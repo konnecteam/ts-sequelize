@@ -2141,5 +2141,105 @@ describe(Support.getTestDialectTeaser('Include'), () => {
         });
       });
     });
+
+    it('should be able to generate a correct limit request with hasOne then hasMany', function() {
+      
+      const Customer = this.sequelize.define('customer', {
+        name: DataTypes.STRING
+      });
+
+      const ShippingAddress = this.sequelize.define('shippingAddress', {
+        address: DataTypes.STRING,
+        verified: DataTypes.BOOLEAN
+      });
+
+      const Order = this.sequelize.define('purchaseOrder', {
+        description: DataTypes.TEXT
+      });
+
+      const Shipment = this.sequelize.define('shipment', {
+        trackingNumber: DataTypes.STRING
+      });
+
+      Customer.hasMany(ShippingAddress);
+      ShippingAddress.belongsTo(Customer);
+
+      Customer.hasMany(Order);
+      Order.belongsTo(Customer);
+
+      Shipment.belongsTo(Order);
+      Order.hasOne(Shipment);
+
+      return this.sequelize.sync({ force: true })
+      .then( () => {
+        return Promise.all([
+          Customer.create({ name: 'kirk' }),
+          Customer.create({ name: 'picard' }),
+          Customer.create({ name: 'archer' }),
+          Customer.create({ name: 'pike' }),
+          Customer.create({ name: 'janeway' })
+        ])
+      .then( (cus) => {
+        return Promise.each([0, 1, 2, 3, 4], i => {
+          console.dir(cus);
+          return ShippingAddress.bulkCreate([
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id }
+          ]);
+        })
+        .then( () => cus);
+      })
+      .then( (cus) => {
+        return Promise.each([0,1], i => {
+          // Third customer don't have order... 
+          return Order.bulkCreate([
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id }
+          ]);
+        }).then( () => cus);
+      })
+      .then( (cus) => {
+        const cusIds = cus.map( f => f.id);
+        return ShippingAddress.findAndCountAll({
+          offset : 0,
+          limit : 15,
+          distinct: true,
+          where : [{
+            customerId : {
+              [Sequelize.Op.in] : [cusIds[1], cusIds[3]],
+            }
+          }],
+          include: [{
+            model: Customer,
+            required: true,
+            include: [{
+              model: Order,
+              required : true
+            }]
+          }]
+        })
+        .then( (results) => {
+          expect(results.rows.length).to.equal(10);
+          expect(results.count).to.equal(10); 
+        })
+      });
+      });
+    });
  });
 });
