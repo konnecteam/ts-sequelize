@@ -2142,6 +2142,173 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       });
     });
 
+    it('should be able to generate a correct limit request with hasMany(hasMany(hasOne))', function() {
+      
+      const User = this.sequelize.define('user', {
+        name: DataTypes.STRING
+      });
+
+      const Job = this.sequelize.define('job', {
+        title: DataTypes.STRING
+      });
+
+      const Share = this.sequelize.define('share', {
+        description: DataTypes.TEXT
+      });
+
+      const Block = this.sequelize.define('block', {
+        description: DataTypes.TEXT
+      });
+
+      const SubBlock = this.sequelize.define('subblock', {
+        description: DataTypes.TEXT
+      });
+
+      User.hasMany(Job);
+      Job.belongsTo(User);
+
+      Job.hasMany(Share);
+      Share.belongsTo(Job);
+
+      Share.belongsTo(Block);
+      Block.hasOne(Share);
+  
+      return this.sequelize.sync({ force: true }).then(() => {
+        return User.findAll({
+          limit : 5,
+          
+          include: [{
+            model: Job,
+            required: true,
+            include: [{
+              model: Share,
+              required : true,
+              include: [{
+                model: Block,
+                required : true
+              }]
+            }]
+          }]
+        });
+      });
+    });
+
+    it('should be able to generate a correct limit request with hasMany(hasMany(hasOne(hasMany)))', function() {
+      
+      const User = this.sequelize.define('user', {
+        name: DataTypes.STRING
+      });
+
+      const Job = this.sequelize.define('job', {
+        title: DataTypes.STRING
+      });
+
+      const Share = this.sequelize.define('share', {
+        description: DataTypes.TEXT
+      });
+
+      const Block = this.sequelize.define('block', {
+        description: DataTypes.TEXT
+      });
+
+      const SubBlock = this.sequelize.define('subblock', {
+        description: DataTypes.TEXT
+      });
+
+      User.hasMany(Job);
+      Job.belongsTo(User);
+
+      Job.hasMany(Share);
+      Share.belongsTo(Job);
+
+      Share.belongsTo(Block);
+      Block.hasOne(Share);
+
+      Block.hasMany(SubBlock);
+      SubBlock.belongsTo(Block);
+
+      return this.sequelize.sync({ force: true })
+      .then(() => {
+        return User.findAll({
+          limit : 5,
+          
+          include: [{
+            model: Job,
+            required: true,
+            include: [{
+              model: Share,
+              required : true,
+              include: [{
+                model: Block,
+                // duplicating : true,
+                required : true,
+                include: [{
+                  model: SubBlock,
+                  required : true
+                }]
+              }]
+            }]
+          }]
+        });
+      });
+    });
+
+    it('should be able to generate a correct limit request with two hasOne then hasMany', function() {
+
+      const Customer = this.sequelize.define('customer', {
+        name: DataTypes.STRING
+      });
+
+      const Reseller = this.sequelize.define('reseller', {
+        name: DataTypes.STRING
+      });
+
+      const ShippingAddress = this.sequelize.define('shippingAddress', {
+        address: DataTypes.STRING,
+        verified: DataTypes.BOOLEAN
+      });
+
+      const Order = this.sequelize.define('purchaseOrder', {
+        description: DataTypes.TEXT
+      });
+
+      const Shipment = this.sequelize.define('shipment', {
+        trackingNumber: DataTypes.STRING
+      });
+
+      Customer.hasMany(ShippingAddress);
+      ShippingAddress.belongsTo(Customer);
+
+      Reseller.hasMany(ShippingAddress);
+      ShippingAddress.belongsTo(Reseller);
+
+      Customer.hasMany(Order);
+      Order.belongsTo(Customer);
+
+      Shipment.belongsTo(Order);
+      Order.hasOne(Shipment);
+
+      return this.sequelize.sync({ force: true })
+      .then( () => {
+
+        return ShippingAddress.findAll({
+          offset : 0,
+          limit : 15,
+          include: [{
+            model: Customer,
+            required: true,
+            include: [{
+              model: Order,
+              required : true
+            }]
+          }, {
+            model: Reseller,
+            required: true
+          }]
+        });
+      });
+    });
+
     it('should be able to generate a correct limit request with hasOne then hasMany', function() {
       
       const Customer = this.sequelize.define('customer', {
@@ -2181,7 +2348,6 @@ describe(Support.getTestDialectTeaser('Include'), () => {
         ])
       .then( (cus) => {
         return Promise.each([0, 1, 2, 3, 4], i => {
-          console.dir(cus);
           return ShippingAddress.bulkCreate([
             { address: 'shipaddr' + i, customerId : cus[i].id },
             { address: 'shipaddr' + i, customerId : cus[i].id },
@@ -2237,9 +2403,113 @@ describe(Support.getTestDialectTeaser('Include'), () => {
         .then( (results) => {
           expect(results.rows.length).to.equal(10);
           expect(results.count).to.equal(10); 
-        })
+        });
       });
       });
     });
+
+    it('should be able to generate a correct limit request with outer separate hasMany and inner hasMany', function() {
+      
+      const Customer = this.sequelize.define('customer', {
+        name: DataTypes.STRING
+      });
+
+      const ShippingAddress = this.sequelize.define('shippingAddress', {
+        address: DataTypes.STRING,
+        verified: DataTypes.BOOLEAN
+      });
+
+      const Order = this.sequelize.define('purchaseOrder', {
+        description: DataTypes.TEXT
+      });
+
+      const Shipment = this.sequelize.define('shipment', {
+        trackingNumber: DataTypes.STRING
+      });
+
+      Customer.hasMany(ShippingAddress);
+      ShippingAddress.belongsTo(Customer);
+
+      Customer.hasMany(Order);
+      Order.belongsTo(Customer);
+
+      Shipment.belongsTo(Order);
+      Order.hasOne(Shipment);
+
+      return this.sequelize.sync({ force: true })
+      .then( () => {
+        return Promise.all([
+          Customer.create({ name: 'kirk' }),
+          Customer.create({ name: 'picard' }),
+          Customer.create({ name: 'archer' }),
+          Customer.create({ name: 'pike' }),
+          Customer.create({ name: 'janeway' })
+        ])
+      .then( (cus) => {
+        return Promise.each([0, 1, 2, 3, 4], i => {
+          return ShippingAddress.bulkCreate([
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id },
+            { address: 'shipaddr' + i, customerId : cus[i].id }
+          ]);
+        })
+        .then( () => cus);
+      })
+      .then( (cus) => {
+        return Promise.each([0,1], i => {
+          // Third customer don't have order... 
+          return Order.bulkCreate([
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id },
+            { description: 'order_' + i, customerId : cus[i].id }
+          ]);
+        }).then( () => cus);
+      })
+      .then( (cus) => {
+        const cusIds = cus.map( f => f.id);
+        return Customer.findAndCountAll({
+          offset : 0,
+          limit : 5,
+          include: [{
+            model: Order,
+            required: false,
+            separate: true,
+            include: [{
+              model: Shipment,
+              required : true,
+              include: [{
+                model: Order,
+                required : true,
+                
+              }]
+            }]
+          }
+          ,{
+            model: ShippingAddress,
+            required: true
+          }
+        ]
+        })
+        .then( (results) => {
+          expect(results.rows.length).to.equal(5);
+          expect(results.count).to.equal(50); 
+        })
+      });
+    });
+  });
  });
 });
