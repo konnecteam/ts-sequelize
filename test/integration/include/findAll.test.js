@@ -5,6 +5,7 @@ const chai = require('chai'),
   expect = chai.expect,
   Support = require(__dirname + '/../support'),
   DataTypes = require(__dirname + '/../../../lib/data-types'),
+  dialect = Support.getTestDialect(),
   Promise = Sequelize.Promise;
 
 const sortById = function(a, b) {
@@ -2308,6 +2309,50 @@ describe(Support.getTestDialectTeaser('Include'), () => {
         });
       });
     });
+
+    if (dialect === 'postgres' || dialect === 'mssql') {
+      it('should be able to force a limit resultsSet for avoid memory crash', function() {
+        
+        const Customer = this.sequelize.define('customer', {
+          name: DataTypes.STRING
+        });
+
+        this.sequelize.config.dialectOptions.maxRows = 3;
+        return this.sequelize.sync({ force: true })
+        .then( () => {
+          return Promise.all([
+            Customer.create({ name: 'kirk' }),
+            Customer.create({ name: 'picard' }),
+            Customer.create({ name: 'archer' }),
+            Customer.create({ name: 'pike' }),
+            Customer.create({ name: 'janeway' })
+          ])
+          .then( (cus) => {
+            return Customer.findAndCountAll({})
+            .then( (results) => {
+              expect(results.rows.length).to.equal(3);
+              expect(results.count).to.equal(5);
+              expect(results.rows[0].name).to.equal('kirk');
+
+              this.sequelize.config.dialectOptions.maxRows = 4;
+              return Customer.findAndCountAll({})
+              .then( (results) => {
+                expect(results.rows.length).to.equal(4);
+                expect(results.count).to.equal(5); 
+                this.sequelize.config.dialectOptions.maxRows = undefined;
+              });
+            });
+          });
+        })
+        .then( () => {
+          this.sequelize.config.dialectOptions.maxRows = undefined;
+        })
+        .catch( err => {
+          this.sequelize.config.dialectOptions.maxRows = undefined;
+          throw err;
+        });
+      });
+    }
 
     it('should be able to generate a correct limit request with hasOne then hasMany', function() {
       
