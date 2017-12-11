@@ -2254,6 +2254,58 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       });
     });
 
+
+    it('should be able to generate a correct limit request with one hasMany and outer belongsTo with belongsTo', function() {
+
+      const User = this.sequelize.define('user', {
+        name: DataTypes.STRING
+      });
+
+      const Contact = this.sequelize.define('contact', {
+        name: DataTypes.STRING
+      });
+
+      const Address = this.sequelize.define('address', {
+        address: DataTypes.STRING,
+        verified: DataTypes.BOOLEAN
+      });
+
+      const Company = this.sequelize.define('company', {
+        description: DataTypes.TEXT
+      });
+
+
+      Contact.hasMany(User);
+      User.belongsTo(Contact);
+
+      Contact.belongsTo(Address);
+      Address.hasMany(Contact);
+
+      Address.belongsTo(Company);
+      Company.hasMany(Address);
+
+      return this.sequelize.sync({ force: true })
+      .then( () => {
+
+        return Contact.findAll({
+          offset : 0,
+          limit : 5,
+          include: [{
+            model: User,
+            required: true
+          }, {
+            model: Address,
+            required: false,
+            include : [{
+                model: Company,
+                required: true
+              }
+            ]
+          }]
+        });
+      });
+    });
+
     it('should be able to generate a correct limit request with two hasOne then hasMany', function() {
 
       const Customer = this.sequelize.define('customer', {
@@ -2328,7 +2380,9 @@ describe(Support.getTestDialectTeaser('Include'), () => {
             Customer.create({ name: 'janeway' })
           ])
           .then( (cus) => {
-            return Customer.findAndCountAll({})
+            return Customer.findAndCountAll({
+              order : ''
+            })
             .then( (results) => {
               expect(results.rows.length).to.equal(3);
               expect(results.count).to.equal(5);
@@ -2450,6 +2504,56 @@ describe(Support.getTestDialectTeaser('Include'), () => {
           expect(results.count).to.equal(10); 
         });
       });
+      });
+    });
+
+    it('should be able to generate a correct belongsToMany(hasOne(hasOne))', function() {
+      
+      const Ability = this.sequelize.define('abilitie', {
+        name: DataTypes.STRING
+      });
+
+      const User = this.sequelize.define('user', {
+        name: DataTypes.TEXT
+      });
+
+      const Address = this.sequelize.define('address', {
+        name: DataTypes.STRING
+      });
+
+      const Company = this.sequelize.define('company', {
+        name: DataTypes.STRING
+      });
+
+      Ability.belongsToMany(User, {through: 'user_ability'});
+      User.belongsTo(Address);
+      Address.belongsTo(Company);
+
+      return this.sequelize.sync({ force: true })
+      .then( () => {
+        return Ability.findAndCountAll({
+          offset : 0,
+          limit : 5,
+          include: [{
+            model: User,
+            through : {
+              required : true
+            },
+            required: true,
+            include: [{
+              model: Address,
+              required : true,
+              include: [{
+                model: Company,
+                required : true
+              }]
+            }]
+          }]
+        })
+        .then( (results) => {
+          expect(results.rows.length).to.equal(5);
+          expect(results.count).to.equal(50); 
+        });
       });
     });
 
