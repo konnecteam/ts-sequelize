@@ -2254,7 +2254,6 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       });
     });
 
-
     it('should be able to generate a correct limit request with one hasMany and outer belongsTo with belongsTo', function() {
 
       const User = this.sequelize.define('user', {
@@ -2299,6 +2298,67 @@ describe(Support.getTestDialectTeaser('Include'), () => {
             include : [{
                 model: Company,
                 required: true
+              }
+            ]
+          }]
+        });
+      });
+    });
+
+    it.only('should be able to generate a correct limit request with hasMany,!belongsTo(belongsTo(hasMany))', function() {
+
+      const User = this.sequelize.define('user', {
+        name: DataTypes.STRING
+      });
+
+      const Contact = this.sequelize.define('contact', {
+        name: DataTypes.STRING
+      });
+
+      const Address = this.sequelize.define('address', {
+        address: DataTypes.STRING,
+        verified: DataTypes.BOOLEAN
+      });
+
+      const Company = this.sequelize.define('company', {
+        description: DataTypes.TEXT
+      });
+
+      const Relation = this.sequelize.define('relation', {
+        description: DataTypes.TEXT
+      });
+
+      Contact.hasMany(User);
+      User.belongsTo(Contact);
+
+      Contact.belongsTo(Address);
+      Address.hasMany(Contact);
+
+      Address.belongsTo(Company);
+      Company.hasMany(Address);
+
+      Company.hasMany(Relation);
+      Relation.belongsTo(Company);
+
+      return this.sequelize.sync({ force: true })
+      .then( () => {
+
+        return Contact.findAll({
+          offset : 0,
+          limit : 5,
+          include: [{
+            model: User,
+            required: true
+          }, {
+            model: Address,
+            required: false,
+            include : [{
+                model: Company,
+                required: true,
+                include : [{
+                  model: Relation,
+                  required: true
+                }]
               }
             ]
           }]
