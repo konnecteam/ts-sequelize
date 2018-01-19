@@ -9,7 +9,33 @@ Sequelize V4 is a major release and it introduces new features and breaking chan
 - Removed MariaDB dialect. This was just a thin wrapper around MySQL, so using `dialect: 'mysql'` instead should work with no further changes
 - Removed default `REPEATABLE_READ` transaction isolation. The isolation level now defaults to that of the database. Explicitly pass the required isolation level when initiating the transaction.
 - Removed support for `pool: false`. To use a single connection, set `pool.max` to 1.
+- Removed support for old connection pooling configuration keys. Instead of
+  ```js
+  pool: {
+    maxIdleTime: 30000,
+    minConnections: 20,
+    maxConnections: 30
+  }
+  ```
+
+  use
+
+  ```js
+  pool: {
+    idle: 30000,
+    min: 20,
+    max: 30
+  }
+  ```
+
 - (MySQL) BIGINT now gets converted to string when number is too big
+- (MySQL) `DECIMAL` and `NEWDECIMAL` types now returned as String unless
+  ```js
+  dialectOptions: {
+    decimalNumbers: true
+  }
+  ```
+  is specified.
 - Removed support for referencesKey, use a references object
   ```js
   references: {
@@ -89,6 +115,61 @@ Sequelize V4 is a major release and it introduces new features and breaking chan
 - Raw options for where, order and group like `where: { $raw: '..', order: [{ raw: '..' }], group: [{ raw: '..' }] }` have been removed to prevent SQL injection attacks.
 - `Sequelize.Utils` is not longer part of the public API, use it at your own risk
 - `Hooks` should return Promises now. Callbacks are deprecated.
+- `include` is always an array
+
+  Previous:
+  ```js
+  User.findAll({
+    include: {
+      model: Comment,
+      as: 'comments'
+    }
+  })
+  ```
+  
+  New:
+  ```js
+  User.findAll({
+    include: [{
+      model: Comment,
+      as: 'comments'
+    }]
+  })
+  ```
+
+- `where` clause inside `include` does not make this `include` and all its parents `required`. You can use following `beforeFind` global hook to keep previous behaviour:
+
+  ```js
+  function whereRequiredLikeInV3(modelDescriptor) {
+    if (!modelDescriptor.include) {
+      return false;
+    }
+
+    return modelDescriptor.include.some(relatedModelDescriptor => {
+      const childDescriptorRequired = whereRequiredLikeInV3(
+        relatedModelDescriptor,
+      );
+
+      if (
+        (relatedModelDescriptor.where || childDescriptorRequired) &&
+        typeof relatedModelDescriptor.required === 'undefined'
+      ) {
+        relatedModelDescriptor.required = true;
+      }
+
+      return relatedModelDescriptor.required;
+    });
+  }
+  
+  const sequelize = new Sequelize(..., {
+    ...,
+    define: {
+      hooks: {
+        beforeFind: whereRequiredLikeInV3,
+      },
+    },
+  });
+  ```
 
 ### New features
 - Initial version of `sequelize.sync({ alter: true })` has been added and uses `ALTER TABLE` commands to sync tables. [Migrations](http://docs.sequelizejs.com/manual/tutorial/migrations.html) are still preferred and should be used in production.

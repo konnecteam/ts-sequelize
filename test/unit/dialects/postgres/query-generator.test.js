@@ -16,29 +16,39 @@ if (dialect.match(/^postgres/)) {
     const suites = {
       arithmeticQuery: [
         {
-          title:'Should use the plus operator',
+          title: 'Should use the plus operator',
           arguments: ['+', 'myTable', { foo: 'bar' }, {}, {}],
           expectation: 'UPDATE "myTable" SET "foo"="foo"+ \'bar\'  RETURNING *'
         },
         {
-          title:'Should use the plus operator with where clause',
+          title: 'Should use the plus operator with where clause',
           arguments: ['+', 'myTable', { foo: 'bar' }, { bar: 'biz'}, {}],
           expectation: 'UPDATE "myTable" SET "foo"="foo"+ \'bar\' WHERE "bar" = \'biz\' RETURNING *'
         },
         {
-          title:'Should use the minus operator',
+          title: 'Should use the plus operator without returning clause',
+          arguments: ['+', 'myTable', { foo: 'bar' }, {}, { returning: false }],
+          expectation: 'UPDATE "myTable" SET "foo"="foo"+ \'bar\' '
+        },
+        {
+          title: 'Should use the minus operator',
           arguments: ['-', 'myTable', { foo: 'bar' }, {}, {}],
           expectation: 'UPDATE "myTable" SET "foo"="foo"- \'bar\'  RETURNING *'
         },
         {
-          title:'Should use the minus operator with negative value',
+          title: 'Should use the minus operator with negative value',
           arguments: ['-', 'myTable', { foo: -1 }, {}, {}],
           expectation: 'UPDATE "myTable" SET "foo"="foo"- -1  RETURNING *'
         },
         {
-          title:'Should use the minus operator with where clause',
+          title: 'Should use the minus operator with where clause',
           arguments: ['-', 'myTable', { foo: 'bar' }, { bar: 'biz'}, {}],
           expectation: 'UPDATE "myTable" SET "foo"="foo"- \'bar\' WHERE "bar" = \'biz\' RETURNING *'
+        },
+        {
+          title: 'Should use the minus operator without returning clause',
+          arguments: ['-', 'myTable', { foo: 'bar' }, {}, { returning: false }],
+          expectation: 'UPDATE "myTable" SET "foo"="foo"- \'bar\' '
         }
       ],
       attributesToSQL: [
@@ -351,7 +361,7 @@ if (dialect.match(/^postgres/)) {
             return {
               where: sequelize.and(
                 { archived: null},
-                sequelize.where(sequelize.fn('COALESCE', sequelize.col('place_type_codename'), sequelize.col('announcement_type_codename')), { in : ['Lost', 'Found'] })
+                sequelize.where(sequelize.fn('COALESCE', sequelize.col('place_type_codename'), sequelize.col('announcement_type_codename')), { in: ['Lost', 'Found'] })
               )
             };
           }],
@@ -922,7 +932,52 @@ if (dialect.match(/^postgres/)) {
         },
         {
           arguments: ['myTable', 'myTrigger', 'after_constraint', ['insert', 'update'],  'myFunction', [{name: 'bar', type: 'INTEGER'}], ['FOR EACH ROW']],
-          expectation:'CREATE CONSTRAINT TRIGGER myTrigger\n\tAFTER INSERT OR UPDATE\n\tON myTable\n\t\n\tFOR EACH ROW\n\tEXECUTE PROCEDURE myFunction(bar INTEGER);'
+          expectation: 'CREATE CONSTRAINT TRIGGER myTrigger\n\tAFTER INSERT OR UPDATE\n\tON myTable\n\t\n\tFOR EACH ROW\n\tEXECUTE PROCEDURE myFunction(bar INTEGER);'
+        }
+      ],
+      getForeignKeyReferenceQuery: [
+        {
+          arguments: ['myTable', 'myColumn'],
+          expectation: 'SELECT ' +
+              'DISTINCT tc.constraint_name as constraint_name, ' +
+              'tc.constraint_schema as constraint_schema, ' +
+              'tc.constraint_catalog as constraint_catalog, ' +
+              'tc.table_name as table_name,' +
+              'tc.table_schema as table_schema,' +
+              'tc.table_catalog as table_catalog,' +
+              'kcu.column_name as column_name,' +
+              'ccu.table_schema  AS referenced_table_schema,' +
+              'ccu.table_catalog  AS referenced_table_catalog,' +
+              'ccu.table_name  AS referenced_table_name,' +
+              'ccu.column_name AS referenced_column_name ' +
+            'FROM information_schema.table_constraints AS tc ' +
+              'JOIN information_schema.key_column_usage AS kcu ' +
+                'ON tc.constraint_name = kcu.constraint_name ' +
+              'JOIN information_schema.constraint_column_usage AS ccu ' +
+                'ON ccu.constraint_name = tc.constraint_name ' +
+            'WHERE constraint_type = \'FOREIGN KEY\' AND tc.table_name=\'myTable\' AND  kcu.column_name = \'myColumn\''
+        },
+        {
+          arguments: [{ schema: 'mySchema', tableName: 'myTable' }, 'myColumn'],
+          expectation: 'SELECT ' +
+              'DISTINCT tc.constraint_name as constraint_name, ' +
+              'tc.constraint_schema as constraint_schema, ' +
+              'tc.constraint_catalog as constraint_catalog, ' +
+              'tc.table_name as table_name,' +
+              'tc.table_schema as table_schema,' +
+              'tc.table_catalog as table_catalog,' +
+              'kcu.column_name as column_name,' +
+              'ccu.table_schema  AS referenced_table_schema,' +
+              'ccu.table_catalog  AS referenced_table_catalog,' +
+              'ccu.table_name  AS referenced_table_name,' +
+              'ccu.column_name AS referenced_column_name ' +
+            'FROM information_schema.table_constraints AS tc ' +
+              'JOIN information_schema.key_column_usage AS kcu ' +
+                'ON tc.constraint_name = kcu.constraint_name ' +
+              'JOIN information_schema.constraint_column_usage AS ccu ' +
+                'ON ccu.constraint_name = tc.constraint_name ' +
+            'WHERE constraint_type = \'FOREIGN KEY\' AND tc.table_name=\'myTable\' AND  kcu.column_name = \'myColumn\'' +
+              ' AND tc.table_schema = \'mySchema\''
         }
       ]
     };

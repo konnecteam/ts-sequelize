@@ -12,7 +12,7 @@ const Support   = require(__dirname + '/../support'),
 suite(Support.getTestDialectTeaser('SQL'), () => {
   suite('delete', () => {
     const User = current.define('test_user', {}, {
-      timestamps:false,
+      timestamps: false,
       schema: 'public'
     });
 
@@ -86,7 +86,7 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
             options,
             User
           ), {
-            default:  "DELETE FROM [public.test_users] WHERE `name` = 'foo'",
+            default: "DELETE FROM [public.test_users] WHERE `name` = 'foo'",
             postgres: 'DELETE FROM "public"."test_users" WHERE "name" = \'foo\'',
             mssql:    "DELETE FROM [public].[test_users] WHERE [name] = N'foo'; SELECT @@ROWCOUNT AS AFFECTEDROWS;",
             sqlite:   "DELETE FROM `public.test_users` WHERE `name` = 'foo'",
@@ -156,12 +156,12 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
     suite('delete when the primary key has a different field name', () => {
       const User = current.define('test_user', {
         id: {
-          type:       Sequelize.INTEGER,
+          type: Sequelize.INTEGER,
           primaryKey: true,
-          field:      'test_user_id'
+          field: 'test_user_id'
         }
       }, {
-        timestamps:false,
+        timestamps: false,
         schema: 'public'
       });
 

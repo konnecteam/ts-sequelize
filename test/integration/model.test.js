@@ -1164,6 +1164,67 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
     });
 
+    it('does not update soft deleted records when model is paranoid', function() {
+      const ParanoidUser = this.sequelize.define('ParanoidUser', { username: DataTypes.STRING }, { paranoid: true });
+
+      return this.sequelize.sync({ force: true }).then(() => {
+        return ParanoidUser.bulkCreate([
+          { username: 'user1' },
+          { username: 'user2' }
+        ]);
+      }).then(() => {
+        return ParanoidUser.destroy({
+          where: {
+            username: 'user1'
+          }
+        });
+      }).then(() => {
+        return ParanoidUser.update({ username: 'foo' }, {
+          where: {}
+        });
+      }).then(() => {
+        return ParanoidUser.findAll({
+          paranoid: false,
+          where: {
+            username: 'foo'
+          }
+        });
+      }).then(users => {
+        expect(users).to.have.lengthOf(1, 'should not update soft-deleted record');
+      });
+    });
+
+    it('updates soft deleted records when paranoid is overridden', function() {
+      const ParanoidUser = this.sequelize.define('ParanoidUser', { username: DataTypes.STRING }, { paranoid: true });
+
+      return this.sequelize.sync({ force: true }).then(() => {
+        return ParanoidUser.bulkCreate([
+          { username: 'user1' },
+          { username: 'user2' }
+        ]);
+      }).then(() => {
+        return ParanoidUser.destroy({
+          where: {
+            username: 'user1'
+          }
+        });
+      }).then(() => {
+        return ParanoidUser.update({ username: 'foo' }, {
+          where: {},
+          paranoid: false
+        });
+      }).then(() => {
+        return ParanoidUser.findAll({
+          paranoid: false,
+          where: {
+            username: 'foo'
+          }
+        });
+      }).then(users => {
+        expect(users).to.have.lengthOf(2);
+      });
+    });
+
     if (dialect === 'postgres') {
       it('returns the affected rows if `options.returning` is true', function() {
         const self = this,
@@ -1625,6 +1686,33 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           return run.call(self);
         });
       });
+    });
+
+    it('should work if model is paranoid and only operator in where clause is a Symbol', function() {
+      const User = this.sequelize.define('User', {
+        username: Sequelize.STRING
+      }, {
+        paranoid: true
+      });
+
+      return User.sync({ force: true})
+        .then(() => User.create({ username: 'foo' }))
+        .then(() => User.create({ username: 'bar' }))
+        .then(() => {
+          return User.destroy({
+            where: {
+              [Sequelize.Op.or]: [
+                { username: 'bar' },
+                { username: 'baz' }
+              ]
+            }
+          });
+        })
+        .then(() => User.findAll())
+        .then(users => {
+          expect(users).to.have.length(1);
+          expect(users[0].get('username')).to.equal('foo');
+        });
     });
   });
 
@@ -2785,7 +2873,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         type: Sequelize.STRING,
         references: {
           model: 'Users',
-          key:   'UUID'
+          key: 'UUID'
         }
       }
     });

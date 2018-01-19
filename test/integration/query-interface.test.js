@@ -248,17 +248,17 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
     it('should correctly determine the primary key columns', function() {
       const self = this;
       const Country = self.sequelize.define('_Country', {
-        code:     {type: DataTypes.STRING, primaryKey: true },
-        name:     {type: DataTypes.STRING, allowNull: false}
+        code: {type: DataTypes.STRING, primaryKey: true },
+        name: {type: DataTypes.STRING, allowNull: false}
       }, { freezeTableName: true });
       const Alumni = self.sequelize.define('_Alumni', {
-        year:     {type: DataTypes.INTEGER, primaryKey: true },
-        num:      {type: DataTypes.INTEGER, primaryKey: true },
+        year: {type: DataTypes.INTEGER, primaryKey: true },
+        num: {type: DataTypes.INTEGER, primaryKey: true },
         username: {type: DataTypes.STRING, allowNull: false, unique: true },
-        dob:      {type: DataTypes.DATEONLY, allowNull: false },
-        dod:      {type: DataTypes.DATEONLY, allowNull: true },
-        city:     {type: DataTypes.STRING, allowNull: false},
-        ctrycod:  {type: DataTypes.STRING, allowNull: false,
+        dob: {type: DataTypes.DATEONLY, allowNull: false },
+        dod: {type: DataTypes.DATEONLY, allowNull: true },
+        city: {type: DataTypes.STRING, allowNull: false},
+        ctrycod: {type: DataTypes.STRING, allowNull: false,
           references: { model: Country, key: 'code'}}
       }, { freezeTableName: true });
 
@@ -602,7 +602,7 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
           type: DataTypes.INTEGER,
           references: {
             model: 'level',
-            key:   'id'
+            key: 'id'
           },
           onUpdate: 'cascade',
           onDelete: 'cascade'
@@ -640,7 +640,7 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
           type: DataTypes.INTEGER,
           references: {
             model: 'level',
-            key:   'id'
+            key: 'id'
           },
           onUpdate: 'cascade',
           onDelete: 'set null'
@@ -711,7 +711,7 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
             type: DataTypes.INTEGER,
             references: {
               model: 'users',
-              key:   'id'
+              key: 'id'
             }
           },
           email: {
@@ -885,14 +885,14 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
             type: DataTypes.INTEGER,
             references: {
               model: 'users',
-              key:   'id'
+              key: 'id'
             }
           },
           operator: {
             type: DataTypes.INTEGER,
             references: {
               model: 'users',
-              key:   'id'
+              key: 'id'
             },
             onUpdate: 'cascade'
           },
@@ -900,7 +900,7 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
             type: DataTypes.INTEGER,
             references: {
               model: 'users',
-              key:   'id'
+              key: 'id'
             },
             onUpdate: 'cascade',
             onDelete: 'set null'
@@ -925,7 +925,7 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
         } else if (dialect === 'sqlite') {
           expect(keys).to.have.length(8);
         } else if (dialect === 'mysql' || dialect === 'mssql') {
-          expect(keys).to.have.length(1);
+          expect(keys).to.have.length(12);
         } else {
           console.log('This test doesn\'t support ' + dialect);
         }
@@ -942,6 +942,21 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
         }
         return;
       });
+    });
+
+    it('should get a list of foreign key references details for the table', function() {
+      return this.queryInterface.getForeignKeyReferencesForTable('hosts', this.sequelize.options)
+        .then(references => {
+          expect(references).to.have.length(3);
+          const keys = [];
+          _.each(references, reference => {
+            expect(reference.tableName).to.eql('hosts');
+            expect(reference.referencedColumnName).to.eql('id');
+            expect(reference.referencedTableName).to.eql('users');
+            keys.push(reference.columnName);
+          });
+          expect(keys).to.have.same.members(['owner', 'operator', 'admin']);
+        });
     });
   });
 

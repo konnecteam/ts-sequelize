@@ -13,27 +13,27 @@ if (dialect === 'mysql') {
     const suites = {
       arithmeticQuery: [
         {
-          title:'Should use the plus operator',
+          title: 'Should use the plus operator',
           arguments: ['+', 'myTable', { foo: 'bar' }, {}, {}],
           expectation: 'UPDATE `myTable` SET `foo`=`foo`+ \'bar\' '
         },
         {
-          title:'Should use the plus operator with where clause',
+          title: 'Should use the plus operator with where clause',
           arguments: ['+', 'myTable', { foo: 'bar' }, { bar: 'biz'}, {}],
           expectation: 'UPDATE `myTable` SET `foo`=`foo`+ \'bar\' WHERE `bar` = \'biz\''
         },
         {
-          title:'Should use the minus operator',
+          title: 'Should use the minus operator',
           arguments: ['-', 'myTable', { foo: 'bar' }, {}, {}],
           expectation: 'UPDATE `myTable` SET `foo`=`foo`- \'bar\' '
         },
         {
-          title:'Should use the minus operator with negative value',
+          title: 'Should use the minus operator with negative value',
           arguments: ['-', 'myTable', { foo: -1 }, {}, {}],
           expectation: 'UPDATE `myTable` SET `foo`=`foo`- -1 '
         },
         {
-          title:'Should use the minus operator with where clause',
+          title: 'Should use the minus operator with where clause',
           arguments: ['-', 'myTable', { foo: 'bar' }, { bar: 'biz'}, {}],
           expectation: 'UPDATE `myTable` SET `foo`=`foo`- \'bar\' WHERE `bar` = \'biz\''
         }
@@ -75,7 +75,27 @@ if (dialect === 'mysql') {
           arguments: [{id: {type: 'INTEGER', after: 'Bar'}}],
           expectation: {id: 'INTEGER AFTER `Bar`'}
         },
-
+        // No Default Values allowed for certain types
+        {
+          title: 'No Default value for MySQL BLOB allowed',
+          arguments: [{id: {type: 'BLOB', defaultValue: []}}],
+          expectation: {id: 'BLOB'}
+        },
+        {
+          title: 'No Default value for MySQL TEXT allowed',
+          arguments: [{id: {type: 'TEXT', defaultValue: []}}],
+          expectation: {id: 'TEXT'}
+        },
+        {
+          title: 'No Default value for MySQL GEOMETRY allowed',
+          arguments: [{id: {type: 'GEOMETRY', defaultValue: []}}],
+          expectation: {id: 'GEOMETRY'}
+        },
+        {
+          title: 'No Default value for MySQL JSON allowed',
+          arguments: [{id: {type: 'JSON', defaultValue: []}}],
+          expectation: {id: 'JSON'}
+        },
         // New references style
         {
           arguments: [{id: {type: 'INTEGER', references: { model: 'Bar' }}}],
@@ -312,7 +332,7 @@ if (dialect === 'mysql') {
             return {
               where: sequelize.and(
                 { archived: null},
-                sequelize.where(sequelize.fn('COALESCE', sequelize.col('place_type_codename'), sequelize.col('announcement_type_codename')), { in : ['Lost', 'Found'] })
+                sequelize.where(sequelize.fn('COALESCE', sequelize.col('place_type_codename'), sequelize.col('announcement_type_codename')), { in: ['Lost', 'Found'] })
               )
             };
           }],
@@ -559,7 +579,7 @@ if (dialect === 'mysql') {
       getForeignKeyQuery: [
         {
           arguments: ['User', 'email'],
-          expectation: "SELECT CONSTRAINT_NAME as constraint_name FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE (REFERENCED_TABLE_NAME = 'User' AND REFERENCED_COLUMN_NAME = 'email') OR (TABLE_NAME = 'User' AND COLUMN_NAME = 'email' AND REFERENCED_TABLE_NAME IS NOT NULL)"
+          expectation: "SELECT CONSTRAINT_NAME as constraint_name,CONSTRAINT_NAME as constraintName,CONSTRAINT_SCHEMA as constraintSchema,CONSTRAINT_SCHEMA as constraintCatalog,TABLE_NAME as tableName,TABLE_SCHEMA as tableSchema,TABLE_SCHEMA as tableCatalog,COLUMN_NAME as columnName,REFERENCED_TABLE_SCHEMA as referencedTableSchema,REFERENCED_TABLE_SCHEMA as referencedTableCatalog,REFERENCED_TABLE_NAME as referencedTableName,REFERENCED_COLUMN_NAME as referencedColumnName FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE (REFERENCED_TABLE_NAME = 'User' AND REFERENCED_COLUMN_NAME = 'email') OR (TABLE_NAME = 'User' AND COLUMN_NAME = 'email' AND REFERENCED_TABLE_NAME IS NOT NULL)"
         }
       ]
     };
