@@ -1058,12 +1058,12 @@ describe(Support.getTestDialectTeaser('Sequelize'), () => {
 
         return User2.sync().catch(err => {
           if (dialect === 'postgres' || dialect === 'postgres-native') {
-            assert([
+            expect([
               'fe_sendauth: no password supplied',
               'role "bar" does not exist',
               'FATAL:  role "bar" does not exist',
               'password authentication failed for user "bar"'
-            ].indexOf(err.message.trim()) !== -1);
+            ].indexOf(err.message.trim()) !== -1).to.equal(true);
           } else if (dialect === 'mssql') {
             expect(err.message).to.equal('Login failed for user \'bar\'.');
           } else if (dialect === 'oracle') {

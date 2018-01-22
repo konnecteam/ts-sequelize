@@ -112,20 +112,23 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         .then(data => expect(data).not.to.be.ok, error => expect(error).to.be.ok);
     });
 
-    it('should properly alter tables when there are foreign keys', function() {
-      const foreignKeyTestSyncA = this.sequelize.define('foreignKeyTestSyncA', {
-        dummy: Sequelize.STRING
+    if (Support.getTestDialect() !== 'oracle') {
+      //Table names too long for Oracle
+      it('should properly alter tables when there are foreign keys', function() {
+        const foreignKeyTestSyncA = this.sequelize.define('foreignKeyTestSyncA', {
+          dummy: Sequelize.STRING
+        });
+  
+        const foreignKeyTestSyncB = this.sequelize.define('foreignKeyTestSyncB', {
+          dummy: Sequelize.STRING
+        });
+  
+        foreignKeyTestSyncA.hasMany(foreignKeyTestSyncB);
+        foreignKeyTestSyncB.belongsTo(foreignKeyTestSyncA);
+  
+        return this.sequelize.sync({ alter: true })
+          .then(() => this.sequelize.sync({ alter: true }));
       });
-
-      const foreignKeyTestSyncB = this.sequelize.define('foreignKeyTestSyncB', {
-        dummy: Sequelize.STRING
-      });
-
-      foreignKeyTestSyncA.hasMany(foreignKeyTestSyncB);
-      foreignKeyTestSyncB.belongsTo(foreignKeyTestSyncA);
-
-      return this.sequelize.sync({ alter: true })
-        .then(() => this.sequelize.sync({ alter: true }));
-    });
+    }
   });
 });

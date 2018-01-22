@@ -125,6 +125,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               expect(sql.indexOf('INSERT INTO "Beers" ("id","style","createdAt","updatedAt") VALUES (DEFAULT')).not.be.equal(-1);
             } else if (dialect === 'mssql') {
               expect(sql.indexOf('INSERT INTO [Beers] ([style],[createdAt],[updatedAt]) VALUES')).not.be.equal(-1);
+            } else if (dialect === 'oracle') {
+              expect(sql.indexOf('INSERT ALL INTO Beers (style,createdAt,updatedAt) WITH rowAttr AS (SELECT \'ipa\' AS "style",')).not.be.equal(-1);
             } else { // mysql, sqlite
               expect(sql.indexOf('INSERT INTO `Beers` (`id`,`style`,`createdAt`,`updatedAt`) VALUES (NULL')).not.be.equal(-1);
             }
@@ -424,6 +426,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           return self.User.bulkCreate(data, { fields: ['uniqueName', 'secretValue'], ignoreDuplicates: true }).catch(err => {
             if (dialect === 'mssql') {
               expect(err.message).to.match(/mssql does not support the \'ignoreDuplicates\' option./);
+            } else if (dialect === 'oracle') {
+              expect(err.message).to.match(/oracle does not support the \'ignoreDuplicates\' option./);
             } else {
               expect(err.message).to.match(/postgres does not support the \'ignoreDuplicates\' option./);
             }
@@ -596,8 +600,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         return Maya.sync({ force: true })
           .then(() => Maya.bulkCreate([M1, M2], { returning: true }))
           .then(ms => {
-            expect(ms[0].id).to.be.eql(1);
-            expect(ms[1].id).to.be.eql(2);
+            if (dialect === 'oracle') {
+              //Oracle on bulk insert cannot return ids
+              expect(ms.length).to.be.eql(2);
+            } else {
+              expect(ms[0].id).to.be.eql(1);
+              expect(ms[1].id).to.be.eql(2);
+            }
           });
       });
 
