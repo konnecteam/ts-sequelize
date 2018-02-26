@@ -1067,7 +1067,7 @@ describe(Support.getTestDialectTeaser('Sequelize'), () => {
           } else if (dialect === 'mssql') {
             expect(err.message).to.equal('Login failed for user \'bar\'.');
           } else if (dialect === 'oracle') {
-            expect(err.message).to.equal('ORA-12514: TNS:listener does not currently know of service requested in connect descriptor\n');
+            expect(err.message).to.equal('NJS-007: invalid value for "password" in parameter 1');
           } else {
             expect(err.message.toString()).to.match(/.*Access\ denied.*/);
           }
