@@ -2100,6 +2100,49 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       });
     });
 
+    it('should be able to generate a correct limit request with BT->BT->BT then hasMany', function() {
+      
+      const Project = this.sequelize.define('project', {
+        name: DataTypes.STRING
+      });
+
+      const Issue = this.sequelize.define('issue', {
+        name: DataTypes.STRING
+      });
+
+      const IssueType = this.sequelize.define('issueType', {
+        description: DataTypes.TEXT
+      });
+
+      const IssueTypeOptions = this.sequelize.define('issueTypeOpt', {
+        serialnumber: DataTypes.STRING
+      });
+
+      Project.hasOne(Issue);
+      Issue.hasOne(IssueType);
+      IssueType.hasMany(IssueTypeOptions);
+
+      return this.sequelize.sync({ force: true }).then(() => {
+        return Project.findAll({
+          limit : 5,
+          include: [{
+            model: Issue,
+            required: true,
+            include: [{
+              attributes: [],
+              model: IssueType,
+              required: true,
+              include: [{
+                attributes: [],
+                model: IssueTypeOptions,
+                required : true
+              }]
+            }]
+          }]
+        });
+      });
+    });
+
     it('should be able to generate a correct limit request with hasMany then hasOne', function() {
       
       const Customer = this.sequelize.define('customer', {
