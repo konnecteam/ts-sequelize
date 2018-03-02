@@ -2100,6 +2100,48 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       });
     });
 
+    it('should be able to generate a correct limit request with BT->BT->BT[WA] then hasMany', function() {
+      
+      const Project = this.sequelize.define('project', {
+        name: DataTypes.STRING
+      });
+
+      const Issue = this.sequelize.define('issue', {
+        name: DataTypes.STRING
+      });
+
+      const IssueType = this.sequelize.define('issueType', {
+        description: DataTypes.TEXT
+      });
+
+      const IssueTypeOptions = this.sequelize.define('issueTypeOpt', {
+        serialnumber: DataTypes.STRING
+      });
+
+      Project.hasOne(Issue);
+      Issue.hasOne(IssueType);
+      IssueType.hasMany(IssueTypeOptions);
+
+      return this.sequelize.sync({ force: true }).then(() => {
+        return Project.findAll({
+          limit : 5,
+          include: [{
+            model: Issue,
+            required: true,
+            include: [{
+              attributes: [],
+              model: IssueType,
+              required: true,
+              include: [{
+                model: IssueTypeOptions,
+                required : true
+              }]
+            }]
+          }]
+        });
+      });
+    });
+
     it('should be able to generate a correct limit request with BT->BT->BT then hasMany', function() {
       
       const Project = this.sequelize.define('project', {
@@ -2484,12 +2526,12 @@ describe(Support.getTestDialectTeaser('Include'), () => {
           ])
           .then( (cus) => {
             return Customer.findAndCountAll({
-              order : ''
+              order : ['name']
             })
             .then( (results) => {
               expect(results.rows.length).to.equal(3);
               expect(results.count).to.equal(5);
-              expect(results.rows[0].name).to.equal('kirk');
+              expect(results.rows[0].name).to.equal('archer');
 
               this.sequelize.config.dialectOptions.maxRows = 4;
               return Customer.findAndCountAll({})
