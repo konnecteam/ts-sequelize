@@ -2702,6 +2702,35 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       });
     });
 
+    it('should be able to generate a correct BT,HM with order by BT.XXX and offset', function() {
+      const User = this.sequelize.define('user', { name: DataTypes.TEXT });
+      const Address = this.sequelize.define('address', { name: DataTypes.STRING });
+      const Abilities = this.sequelize.define('abilitie', { name: DataTypes.STRING });
+
+      User.hasMany(Abilities);
+      User.belongsTo(Address);
+
+      return this.sequelize.sync({ force: true })
+      .then( () => {
+        return User.findAndCountAll({
+          offset : 0,
+          limit : 5,
+          include: [{
+            attributes: ['name'],
+            model: Address,
+            required: true
+          }, {
+            model: Abilities,
+            required: true
+          }],
+          order : [[{ model : Address, as : 'Address' }, 'name', 'DESC']]
+        })
+        .then( (results) => {
+          expect(results.rows.length).to.equal(0);
+        });
+      });
+    });
+
     it('should be able to generate a correct limit request with outer separate hasMany and inner hasMany', function() {
       
       const Customer = this.sequelize.define('customer', {
