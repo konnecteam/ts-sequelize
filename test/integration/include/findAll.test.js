@@ -2731,6 +2731,102 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       });
     });
 
+    
+    it('should be able to generate a correct BT(HM) with order by BT.XXX and offset', function() {
+      const User = this.sequelize.define('user', { name: DataTypes.TEXT });
+      const Address = this.sequelize.define('address', { name: DataTypes.STRING });
+      const Factions = this.sequelize.define('faction', { name: DataTypes.STRING });
+
+      User.belongsTo(Address);
+      Address.hasMany(Factions);
+
+      return this.sequelize.sync({ force: true })
+      .then( () => {
+        return User.findAndCountAll({
+          offset : 0,
+          limit : 5,
+          include: [{
+            attributes: ['name'],
+            model: Address,
+            required: true,
+            include: [{
+              model: Factions,
+              required: true
+            }]
+          }],
+          order : [[{ model : Address, as : 'Address' }, 'name', 'DESC']]
+        })
+        .then( (results) => {
+          expect(results.rows.length).to.equal(0);
+        });
+      });
+    });
+
+    it('should be able to generate a correct mismatch !BT with offset', function() {
+      const User = this.sequelize.define('user', { name: DataTypes.TEXT });
+      const Address = this.sequelize.define('address', { name: DataTypes.STRING });
+
+      Address.hasOne(User);
+
+      return this.sequelize.sync({ force: true })
+      .then( () => {
+        return Address.findAndCountAll({
+          offset : 0,
+          limit : 5,
+          include: [{
+            mismatch : true,
+            attributes: ['name'],
+            model: User,
+            required: false
+          }],
+          where : [{
+            '$user.id$' : {
+              $ne : null
+            }
+          }, {
+            id : 55555
+          }],
+          order : [['name', 'DESC']]
+        })
+        .then( (results) => {
+          expect(results.rows.length).to.equal(0);
+        });
+      });
+    });
+
+    it('should be able to generate a correct mismatch !BT(HM) with offset', function() {
+      const User = this.sequelize.define('user', { name: DataTypes.TEXT });
+      const Address = this.sequelize.define('address', { name: DataTypes.STRING });
+      const Abilities = this.sequelize.define('abilitie', { name: DataTypes.STRING });
+
+      Address.hasOne(User);
+      User.hasMany(Abilities);
+
+      return this.sequelize.sync({ force: true })
+      .then( () => {
+        return Address.findAndCountAll({
+          offset : 0,
+          limit : 5,
+          include: [{
+            mismatch : true,
+            attributes: ['name'],
+            model: User,
+            required: false,
+            include: [{
+              mismatch : true,
+              attributes: ['name'],
+              model: Abilities,
+              required: true
+            }]
+          }],
+          order : [['name', 'DESC']]
+        })
+        .then( (results) => {
+          expect(results.rows.length).to.equal(0);
+        });
+      });
+    });
+
     it('should be able to generate a correct limit request with outer separate hasMany and inner hasMany', function() {
       
       const Customer = this.sequelize.define('customer', {
