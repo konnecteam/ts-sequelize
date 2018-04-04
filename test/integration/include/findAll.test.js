@@ -2731,7 +2731,63 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       });
     });
 
-    
+    it('should be able to generate a correct HM(BT(BT) with order by and offset', function() {
+      const User = this.sequelize.define('user', { name: DataTypes.TEXT });
+      const Address = this.sequelize.define('address', { name: DataTypes.STRING });
+      const City = this.sequelize.define('city', { name: DataTypes.STRING });
+      const PostalCode = this.sequelize.define('postalcode', { name: DataTypes.STRING });
+
+      User.hasMany(Address);
+      Address.hasOne(City);
+      City.hasOne(PostalCode);
+
+      return this.sequelize.sync({ force: true })
+      .then( () => {
+        return User.create({ name: 'kirk' })
+        .then( kirk => {
+          return Address.create({
+            name : '1234',
+            userId : kirk.id
+          })
+          .then( addr => {
+            return City.create({
+              name : 'Chicago',
+              addressId : addr.id
+            })
+            .then( city => {
+              return PostalCode.create({
+                name : '99999',
+                cityId : city.id
+              });
+            });
+          })
+        })
+        .then( () => {
+          return User.findAndCountAll({
+            offset : 0,
+            limit : 5,
+            include: [{
+              model: Address,
+              required: true,
+              include: [{
+                model: City,
+                required: true,
+                include: [{
+                  model: PostalCode,
+                  required: true
+                }]
+              }]
+            }]
+          })
+          .then( (results) => {
+            expect(results.count).to.equal(1);
+            expect(results.rows.length).to.equal(1);
+            expect(results.rows[0].addresses[0].city.postalcode.id).to.equal(1);
+          });
+        });
+      });
+    });
+
     it('should be able to generate a correct BT(HM) with order by BT.XXX and offset', function() {
       const User = this.sequelize.define('user', { name: DataTypes.TEXT });
       const Address = this.sequelize.define('address', { name: DataTypes.STRING });
