@@ -2731,6 +2731,40 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       });
     });
 
+    it('should be able to generate a correct BT(HM(BT)) with order by and offset', function() {
+      const Father = this.sequelize.define('father', { name: DataTypes.TEXT });
+      const User = this.sequelize.define('user', { name: DataTypes.TEXT });
+      const Address = this.sequelize.define('address', { name: DataTypes.STRING });
+      const City = this.sequelize.define('city', { name: DataTypes.STRING });
+
+      Father.hasOne(User);
+      User.hasMany(Address);
+      Address.hasOne(City);
+
+      return this.sequelize.sync({ force: true })
+      .then( () => {
+        return Father.findAndCountAll({
+          offset : 0,
+          limit : 5,
+          include: [{
+            model: User,
+            required: true,
+            include: [{
+              model: Address,
+              required: true,
+              include: [{
+                model: City,
+                required: true
+              }]
+            }]
+          }]
+        })
+        .then( (results) => {
+          expect(results.count).to.equal(0);
+        });
+      });
+    });
+
     it('should be able to generate a correct HM(BT(BT) with order by and offset', function() {
       const User = this.sequelize.define('user', { name: DataTypes.TEXT });
       const Address = this.sequelize.define('address', { name: DataTypes.STRING });
