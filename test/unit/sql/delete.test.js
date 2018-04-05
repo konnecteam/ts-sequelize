@@ -1,22 +1,22 @@
 'use strict';
 
-const Support   = require(__dirname + '/../support'),
-  util = require('util'),
-  expectsql = Support.expectsql,
-  current   = Support.sequelize,
-  Sequelize = Support.Sequelize,
-  sql       = current.dialect.QueryGenerator;
+const Support   = require(__dirname + '/../support');
+const util      = require('util');
+const expectsql = Support.expectsql;
+const current   = Support.sequelize;
+const Sequelize = Support.Sequelize;
+const sql       = current.dialect.QueryGenerator;
 
 // Notice: [] will be replaced by dialect specific tick/quote character when there is not dialect specific expectation but only a default expectation
 
-suite(Support.getTestDialectTeaser('SQL'), () => {
-  suite('delete', () => {
+describe(Support.getTestDialectTeaser('SQL'), () => {
+  describe('delete', () => {
     const User = current.define('test_user', {}, {
       timestamps: false,
       schema: 'public'
     });
 
-    suite('truncate #4306', () => {
+    describe('truncate #4306', () => {
       const options = {
         table: User.getTableName(),
         where: {},
@@ -25,8 +25,8 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
         limit: 10
       };
 
-      test(util.inspect(options, {depth: 2}), () => {
-        return expectsql(
+      it(util.inspect(options, {depth: 2}), () => {
+        expectsql(
           sql.deleteQuery(
             options.table,
             options.where,
@@ -34,16 +34,16 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
             User
           ), {
             postgres: 'TRUNCATE "public"."test_users" CASCADE',
-            mssql:    'TRUNCATE TABLE [public].[test_users]',
-            mysql:    'TRUNCATE `public.test_users`',
+            mssql: 'TRUNCATE TABLE [public].[test_users]',
+            mysql: 'TRUNCATE `public.test_users`',
             oracle: 'TRUNCATE TABLE "public".test_users',
-            sqlite:   'DELETE FROM `public.test_users`'
+            sqlite: 'DELETE FROM `public.test_users`'
           }
         );
       });
     });
 
-    suite('truncate with cascade and restartIdentity', () => {
+    describe('truncate with cascade and restartIdentity', () => {
       const options = {
         table: User.getTableName(),
         where: {},
@@ -53,8 +53,8 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
         limit: 10
       };
 
-      test(util.inspect(options, {depth: 2}), () => {
-        return expectsql(
+      it(util.inspect(options, {depth: 2}), () => {
+        expectsql(
           sql.deleteQuery(
             options.table,
             options.where,
@@ -62,24 +62,24 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
             User
           ), {
             postgres: 'TRUNCATE "public"."test_users" RESTART IDENTITY CASCADE',
-            mssql:    'TRUNCATE TABLE [public].[test_users]',
-            mysql:    'TRUNCATE `public.test_users`',
-            oracle:    'TRUNCATE TABLE "public".test_users',
-            sqlite:   'DELETE FROM `public.test_users`'
+            mssql: 'TRUNCATE TABLE [public].[test_users]',
+            mysql: 'TRUNCATE `public.test_users`',
+            oracle: 'TRUNCATE TABLE "public".test_users',
+            sqlite: 'DELETE FROM `public.test_users`'
           }
         );
       });
     });
 
-    suite('delete without limit', () => {
+    describe('delete without limit', () => {
       const options = {
         table: User.getTableName(),
         where: {name: 'foo' },
         limit: null
       };
 
-      test(util.inspect(options, {depth: 2}), () => {
-        return expectsql(
+      it(util.inspect(options, {depth: 2}), () => {
+        expectsql(
           sql.deleteQuery(
             options.table,
             options.where,
@@ -88,23 +88,23 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
           ), {
             default: "DELETE FROM [public.test_users] WHERE `name` = 'foo'",
             postgres: 'DELETE FROM "public"."test_users" WHERE "name" = \'foo\'',
-            mssql:    "DELETE FROM [public].[test_users] WHERE [name] = N'foo'; SELECT @@ROWCOUNT AS AFFECTEDROWS;",
-            sqlite:   "DELETE FROM `public.test_users` WHERE `name` = 'foo'",
-            oracle:    "DELETE FROM \"public\".test_users WHERE name = 'foo'"
+            mssql: "DELETE FROM [public].[test_users] WHERE [name] = N'foo'; SELECT @@ROWCOUNT AS AFFECTEDROWS;",
+            sqlite: "DELETE FROM `public.test_users` WHERE `name` = 'foo'",
+            oracle: "DELETE FROM \"public\".test_users WHERE name = 'foo'"
           }
         );
       });
     });
 
-    suite('delete with limit', () => {
+    describe('delete with limit', () => {
       const options = {
         table: User.getTableName(),
         where: {name: "foo';DROP TABLE mySchema.myTable;"},
         limit: 10
       };
 
-      test(util.inspect(options, {depth: 2}), () => {
-        return expectsql(
+      it(util.inspect(options, {depth: 2}), () => {
+        expectsql(
           sql.deleteQuery(
             options.table,
             options.where,
@@ -112,23 +112,23 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
             User
           ), {
             postgres: 'DELETE FROM "public"."test_users" WHERE "id" IN (SELECT "id" FROM "public"."test_users" WHERE "name" = \'foo\'\';DROP TABLE mySchema.myTable;\' LIMIT 10)',
-            sqlite:   "DELETE FROM `public.test_users` WHERE rowid IN (SELECT rowid FROM `public.test_users` WHERE `name` = \'foo\'\';DROP TABLE mySchema.myTable;\' LIMIT 10)",
-            mssql:    "DELETE TOP(10) FROM [public].[test_users] WHERE [name] = N'foo'';DROP TABLE mySchema.myTable;'; SELECT @@ROWCOUNT AS AFFECTEDROWS;",
-            default:  "DELETE FROM [public.test_users] WHERE `name` = 'foo\\';DROP TABLE mySchema.myTable;' LIMIT 10",
+            sqlite: "DELETE FROM `public.test_users` WHERE rowid IN (SELECT rowid FROM `public.test_users` WHERE `name` = \'foo\'\';DROP TABLE mySchema.myTable;\' LIMIT 10)",
+            mssql: "DELETE TOP(10) FROM [public].[test_users] WHERE [name] = N'foo'';DROP TABLE mySchema.myTable;'; SELECT @@ROWCOUNT AS AFFECTEDROWS;",
+            default: "DELETE FROM [public.test_users] WHERE `name` = 'foo\\';DROP TABLE mySchema.myTable;' LIMIT 10",
             oracle: "DELETE FROM \"public\".test_users WHERE rowid IN (SELECT rowid FROM \"public\".test_users WHERE rownum <= 10 AND name = 'foo'';DROP TABLE mySchema.myTable;')"
           }
         );
       });
     });
 
-    suite('delete with limit and without model', () => {
+    describe('delete with limit and without model', () => {
       const options = {
         table: User.getTableName(),
         where: {name: "foo';DROP TABLE mySchema.myTable;"},
         limit: 10
       };
 
-      test(util.inspect(options, {depth: 2}), () => {
+      it(util.inspect(options, {depth: 2}), () => {
         let query;
         try {
           query = sql.deleteQuery(
@@ -141,19 +141,19 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
           query = err;
         }
 
-        return expectsql(
+        expectsql(
           query, {
             postgres: new Error('Cannot LIMIT delete without a model.'),
-            sqlite:   "DELETE FROM `public.test_users` WHERE rowid IN (SELECT rowid FROM `public.test_users` WHERE `name` = 'foo'';DROP TABLE mySchema.myTable;' LIMIT 10)",
-            mssql:    "DELETE TOP(10) FROM [public].[test_users] WHERE [name] = N'foo'';DROP TABLE mySchema.myTable;'; SELECT @@ROWCOUNT AS AFFECTEDROWS;",
+            sqlite: "DELETE FROM `public.test_users` WHERE rowid IN (SELECT rowid FROM `public.test_users` WHERE `name` = 'foo'';DROP TABLE mySchema.myTable;' LIMIT 10)",
+            mssql: "DELETE TOP(10) FROM [public].[test_users] WHERE [name] = N'foo'';DROP TABLE mySchema.myTable;'; SELECT @@ROWCOUNT AS AFFECTEDROWS;",
             oracle: "DELETE FROM \"public\".test_users WHERE rowid IN (SELECT rowid FROM \"public\".test_users WHERE rownum <= 10 AND name = 'foo'';DROP TABLE mySchema.myTable;')",
-            default:  "DELETE FROM [public.test_users] WHERE `name` = 'foo\\';DROP TABLE mySchema.myTable;' LIMIT 10"
+            default: "DELETE FROM [public.test_users] WHERE `name` = 'foo\\';DROP TABLE mySchema.myTable;' LIMIT 10"
           }
         );
       });
     });
 
-    suite('delete when the primary key has a different field name', () => {
+    describe('delete when the primary key has a different field name', () => {
       const User = current.define('test_user', {
         id: {
           type: Sequelize.INTEGER,
@@ -170,8 +170,8 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
         where: { 'test_user_id': 100 }
       };
 
-      test(util.inspect(options, {depth: 2}), () => {
-        return expectsql(
+      it(util.inspect(options, {depth: 2}), () => {
+        expectsql(
           sql.deleteQuery(
             options.table,
             options.where,
@@ -179,10 +179,10 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
             User
           ), {
             postgres: 'DELETE FROM "test_user" WHERE "test_user_id" IN (SELECT "test_user_id" FROM "test_user" WHERE "test_user_id" = 100 LIMIT 1)',
-            sqlite:   'DELETE FROM `test_user` WHERE rowid IN (SELECT rowid FROM `test_user` WHERE `test_user_id` = 100 LIMIT 1)',
-            oracle:  'DELETE FROM test_user WHERE test_user_id = 100',
-            mssql:    'DELETE TOP(1) FROM [test_user] WHERE [test_user_id] = 100; SELECT @@ROWCOUNT AS AFFECTEDROWS;',
-            default:  'DELETE FROM [test_user] WHERE [test_user_id] = 100 LIMIT 1'
+            sqlite: 'DELETE FROM `test_user` WHERE rowid IN (SELECT rowid FROM `test_user` WHERE `test_user_id` = 100 LIMIT 1)',
+            oracle: 'DELETE FROM test_user WHERE test_user_id = 100',
+            mssql: 'DELETE TOP(1) FROM [test_user] WHERE [test_user_id] = 100; SELECT @@ROWCOUNT AS AFFECTEDROWS;',
+            default: 'DELETE FROM [test_user] WHERE [test_user_id] = 100 LIMIT 1'
           }
         );
       });

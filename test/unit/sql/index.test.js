@@ -1,15 +1,15 @@
 'use strict';
 
-const Support   = require(__dirname + '/../support'),
-  expectsql = Support.expectsql,
-  current   = Support.sequelize,
-  sql       = current.dialect.QueryGenerator;
+const Support   = require(__dirname + '/../support');
+const expectsql = Support.expectsql;
+const current   = Support.sequelize;
+const sql       = current.dialect.QueryGenerator;
 
 // Notice: [] will be replaced by dialect specific tick/quote character when there is not dialect specific expectation but only a default expectation
 
-suite(Support.getTestDialectTeaser('SQL'), () => {
-  suite('addIndex', () => {
-    test('naming', () => {
+describe(Support.getTestDialectTeaser('SQL'), () => {
+  describe('addIndex', () => {
+    it('naming', () => {
       expectsql(sql.addIndexQuery('table', ['column1', 'column2'], {}, 'table'), {
         default: 'CREATE INDEX [table_column1_column2] ON [table] ([column1], [column2])',
         mysql: 'ALTER TABLE `table` ADD INDEX `table_column1_column2` (`column1`, `column2`)',
@@ -40,7 +40,7 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
       }
     });
 
-    test('type and method', () => {
+    it('type and method', () => {
       expectsql(sql.addIndexQuery('User', ['fieldC'], {
         type: 'FULLTEXT',
         concurrently: true
@@ -66,7 +66,7 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
       });
     });
 
-    test('POJO field', () => {
+    it('POJO field', () => {
       expectsql(sql.addIndexQuery('table', [{ attribute: 'column', collate: 'BINARY', length: 5, order: 'DESC'}], {}, 'table'), {
         default: 'CREATE INDEX [table_column] ON [table] ([column] COLLATE [BINARY] DESC)',
         mssql: 'CREATE INDEX [table_column] ON [table] ([column] DESC)',
@@ -75,7 +75,7 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
       });
     });
 
-    test('function', () => {
+    it('function', () => {
       expectsql(sql.addIndexQuery('table', [current.fn('UPPER', current.col('test'))], { name: 'myindex'}), {
         default: 'CREATE INDEX [myindex] ON [table] (UPPER([test]))',
         oracle: 'CREATE INDEX myindex ON "table" (UPPER(test))',
@@ -84,7 +84,7 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
     });
 
     if (current.dialect.supports.index.using === 2) {
-      test('USING', () => {
+      it('USING', () => {
         expectsql(sql.addIndexQuery('table', {
           fields: ['event'],
           using: 'gin'
@@ -95,7 +95,7 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
     }
 
     if (current.dialect.supports.index.where) {
-      test('WHERE', () => {
+      it('WHERE', () => {
         expectsql(sql.addIndexQuery('table', {
           fields: ['type'],
           where: {
@@ -139,7 +139,7 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
     }
 
     if (current.dialect.supports.JSONB) {
-      test('operator', () => {
+      it('operator', () => {
         expectsql(sql.addIndexQuery('table', {
           fields: ['event'],
           using: 'gin',
@@ -151,7 +151,7 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
     }
 
     if (current.dialect.name === 'postgres') {
-      test('show indexes', () => {
+      it('show indexes', () => {
         expectsql(sql.showIndexesQuery('table'), {
           postgres: 'SELECT i.relname AS name, ix.indisprimary AS primary, ix.indisunique AS unique, ix.indkey AS indkey, ' +
           'array_agg(a.attnum) as column_indexes, array_agg(a.attname) AS column_names, pg_get_indexdef(ix.indexrelid) ' +
@@ -172,8 +172,8 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
     }
   });
 
-  suite('removeIndex', () => {
-    test('naming', () => {
+  describe('removeIndex', () => {
+    it('naming', () => {
       expectsql(sql.removeIndexQuery('table', ['column1', 'column2'], {}, 'table'), {
         mysql: 'DROP INDEX `table_column1_column2` ON `table`',
         mssql: 'DROP INDEX [table_column1_column2] ON [table]',

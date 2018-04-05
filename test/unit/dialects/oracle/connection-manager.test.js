@@ -15,7 +15,7 @@ describe('[ORACLE] Connection Manager', () => {
       //  expect(config.dialectOptions.domain).to.equal('TEST.COM');
       config = {
         dialect: 'oracle',
-        host : 'localhost',
+        host: 'localhost',
         database: 'localhost:1521/xe.oracle.docker',
         username: 'sequelize',
         password: 'sequelize'

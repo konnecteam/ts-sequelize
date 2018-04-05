@@ -1,144 +1,199 @@
 'use strict';
 
-const Support   = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  Sequelize = Support.Sequelize,
-  chai = require('chai'),
-  util = require('util'),
-  uuid = require('uuid'),
-  expectsql = Support.expectsql,
-  current   = Support.sequelize,
-  expect = chai.expect;
+const Support   = require(__dirname + '/../support');
+const DataTypes = require(__dirname + '/../../../lib/data-types');
+const Sequelize = Support.Sequelize;
+const chai = require('chai');
+const uuid = require('uuid');
+const expectsql = Support.expectsql;
+const current   = Support.sequelize;
+const expect = chai.expect;
 
 // Notice: [] will be replaced by dialect specific tick/quote character when there is not dialect specific expectation but only a default expectation
+describe('Data types', () => {
+  describe('String', () => {
 
-suite(Support.getTestDialectTeaser('SQL'), () => {
-  suite('DataTypes', () => {
-    const testsql = function(description, dataType, expectation) {
-      test(description, () => {
-        return expectsql(current.normalizeDataType(dataType).toSql(), expectation);
-      });
-    };
+    it('String standard', () => {
+      const result = current.normalizeDataType(DataTypes.STRING).toSql();
 
-    suite('STRING', () => {
-      testsql('STRING', DataTypes.STRING, {
+      expectsql(result, {
         default: 'VARCHAR(255)',
         oracle: 'NVARCHAR2(255)',
         mssql: 'NVARCHAR(255)'
       });
+    });
 
-      testsql('STRING(1234)', DataTypes.STRING(1234), {
+    it('String length 1234', () => {
+      const result = current.normalizeDataType(DataTypes.STRING(1234)).toSql();
+
+      expectsql(result, {
         default: 'VARCHAR(1234)',
         oracle: 'NVARCHAR2(1234)',
         mssql: 'NVARCHAR(1234)'
       });
+    });
 
-      testsql('STRING({ length: 1234 })', DataTypes.STRING({ length: 1234 }), {
+    it('String { length: 1234 }', () => {
+      const result = current.normalizeDataType(DataTypes.STRING({ length: 1234 })).toSql();
+
+      expectsql(result, {
         default: 'VARCHAR(1234)',
         oracle: 'NVARCHAR2(1234)',
         mssql: 'NVARCHAR(1234)'
       });
+    });
 
-      testsql('STRING(1234).BINARY', DataTypes.STRING(1234).BINARY, {
+    it('String length 1234 bynary', () => {
+      const result = current.normalizeDataType(DataTypes.STRING(1234).BINARY).toSql();
+
+      expectsql(result, {
         default: 'VARCHAR(1234) BINARY',
         sqlite: 'VARCHAR BINARY(1234)',
         oracle: 'RAW(1234)',
         mssql: 'BINARY(1234)',
         postgres: 'BYTEA'
       });
+    });
 
-      testsql('STRING.BINARY', DataTypes.STRING.BINARY, {
+    it('String binary', () => {
+      const result = current.normalizeDataType(DataTypes.STRING.BINARY).toSql();
+
+      expectsql(result, {
         default: 'VARCHAR(255) BINARY',
         sqlite: 'VARCHAR BINARY(255)',
         oracle: 'RAW(255)',
         mssql: 'BINARY(255)',
         postgres: 'BYTEA'
       });
+    });
 
-      suite('validate', () => {
-        test('should return `true` if `value` is a string', () => {
-          const type = DataTypes.STRING();
+    describe('validate String', () => {
+      it('should return `true` if `value` is a string', () => {
+        const type = DataTypes.STRING();
 
-          expect(type.validate('foobar')).to.equal(true);
-          expect(type.validate(new String('foobar'))).to.equal(true);
-          expect(type.validate(12)).to.equal(true);
-        });
+        expect(type.validate('foobar')).to.equal(true);
+        expect(type.validate(new String('foobar'))).to.equal(true);
+        expect(type.validate(12)).to.equal(true);
       });
     });
 
-    suite('TEXT', () => {
-      testsql('TEXT', DataTypes.TEXT, {
+  });
+
+
+  describe('Text', () => {
+
+    it('Text standard', () => {
+      const result = current.normalizeDataType(DataTypes.TEXT).toSql();
+
+      expectsql(result, {
         default: 'TEXT',
         oracle: 'CLOB',
         mssql: 'NVARCHAR(MAX)' // in mssql text is actually representing a non unicode text field
       });
+    });
 
-      testsql('TEXT("tiny")', DataTypes.TEXT('tiny'), {
+    it('Text length tiny', () => {
+      const result = current.normalizeDataType(DataTypes.TEXT('tiny')).toSql();
+
+      expectsql(result, {
         default: 'TEXT',
         oracle: 'NVARCHAR2(256)',
         mssql: 'NVARCHAR(256)',
         mysql: 'TINYTEXT'
       });
+    });
 
-      testsql('TEXT({ length: "tiny" })', DataTypes.TEXT({ length: 'tiny' }), {
+    it('Text { length: "tiny" }', () => {
+      const result = current.normalizeDataType(DataTypes.TEXT({ length: 'tiny' })).toSql();
+
+      expectsql(result, {
         default: 'TEXT',
         oracle: 'NVARCHAR2(256)',
         mssql: 'NVARCHAR(256)',
         mysql: 'TINYTEXT'
       });
+    });
 
-      testsql('TEXT("medium")', DataTypes.TEXT('medium'), {
+    it('Text medium', () => {
+      const result = current.normalizeDataType(DataTypes.TEXT('medium')).toSql();
+
+      expectsql(result, {
         default: 'TEXT',
         mssql: 'NVARCHAR(MAX)',
         oracle: 'NVARCHAR2(2000)',
         mysql: 'MEDIUMTEXT'
       });
+    });
 
-      testsql('TEXT("long")', DataTypes.TEXT('long'), {
+    it('Text long', () => {
+      const result = current.normalizeDataType(DataTypes.TEXT('long')).toSql();
+
+      expectsql(result, {
         default: 'TEXT',
         mssql: 'NVARCHAR(MAX)',
         oracle: 'NVARCHAR2(4000)',
         mysql: 'LONGTEXT'
       });
+    });
 
-      suite('validate', () => {
-        test('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.TEXT();
+    describe('validate Text', () => {
+      it('should throw an error if `value` is invalid', () => {
+        const type = DataTypes.TEXT();
 
-          expect(() => {
-            type.validate(12345);
-          }).to.throw(Sequelize.ValidationError, '12345 is not a valid string');
-        });
+        expect(() => {
+          type.validate(12345);
+        }).to.throw(Sequelize.ValidationError, '12345 is not a valid string');
+      });
+      it('should return `true` if `value` is a string', () => {
+        const type = DataTypes.TEXT();
 
-        test('should return `true` if `value` is a string', () => {
-          const type = DataTypes.TEXT();
+        expect(type.validate('foobar')).to.equal(true);
+      });
+    });
+  });
 
-          expect(type.validate('foobar')).to.equal(true);
-        });
+
+  describe('Char', () => {
+
+    it('Char standard', () => {
+      const result = current.normalizeDataType(DataTypes.CHAR).toSql();
+
+      expectsql(result, {
+        default: 'CHAR(255)'
       });
     });
 
-    suite('CHAR', () => {
-      testsql('CHAR', DataTypes.CHAR, {
-        default: 'CHAR(255)'
-      });
+    it('Char length 12', () => {
+      const result = current.normalizeDataType(DataTypes.CHAR(12)).toSql();
 
-      testsql('CHAR(12)', DataTypes.CHAR(12), {
+      expectsql(result, {
         default: 'CHAR(12)'
       });
+    });
 
-      testsql('CHAR({ length: 12 })', DataTypes.CHAR({ length: 12 }), {
+    it('Char { length: 12 }', () => {
+      const result = current.normalizeDataType(DataTypes.CHAR({ length: 12 })).toSql();
+
+      expectsql(result, {
         default: 'CHAR(12)'
       });
+    });
 
-      testsql('CHAR(12).BINARY', DataTypes.CHAR(12).BINARY, {
+    it('String length 12 bynary', () => {
+      const result = current.normalizeDataType(DataTypes.CHAR(12).BINARY).toSql();
+
+      expectsql(result, {
         default: 'CHAR(12) BINARY',
         sqlite: 'CHAR BINARY(12)',
         oracle: 'RAW(12)',
         postgres: 'BYTEA'
       });
+    });
 
-      testsql('CHAR.BINARY', DataTypes.CHAR.BINARY, {
+    it('Char binary', () => {
+      const result = current.normalizeDataType(DataTypes.CHAR.BINARY).toSql();
+
+      expectsql(result, {
         default: 'CHAR(255) BINARY',
         sqlite: 'CHAR BINARY(255)',
         oracle: 'RAW(255)',
@@ -146,836 +201,1089 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
       });
     });
 
-    suite('BOOLEAN', () => {
-      testsql('BOOLEAN', DataTypes.BOOLEAN, {
+  });
+
+  describe('Boolean', () => {
+
+    it('Boolean', () => {
+      const result = current.normalizeDataType(DataTypes.BOOLEAN).toSql();
+
+      expectsql(result, {
         postgres: 'BOOLEAN',
         mssql: 'BIT',
         oracle: 'NUMBER(1)',
         mysql: 'TINYINT(1)',
         sqlite: 'TINYINT(1)'
       });
+    });
 
-      suite('validate', () => {
-        test('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.BOOLEAN();
+    describe('validate Boolean', () => {
+      it('should throw an error if `value` is invalid', () => {
+        const type = DataTypes.BOOLEAN();
 
-          expect(() => {
-            type.validate(12345);
-          }).to.throw(Sequelize.ValidationError, '12345 is not a valid boolean');
-        });
+        expect(() => {
+          type.validate(12345);
+        }).to.throw(Sequelize.ValidationError, '12345 is not a valid boolean');
+      });
+      it('should return `true` if `value` is a boolean', () => {
+        const type = DataTypes.BOOLEAN();
 
-        test('should return `true` if `value` is a boolean', () => {
-          const type = DataTypes.BOOLEAN();
-
-          expect(type.validate(true)).to.equal(true);
-          expect(type.validate(false)).to.equal(true);
-          expect(type.validate('1')).to.equal(true);
-          expect(type.validate('0')).to.equal(true);
-          expect(type.validate('true')).to.equal(true);
-          expect(type.validate('false')).to.equal(true);
-        });
+        expect(type.validate(true)).to.equal(true);
+        expect(type.validate(false)).to.equal(true);
+        expect(type.validate('1')).to.equal(true);
+        expect(type.validate('0')).to.equal(true);
+        expect(type.validate('true')).to.equal(true);
+        expect(type.validate('false')).to.equal(true);
       });
     });
 
-    suite('DATE', () => {
-      testsql('DATE', DataTypes.DATE, {
+  });
+
+
+  describe('Date', () => {
+
+    it('Date standart', () => {
+      const result = current.normalizeDataType(DataTypes.DATE).toSql();
+
+      expectsql(result, {
         postgres: 'TIMESTAMP WITH TIME ZONE',
         mssql: 'DATETIMEOFFSET',
         oracle: 'TIMESTAMP WITH LOCAL TIME ZONE',
         mysql: 'DATETIME',
         sqlite: 'DATETIME'
       });
+    });
 
-      testsql('DATE(6)', DataTypes.DATE(6), {
+    it('Date(6)', () => {
+      const result = current.normalizeDataType(DataTypes.DATE(6)).toSql();
+
+      expectsql(result, {
         postgres: 'TIMESTAMP WITH TIME ZONE',
         mssql: 'DATETIMEOFFSET',
         oracle: 'TIMESTAMP WITH LOCAL TIME ZONE',
         mysql: 'DATETIME(6)',
         sqlite: 'DATETIME'
       });
+    });
 
-      suite('validate', () => {
-        test('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.DATE();
+    describe('validate Date', () => {
+      it('should throw an error if `value` is invalid', () => {
+        const type = DataTypes.DATE();
 
-          expect(() => {
-            type.validate('foobar');
-          }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid date');
-        });
+        expect(() => {
+          type.validate('foobar');
+        }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid date');
+      });
 
-        test('should return `true` if `value` is a date', () => {
-          const type = DataTypes.DATE();
+      it('should return `true` if `value` is a date', () => {
+        const type = DataTypes.DATE();
 
-          expect(type.validate(new Date())).to.equal(true);
-        });
+        expect(type.validate(new Date())).to.equal(true);
       });
     });
 
-    if (current.dialect.supports.HSTORE) {
-      suite('HSTORE', () => {
-        suite('validate', () => {
-          test('should throw an error if `value` is invalid', () => {
-            const type = DataTypes.HSTORE();
+  });
 
-            expect(() => {
-              type.validate('foobar');
-            }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid hstore');
-          });
+  if (current.dialect.supports.HSTORE) {
+    describe('Hstore', () => {
+    
+      describe('validate Hstore', () => {
+        it('should throw an error if `value` is invalid', () => {
+          const type = DataTypes.HSTORE();
 
-          test('should return `true` if `value` is an hstore', () => {
-            const type = DataTypes.HSTORE();
+          expect(() => {
+            type.validate('foobar');
+          }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid hstore');
+        });
 
-            expect(type.validate({ foo: 'bar' })).to.equal(true);
-          });
+        it('should return `true` if `value` is an hstore', () => {
+          const type = DataTypes.HSTORE();
+
+          expect(type.validate({ foo: 'bar' })).to.equal(true);
         });
       });
-    }
+    
+    });
+  }
 
-    suite('UUID', () => {
-      testsql('UUID', DataTypes.UUID, {
+  describe('Uuid', () => {
+    
+    it('Uuid', () => {
+      const result = current.normalizeDataType(DataTypes.UUID).toSql();
+
+      expectsql(result, {
         postgres: 'UUID',
         mssql: 'CHAR(36)',
         oracle: 'NVARCHAR2(36)',
         mysql: 'CHAR(36) BINARY',
         sqlite: 'UUID'
       });
+    });
 
-      suite('validate', () => {
-        test('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.UUID();
+    describe('validate Uuid', () => {
+      it('should throw an error if `value` is invalid', () => {
+        const type = DataTypes.UUID();
 
-          expect(() => {
-            type.validate('foobar');
-          }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid uuid');
+        expect(() => {
+          type.validate('foobar');
+        }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid uuid');
 
-          expect(() => {
-            type.validate(['foobar']);
-          }).to.throw(Sequelize.ValidationError, '["foobar"] is not a valid uuid');
-        });
+        expect(() => {
+          type.validate(['foobar']);
+        }).to.throw(Sequelize.ValidationError, '["foobar"] is not a valid uuid');
+      });
 
-        test('should return `true` if `value` is an uuid', () => {
-          const type = DataTypes.UUID();
+      it('should return `true` if `value` is an uuid', () => {
+        const type = DataTypes.UUID();
 
-          expect(type.validate(uuid.v4())).to.equal(true);
-        });
+        expect(type.validate(uuid.v4())).to.equal(true);
+      });
 
-        test('should return `true` if `value` is a string and we accept strings', () => {
-          const type = DataTypes.UUID();
+      it('should return `true` if `value` is a string and we accept strings', () => {
+        const type = DataTypes.UUID();
 
-          expect(type.validate('foobar', { acceptStrings: true })).to.equal(true);
-        });
+        expect(type.validate('foobar', { acceptStrings: true })).to.equal(true);
       });
     });
 
-    suite('UUIDV1', () => {
-      testsql('UUIDV1', DataTypes.UUIDV1, {
+  });
+
+  describe('Uuidv1', () => {
+    
+    it('Uuidv1', () => {
+      const result = current.normalizeDataType(DataTypes.UUIDV1).toSql();
+
+      expectsql(result, {
         default: 'UUIDV1'
       });
+    });
 
-      suite('validate', () => {
-        test('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.UUIDV1();
+    describe('validate Uuidv1', () => {
+      it('should throw an error if `value` is invalid', () => {
+        const type = DataTypes.UUIDV1();
 
-          expect(() => {
-            type.validate('foobar');
-          }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid uuid');
+        expect(() => {
+          type.validate('foobar');
+        }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid uuid');
 
-          expect(() => {
-            type.validate(['foobar']);
-          }).to.throw(Sequelize.ValidationError, '["foobar"] is not a valid uuid');
-        });
+        expect(() => {
+          type.validate(['foobar']);
+        }).to.throw(Sequelize.ValidationError, '["foobar"] is not a valid uuid');
+      });
 
-        test('should return `true` if `value` is an uuid', () => {
-          const type = DataTypes.UUIDV1();
+      it('should return `true` if `value` is an uuid', () => {
+        const type = DataTypes.UUIDV1();
 
-          expect(type.validate(uuid.v1())).to.equal(true);
-        });
+        expect(type.validate(uuid.v1())).to.equal(true);
+      });
 
-        test('should return `true` if `value` is a string and we accept strings', () => {
-          const type = DataTypes.UUIDV1();
+      it('should return `true` if `value` is a string and we accept strings', () => {
+        const type = DataTypes.UUIDV1();
 
-          expect(type.validate('foobar', { acceptStrings: true })).to.equal(true);
-        });
+        expect(type.validate('foobar', { acceptStrings: true })).to.equal(true);
       });
     });
 
-    suite('UUIDV4', () => {
-      testsql('UUIDV4', DataTypes.UUIDV4, {
+  });
+
+  describe('Uuidv4', () => {
+    
+    it('Uuidv4', () => {
+      const result = current.normalizeDataType(DataTypes.UUIDV4).toSql();
+
+      expectsql(result, {
         default: 'UUIDV4'
       });
+    });
 
-      suite('validate', () => {
-        test('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.UUIDV4();
-          const value = uuid.v1();
+    describe('validate Uuidv4', () => {
+      it('should throw an error if `value` is invalid', () => {
+        const type = DataTypes.UUIDV4();
+        const value = uuid.v1();
 
-          expect(() => {
-            type.validate(value);
-          }).to.throw(Sequelize.ValidationError, util.format('%j is not a valid uuidv4', value));
+        expect(() => {
+          type.validate(value);
+        }).to.throw(Sequelize.ValidationError, `"${value}" is not a valid uuidv4`);
 
-          expect(() => {
-            type.validate(['foobar']);
-          }).to.throw(Sequelize.ValidationError, '["foobar"] is not a valid uuidv4');
-        });
+        expect(() => {
+          type.validate(['foobar']);
+        }).to.throw(Sequelize.ValidationError, '["foobar"] is not a valid uuidv4');
+      });
 
-        test('should return `true` if `value` is an uuid', () => {
-          const type = DataTypes.UUIDV4();
+      it('should return `true` if `value` is an uuid', () => {
+        const type = DataTypes.UUIDV4();
 
-          expect(type.validate(uuid.v4())).to.equal(true);
-        });
+        expect(type.validate(uuid.v4())).to.equal(true);
+      });
 
-        test('should return `true` if `value` is a string and we accept strings', () => {
-          const type = DataTypes.UUIDV4();
+      it('should return `true` if `value` is a string and we accept strings', () => {
+        const type = DataTypes.UUIDV4();
 
-          expect(type.validate('foobar', { acceptStrings: true })).to.equal(true);
-        });
+        expect(type.validate('foobar', { acceptStrings: true })).to.equal(true);
       });
     });
 
-    suite('NOW', () => {
-      testsql('NOW', DataTypes.NOW, {
+  });
+
+  describe('Now', () => {
+    
+    it('Now', () => {
+      const result = current.normalizeDataType(DataTypes.NOW).toSql();
+
+      expectsql(result, {
         default: 'NOW',
-        oracle: 'SELECT TO_CHAR(SYSDATE, \'YYYY-MM-DD HH24:MI:SS\') "NOW" FROM DUAL;',
+        postgres: 'CURRENT_DATE',
+        oracle: 'CURRENT_TIMESTAMP',
         mssql: 'GETDATE()'
       });
     });
+    
+  });
 
-    suite('INTEGER', () => {
-      testsql('INTEGER', DataTypes.INTEGER, {
+  describe('Integer', () => {
+
+    it('Integer standard', () => {
+      const result = current.normalizeDataType(DataTypes.INTEGER).toSql();
+
+      expectsql(result, {
         default: 'INTEGER'
       });
+    });
 
-      testsql('INTEGER.UNSIGNED', DataTypes.INTEGER.UNSIGNED, {
+    it('Integer unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.INTEGER.UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'INTEGER UNSIGNED',
         postgres: 'INTEGER',
         oracle: 'INTEGER',
         mssql: 'INTEGER'
       });
+    });
 
-      testsql('INTEGER.UNSIGNED.ZEROFILL', DataTypes.INTEGER.UNSIGNED.ZEROFILL, {
+    it('Integer unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.INTEGER.UNSIGNED.ZEROFILL).toSql();
+
+      expectsql(result, {
         default: 'INTEGER UNSIGNED ZEROFILL',
         postgres: 'INTEGER',
         oracle: 'INTEGER',
         mssql: 'INTEGER'
       });
+    });
 
-      testsql('INTEGER(11)', DataTypes.INTEGER(11), {
+    it('Integer length 11', () => {
+      const result = current.normalizeDataType(DataTypes.INTEGER(11)).toSql();
+
+      expectsql(result, {
         default: 'INTEGER(11)',
         postgres: 'INTEGER',
         oracle: 'INTEGER',
         mssql: 'INTEGER'
       });
+    });
 
-      testsql('INTEGER({ length: 11 })', DataTypes.INTEGER({ length: 11 }), {
+    it('Integer { length: 11 }', () => {
+      const result = current.normalizeDataType(DataTypes.INTEGER({ length: 11 })).toSql();
+
+      expectsql(result, {
         default: 'INTEGER(11)',
         postgres: 'INTEGER',
         oracle: 'INTEGER',
         mssql: 'INTEGER'
       });
+    });
 
-      testsql('INTEGER(11).UNSIGNED', DataTypes.INTEGER(11).UNSIGNED, {
+    it('Integer length 11 unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.INTEGER(11).UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'INTEGER(11) UNSIGNED',
         sqlite: 'INTEGER UNSIGNED(11)',
         oracle: 'INTEGER(11)',
         postgres: 'INTEGER',
         mssql: 'INTEGER'
       });
+    });
 
-      testsql('INTEGER(11).UNSIGNED.ZEROFILL', DataTypes.INTEGER(11).UNSIGNED.ZEROFILL, {
+    it('Integer length 11 unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.INTEGER(11).UNSIGNED.ZEROFILL).toSql();
+
+      expectsql(result, {
         default: 'INTEGER(11) UNSIGNED ZEROFILL',
         sqlite: 'INTEGER UNSIGNED ZEROFILL(11)',
         oracle: 'INTEGER(11)',
         postgres: 'INTEGER',
         mssql: 'INTEGER'
       });
+    });
 
-      testsql('INTEGER(11).ZEROFILL', DataTypes.INTEGER(11).ZEROFILL, {
+    it('Integer length 11 zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.INTEGER(11).ZEROFILL).toSql();
+
+      expectsql(result, {
         default: 'INTEGER(11) ZEROFILL',
         sqlite: 'INTEGER ZEROFILL(11)',
         oracle: 'INTEGER',
         postgres: 'INTEGER',
         mssql: 'INTEGER'
       });
+    });
 
-      testsql('INTEGER(11).ZEROFILL.UNSIGNED', DataTypes.INTEGER(11).ZEROFILL.UNSIGNED, {
+    it('Integer length 11 zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.INTEGER(11).ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'INTEGER(11) UNSIGNED ZEROFILL',
         sqlite: 'INTEGER UNSIGNED ZEROFILL(11)',
         oracle: 'INTEGER(11)',
         postgres: 'INTEGER',
         mssql: 'INTEGER'
       });
+    });
 
-      suite('validate', () => {
-        test('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.INTEGER();
+    describe('validate Integer', () => {
+      it('should throw an error if `value` is invalid', () => {
+        const type = DataTypes.INTEGER();
 
-          expect(() => {
-            type.validate('foobar');
-          }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid integer');
+        expect(() => {
+          type.validate('foobar');
+        }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid integer');
 
-          expect(() => {
-            type.validate('123.45');
-          }).to.throw(Sequelize.ValidationError, '"123.45" is not a valid integer');
+        expect(() => {
+          type.validate('123.45');
+        }).to.throw(Sequelize.ValidationError, '"123.45" is not a valid integer');
 
-          expect(() => {
-            type.validate(123.45);
-          }).to.throw(Sequelize.ValidationError, '123.45 is not a valid integer');
-        });
+        expect(() => {
+          type.validate(123.45);
+        }).to.throw(Sequelize.ValidationError, '123.45 is not a valid integer');
+      });
 
-        test('should return `true` if `value` is a valid integer', () => {
-          const type = DataTypes.INTEGER();
+      it('should return `true` if `value` is a valid integer', () => {
+        const type = DataTypes.INTEGER();
 
-          expect(type.validate('12345')).to.equal(true);
-          expect(type.validate(12345)).to.equal(true);
-        });
+        expect(type.validate('12345')).to.equal(true);
+        expect(type.validate(12345)).to.equal(true);
+      });
+    });
+  });
+
+  describe('Tinyint', () => {
+
+    it('Tinyint standard', () => {
+      const result = current.normalizeDataType(DataTypes.TINYINT).toSql();
+
+      expectsql(result, {
+        default: 'TINYINT'
       });
     });
 
-    suite('TINYINT', () => {
-      const cases = [
-        {
-          title: 'TINYINT',
-          dataType: DataTypes.TINYINT,
-          expect: {
-            default: 'TINYINT'
-          }
-        },
-        {
-          title: 'TINYINT(2)',
-          dataType: DataTypes.TINYINT(2),
-          expect: {
-            default: 'TINYINT(2)',
-            mssql: 'TINYINT'
-          }
-        },
-        {
-          title: 'TINYINT({ length: 2 })',
-          dataType: DataTypes.TINYINT({ length: 2 }),
-          expect: {
-            default: 'TINYINT(2)',
-            mssql: 'TINYINT'
-          }
-        },
-        {
-          title: 'TINYINT.UNSIGNED',
-          dataType: DataTypes.TINYINT.UNSIGNED,
-          expect: {
-            default: 'TINYINT UNSIGNED',
-            mssql: 'TINYINT'
-          }
-        },
-        {
-          title: 'TINYINT(2).UNSIGNED',
-          dataType: DataTypes.TINYINT(2).UNSIGNED,
-          expect: {
-            default: 'TINYINT(2) UNSIGNED',
-            sqlite: 'TINYINT UNSIGNED(2)',
-            mssql: 'TINYINT'
-          }
-        },
-        {
-          title: 'TINYINT.UNSIGNED.ZEROFILL',
-          dataType: DataTypes.TINYINT.UNSIGNED.ZEROFILL,
-          expect: {
-            default: 'TINYINT UNSIGNED ZEROFILL',
-            mssql: 'TINYINT'
-          }
-        },
-        {
-          title: 'TINYINT(2).UNSIGNED.ZEROFILL',
-          dataType: DataTypes.TINYINT(2).UNSIGNED.ZEROFILL,
-          expect: {
-            default: 'TINYINT(2) UNSIGNED ZEROFILL',
-            sqlite: 'TINYINT UNSIGNED ZEROFILL(2)',
-            mssql: 'TINYINT'
-          }
-        },
-        {
-          title: 'TINYINT.ZEROFILL',
-          dataType: DataTypes.TINYINT.ZEROFILL,
-          expect: {
-            default: 'TINYINT ZEROFILL',
-            mssql: 'TINYINT'
-          }
-        },
-        {
-          title: 'TINYINT(2).ZEROFILL',
-          dataType: DataTypes.TINYINT(2).ZEROFILL,
-          expect: {
-            default: 'TINYINT(2) ZEROFILL',
-            sqlite: 'TINYINT ZEROFILL(2)',
-            mssql: 'TINYINT'
-          }
-        },
-        {
-          title: 'TINYINT.ZEROFILL.UNSIGNED',
-          dataType: DataTypes.TINYINT.ZEROFILL.UNSIGNED,
-          expect: {
-            default: 'TINYINT UNSIGNED ZEROFILL',
-            mssql: 'TINYINT'
-          }
-        },
-        {
-          title: 'TINYINT(2).ZEROFILL.UNSIGNED',
-          dataType: DataTypes.TINYINT(2).ZEROFILL.UNSIGNED,
-          expect: {
-            default: 'TINYINT(2) UNSIGNED ZEROFILL',
-            sqlite: 'TINYINT UNSIGNED ZEROFILL(2)',
-            mssql: 'TINYINT'
-          }
-        }
-      ];
-      cases.forEach(row => {
-        testsql(row.title, row.dataType, row.expect);
-      });
+    it('Tinyint length 2', () => {
+      const result = current.normalizeDataType(DataTypes.TINYINT(2)).toSql();
 
-      suite('validate', () => {
-        test('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.TINYINT();
-
-          expect(() => {
-            type.validate('foobar');
-          }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid tinyint');
-
-          expect(() => {
-            type.validate(123.45);
-          }).to.throw(Sequelize.ValidationError, '123.45 is not a valid tinyint');
-        });
-
-        test('should return `true` if `value` is an integer', () => {
-          const type = DataTypes.TINYINT();
-
-          expect(type.validate(-128)).to.equal(true);
-          expect(type.validate('127')).to.equal(true);
-        });
+      expectsql(result, {
+        default: 'TINYINT(2)',
+        mssql: 'TINYINT'
       });
     });
 
-    suite('SMALLINT', () => {
-      const cases = [
-        {
-          title: 'SMALLINT',
-          dataType: DataTypes.SMALLINT,
-          expect: {
-            default: 'SMALLINT'
-          }
-        },
-        {
-          title: 'SMALLINT(4)',
-          dataType: DataTypes.SMALLINT(4),
-          expect: {
-            default: 'SMALLINT(4)',
-            postgres: 'SMALLINT',
-            mssql: 'SMALLINT'
-          }
-        },
-        {
-          title: 'SMALLINT({ length: 4 })',
-          dataType: DataTypes.SMALLINT({ length: 4 }),
-          expect: {
-            default: 'SMALLINT(4)',
-            postgres: 'SMALLINT',
-            mssql: 'SMALLINT'
-          }
-        },
-        {
-          title: 'SMALLINT.UNSIGNED',
-          dataType: DataTypes.SMALLINT.UNSIGNED,
-          expect: {
-            default: 'SMALLINT UNSIGNED',
-            postgres: 'SMALLINT',
-            mssql: 'SMALLINT'
-          }
-        },
-        {
-          title: 'SMALLINT(4).UNSIGNED',
-          dataType: DataTypes.SMALLINT(4).UNSIGNED,
-          expect: {
-            default: 'SMALLINT(4) UNSIGNED',
-            sqlite: 'SMALLINT UNSIGNED(4)',
-            postgres: 'SMALLINT',
-            mssql: 'SMALLINT'
-          }
-        },
-        {
-          title: 'SMALLINT.UNSIGNED.ZEROFILL',
-          dataType: DataTypes.SMALLINT.UNSIGNED.ZEROFILL,
-          expect: {
-            default: 'SMALLINT UNSIGNED ZEROFILL',
-            postgres: 'SMALLINT',
-            mssql: 'SMALLINT'
-          }
-        },
-        {
-          title: 'SMALLINT(4).UNSIGNED.ZEROFILL',
-          dataType: DataTypes.SMALLINT(4).UNSIGNED.ZEROFILL,
-          expect: {
-            default: 'SMALLINT(4) UNSIGNED ZEROFILL',
-            sqlite: 'SMALLINT UNSIGNED ZEROFILL(4)',
-            postgres: 'SMALLINT',
-            mssql: 'SMALLINT'
-          }
-        },
-        {
-          title: 'SMALLINT.ZEROFILL',
-          dataType: DataTypes.SMALLINT.ZEROFILL,
-          expect: {
-            default: 'SMALLINT ZEROFILL',
-            postgres: 'SMALLINT',
-            mssql: 'SMALLINT'
-          }
-        },
-        {
-          title: 'SMALLINT(4).ZEROFILL',
-          dataType: DataTypes.SMALLINT(4).ZEROFILL,
-          expect: {
-            default: 'SMALLINT(4) ZEROFILL',
-            sqlite: 'SMALLINT ZEROFILL(4)',
-            postgres: 'SMALLINT',
-            mssql: 'SMALLINT'
-          }
-        },
-        {
-          title: 'SMALLINT.ZEROFILL.UNSIGNED',
-          dataType: DataTypes.SMALLINT.ZEROFILL.UNSIGNED,
-          expect: {
-            default: 'SMALLINT UNSIGNED ZEROFILL',
-            postgres: 'SMALLINT',
-            mssql: 'SMALLINT'
-          }
-        },
-        {
-          title: 'SMALLINT(4).ZEROFILL.UNSIGNED',
-          dataType: DataTypes.SMALLINT(4).ZEROFILL.UNSIGNED,
-          expect: {
-            default: 'SMALLINT(4) UNSIGNED ZEROFILL',
-            sqlite: 'SMALLINT UNSIGNED ZEROFILL(4)',
-            postgres: 'SMALLINT',
-            mssql: 'SMALLINT'
-          }
-        }
-      ];
-      cases.forEach(row => {
-        testsql(row.title, row.dataType, row.expect);
-      });
+    it('Tinyint { length: 2 }', () => {
+      const result = current.normalizeDataType(DataTypes.TINYINT({ length: 2 })).toSql();
 
-      suite('validate', () => {
-        test('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.SMALLINT();
-
-          expect(() => {
-            type.validate('foobar');
-          }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid smallint');
-
-          expect(() => {
-            type.validate(123.45);
-          }).to.throw(Sequelize.ValidationError, '123.45 is not a valid smallint');
-        });
-
-        test('should return `true` if `value` is an integer', () => {
-          const type = DataTypes.SMALLINT();
-
-          expect(type.validate(-32768)).to.equal(true);
-          expect(type.validate('32767')).to.equal(true);
-        });
+      expectsql(result, {
+        default: 'TINYINT(2)',
+        mssql: 'TINYINT'
       });
     });
 
-    suite('MEDIUMINT', () => {
-      const cases = [
-        {
-          title: 'MEDIUMINT',
-          dataType: DataTypes.MEDIUMINT,
-          expect: {
-            default: 'MEDIUMINT'
-          }
-        },
-        {
-          title: 'MEDIUMINT(6)',
-          dataType: DataTypes.MEDIUMINT(6),
-          expect: {
-            default: 'MEDIUMINT(6)'
-          }
-        },
-        {
-          title: 'MEDIUMINT({ length: 6 })',
-          dataType: DataTypes.MEDIUMINT({ length: 6 }),
-          expect: {
-            default: 'MEDIUMINT(6)'
-          }
-        },
-        {
-          title: 'MEDIUMINT.UNSIGNED',
-          dataType: DataTypes.MEDIUMINT.UNSIGNED,
-          expect: {
-            default: 'MEDIUMINT UNSIGNED'
-          }
-        },
-        {
-          title: 'MEDIUMINT(6).UNSIGNED',
-          dataType: DataTypes.MEDIUMINT(6).UNSIGNED,
-          expect: {
-            default: 'MEDIUMINT(6) UNSIGNED',
-            sqlite: 'MEDIUMINT UNSIGNED(6)'
-          }
-        },
-        {
-          title: 'MEDIUMINT.UNSIGNED.ZEROFILL',
-          dataType: DataTypes.MEDIUMINT.UNSIGNED.ZEROFILL,
-          expect: {
-            default: 'MEDIUMINT UNSIGNED ZEROFILL'
-          }
-        },
-        {
-          title: 'MEDIUMINT(6).UNSIGNED.ZEROFILL',
-          dataType: DataTypes.MEDIUMINT(6).UNSIGNED.ZEROFILL,
-          expect: {
-            default: 'MEDIUMINT(6) UNSIGNED ZEROFILL',
-            sqlite: 'MEDIUMINT UNSIGNED ZEROFILL(6)'
-          }
-        },
-        {
-          title: 'MEDIUMINT.ZEROFILL',
-          dataType: DataTypes.MEDIUMINT.ZEROFILL,
-          expect: {
-            default: 'MEDIUMINT ZEROFILL'
-          }
-        },
-        {
-          title: 'MEDIUMINT(6).ZEROFILL',
-          dataType: DataTypes.MEDIUMINT(6).ZEROFILL,
-          expect: {
-            default: 'MEDIUMINT(6) ZEROFILL',
-            sqlite: 'MEDIUMINT ZEROFILL(6)'
-          }
-        },
-        {
-          title: 'MEDIUMINT.ZEROFILL.UNSIGNED',
-          dataType: DataTypes.MEDIUMINT.ZEROFILL.UNSIGNED,
-          expect: {
-            default: 'MEDIUMINT UNSIGNED ZEROFILL'
-          }
-        },
-        {
-          title: 'MEDIUMINT(6).ZEROFILL.UNSIGNED',
-          dataType: DataTypes.MEDIUMINT(6).ZEROFILL.UNSIGNED,
-          expect: {
-            default: 'MEDIUMINT(6) UNSIGNED ZEROFILL',
-            sqlite: 'MEDIUMINT UNSIGNED ZEROFILL(6)'
-          }
-        }
-      ];
-      cases.forEach(row => {
-        testsql(row.title, row.dataType, row.expect);
-      });
+    it('Tinyint unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.TINYINT.UNSIGNED).toSql();
 
-      suite('validate', () => {
-        test('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.MEDIUMINT();
-
-          expect(() => {
-            type.validate('foobar');
-          }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid mediumint');
-
-          expect(() => {
-            type.validate(123.45);
-          }).to.throw(Sequelize.ValidationError, '123.45 is not a valid mediumint');
-        });
-
-        test('should return `true` if `value` is an integer', () => {
-          const type = DataTypes.MEDIUMINT();
-
-          expect(type.validate(-8388608)).to.equal(true);
-          expect(type.validate('8388607')).to.equal(true);
-        });
+      expectsql(result, {
+        default: 'TINYINT UNSIGNED',
+        mssql: 'TINYINT'
       });
     });
 
-    suite('BIGINT', () => {
-      testsql('BIGINT', DataTypes.BIGINT, {
+    it('Tinyint length 2 unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.TINYINT(2).UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'TINYINT(2) UNSIGNED',
+        sqlite: 'TINYINT UNSIGNED(2)',
+        mssql: 'TINYINT'
+      });
+    });
+
+    it('Tinyint unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.TINYINT.UNSIGNED.ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'TINYINT UNSIGNED ZEROFILL',
+        mssql: 'TINYINT'
+      });
+    });
+
+    it('Tinyint length 2 unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.TINYINT(2).UNSIGNED.ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'TINYINT(2) UNSIGNED ZEROFILL',
+        sqlite: 'TINYINT UNSIGNED ZEROFILL(2)',
+        mssql: 'TINYINT'
+      });
+    });
+
+    it('Tinyint zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.TINYINT.ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'TINYINT ZEROFILL',
+        mssql: 'TINYINT'
+      });
+    });
+
+    it('Tinyint length 2 zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.TINYINT(2).ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'TINYINT(2) ZEROFILL',
+        sqlite: 'TINYINT ZEROFILL(2)',
+        mssql: 'TINYINT'
+      });
+    });
+
+    it('Tinyint zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.TINYINT.ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'TINYINT UNSIGNED ZEROFILL',
+        mssql: 'TINYINT'
+      });
+    });
+
+    it('Tinyint length 2 zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.TINYINT(2).ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'TINYINT(2) UNSIGNED ZEROFILL',
+        sqlite: 'TINYINT UNSIGNED ZEROFILL(2)',
+        mssql: 'TINYINT'
+      });
+    });
+
+    describe('validate Tinyint', () => {
+      it('should throw an error if `value` is invalid', () => {
+        const type = DataTypes.TINYINT();
+
+        expect(() => {
+          type.validate('foobar');
+        }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid tinyint');
+
+        expect(() => {
+          type.validate(123.45);
+        }).to.throw(Sequelize.ValidationError, '123.45 is not a valid tinyint');
+      });
+
+      it('should return `true` if `value` is an integer', () => {
+        const type = DataTypes.TINYINT();
+
+        expect(type.validate(-128)).to.equal(true);
+        expect(type.validate('127')).to.equal(true);
+      });
+    });
+  });
+
+  describe('Smallint', () => {
+
+    it('Smallint standard', () => {
+      const result = current.normalizeDataType(DataTypes.SMALLINT).toSql();
+
+      expectsql(result, {
+        default: 'SMALLINT'
+      });
+    });
+
+    it('Smallint length 4', () => {
+      const result = current.normalizeDataType(DataTypes.SMALLINT(4)).toSql();
+
+      expectsql(result, {
+        default: 'SMALLINT(4)',
+        postgres: 'SMALLINT',
+        mssql: 'SMALLINT'
+      });
+    });
+
+    it('Smallint { length: 4 }', () => {
+      const result = current.normalizeDataType(DataTypes.SMALLINT({ length: 4 })).toSql();
+
+      expectsql(result, {
+        default: 'SMALLINT(4)',
+        postgres: 'SMALLINT',
+        mssql: 'SMALLINT'
+      });
+    });
+
+    it('Smallint unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.SMALLINT.UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'SMALLINT UNSIGNED',
+        postgres: 'SMALLINT',
+        mssql: 'SMALLINT'
+      });
+    });
+
+    it('Smallint length 4 unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.SMALLINT(4).UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'SMALLINT(4) UNSIGNED',
+        sqlite: 'SMALLINT UNSIGNED(4)',
+        postgres: 'SMALLINT',
+        mssql: 'SMALLINT'
+      });
+    });
+
+    it('Smallint unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.SMALLINT.UNSIGNED.ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'SMALLINT UNSIGNED ZEROFILL',
+        postgres: 'SMALLINT',
+        mssql: 'SMALLINT'
+      });
+    });
+
+    it('Smallint length 4 unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.SMALLINT(4).UNSIGNED.ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'SMALLINT(4) UNSIGNED ZEROFILL',
+        sqlite: 'SMALLINT UNSIGNED ZEROFILL(4)',
+        postgres: 'SMALLINT',
+        mssql: 'SMALLINT'
+      });
+    });
+
+    it('Smallint zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.SMALLINT.ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'SMALLINT ZEROFILL',
+        postgres: 'SMALLINT',
+        mssql: 'SMALLINT'
+      });
+    });
+
+    it('Smallint length 4 zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.SMALLINT(4).ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'SMALLINT(4) ZEROFILL',
+        sqlite: 'SMALLINT ZEROFILL(4)',
+        postgres: 'SMALLINT',
+        mssql: 'SMALLINT'
+      });
+    });
+
+    it('Smallint zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.SMALLINT.ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'SMALLINT UNSIGNED ZEROFILL',
+        postgres: 'SMALLINT',
+        mssql: 'SMALLINT'
+      });
+    });
+
+    it('Smallint length 4 zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.SMALLINT(4).ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'SMALLINT(4) UNSIGNED ZEROFILL',
+        sqlite: 'SMALLINT UNSIGNED ZEROFILL(4)',
+        postgres: 'SMALLINT',
+        mssql: 'SMALLINT'
+      });
+    });
+
+    describe('validate Smallint', () => {
+      it('should throw an error if `value` is invalid', () => {
+        const type = DataTypes.SMALLINT();
+
+        expect(() => {
+          type.validate('foobar');
+        }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid smallint');
+
+        expect(() => {
+          type.validate(123.45);
+        }).to.throw(Sequelize.ValidationError, '123.45 is not a valid smallint');
+      });
+
+      it('should return `true` if `value` is an integer', () => {
+        const type = DataTypes.SMALLINT();
+
+        expect(type.validate(-32768)).to.equal(true);
+        expect(type.validate('32767')).to.equal(true);
+      });
+    });
+  });
+
+  describe('MediumInt', () => {
+
+    it('MediumInt standard', () => {
+      const result = current.normalizeDataType(DataTypes.MEDIUMINT).toSql();
+
+      expectsql(result, {
+        default: 'MEDIUMINT'
+      });
+    });
+
+    it('MediumInt length 6', () => {
+      const result = current.normalizeDataType(DataTypes.MEDIUMINT(6)).toSql();
+
+      expectsql(result, {
+        default: 'MEDIUMINT(6)'
+      });
+    });
+
+    it('MediumInt { length: 6 }', () => {
+      const result = current.normalizeDataType(DataTypes.MEDIUMINT({ length: 6 })).toSql();
+
+      expectsql(result, {
+        default: 'MEDIUMINT(6)'
+      });
+    });
+
+    it('MediumInt unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.MEDIUMINT.UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'MEDIUMINT UNSIGNED'
+      });
+    });
+
+    it('MediumInt length 6 unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.MEDIUMINT(6).UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'MEDIUMINT(6) UNSIGNED',
+        sqlite: 'MEDIUMINT UNSIGNED(6)'
+      });
+    });
+
+    it('MediumInt unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.MEDIUMINT.UNSIGNED.ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'MEDIUMINT UNSIGNED ZEROFILL'
+      });
+    });
+
+    it('MediumInt length 6 unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.MEDIUMINT(6).UNSIGNED.ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'MEDIUMINT(6) UNSIGNED ZEROFILL',
+        sqlite: 'MEDIUMINT UNSIGNED ZEROFILL(6)'
+      });
+    });
+
+    it('MediumInt zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.MEDIUMINT.ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'MEDIUMINT ZEROFILL'
+      });
+    });
+
+    it('MediumInt length 6 zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.MEDIUMINT(6).ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'MEDIUMINT(6) ZEROFILL',
+        sqlite: 'MEDIUMINT ZEROFILL(6)'
+      });
+    });
+
+    it('MediumInt length zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.MEDIUMINT.ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'MEDIUMINT UNSIGNED ZEROFILL'
+      });
+    });
+
+    it('MediumInt length 6 zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.MEDIUMINT(6).ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'MEDIUMINT(6) UNSIGNED ZEROFILL',
+        sqlite: 'MEDIUMINT UNSIGNED ZEROFILL(6)'
+      });
+    });
+
+    describe('validate MediumInt', () => {
+      it('should throw an error if `value` is invalid', () => {
+        const type = DataTypes.MEDIUMINT();
+
+        expect(() => {
+          type.validate('foobar');
+        }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid mediumint');
+
+        expect(() => {
+          type.validate(123.45);
+        }).to.throw(Sequelize.ValidationError, '123.45 is not a valid mediumint');
+      });
+
+      it('should return `true` if `value` is an integer', () => {
+        const type = DataTypes.MEDIUMINT();
+
+        expect(type.validate(-8388608)).to.equal(true);
+        expect(type.validate('8388607')).to.equal(true);
+      });
+    });
+  });
+
+  describe('BigInt', () => {
+
+    it('BigInt standard', () => {
+      const result = current.normalizeDataType(DataTypes.BIGINT).toSql();
+
+      expectsql(result, {
         default: 'BIGINT',
         oracle: 'NUMBER(19)'
       });
+    });
 
-      testsql('BIGINT.UNSIGNED', DataTypes.BIGINT.UNSIGNED, {
+    it('BigInt length 11', () => {
+      const result = current.normalizeDataType(DataTypes.BIGINT(11)).toSql();
+
+      expectsql(result, {
+        default: 'BIGINT(11)',
+        postgres: 'BIGINT',
+        oracle: 'NUMBER(19)',
+        mssql: 'BIGINT'
+      });
+    });
+
+    it('BigInt { length: 11 }', () => {
+      const result = current.normalizeDataType(DataTypes.BIGINT({ length: 11 })).toSql();
+
+      expectsql(result, {
+        default: 'BIGINT(11)',
+        postgres: 'BIGINT',
+        oracle: 'NUMBER(19)',
+        mssql: 'BIGINT'
+      });
+    });
+
+    it('BigInt unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.BIGINT.UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'BIGINT UNSIGNED',
         postgres: 'BIGINT',
         oracle: 'NUMBER(19)',
         mssql: 'BIGINT'
       });
+    });
 
-      testsql('BIGINT.UNSIGNED.ZEROFILL', DataTypes.BIGINT.UNSIGNED.ZEROFILL, {
-        default: 'BIGINT UNSIGNED ZEROFILL',
-        postgres: 'BIGINT',
-        oracle: 'NUMBER(19)',
-        mssql: 'BIGINT'
-      });
+    it('BigInt length 11 unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.BIGINT(11).UNSIGNED).toSql();
 
-      testsql('BIGINT(11)', DataTypes.BIGINT(11), {
-        default: 'BIGINT(11)',
-        postgres: 'BIGINT',
-        oracle: 'NUMBER(19)',
-        mssql: 'BIGINT'
-      });
-
-      testsql('BIGINT({ length: 11 })', DataTypes.BIGINT({ length: 11 }), {
-        default: 'BIGINT(11)',
-        postgres: 'BIGINT',
-        oracle: 'NUMBER(19)',
-        mssql: 'BIGINT'
-      });
-
-      testsql('BIGINT(11).UNSIGNED', DataTypes.BIGINT(11).UNSIGNED, {
+      expectsql(result, {
         default: 'BIGINT(11) UNSIGNED',
         sqlite: 'BIGINT UNSIGNED(11)',
         postgres: 'BIGINT',
         oracle: 'NUMBER(19)',
         mssql: 'BIGINT'
       });
+    });
 
-      testsql('BIGINT(11).UNSIGNED.ZEROFILL', DataTypes.BIGINT(11).UNSIGNED.ZEROFILL, {
+    it('BigInt unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.BIGINT.UNSIGNED.ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'BIGINT UNSIGNED ZEROFILL',
+        postgres: 'BIGINT',
+        oracle: 'NUMBER(19)',
+        mssql: 'BIGINT'
+      });
+    });
+
+    it('BigInt length 11 unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.BIGINT(11).UNSIGNED.ZEROFILL).toSql();
+
+      expectsql(result, {
         default: 'BIGINT(11) UNSIGNED ZEROFILL',
         sqlite: 'BIGINT UNSIGNED ZEROFILL(11)',
         oracle: 'NUMBER(19)',
         postgres: 'BIGINT',
         mssql: 'BIGINT'
       });
+    });
 
-      testsql('BIGINT(11).ZEROFILL', DataTypes.BIGINT(11).ZEROFILL, {
+    it('BigInt zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.BIGINT.ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'BIGINT ZEROFILL',
+        sqlite: 'BIGINT ZEROFILL',
+        oracle: 'NUMBER(19)',
+        postgres: 'BIGINT',
+        mssql: 'BIGINT'
+      });
+    });
+
+    it('BigInt length 11 zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.BIGINT(11).ZEROFILL).toSql();
+
+      expectsql(result, {
         default: 'BIGINT(11) ZEROFILL',
         sqlite: 'BIGINT ZEROFILL(11)',
         oracle: 'NUMBER(19)',
         postgres: 'BIGINT',
         mssql: 'BIGINT'
       });
+    });
 
-      testsql('BIGINT(11).ZEROFILL.UNSIGNED', DataTypes.BIGINT(11).ZEROFILL.UNSIGNED, {
+    it('BigInt zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.BIGINT.ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'BIGINT UNSIGNED ZEROFILL',
+        postgres: 'BIGINT',
+        oracle: 'NUMBER(19)',
+        mssql: 'BIGINT'
+      });
+    });
+
+    it('BigInt length 11 zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.BIGINT(11).ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'BIGINT(11) UNSIGNED ZEROFILL',
         sqlite: 'BIGINT UNSIGNED ZEROFILL(11)',
         oracle: 'NUMBER(19)',
         postgres: 'BIGINT',
         mssql: 'BIGINT'
       });
+    });
 
-      suite('validate', () => {
-        test('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.BIGINT();
+    describe('validate BigInt', () => {
+      it('should throw an error if `value` is invalid', () => {
+        const type = DataTypes.BIGINT();
 
-          expect(() => {
-            type.validate('foobar');
-          }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid bigint');
+        expect(() => {
+          type.validate('foobar');
+        }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid bigint');
 
-          expect(() => {
-            type.validate(123.45);
-          }).to.throw(Sequelize.ValidationError, '123.45 is not a valid bigint');
-        });
+        expect(() => {
+          type.validate(123.45);
+        }).to.throw(Sequelize.ValidationError, '123.45 is not a valid bigint');
+      });
 
-        test('should return `true` if `value` is an integer', () => {
-          const type = DataTypes.BIGINT();
+      it('should return `true` if `value` is an integer', () => {
+        const type = DataTypes.BIGINT();
 
-          expect(type.validate('9223372036854775807')).to.equal(true);
-        });
+        expect(type.validate('9223372036854775807')).to.equal(true);
+      });
+    });
+  });
+
+  describe('Real', () => {
+
+    it('Real standard', () => {
+      const result = current.normalizeDataType(DataTypes.REAL).toSql();
+
+      expectsql(result, {
+        default: 'REAL'
       });
     });
 
-    suite('REAL', () => {
-      testsql('REAL', DataTypes.REAL, {
-        default: 'REAL'
-      });
+    it('Real length 11', () => {
+      const result = current.normalizeDataType(DataTypes.REAL(11)).toSql();
 
-      testsql('REAL.UNSIGNED', DataTypes.REAL.UNSIGNED, {
+      expectsql(result, {
+        default: 'REAL(11)',
+        postgres: 'REAL',
+        oracle: 'REAL',
+        mssql: 'REAL'
+      });
+    });
+
+    it('Real { length: 11 }', () => {
+      const result = current.normalizeDataType(DataTypes.REAL({ length: 11 })).toSql();
+
+      expectsql(result, {
+        default: 'REAL(11)',
+        postgres: 'REAL',
+        oracle: 'REAL',
+        mssql: 'REAL'
+      });
+    });
+
+    it('Real unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.REAL.UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'REAL UNSIGNED',
         postgres: 'REAL',
         oracle: 'REAL',
         mssql: 'REAL'
       });
+    });
 
-      testsql('REAL(11)', DataTypes.REAL(11), {
-        default: 'REAL(11)',
-        postgres: 'REAL',
-        oracle: 'REAL',
-        mssql: 'REAL'
-      });
+    it('Real length 11 unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.REAL(11).UNSIGNED).toSql();
 
-      testsql('REAL({ length: 11 })', DataTypes.REAL({ length: 11 }), {
-        default: 'REAL(11)',
-        postgres: 'REAL',
-        oracle: 'REAL',
-        mssql: 'REAL'
-      });
-
-      testsql('REAL(11).UNSIGNED', DataTypes.REAL(11).UNSIGNED, {
+      expectsql(result, {
         default: 'REAL(11) UNSIGNED',
         sqlite: 'REAL UNSIGNED(11)',
         postgres: 'REAL',
         oracle: 'REAL',
         mssql: 'REAL'
       });
+    });
 
-      testsql('REAL(11).UNSIGNED.ZEROFILL', DataTypes.REAL(11).UNSIGNED.ZEROFILL, {
+    it('Real unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.REAL.UNSIGNED.ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'REAL UNSIGNED ZEROFILL',
+        sqlite: 'REAL UNSIGNED ZEROFILL',
+        postgres: 'REAL',
+        oracle: 'REAL',
+        mssql: 'REAL'
+      });
+    });
+
+    it('Real length 11 unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.REAL(11).UNSIGNED.ZEROFILL).toSql();
+
+      expectsql(result, {
         default: 'REAL(11) UNSIGNED ZEROFILL',
         sqlite: 'REAL UNSIGNED ZEROFILL(11)',
         postgres: 'REAL',
         oracle: 'REAL',
         mssql: 'REAL'
       });
+    });
 
-      testsql('REAL(11).ZEROFILL', DataTypes.REAL(11).ZEROFILL, {
+    it('Real zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.REAL.ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'REAL ZEROFILL',
+        sqlite: 'REAL ZEROFILL',
+        postgres: 'REAL',
+        oracle: 'REAL',
+        mssql: 'REAL'
+      });
+    });
+
+    it('Real length 11 zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.REAL(11).ZEROFILL).toSql();
+
+      expectsql(result, {
         default: 'REAL(11) ZEROFILL',
         sqlite: 'REAL ZEROFILL(11)',
         postgres: 'REAL',
         oracle: 'REAL',
         mssql: 'REAL'
       });
+    });
 
-      testsql('REAL(11).ZEROFILL.UNSIGNED', DataTypes.REAL(11).ZEROFILL.UNSIGNED, {
+    it('Real zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.REAL.ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'REAL UNSIGNED ZEROFILL',
+        sqlite: 'REAL UNSIGNED ZEROFILL',
+        postgres: 'REAL',
+        oracle: 'REAL',
+        mssql: 'REAL'
+      });
+    });
+
+    it('Real length 11 zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.REAL(11).ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'REAL(11) UNSIGNED ZEROFILL',
         sqlite: 'REAL UNSIGNED ZEROFILL(11)',
         postgres: 'REAL',
         oracle: 'REAL',
         mssql: 'REAL'
       });
+    });
 
-      testsql('REAL(11, 12)', DataTypes.REAL(11, 12), {
+    it('Real length 11 decimals 12 ', () => {
+      const result = current.normalizeDataType(DataTypes.REAL(11, 12)).toSql();
+
+      expectsql(result, {
         default: 'REAL(11,12)',
+        sqlite: 'REAL(11,12)',
         postgres: 'REAL',
         oracle: 'REAL',
         mssql: 'REAL'
       });
+    });
 
-      testsql('REAL(11, 12).UNSIGNED', DataTypes.REAL(11, 12).UNSIGNED, {
+    it('Real length 11 decimals 12 unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.REAL(11, 12).UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'REAL(11,12) UNSIGNED',
         sqlite: 'REAL UNSIGNED(11,12)',
         postgres: 'REAL',
         oracle: 'REAL',
         mssql: 'REAL'
       });
+    });
 
-      testsql('REAL({ length: 11, decimals: 12 }).UNSIGNED', DataTypes.REAL({ length: 11, decimals: 12 }).UNSIGNED, {
+    it('Real { length: 11, decimals: 12 } unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.REAL(11, 12).UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'REAL(11,12) UNSIGNED',
         sqlite: 'REAL UNSIGNED(11,12)',
         postgres: 'REAL',
         oracle: 'REAL',
         mssql: 'REAL'
       });
+    });
 
-      testsql('REAL(11, 12).UNSIGNED.ZEROFILL', DataTypes.REAL(11, 12).UNSIGNED.ZEROFILL, {
+    it('Real length 11 decimals 12 unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.REAL(11, 12).ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'REAL(11,12) UNSIGNED ZEROFILL',
         sqlite: 'REAL UNSIGNED ZEROFILL(11,12)',
         postgres: 'REAL',
         oracle: 'REAL',
         mssql: 'REAL'
       });
+    });
 
-      testsql('REAL(11, 12).ZEROFILL', DataTypes.REAL(11, 12).ZEROFILL, {
+    it('Real length 11 decimals 12 zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.REAL(11, 12).ZEROFILL).toSql();
+
+      expectsql(result, {
         default: 'REAL(11,12) ZEROFILL',
         sqlite: 'REAL ZEROFILL(11,12)',
         postgres: 'REAL',
         oracle: 'REAL',
         mssql: 'REAL'
       });
+    });
 
-      testsql('REAL(11, 12).ZEROFILL.UNSIGNED', DataTypes.REAL(11, 12).ZEROFILL.UNSIGNED, {
+    it('Real length 11 decimals 12 zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.REAL(11, 12).ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'REAL(11,12) UNSIGNED ZEROFILL',
         sqlite: 'REAL UNSIGNED ZEROFILL(11,12)',
         postgres: 'REAL',
@@ -983,88 +1291,162 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
         mssql: 'REAL'
       });
     });
+  });
 
-    suite('DOUBLE PRECISION', () => {
-      testsql('DOUBLE', DataTypes.DOUBLE, {
+  describe('Double', () => {
+
+    it('Double standard', () => {
+      const result = current.normalizeDataType(DataTypes.DOUBLE).toSql();
+
+      expectsql(result, {
         default: 'DOUBLE PRECISION',
         oracle: 'NUMBER(15,5)'
       });
+    });
 
-      testsql('DOUBLE.UNSIGNED', DataTypes.DOUBLE.UNSIGNED, {
-        default: 'DOUBLE PRECISION UNSIGNED',
-        oracle: 'NUMBER(15,5)',
-        postgres: 'DOUBLE PRECISION'
-      });
+    it('Double length 11', () => {
+      const result = current.normalizeDataType(DataTypes.DOUBLE(11)).toSql();
 
-      testsql('DOUBLE(11)', DataTypes.DOUBLE(11), {
+      expectsql(result, {
         default: 'DOUBLE PRECISION(11)',
         oracle: 'NUMBER(15,5)',
         postgres: 'DOUBLE PRECISION'
       });
+    });
 
-      testsql('DOUBLE(11).UNSIGNED', DataTypes.DOUBLE(11).UNSIGNED, {
+    it('Double { length: 11 }', () => {
+      const result = current.normalizeDataType(DataTypes.DOUBLE({ length: 11 })).toSql();
+
+      expectsql(result, {
+        default: 'DOUBLE PRECISION(11)',
+        oracle: 'NUMBER(15,5)',
+        postgres: 'DOUBLE PRECISION'
+      });
+    });
+
+    it('Double unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.DOUBLE.UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'DOUBLE PRECISION UNSIGNED',
+        oracle: 'NUMBER(15,5)',
+        postgres: 'DOUBLE PRECISION'
+      });
+    });
+
+    it('Double length 11 unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.DOUBLE(11).UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'DOUBLE PRECISION(11) UNSIGNED',
         sqlite: 'DOUBLE PRECISION UNSIGNED(11)',
         oracle: 'NUMBER(15,5)',
         postgres: 'DOUBLE PRECISION'
       });
+    });
 
-      testsql('DOUBLE({ length: 11 }).UNSIGNED', DataTypes.DOUBLE({ length: 11 }).UNSIGNED, {
-        default: 'DOUBLE PRECISION(11) UNSIGNED',
-        sqlite: 'DOUBLE PRECISION UNSIGNED(11)',
+    it('Double unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.DOUBLE.UNSIGNED.ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'DOUBLE PRECISION UNSIGNED ZEROFILL',
+        sqlite: 'DOUBLE PRECISION UNSIGNED ZEROFILL',
         oracle: 'NUMBER(15,5)',
         postgres: 'DOUBLE PRECISION'
       });
+    });
 
-      testsql('DOUBLE(11).UNSIGNED.ZEROFILL', DataTypes.DOUBLE(11).UNSIGNED.ZEROFILL, {
+    it('Double length 11 unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.DOUBLE(11).UNSIGNED.ZEROFILL).toSql();
+
+      expectsql(result, {
         default: 'DOUBLE PRECISION(11) UNSIGNED ZEROFILL',
         sqlite: 'DOUBLE PRECISION UNSIGNED ZEROFILL(11)',
         oracle: 'NUMBER(15,5)',
         postgres: 'DOUBLE PRECISION'
       });
+    });
 
-      testsql('DOUBLE(11).ZEROFILL', DataTypes.DOUBLE(11).ZEROFILL, {
+    it('Double zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.DOUBLE.ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'DOUBLE PRECISION ZEROFILL',
+        sqlite: 'DOUBLE PRECISION ZEROFILL',
+        oracle: 'NUMBER(15,5)',
+        postgres: 'DOUBLE PRECISION'
+      });
+    });
+
+    it('Double length 11 zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.DOUBLE(11).ZEROFILL).toSql();
+
+      expectsql(result, {
         default: 'DOUBLE PRECISION(11) ZEROFILL',
         sqlite: 'DOUBLE PRECISION ZEROFILL(11)',
         oracle: 'NUMBER(15,5)',
         postgres: 'DOUBLE PRECISION'
       });
+    });
 
-      testsql('DOUBLE(11).ZEROFILL.UNSIGNED', DataTypes.DOUBLE(11).ZEROFILL.UNSIGNED, {
+    it('Double zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.DOUBLE.ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'DOUBLE PRECISION UNSIGNED ZEROFILL',
+        sqlite: 'DOUBLE PRECISION UNSIGNED ZEROFILL',
+        oracle: 'NUMBER(15,5)',
+        postgres: 'DOUBLE PRECISION'
+      });
+    });
+
+    it('Double length 11 zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.DOUBLE(11).ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'DOUBLE PRECISION(11) UNSIGNED ZEROFILL',
         sqlite: 'DOUBLE PRECISION UNSIGNED ZEROFILL(11)',
         oracle: 'NUMBER(15,5)',
         postgres: 'DOUBLE PRECISION'
       });
+    });
 
-      testsql('DOUBLE(11, 12)', DataTypes.DOUBLE(11, 12), {
+    it('Double length 11 decimals 12 ', () => {
+      const result = current.normalizeDataType(DataTypes.DOUBLE(11, 12)).toSql();
+
+      expectsql(result, {
         default: 'DOUBLE PRECISION(11,12)',
         oracle: 'NUMBER(15,5)',
         postgres: 'DOUBLE PRECISION'
       });
+    });
 
-      testsql('DOUBLE(11, 12).UNSIGNED', DataTypes.DOUBLE(11, 12).UNSIGNED, {
+    it('Double length 11 decimals 12 unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.DOUBLE(11, 12).UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'DOUBLE PRECISION(11,12) UNSIGNED',
         sqlite: 'DOUBLE PRECISION UNSIGNED(11,12)',
         oracle: 'NUMBER(15,5)',
         postgres: 'DOUBLE PRECISION'
       });
+    });
 
-      testsql('DOUBLE(11, 12).UNSIGNED.ZEROFILL', DataTypes.DOUBLE(11, 12).UNSIGNED.ZEROFILL, {
-        default: 'DOUBLE PRECISION(11,12) UNSIGNED ZEROFILL',
-        sqlite: 'DOUBLE PRECISION UNSIGNED ZEROFILL(11,12)',
+    it('Double { length: 11, decimals: 12 } unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.DOUBLE(11, 12).UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'DOUBLE PRECISION(11,12) UNSIGNED',
+        sqlite: 'DOUBLE PRECISION UNSIGNED(11,12)',
         oracle: 'NUMBER(15,5)',
         postgres: 'DOUBLE PRECISION'
       });
+    });
 
-      testsql('DOUBLE(11, 12).ZEROFILL', DataTypes.DOUBLE(11, 12).ZEROFILL, {
-        default: 'DOUBLE PRECISION(11,12) ZEROFILL',
-        sqlite: 'DOUBLE PRECISION ZEROFILL(11,12)',
-        oracle: 'NUMBER(15,5)',
-        postgres: 'DOUBLE PRECISION'
-      });
+    it('Double length 11 decimals 12 unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.DOUBLE(11, 12).ZEROFILL.UNSIGNED).toSql();
 
-      testsql('DOUBLE(11, 12).ZEROFILL.UNSIGNED', DataTypes.DOUBLE(11, 12).ZEROFILL.UNSIGNED, {
+      expectsql(result, {
         default: 'DOUBLE PRECISION(11,12) UNSIGNED ZEROFILL',
         sqlite: 'DOUBLE PRECISION UNSIGNED ZEROFILL(11,12)',
         oracle: 'NUMBER(15,5)',
@@ -1072,457 +1454,720 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
       });
     });
 
-    suite('FLOAT', () => {
-      testsql('FLOAT', DataTypes.FLOAT, {
+    it('Double length 11 decimals 12 zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.DOUBLE(11, 12).ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'DOUBLE PRECISION(11,12) ZEROFILL',
+        sqlite: 'DOUBLE PRECISION ZEROFILL(11,12)',
+        oracle: 'NUMBER(15,5)',
+        postgres: 'DOUBLE PRECISION'
+      });
+    });
+
+    it('Double length 11 decimals 12 zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.DOUBLE(11, 12).ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'DOUBLE PRECISION(11,12) UNSIGNED ZEROFILL',
+        sqlite: 'DOUBLE PRECISION UNSIGNED ZEROFILL(11,12)',
+        oracle: 'NUMBER(15,5)',
+        postgres: 'DOUBLE PRECISION'
+      });
+    });
+  });
+
+  describe('Float', () => {
+
+    it('Float standard', () => {
+      const result = current.normalizeDataType(DataTypes.FLOAT).toSql();
+
+      expectsql(result, {
         default: 'FLOAT',
         postgres: 'FLOAT'
       });
+    });
 
-      testsql('FLOAT.UNSIGNED', DataTypes.FLOAT.UNSIGNED, {
-        default: 'FLOAT UNSIGNED',
-        postgres: 'FLOAT',
-        oracle: 'FLOAT',
-        mssql: 'FLOAT'
-      });
+    it('Float length 11', () => {
+      const result = current.normalizeDataType(DataTypes.FLOAT(11)).toSql();
 
-      testsql('FLOAT(11)', DataTypes.FLOAT(11), {
+      expectsql(result, {
         default: 'FLOAT(11)',
         postgres: 'FLOAT(11)', // 1-24 = 4 bytes; 35-53 = 8 bytes
         oracle: 'FLOAT(11)',
         mssql: 'FLOAT(11)' // 1-24 = 4 bytes; 35-53 = 8 bytes
       });
+    });
 
-      testsql('FLOAT(11).UNSIGNED', DataTypes.FLOAT(11).UNSIGNED, {
+    it('Float { length: 11 }', () => {
+      const result = current.normalizeDataType(DataTypes.FLOAT({ length: 11 })).toSql();
+
+      expectsql(result, {
+        default: 'FLOAT(11)',
+        postgres: 'FLOAT(11)',
+        oracle: 'FLOAT(11)',
+        mssql: 'FLOAT(11)'
+      });
+    });
+
+    it('Float unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.FLOAT.UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'FLOAT UNSIGNED',
+        postgres: 'FLOAT',
+        oracle: 'FLOAT',
+        mssql: 'FLOAT'
+      });
+    });
+
+    it('Float length 11 unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.FLOAT(11).UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'FLOAT(11) UNSIGNED',
         sqlite: 'FLOAT UNSIGNED(11)',
         postgres: 'FLOAT(11)',
         oracle: 'FLOAT(11)',
         mssql: 'FLOAT(11)'
       });
+    });
 
-      testsql('FLOAT(11).UNSIGNED.ZEROFILL', DataTypes.FLOAT(11).UNSIGNED.ZEROFILL, {
+    it('Float unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.FLOAT.UNSIGNED.ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'FLOAT UNSIGNED ZEROFILL',
+        sqlite: 'FLOAT UNSIGNED ZEROFILL',
+        postgres: 'FLOAT',
+        oracle: 'FLOAT',
+        mssql: 'FLOAT'
+      });
+    });
+
+    it('Float length 11 unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.FLOAT(11).UNSIGNED.ZEROFILL).toSql();
+
+      expectsql(result, {
         default: 'FLOAT(11) UNSIGNED ZEROFILL',
         sqlite: 'FLOAT UNSIGNED ZEROFILL(11)',
         postgres: 'FLOAT(11)',
         oracle: 'FLOAT(11)',
         mssql: 'FLOAT(11)'
       });
+    });
 
-      testsql('FLOAT(11).ZEROFILL', DataTypes.FLOAT(11).ZEROFILL, {
+    it('Float zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.FLOAT.ZEROFILL).toSql();
+
+      expectsql(result, {
+        default: 'FLOAT ZEROFILL',
+        sqlite: 'FLOAT ZEROFILL',
+        postgres: 'FLOAT',
+        oracle: 'FLOAT',
+        mssql: 'FLOAT'
+      });
+    });
+
+    it('Float length 11 zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.FLOAT(11).ZEROFILL).toSql();
+
+      expectsql(result, {
         default: 'FLOAT(11) ZEROFILL',
         sqlite: 'FLOAT ZEROFILL(11)',
         postgres: 'FLOAT(11)',
         oracle: 'FLOAT(11)',
         mssql: 'FLOAT(11)'
       });
+    });
 
-      testsql('FLOAT({ length: 11 }).ZEROFILL', DataTypes.FLOAT({ length: 11 }).ZEROFILL, {
-        default: 'FLOAT(11) ZEROFILL',
-        sqlite: 'FLOAT ZEROFILL(11)',
-        postgres: 'FLOAT(11)',
-        oracle: 'FLOAT(11)',
-        mssql: 'FLOAT(11)'
+    it('Float zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.FLOAT.ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
+        default: 'FLOAT UNSIGNED ZEROFILL',
+        sqlite: 'FLOAT UNSIGNED ZEROFILL',
+        postgres: 'FLOAT',
+        oracle: 'FLOAT',
+        mssql: 'FLOAT'
       });
+    });
 
-      testsql('FLOAT(11).ZEROFILL.UNSIGNED', DataTypes.FLOAT(11).ZEROFILL.UNSIGNED, {
+    it('Float length 11 zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.FLOAT(11).ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'FLOAT(11) UNSIGNED ZEROFILL',
         sqlite: 'FLOAT UNSIGNED ZEROFILL(11)',
         postgres: 'FLOAT(11)',
         oracle: 'FLOAT(11)',
         mssql: 'FLOAT(11)'
       });
+    });
 
-      testsql('FLOAT(11, 12)', DataTypes.FLOAT(11, 12), {
+    it('Float length 11 decimals 12 ', () => {
+      const result = current.normalizeDataType(DataTypes.FLOAT(11, 12)).toSql();
+
+      expectsql(result, {
         default: 'FLOAT(11,12)',
         postgres: 'FLOAT',
         oracle: 'FLOAT(11)',
         mssql: 'FLOAT'
       });
+    });
 
-      testsql('FLOAT(11, 12).UNSIGNED', DataTypes.FLOAT(11, 12).UNSIGNED, {
+    it('Float length 11 decimals 12 unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.FLOAT(11, 12).UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'FLOAT(11,12) UNSIGNED',
         sqlite: 'FLOAT UNSIGNED(11,12)',
         postgres: 'FLOAT',
         oracle: 'FLOAT(11)',
         mssql: 'FLOAT'
       });
+    });
 
-      testsql('FLOAT({ length: 11, decimals: 12 }).UNSIGNED', DataTypes.FLOAT({ length: 11, decimals: 12 }).UNSIGNED, {
+    it('Float { length: 11, decimals: 12 } unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.FLOAT(11, 12).UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'FLOAT(11,12) UNSIGNED',
         sqlite: 'FLOAT UNSIGNED(11,12)',
         postgres: 'FLOAT',
         oracle: 'FLOAT(11)',
         mssql: 'FLOAT'
       });
+    });
 
-      testsql('FLOAT(11, 12).UNSIGNED.ZEROFILL', DataTypes.FLOAT(11, 12).UNSIGNED.ZEROFILL, {
+    it('Float length 11 decimals 12 unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.FLOAT(11, 12).ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'FLOAT(11,12) UNSIGNED ZEROFILL',
         sqlite: 'FLOAT UNSIGNED ZEROFILL(11,12)',
         postgres: 'FLOAT',
         oracle: 'FLOAT(11)',
         mssql: 'FLOAT'
       });
+    });
 
-      testsql('FLOAT(11, 12).ZEROFILL', DataTypes.FLOAT(11, 12).ZEROFILL, {
+    it('Float length 11 decimals 12 zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.FLOAT(11, 12).ZEROFILL).toSql();
+
+      expectsql(result, {
         default: 'FLOAT(11,12) ZEROFILL',
         sqlite: 'FLOAT ZEROFILL(11,12)',
         postgres: 'FLOAT',
         oracle: 'FLOAT(11)',
         mssql: 'FLOAT'
       });
+    });
 
-      testsql('FLOAT(11, 12).ZEROFILL.UNSIGNED', DataTypes.FLOAT(11, 12).ZEROFILL.UNSIGNED, {
+    it('Float length 11 decimals 12 zerofill unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.FLOAT(11, 12).ZEROFILL.UNSIGNED).toSql();
+
+      expectsql(result, {
         default: 'FLOAT(11,12) UNSIGNED ZEROFILL',
         sqlite: 'FLOAT UNSIGNED ZEROFILL(11,12)',
         oracle: 'FLOAT(11)',
         postgres: 'FLOAT',
         mssql: 'FLOAT'
       });
+    });
 
-      suite('validate', () => {
-        test('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.FLOAT();
+    describe('validate Float', () => {
+      it('should throw an error if `value` is invalid', () => {
+        const type = DataTypes.FLOAT();
 
-          expect(() => {
-            type.validate('foobar');
-          }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid float');
+        expect(() => {
+          type.validate('foobar');
+        }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid float');
+      });
+
+      it('should return `true` if `value` is a float', () => {
+        const type = DataTypes.FLOAT();
+
+        expect(type.validate(1.2)).to.equal(true);
+        expect(type.validate('1')).to.equal(true);
+        expect(type.validate('1.2')).to.equal(true);
+        expect(type.validate('-0.123')).to.equal(true);
+        expect(type.validate('-0.22250738585072011e-307')).to.equal(true);
+      });
+    });
+  });
+
+  if (current.dialect.supports.NUMERIC) {
+    describe('Numeric', () => {
+
+      it('Numeric standart', () => {
+        const result = current.normalizeDataType(DataTypes.NUMERIC).toSql();
+    
+        expectsql(result, {
+          default: 'DECIMAL',
+          oracle: 'NUMBER'
         });
+      });
 
-        test('should return `true` if `value` is a float', () => {
-          const type = DataTypes.FLOAT();
-
-          expect(type.validate(1.2)).to.equal(true);
-          expect(type.validate('1')).to.equal(true);
-          expect(type.validate('1.2')).to.equal(true);
-          expect(type.validate('-0.123')).to.equal(true);
-          expect(type.validate('-0.22250738585072011e-307')).to.equal(true);
+      it('Numeric length 15 decimals 5', () => {
+        const result = current.normalizeDataType(DataTypes.NUMERIC(15, 5)).toSql();
+    
+        expectsql(result, {
+          default: 'DECIMAL(15,5)',
+          oracle: 'NUMBER(15,5)'
         });
       });
     });
+  }
 
-    if (current.dialect.supports.NUMERIC) {
-      testsql('NUMERIC', DataTypes.NUMERIC, {
-        default: 'DECIMAL',
-        oracle : 'NUMBER'
-      });
+  describe('Decimal', () => {
 
-      testsql('NUMERIC(15,5)', DataTypes.NUMERIC(15, 5), {
-        default: 'DECIMAL(15,5)',
-        oracle : 'NUMBER(15,5)'
-      });
-    }
+    it('Decimal standard', () => {
+      const result = current.normalizeDataType(DataTypes.DECIMAL).toSql();
 
-    suite('DECIMAL', () => {
-      testsql('DECIMAL', DataTypes.DECIMAL, {
+      expectsql(result, {
         default: 'DECIMAL',
         oracle: 'NUMBER'
       });
+    });
 
-      testsql('DECIMAL(10, 2)', DataTypes.DECIMAL(10, 2), {
+    it('Decimal precision 10 scale 2', () => {
+      const result = current.normalizeDataType(DataTypes.DECIMAL(10, 2)).toSql();
+
+      expectsql(result, {
         default: 'DECIMAL(10,2)',
         oracle: 'NUMBER(10,2)'
       });
+    });
 
-      testsql('DECIMAL({ precision: 10, scale: 2 })', DataTypes.DECIMAL({ precision: 10, scale: 2 }), {
+    it('Decimal { precision: 10, scale: 2 }', () => {
+      const result = current.normalizeDataType(DataTypes.DECIMAL({ precision: 10, scale: 2 })).toSql();
+
+      expectsql(result, {
         default: 'DECIMAL(10,2)',
         oracle: 'NUMBER(10,2)'
       });
+    });
 
-      testsql('DECIMAL(10)', DataTypes.DECIMAL(10), {
+    it('Decimal precision 10', () => {
+      const result = current.normalizeDataType(DataTypes.DECIMAL(10)).toSql();
+
+      expectsql(result, {
         default: 'DECIMAL(10)',
         oracle: 'NUMBER(10)'
       });
+    });
 
-      testsql('DECIMAL({ precision: 10 })', DataTypes.DECIMAL({ precision: 10 }), {
+    it('Decimal { precision: 10 }', () => {
+      const result = current.normalizeDataType(DataTypes.DECIMAL({ precision: 10 })).toSql();
+
+      expectsql(result, {
         default: 'DECIMAL(10)',
         oracle: 'NUMBER(10)'
       });
+    });
 
-      testsql('DECIMAL.UNSIGNED', DataTypes.DECIMAL.UNSIGNED, {
+    it('Decimal unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.DECIMAL.UNSIGNED).toSql();
+
+      expectsql(result, {
         mysql: 'DECIMAL UNSIGNED',
         oracle: 'NUMBER',
         default: 'DECIMAL'
       });
+    });
 
-      testsql('DECIMAL.UNSIGNED.ZEROFILL', DataTypes.DECIMAL.UNSIGNED.ZEROFILL, {
+    it('Decimal unsigned zerofill', () => {
+      const result = current.normalizeDataType(DataTypes.DECIMAL.UNSIGNED.ZEROFILL).toSql();
+
+      expectsql(result, {
         mysql: 'DECIMAL UNSIGNED ZEROFILL',
         oracle: 'NUMBER',
         default: 'DECIMAL'
       });
+    });
 
-      testsql('DECIMAL({ precision: 10, scale: 2 }).UNSIGNED', DataTypes.DECIMAL({ precision: 10, scale: 2 }).UNSIGNED, {
+    it('Decimal { precision: 10, scale: 2 } unsigned', () => {
+      const result = current.normalizeDataType(DataTypes.DECIMAL(10, 2).UNSIGNED).toSql();
+
+      expectsql(result, {
         mysql: 'DECIMAL(10,2) UNSIGNED',
         oracle: 'NUMBER(10,2)',
         default: 'DECIMAL(10,2)'
       });
-
-      suite('validate', () => {
-        test('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.DECIMAL(10);
-
-          expect(() => {
-            type.validate('foobar');
-          }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid decimal');
-
-          expect(() => {
-            type.validate('0.1a');
-          }).to.throw(Sequelize.ValidationError, '"0.1a" is not a valid decimal');
-
-          expect(() => {
-            type.validate(NaN);
-          }).to.throw(Sequelize.ValidationError, 'null is not a valid decimal');
-        });
-
-        test('should return `true` if `value` is a decimal', () => {
-          const type = DataTypes.DECIMAL(10);
-
-          expect(type.validate(123)).to.equal(true);
-          expect(type.validate(1.2)).to.equal(true);
-          expect(type.validate(-0.25)).to.equal(true);
-          expect(type.validate(0.0000000000001)).to.equal(true);
-          expect(type.validate('123')).to.equal(true);
-          expect(type.validate('1.2')).to.equal(true);
-          expect(type.validate('-0.25')).to.equal(true);
-          expect(type.validate('0.0000000000001')).to.equal(true);
-        });
-      });
     });
 
-    suite('ENUM', () => {
-      // TODO: Fix Enums and add more tests
-      // testsql('ENUM("value 1", "value 2")', DataTypes.ENUM('value 1', 'value 2'), {
-      //   default: 'ENUM'
-      // });
+    describe('validate Decimal', () => {
+      it('should throw an error if `value` is invalid', () => {
+        const type = DataTypes.DECIMAL(10);
 
-      suite('validate', () => {
-        test('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.ENUM('foo');
+        expect(() => {
+          type.validate('foobar');
+        }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid decimal');
 
-          expect(() => {
-            type.validate('foobar');
-          }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid choice in ["foo"]');
-        });
+        expect(() => {
+          type.validate('0.1a');
+        }).to.throw(Sequelize.ValidationError, '"0.1a" is not a valid decimal');
 
-        test('should return `true` if `value` is a valid choice', () => {
-          const type = DataTypes.ENUM('foobar', 'foobiz');
+        expect(() => {
+          type.validate(NaN);
+        }).to.throw(Sequelize.ValidationError, 'null is not a valid decimal');
+      });
 
-          expect(type.validate('foobar')).to.equal(true);
-          expect(type.validate('foobiz')).to.equal(true);
-        });
+      it('should return `true` if `value` is a decimal', () => {
+        const type = DataTypes.DECIMAL(10);
+
+        expect(type.validate(123)).to.equal(true);
+        expect(type.validate(1.2)).to.equal(true);
+        expect(type.validate(-0.25)).to.equal(true);
+        expect(type.validate(0.0000000000001)).to.equal(true);
+        expect(type.validate('123')).to.equal(true);
+        expect(type.validate('1.2')).to.equal(true);
+        expect(type.validate('-0.25')).to.equal(true);
+        expect(type.validate('0.0000000000001')).to.equal(true);
       });
     });
+  });
 
-    suite('BLOB', () => {
-      testsql('BLOB', DataTypes.BLOB, {
+  describe('Enum', () => {
+    // TODO: Fix Enums and add more tests
+    // testsql('ENUM("value 1", "value 2")', DataTypes.ENUM('value 1', 'value 2'), {
+    //   default: 'ENUM'
+    // });
+
+    //it('Enum "value 1", "value 2"', function() {
+    //  const result = current.normalizeDataType(DataTypes.ENUM("value 1","value 2")).toSql();
+    //  expectsql(result, {
+    //    default: 'ENUM'
+    //  });
+    //});
+
+    describe('validate Enum', () => {
+      it('should throw an error if `value` is invalid', () => {
+        const type = DataTypes.ENUM('foo');
+
+        expect(() => {
+          type.validate('foobar');
+        }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid choice in ["foo"]');
+      });
+
+      it('should return `true` if `value` is a valid choice', () => {
+        const type = DataTypes.ENUM('foobar', 'foobiz');
+
+        expect(type.validate('foobar')).to.equal(true);
+        expect(type.validate('foobiz')).to.equal(true);
+      });
+    });
+  });
+
+  describe('Blob', () => {
+
+    it('Blob standard', () => {
+      const result = current.normalizeDataType(DataTypes.BLOB).toSql();
+
+      expectsql(result, {
         default: 'BLOB',
         mssql: 'VARBINARY(MAX)',
         postgres: 'BYTEA'
       });
+    });
 
-      testsql('BLOB("tiny")', DataTypes.BLOB('tiny'), {
+    it('Blob tiny', () => {
+      const result = current.normalizeDataType(DataTypes.BLOB('tiny')).toSql();
+
+      expectsql(result, {
         default: 'TINYBLOB',
-        oracle:'RAW(256)',
+        oracle: 'RAW(256)',
         mssql: 'VARBINARY(256)',
         postgres: 'BYTEA'
       });
+    });
 
-      testsql('BLOB("medium")', DataTypes.BLOB('medium'), {
+    it('Blob medium', () => {
+      const result = current.normalizeDataType(DataTypes.BLOB('medium')).toSql();
+
+      expectsql(result, {
         default: 'MEDIUMBLOB',
         mssql: 'VARBINARY(MAX)',
         oracle: 'RAW(2000)',
         postgres: 'BYTEA'
       });
+    });
 
-      testsql('BLOB({ length: "medium" })', DataTypes.BLOB({ length: 'medium' }), {
+    it('Blob { length: "medium" }', () => {
+      const result = current.normalizeDataType(DataTypes.BLOB({ length: 'medium' })).toSql();
+
+      expectsql(result, {
         default: 'MEDIUMBLOB',
         mssql: 'VARBINARY(MAX)',
         oracle: 'RAW(2000)',
         postgres: 'BYTEA'
       });
+    });
 
-      testsql('BLOB("long")', DataTypes.BLOB('long'), {
+    it('Blob long', () => {
+      const result = current.normalizeDataType(DataTypes.BLOB('long')).toSql();
+
+      expectsql(result, {
         default: 'LONGBLOB',
         mssql: 'VARBINARY(MAX)',
         oracle: 'RAW(2000)',
         postgres: 'BYTEA'
       });
-
-      suite('validate', () => {
-        test('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.BLOB();
-
-          expect(() => {
-            type.validate(12345);
-          }).to.throw(Sequelize.ValidationError, '12345 is not a valid blob');
-        });
-
-        test('should return `true` if `value` is a blob', () => {
-          const type = DataTypes.BLOB();
-
-          expect(type.validate('foobar')).to.equal(true);
-          expect(type.validate(new Buffer('foobar'))).to.equal(true);
-        });
-      });
     });
 
-    suite('RANGE', () => {
-      suite('validate', () => {
-        test('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.RANGE();
+    describe('validate Blob', () => {
+      it('should throw an error if `value` is invalid', () => {
+        const type = DataTypes.BLOB();
+
+        expect(() => {
+          type.validate(12345);
+        }).to.throw(Sequelize.ValidationError, '12345 is not a valid blob');
+      });
+
+      it('should return `true` if `value` is a blob', () => {
+        const type = DataTypes.BLOB();
+
+        expect(type.validate('foobar')).to.equal(true);
+        expect(type.validate(new Buffer('foobar'))).to.equal(true);
+      });
+    });
+  });
+
+  describe('Range', () => {
+
+    describe('validate Range', () => {
+      it('should throw an error if `value` is invalid', () => {
+        const type = DataTypes.RANGE();
+
+        expect(() => {
+          type.validate('foobar');
+        }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid range');
+      });
+
+      it('should throw an error if `value` is not an array with two elements', () => {
+        const type = DataTypes.RANGE();
+
+        expect(() => {
+          type.validate([1]);
+        }).to.throw(Sequelize.ValidationError, 'A range must be an array with two elements');
+      });
+
+      it('should throw an error if `value.inclusive` is invalid', () => {
+        const type = DataTypes.RANGE();
+
+        expect(() => {
+          type.validate({ inclusive: 'foobar' });
+        }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid range');
+      });
+
+      it('should throw an error if `value.inclusive` is not an array with two elements', () => {
+        const type = DataTypes.RANGE();
+
+        expect(() => {
+          type.validate({ inclusive: [1] });
+        }).to.throw(Sequelize.ValidationError, 'A range must be an array with two elements');
+      });
+
+      it('should return `true` if `value` is a range', () => {
+        const type = DataTypes.RANGE();
+
+        expect(type.validate([1, 2])).to.equal(true);
+      });
+
+      it('should return `true` if `value.inclusive` is a range', () => {
+        const type = DataTypes.RANGE();
+
+        expect(type.validate({ inclusive: [1, 2] })).to.equal(true);
+      });
+    });
+  });
+
+
+  if (current.dialect.supports.ARRAY) {
+    describe('Array', () => {
+
+      it('Array varchar', () => {
+        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.STRING)).toSql();
+
+        expectsql(result, {
+          postgres: 'VARCHAR(255)[]'
+        });
+      });
+
+      it('Array varchar(100)', () => {
+        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.STRING(100))).toSql();
+
+        expectsql(result, {
+          postgres: 'VARCHAR(100)[]'
+        });
+      });
+
+      it('Array hstore', () => {
+        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.HSTORE)).toSql();
+
+        expectsql(result, {
+          postgres: 'HSTORE[]'
+        });
+      });
+
+      it('Array array(varchar)', () => {
+        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.ARRAY(DataTypes.STRING))).toSql();
+
+        expectsql(result, {
+          postgres: 'VARCHAR(255)[][]'
+        });
+      });
+
+      it('Array text', () => {
+        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.TEXT)).toSql();
+
+        expectsql(result, {
+          postgres: 'TEXT[]'
+        });
+      });
+
+      it('Array date', () => {
+        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.DATE)).toSql();
+
+        expectsql(result, {
+          postgres: 'TIMESTAMP WITH TIME ZONE[]'
+        });
+      });
+
+      it('Array boolean', () => {
+        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.BOOLEAN)).toSql();
+
+        expectsql(result, {
+          postgres: 'BOOLEAN[]'
+        });
+      });
+
+      it('Array decimal', () => {
+        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.DECIMAL)).toSql();
+
+        expectsql(result, {
+          postgres: 'DECIMAL[]'
+        });
+      });
+
+      it('Array decimal(6)', () => {
+        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.DECIMAL(6))).toSql();
+
+        expectsql(result, {
+          postgres: 'DECIMAL(6)[]'
+        });
+      });
+
+      it('Array decimal(6,4)', () => {
+        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.DECIMAL(6, 4))).toSql();
+
+        expectsql(result, {
+          postgres: 'DECIMAL(6,4)[]'
+        });
+      });
+
+      it('Array double', () => {
+        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.DOUBLE)).toSql();
+
+        expectsql(result, {
+          postgres: 'DOUBLE PRECISION[]'
+        });
+      });
+
+      it('Array real', () => {
+        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.REAL)).toSql();
+
+        expectsql(result, {
+          postgres: 'REAL[]'
+        });
+      });
+
+
+      if (current.dialect.supports.JSON) {
+        it('Array json', () => {
+          const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.JSON)).toSql();
+
+          expectsql(result, {
+            postgres: 'JSON[]'
+          });
+        });
+      }
+
+      if (current.dialect.supports.JSONB) {
+        it('Array jsonb', () => {
+          const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.JSONB)).toSql();
+
+          expectsql(result, {
+            postgres: 'JSONB[]'
+          });
+        });
+      }
+
+      describe('validate Array', () => {
+        it('should throw an error if `value` is invalid', () => {
+          const type = DataTypes.ARRAY();
 
           expect(() => {
             type.validate('foobar');
-          }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid range');
+          }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid array');
         });
 
-        test('should throw an error if `value` is not an array with two elements', () => {
-          const type = DataTypes.RANGE();
+        it('should return `true` if `value` is an array', () => {
+          const type = DataTypes.ARRAY();
 
-          expect(() => {
-            type.validate([1]);
-          }).to.throw(Sequelize.ValidationError, 'A range must be an array with two elements');
-        });
-
-        test('should throw an error if `value.inclusive` is invalid', () => {
-          const type = DataTypes.RANGE();
-
-          expect(() => {
-            type.validate({ inclusive: 'foobar' });
-          }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid range');
-        });
-
-        test('should throw an error if `value.inclusive` is not an array with two elements', () => {
-          const type = DataTypes.RANGE();
-
-          expect(() => {
-            type.validate({ inclusive: [1] });
-          }).to.throw(Sequelize.ValidationError, 'A range must be an array with two elements');
-        });
-
-        test('should return `true` if `value` is a range', () => {
-          const type = DataTypes.RANGE();
-
-          expect(type.validate([1, 2])).to.equal(true);
-        });
-
-        test('should return `true` if `value.inclusive` is a range', () => {
-          const type = DataTypes.RANGE();
-
-          expect(type.validate({ inclusive: [1, 2] })).to.equal(true);
+          expect(type.validate(['foo', 'bar'])).to.equal(true);
         });
       });
     });
+  }
 
-    if (current.dialect.supports.ARRAY) {
-      suite('ARRAY', () => {
-        testsql('ARRAY(VARCHAR)', DataTypes.ARRAY(DataTypes.STRING), {
-          postgres: 'VARCHAR(255)[]'
-        });
+  if (current.dialect.supports.GEOMETRY) {
+    describe('Geometry', () => {
 
-        testsql('ARRAY(VARCHAR(100))', DataTypes.ARRAY(DataTypes.STRING(100)), {
-          postgres: 'VARCHAR(100)[]'
-        });
+      it('Geometry standart', () => {
+        const result = current.normalizeDataType(DataTypes.GEOMETRY).toSql();
 
-        testsql('ARRAY(INTEGER)', DataTypes.ARRAY(DataTypes.INTEGER), {
-          postgres: 'INTEGER[]'
-        });
-
-        testsql('ARRAY(HSTORE)', DataTypes.ARRAY(DataTypes.HSTORE), {
-          postgres: 'HSTORE[]'
-        });
-
-        testsql('ARRAY(ARRAY(VARCHAR(255)))', DataTypes.ARRAY(DataTypes.ARRAY(DataTypes.STRING)), {
-          postgres: 'VARCHAR(255)[][]'
-        });
-
-        testsql('ARRAY(TEXT)', DataTypes.ARRAY(DataTypes.TEXT), {
-          postgres: 'TEXT[]'
-        });
-
-        testsql('ARRAY(DATE)', DataTypes.ARRAY(DataTypes.DATE), {
-          postgres: 'TIMESTAMP WITH TIME ZONE[]'
-        });
-
-        testsql('ARRAY(BOOLEAN)', DataTypes.ARRAY(DataTypes.BOOLEAN), {
-          postgres: 'BOOLEAN[]'
-        });
-
-        testsql('ARRAY(DECIMAL)', DataTypes.ARRAY(DataTypes.DECIMAL), {
-          postgres: 'DECIMAL[]'
-        });
-
-        testsql('ARRAY(DECIMAL(6))', DataTypes.ARRAY(DataTypes.DECIMAL(6)), {
-          postgres: 'DECIMAL(6)[]'
-        });
-
-        testsql('ARRAY(DECIMAL(6,4))', DataTypes.ARRAY(DataTypes.DECIMAL(6, 4)), {
-          postgres: 'DECIMAL(6,4)[]'
-        });
-
-        testsql('ARRAY(DOUBLE)', DataTypes.ARRAY(DataTypes.DOUBLE), {
-          postgres: 'DOUBLE PRECISION[]'
-        });
-
-        testsql('ARRAY(REAL))', DataTypes.ARRAY(DataTypes.REAL), {
-          postgres: 'REAL[]'
-        });
-
-        if (current.dialect.supports.JSON) {
-          testsql('ARRAY(JSON)', DataTypes.ARRAY(DataTypes.JSON), {
-            postgres: 'JSON[]'
-          });
-        }
-
-        if (current.dialect.supports.JSONB) {
-          testsql('ARRAY(JSONB)', DataTypes.ARRAY(DataTypes.JSONB), {
-            postgres: 'JSONB[]'
-          });
-        }
-
-        suite('validate', () => {
-          test('should throw an error if `value` is invalid', () => {
-            const type = DataTypes.ARRAY();
-
-            expect(() => {
-              type.validate('foobar');
-            }).to.throw(Sequelize.ValidationError, '"foobar" is not a valid array');
-          });
-
-          test('should return `true` if `value` is an array', () => {
-            const type = DataTypes.ARRAY();
-
-            expect(type.validate(['foo', 'bar'])).to.equal(true);
-          });
-        });
-      });
-    }
-
-    if (current.dialect.supports.GEOMETRY) {
-      suite('GEOMETRY', () => {
-        testsql('GEOMETRY', DataTypes.GEOMETRY, {
+        expectsql(result, {
           default: 'GEOMETRY'
         });
+      });
 
-        testsql('GEOMETRY(\'POINT\')', DataTypes.GEOMETRY('POINT'), {
+      it('Geometry point', () => {
+        const result = current.normalizeDataType(DataTypes.GEOMETRY('POINT')).toSql();
+
+        expectsql(result, {
           postgres: 'GEOMETRY(POINT)',
           mysql: 'POINT'
         });
+      });
 
-        testsql('GEOMETRY(\'LINESTRING\')', DataTypes.GEOMETRY('LINESTRING'), {
+      it('Geometry linestring', () => {
+        const result = current.normalizeDataType(DataTypes.GEOMETRY('LINESTRING')).toSql();
+
+        expectsql(result, {
           postgres: 'GEOMETRY(LINESTRING)',
           mysql: 'LINESTRING'
         });
+      });
 
-        testsql('GEOMETRY(\'POLYGON\')', DataTypes.GEOMETRY('POLYGON'), {
+      it('Geometry polygon', () => {
+        const result = current.normalizeDataType(DataTypes.GEOMETRY('POLYGON')).toSql();
+
+        expectsql(result, {
           postgres: 'GEOMETRY(POLYGON)',
           mysql: 'POLYGON'
         });
+      });
 
-        testsql('GEOMETRY(\'POINT\',4326)', DataTypes.GEOMETRY('POINT', 4326), {
+      it('Geometry point (4326)', () => {
+        const result = current.normalizeDataType(DataTypes.GEOMETRY('POINT', 4326)).toSql();
+
+        expectsql(result, {
           postgres: 'GEOMETRY(POINT,4326)',
           mysql: 'POINT'
         });
       });
-    }
-  });
+    });
+  }
 });

@@ -7,75 +7,82 @@ const Support   = require(__dirname + '/../support'),
   expect = chai.expect,
   expectsql = Support.expectsql,
   current = Support.sequelize,
-  sql = current.dialect.QueryGenerator;
+  queryGenerator = current.dialect.QueryGenerator;
 
 // Notice: [] will be replaced by dialect specific tick/quote character when there is not dialect specific expectation but only a default expectation
 
-suite(Support.getTestDialectTeaser('SQL'), () => {
-  suite('whereQuery', () => {
-    const testsql = function(params, options, expectation) {
-      if (expectation === undefined) {
-        expectation = options;
-        options = undefined;
-      }
-
-      test(util.inspect(params, {depth: 10})+(options && ', '+util.inspect(options) || ''), () => {
-        return expectsql(sql.whereQuery(params, options), expectation);
-      });
-    };
-
-    testsql({}, {
-      default: ''
-    });
-    testsql([], {
-      default: ''
-    });
-    testsql({id: 1}, {
-      default: 'WHERE [id] = 1',
-      oracle: 'WHERE id = 1'
-    });
-    testsql({id: 1}, {prefix: 'User'}, {
-      default: 'WHERE [User].[id] = 1',
-      oracle : 'WHERE "User".id = 1'
+describe(Support.getTestDialectTeaser('SQL'), () => {
+  describe('whereQuery', () => {
+    
+    it('empty', () => {
+      const params={};
+      const options=undefined;
+      const expectation={
+        default: ''
+      };
+      expectsql(queryGenerator.whereQuery(params, options), expectation);
     });
 
-    test("{ id: 1 }, { prefix: current.literal(sql.quoteTable.call(current.dialect.QueryGenerator, {schema: 'yolo', tableName: 'User'})) }", () => {
-      expectsql(sql.whereQuery({id: 1}, {prefix: current.literal(sql.quoteTable.call(current.dialect.QueryGenerator, {schema: 'yolo', tableName: 'User'}))}), {
+    it('empty array', () => {
+      const params=[];
+      const options=undefined;
+      const expectation={
+        default: ''
+      };
+      expectsql(queryGenerator.whereQuery(params, options), expectation);
+    });
+
+    it('id = 1', () => {
+      const params={id: 1};
+      const options=undefined;
+      const expectation={
+        default: 'WHERE [id] = 1',
+        oracle: 'WHERE id = 1'
+      };
+      expectsql(queryGenerator.whereQuery(params, options), expectation);
+    });
+
+    it('User.id = 1', () => {
+      const params={id: 1};
+      const options={prefix: 'User'};
+      const expectation={
+        default: 'WHERE [User].[id] = 1',
+        oracle: 'WHERE "User".id = 1'
+      };
+      expectsql(queryGenerator.whereQuery(params, options), expectation);
+    });
+
+    it('yolo.User.id = 1', () => {
+      const params={id: 1};
+      const options={prefix: current.literal(queryGenerator.quoteTable.call(current.dialect.QueryGenerator, {schema: 'yolo', tableName: 'User'}))};
+      const expectation={
         default: 'WHERE [yolo.User].[id] = 1',
         oracle: 'WHERE yolo."User".id = 1',
         postgres: 'WHERE "yolo"."User"."id" = 1',
         mssql: 'WHERE [yolo].[User].[id] = 1'
-      });
+      };
+      expectsql(queryGenerator.whereQuery(params, options), expectation);
     });
 
-    testsql({
-      name: 'a project',
-      $or: [
-        { id: [1, 2, 3] },
-        { id: { $gt: 10 } }
-      ]
-    }, {
-      default: "WHERE [name] = 'a project' AND ([id] IN (1, 2, 3) OR [id] > 10)",
-      oracle: "WHERE name = 'a project' AND (id IN (1, 2, 3) OR id > 10)",
-      mssql: "WHERE [name] = N'a project' AND ([id] IN (1, 2, 3) OR [id] > 10)"
-    });
-
-    testsql({
-      name: 'a project',
-      id: {
+    it("name = 'a project' and (id in (1,2,3) or id>10)", () => {
+      const params={
+        name: 'a project',
         $or: [
-          [1, 2, 3],
-          { $gt: 10 }
+          { id: [1, 2, 3] },
+          { id: { $gt: 10 } }
         ]
-      }
-    }, {
-      default: "WHERE [name] = 'a project' AND ([id] IN (1, 2, 3) OR [id] > 10)",
-      oracle: "WHERE name = 'a project' AND (id IN (1, 2, 3) OR id > 10)",
-      mssql: "WHERE [name] = N'a project' AND ([id] IN (1, 2, 3) OR [id] > 10)"
+      };
+      const options=undefined;
+      const expectation={
+        default: "WHERE [name] = 'a project' AND ([id] IN (1, 2, 3) OR [id] > 10)",
+        oracle: "WHERE name = 'a project' AND (id IN (1, 2, 3) OR id > 10)",
+        mssql: "WHERE [name] = N'a project' AND ([id] IN (1, 2, 3) OR [id] > 10)"
+      };
+      expectsql(queryGenerator.whereQuery(params, options), expectation);
     });
   });
 
-  suite('whereItemQuery', () => {
+  describe('whereItemQuery', () => {
     const testsql = function(key, value, options, expectation) {
       if (expectation === undefined) {
         expectation = options;
@@ -83,1056 +90,1604 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
       }
 
       test(key+': '+util.inspect(value, {depth: 10})+(options && ', '+util.inspect(options) || ''), () => {
-        return expectsql(sql.whereItemQuery(key, value, options), expectation);
+        return expectsql(queryGenerator.whereItemQuery(key, value, options), expectation);
       });
     };
 
-    testsql(undefined, 'lol=1', {
-      default: 'lol=1'
+    it('lol=1', () => {
+      const key=undefined;
+      const params='lol=1';
+      const options=undefined;
+      const expectation={
+        default: 'lol=1'
+      };
+      expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
     });
 
-    testsql('deleted', null, {
-      default: '`deleted` IS NULL',
-      oracle: 'deleted IS NULL',
-      postgres: '"deleted" IS NULL',
-      mssql: '[deleted] IS NULL'
+    it('deleted is null', () => {
+      const key='deleted';
+      const params=null;
+      const options=undefined;
+      const expectation={
+        default: '`deleted` IS NULL',
+        oracle: 'deleted IS NULL',
+        postgres: '"deleted" IS NULL',
+        mssql: '[deleted] IS NULL'
+      };
+      expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
     });
 
-    suite('$in', () => {
-      testsql('equipment', {
-        $in: [1, 3]
-      }, {
-        default: '[equipment] IN (1, 3)',
-        oracle: 'equipment IN (1, 3)'
+    describe('$in', () => {
+      it('equipment in (1, 3)', () => {
+        const key='equipment';
+        const params={
+          $in: [1, 3]
+        };
+        const options=undefined;
+        const expectation={
+          default: '[equipment] IN (1, 3)',
+          oracle: 'equipment IN (1, 3)'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
       });
 
-      testsql('equipment', {
-        $in: []
-      }, {
-        default: '[equipment] IN (NULL)',
-        oracle: 'equipment IN (NULL)'
+      it('equipment in null', () => {
+        const key='equipment';
+        const params={
+          $in: []
+        };
+        const options=undefined;
+        const expectation={
+          default: '[equipment] IN (NULL)',
+          oracle: 'equipment IN (NULL)'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
       });
 
-      testsql('muscles', {
-        in: [2, 4]
-      }, {
-        default: '[muscles] IN (2, 4)',
-        oracle: 'muscles IN (2, 4)'
+      it('muscles in (2, 4)', () => {
+        const key='muscles';
+        const params={
+          $in: [2, 4]
+        };
+        const options=undefined;
+        const expectation={
+          default: '[muscles] IN (2, 4)',
+          oracle: 'muscles IN (2, 4)'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
       });
 
-      testsql('equipment', {
-        $in: current.literal(
-          '(select order_id from product_orders where product_id = 3)'
-        )
-      }, {
-        default: '[equipment] IN (select order_id from product_orders where product_id = 3)',
-        oracle: 'equipment IN (select order_id from product_orders where product_id = 3)'
-      });
-    });
-
-    suite('Buffer', () => {
-      testsql('field', new Buffer('Sequelize'), {
-        postgres: '"field" = E\'\\\\x53657175656c697a65\'',
-        oracle: 'field = hextoraw(\'53657175656c697a65\')',
-        sqlite: "`field` = X'53657175656c697a65'",
-        mysql: "`field` = X'53657175656c697a65'",
-        mssql: '[field] = 0x53657175656c697a65'
-      });
-    });
-
-    suite('$not', () => {
-      testsql('deleted', {
-        $not: true
-      }, {
-        default: '[deleted] IS NOT true',
-        oracle: 'deleted IS NOT 1',
-        mssql: '[deleted] IS NOT 1',
-        sqlite: '`deleted` IS NOT 1'
-      });
-
-      testsql('deleted', {
-        $not: null
-      }, {
-        default: '[deleted] IS NOT NULL',
-        oracle: 'deleted IS NOT NULL'
-      });
-
-      testsql('muscles', {
-        $not: 3
-      }, {
-        default: '[muscles] != 3',
-        oracle: 'muscles != 3'
-      });
-    });
-
-    suite('$notIn', () => {
-      testsql('equipment', {
-        $notIn: []
-      }, {
-        default: ''
-      });
-
-      testsql('equipment', {
-        $notIn: [4, 19]
-      }, {
-        default: '[equipment] NOT IN (4, 19)',
-        oracle: 'equipment NOT IN (4, 19)'
-      });
-
-      testsql('equipment', {
-        $notIn: current.literal(
-          '(select order_id from product_orders where product_id = 3)'
-        )
-      }, {
-        default: '[equipment] NOT IN (select order_id from product_orders where product_id = 3)',
-        oracle: 'equipment NOT IN (select order_id from product_orders where product_id = 3)'
+      it('equipment IN (select order_id from product_orders where product_id = 3)', () => {
+        const key='equipment';
+        const params={
+          $in: current.literal('(select order_id from product_orders where product_id = 3)')
+        };
+        const options=undefined;
+        const expectation={
+          default: '[equipment] IN (select order_id from product_orders where product_id = 3)',
+          oracle: 'equipment IN (select order_id from product_orders where product_id = 3)'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
       });
     });
 
-    suite('$ne', () => {
-      testsql('email', {
-        $ne: 'jack.bauer@gmail.com'
-      }, {
-        default: "[email] != 'jack.bauer@gmail.com'",
-        oracle: "email != 'jack.bauer@gmail.com'",
-        mssql: "[email] != N'jack.bauer@gmail.com'"
+    describe('Buffer', () => {
+      it("field = X'53657175656c697a65'", () => {
+        const key='field';
+        const params=new Buffer('Sequelize');
+        const options=undefined;
+        const expectation={
+          postgres: '"field" = E\'\\\\x53657175656c697a65\'',
+          oracle: 'field = hextoraw(\'53657175656c697a65\')',
+          sqlite: "`field` = X'53657175656c697a65'",
+          mysql: "`field` = X'53657175656c697a65'",
+          mssql: '[field] = 0x53657175656c697a65'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
       });
     });
 
-    suite('$and/$or/$not', () => {
-      suite('$or', () => {
-        testsql('email', {
-          $or: ['maker@mhansen.io', 'janzeh@gmail.com']
-        }, {
-          default: '([email] = \'maker@mhansen.io\' OR [email] = \'janzeh@gmail.com\')',
-          oracle: '(email = \'maker@mhansen.io\' OR email = \'janzeh@gmail.com\')',
-          mssql: '([email] = N\'maker@mhansen.io\' OR [email] = N\'janzeh@gmail.com\')'
+    describe('$not', () => {
+      it('deleted is not true', () => {
+        const key='deleted';
+        const params={
+          $not: true
+        };
+        const options=undefined;
+        const expectation={
+          default: '[deleted] IS NOT true',
+          oracle: 'deleted IS NOT 1',
+          mssql: '[deleted] IS NOT 1',
+          sqlite: '`deleted` IS NOT 1'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+      });
+
+      it('deleted is not null', () => {
+        const key='deleted';
+        const params={
+          $not: null
+        };
+        const options=undefined;
+        const expectation={
+          default: '[deleted] IS NOT NULL',
+          oracle: 'deleted IS NOT NULL'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+      });
+
+      it('muscles != 3', () => {
+        const key='muscles';
+        const params={
+          $not: 3
+        };
+        const options=undefined;
+        const expectation={
+          default: '[muscles] != 3',
+          oracle: 'muscles != 3'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+      });
+    });
+
+    describe('$notIn', () => {
+      it('equipment not in []', () => {
+        const key='equipment';
+        const params={
+          $notIn: []
+        };
+        const options=undefined;
+        const expectation={
+          default: ''
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+      });
+
+      it('equipment not in (4, 19)', () => {
+        const key='equipment';
+        const params={
+          $notIn: [4, 19]
+        };
+        const options=undefined;
+        const expectation={
+          default: '[equipment] NOT IN (4, 19)',
+          oracle: 'equipment NOT IN (4, 19)'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+      });
+
+      it('equipment not in (select order_id from product_orders where product_id = 3)', () => {
+        const key='equipment';
+        const params={
+          $notIn: current.literal(
+            '(select order_id from product_orders where product_id = 3)'
+          )
+        };
+        const options=undefined;
+        const expectation={
+          default: '[equipment] NOT IN (select order_id from product_orders where product_id = 3)',
+          oracle: 'equipment NOT IN (select order_id from product_orders where product_id = 3)'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+      });
+    });
+
+    describe('$ne', () => {
+      it("email != 'jack.bauer@gmail.com", () => {
+        const key='email';
+        const params={
+          $ne: 'jack.bauer@gmail.com'
+        };
+        const options=undefined;
+        const expectation={
+          default: "[email] != 'jack.bauer@gmail.com'",
+          oracle: "email != 'jack.bauer@gmail.com'",
+          mssql: "[email] != N'jack.bauer@gmail.com'"
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+      });
+    });
+
+    describe('$and/$or/$not', () => {
+      describe('$or', () => {
+        it("email = 'maker@mhansen.io' or email = 'janzeh@gmail.com'", () => {
+          const key='email';
+          const params={
+            $or: ['maker@mhansen.io', 'janzeh@gmail.com']
+          };
+          const options=undefined;
+          const expectation={
+            default: '([email] = \'maker@mhansen.io\' OR [email] = \'janzeh@gmail.com\')',
+            oracle: '(email = \'maker@mhansen.io\' OR email = \'janzeh@gmail.com\')',
+            mssql: '([email] = N\'maker@mhansen.io\' OR [email] = N\'janzeh@gmail.com\')'
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('rank', {
-          $or: {
-            $lt: 100,
-            $eq: null
-          }
-        }, {
-          default: '([rank] < 100 OR [rank] IS NULL)',
-          oracle: '(rank < 100 OR rank IS NULL)'
+        it('rank < 100 or rank is null', () => {
+          const key='rank';
+          const params={
+            $or: {
+              $lt: 100,
+              $eq: null
+            }
+          };
+          const options=undefined;
+          const expectation={
+            default: '([rank] < 100 OR [rank] IS NULL)',
+            oracle: '(rank < 100 OR rank IS NULL)'
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('$or', [
-          {email: 'maker@mhansen.io'},
-          {email: 'janzeh@gmail.com'}
-        ], {
-          default: '([email] = \'maker@mhansen.io\' OR [email] = \'janzeh@gmail.com\')',
-          oracle: '(email = \'maker@mhansen.io\' OR email = \'janzeh@gmail.com\')',
-          mssql: '([email] = N\'maker@mhansen.io\' OR [email] = N\'janzeh@gmail.com\')'
+        it("email = 'maker@mhansen.io' or email = 'janzeh@gmail.com'  (key = $or)", () => {
+          const key='$or';
+          const params=[
+            {email: 'maker@mhansen.io'},
+            {email: 'janzeh@gmail.com'}
+          ];
+          const options=undefined;
+          const expectation={
+            default: '([email] = \'maker@mhansen.io\' OR [email] = \'janzeh@gmail.com\')',
+            oracle: '(email = \'maker@mhansen.io\' OR email = \'janzeh@gmail.com\')',
+            mssql: '([email] = N\'maker@mhansen.io\' OR [email] = N\'janzeh@gmail.com\')'
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('$or', {
-          email: 'maker@mhansen.io',
-          name: 'Mick Hansen'
-        }, {
-          default: '([email] = \'maker@mhansen.io\' OR [name] = \'Mick Hansen\')',
-          oracle: '(email = \'maker@mhansen.io\' OR name = \'Mick Hansen\')',
-          mssql: '([email] = N\'maker@mhansen.io\' OR [name] = N\'Mick Hansen\')'
+        it("email = 'maker@mhansen.io' or name = 'Mick Hansen'", () => {
+          const key='$or';
+          const params={
+            email: 'maker@mhansen.io',
+            name: 'Mick Hansen'
+          };
+          const options=undefined;
+          const expectation={
+            default: '([email] = \'maker@mhansen.io\' OR [name] = \'Mick Hansen\')',
+            oracle: '(email = \'maker@mhansen.io\' OR name = \'Mick Hansen\')',
+            mssql: '([email] = N\'maker@mhansen.io\' OR [name] = N\'Mick Hansen\')'
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('$or', {
-          equipment: [1, 3],
-          muscles: {
-            $in: [2, 4]
-          }
-        }, {
-          default: '([equipment] IN (1, 3) OR [muscles] IN (2, 4))',
-          oracle: '(equipment IN (1, 3) OR muscles IN (2, 4))'
+        it('equipment in (1, 3) or muscles in (2, 4)', () => {
+          const key='$or';
+          const params={
+            equipment: [1, 3],
+            muscles: {
+              $in: [2, 4]
+            }
+          };
+          const options=undefined;
+          const expectation={
+            default: '([equipment] IN (1, 3) OR [muscles] IN (2, 4))',
+            oracle: '(equipment IN (1, 3) OR muscles IN (2, 4))'
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('$or', [
-          {
-            roleName: 'NEW'
-          }, {
-            roleName: 'CLIENT',
-            type: 'CLIENT'
-          }
-        ], {
-          default: "([roleName] = 'NEW' OR ([roleName] = 'CLIENT' AND [type] = 'CLIENT'))",
-          oracle: "(roleName = 'NEW' OR (roleName = 'CLIENT' AND \"type\" = 'CLIENT'))",
-          mssql: "([roleName] = N'NEW' OR ([roleName] = N'CLIENT' AND [type] = N'CLIENT'))"
+        it("roleName = 'NEW' or (roleName = 'CLIENT' and type = 'CLIENT')", () => {
+          const key='$or';
+          const params=[
+            {
+              roleName: 'NEW'
+            }, {
+              roleName: 'CLIENT',
+              type: 'CLIENT'
+            }
+          ];
+          const options=undefined;
+          const expectation={
+            default: "([roleName] = 'NEW' OR ([roleName] = 'CLIENT' AND [type] = 'CLIENT'))",
+            oracle: "(roleName = 'NEW' OR (roleName = 'CLIENT' AND \"type\" = 'CLIENT'))",
+            mssql: "([roleName] = N'NEW' OR ([roleName] = N'CLIENT' AND [type] = N'CLIENT'))"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        test('sequelize.or({group_id: 1}, {user_id: 2})', function() {
-          expectsql(sql.whereItemQuery(undefined, this.sequelize.or({group_id: 1}, {user_id: 2})), {
+        it('sequelize.or({group_id: 1}, {user_id: 2})', function() {
+          expectsql(queryGenerator.whereItemQuery(undefined, this.sequelize.or({group_id: 1}, {user_id: 2})), {
             default: '([group_id] = 1 OR [user_id] = 2)',
             oracle: '(group_id = 1 OR user_id = 2)'
           });
         });
 
-        test("sequelize.or({group_id: 1}, {user_id: 2, role: 'admin'})", function() {
-          expectsql(sql.whereItemQuery(undefined, this.sequelize.or({group_id: 1}, {user_id: 2, role: 'admin'})), {
+        it("sequelize.or({group_id: 1}, {user_id: 2, role: 'admin'})", function() {
+          expectsql(queryGenerator.whereItemQuery(undefined, this.sequelize.or({group_id: 1}, {user_id: 2, role: 'admin'})), {
             default: "([group_id] = 1 OR ([user_id] = 2 AND [role] = 'admin'))",
             oracle: "(group_id = 1 OR (user_id = 2 AND \"role\" = 'admin'))",
             mssql: "([group_id] = 1 OR ([user_id] = 2 AND [role] = N'admin'))"
           });
         });
 
-        testsql('$or', [], {
-          default: '0 = 1'
+        it('0 = 1 (array)', () => {
+          const key='$or';
+          const params=[];
+          const options=undefined;
+          const expectation={
+            default: '0 = 1'
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('$or', {}, {
-          default: '0 = 1'
+        it('0 = 1 (object)', () => {
+          const key='$or';
+          const params={};
+          const options=undefined;
+          const expectation={
+            default: '0 = 1'
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        test('sequelize.or()', function() {
-          expectsql(sql.whereItemQuery(undefined, this.sequelize.or()), {
+        it('sequelize.or()', function() {
+          expectsql(queryGenerator.whereItemQuery(undefined, this.sequelize.or()), {
             default: '0 = 1'
           });
         });
       });
 
-      suite('$and', () => {
-        testsql('$and', {
-          $or: {
-            group_id: 1,
-            user_id: 2
-          },
-          shared: 1
-        }, {
-          default: '(([group_id] = 1 OR [user_id] = 2) AND [shared] = 1)',
-          oracle: '((group_id = 1 OR user_id = 2) AND \"shared\" = 1)'
+      describe('$and', () => {
+        it('(group_id = 1 or user_id = 2) and shared = 1', () => {
+          const key='$and';
+          const params={
+            $or: {
+              group_id: 1,
+              user_id: 2
+            },
+            shared: 1
+          };
+          const options=undefined;
+          const expectation={
+            default: '(([group_id] = 1 OR [user_id] = 2) AND [shared] = 1)',
+            oracle: '((group_id = 1 OR user_id = 2) AND \"shared\" = 1)'
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('$and', [
-          {
-            name: {
-              $like: '%hello'
+        it("name like '%hello' and name like 'hello%'", () => {
+          const key='$and';
+          const params=[
+            {
+              name: {
+                $like: '%hello'
+              }
+            },
+            {
+              name: {
+                $like: 'hello%'
+              }
             }
-          },
-          {
-            name: {
-              $like: 'hello%'
+          ];
+          const options=undefined;
+          const expectation={
+            default: "([name] LIKE '%hello' AND [name] LIKE 'hello%')",
+            oracle: "(name LIKE '%hello' AND name LIKE 'hello%')",
+            mssql: "([name] LIKE N'%hello' AND [name] LIKE N'hello%')"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+        });
+
+        it('rank != 15 and rank between 10 and 20', () => {
+          const key='rank';
+          const params={
+            $and: {
+              $ne: 15,
+              $between: [10, 20]
             }
-          }
-        ], {
-          default: "([name] LIKE '%hello' AND [name] LIKE 'hello%')",
-          oracle: "(name LIKE '%hello' AND name LIKE 'hello%')",
-          mssql: "([name] LIKE N'%hello' AND [name] LIKE N'hello%')"
+          };
+          const options=undefined;
+          const expectation={
+            default: '([rank] != 15 AND [rank] BETWEEN 10 AND 20)',
+            oracle: '(rank != 15 AND rank BETWEEN 10 AND 20)'
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('rank', {
-          $and: {
-            $ne: 15,
-            $between: [10, 20]
-          }
-        }, {
-          default: '([rank] != 15 AND [rank] BETWEEN 10 AND 20)',
-          oracle: '(rank != 15 AND rank BETWEEN 10 AND 20)'
+        it("name like '%someValue1% and name like '%someValue2%'", () => {
+          const key='name';
+          const params={
+            $and: [
+              {like: '%someValue1%'},
+              {like: '%someValue2%'}
+            ]
+          };
+          const options=undefined;
+          const expectation={
+            default: "([name] LIKE '%someValue1%' AND [name] LIKE '%someValue2%')",
+            oracle: "(name LIKE '%someValue1%' AND name LIKE '%someValue2%')",
+            mssql: "([name] LIKE N'%someValue1%' AND [name] LIKE N'%someValue2%')"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('name', {
-          $and: [
-            {like: '%someValue1%'},
-            {like: '%someValue2%'}
-          ]
-        }, {
-          default: "([name] LIKE '%someValue1%' AND [name] LIKE '%someValue2%')",
-          oracle: "(name LIKE '%someValue1%' AND name LIKE '%someValue2%')",
-          mssql: "([name] LIKE N'%someValue1%' AND [name] LIKE N'%someValue2%')"
-        });
-
-        test('sequelize.and({shared: 1, sequelize.or({group_id: 1}, {user_id: 2}))', function() {
-          expectsql(sql.whereItemQuery(undefined, this.sequelize.and({shared: 1}, this.sequelize.or({group_id: 1}, {user_id: 2}))), {
+        it('sequelize.and({shared: 1, sequelize.or({group_id: 1}, {user_id: 2}))', function() {
+          expectsql(queryGenerator.whereItemQuery(undefined, this.sequelize.and({shared: 1}, this.sequelize.or({group_id: 1}, {user_id: 2}))), {
             default: '([shared] = 1 AND ([group_id] = 1 OR [user_id] = 2))',
             oracle: '(\"shared\" = 1 AND (group_id = 1 OR user_id = 2))'
           });
         });
       });
 
-      suite('$not', () => {
-        testsql('$not', {
-          $or: {
-            group_id: 1,
-            user_id: 2
-          },
-          shared: 1
-        }, {
-          default: 'NOT (([group_id] = 1 OR [user_id] = 2) AND [shared] = 1)',
-          oracle : 'NOT ((group_id = 1 OR user_id = 2) AND "shared" = 1)'
+      describe('$not', () => {
+        it('not ((group_id = 1 or user_id = 2) and shared = 1)', () => {
+          const key='$not';
+          const params={
+            $or: {
+              group_id: 1,
+              user_id: 2
+            },
+            shared: 1
+          };
+          const options=undefined;
+          const expectation={
+            default: 'NOT (([group_id] = 1 OR [user_id] = 2) AND [shared] = 1)',
+            oracle: 'NOT ((group_id = 1 OR user_id = 2) AND "shared" = 1)'
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('$not', [], {
-          default: '0 = 1'
+        it('0 = 1 (array)', () => {
+          const key='$not';
+          const params=[];
+          const options=undefined;
+          const expectation={
+            default: '0 = 1'
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('$not', {}, {
-          default: '0 = 1'
+        it('0 = 1 (object)', () => {
+          const key='$not';
+          const params={};
+          const options=undefined;
+          const expectation={
+            default: '0 = 1'
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
       });
     });
 
-    suite('$col', () => {
-      testsql('userId', {
-        $col: 'user.id'
-      }, {
-        default: '[userId] = [user].[id]',
-        oracle : 'userId = "user".id'
-      });
-
-      testsql('userId', {
-        $eq: {
+    describe('$col', () => {
+      it('userId = user.id', () => {
+        const key='userId';
+        const params={
           $col: 'user.id'
-        }
-      }, {
-        default: '[userId] = [user].[id]',
-        oracle: 'userId = "user".id'
+        };
+        const options=undefined;
+        const expectation={
+          default: '[userId] = [user].[id]',
+          oracle: 'userId = "user".id'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
       });
 
-      testsql('userId', {
-        $gt: {
-          $col: 'user.id'
-        }
-      }, {
-        default: '[userId] > [user].[id]',
-        oracle: 'userId > "user".id'
+      it('userId = user.id ($eq)', () => {
+        const key='userId';
+        const params={
+          $eq: {
+            $col: 'user.id'
+          }
+        };
+        const options=undefined;
+        const expectation={
+          default: '[userId] = [user].[id]',
+          oracle: 'userId = "user".id'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
       });
 
-      testsql('$or', [
-        {'ownerId': {$col: 'user.id'}},
-        {'ownerId': {$col: 'organization.id'}}
-      ], {
-        default: '([ownerId] = [user].[id] OR [ownerId] = [organization].[id])',
-        oracle: '(ownerId = "user".id OR ownerId = "organization".id)'
+      it('userId > user.id', () => {
+        const key='userId';
+        const params={
+          $gt: {
+            $col: 'user.id'
+          }
+        };
+        const options=undefined;
+        const expectation={
+          default: '[userId] > [user].[id]',
+          oracle: 'userId > "user".id'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
       });
 
-      testsql('$organization.id$', {
-        $col: 'user.organizationId'
-      }, {
-        default: '[organization].[id] = [user].[organizationId]',
-        oracle: '"organization".id = "user".organizationId'
+      it('ownerId = user.id or ownerId = organization.id', () => {
+        const key='$or';
+        const params=[
+          {'ownerId': {$col: 'user.id'}},
+          {'ownerId': {$col: 'organization.id'}}
+        ];
+        const options=undefined;
+        const expectation={
+          default: '([ownerId] = [user].[id] OR [ownerId] = [organization].[id])',
+          oracle: '(ownerId = "user".id OR ownerId = "organization".id)'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
       });
 
-      testsql('$offer.organization.id$', {
-        $col: 'offer.user.organizationId'
-      }, {
-        default: '[offer->organization].[id] = [offer->user].[organizationId]',
-        oracle: '"offer->organization".id = "offer->user".organizationId'
+      it('organization.id = user.organizationId', () => {
+        const key='$organization.id$';
+        const params={
+          $col: 'user.organizationId'
+        };
+        const options=undefined;
+        const expectation={
+          default: '[organization].[id] = [user].[organizationId]',
+          oracle: '"organization".id = "user".organizationId'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+      });
+
+      it('organization.id = user.organizationId', () => {
+        const key='$offer.organization.id$';
+        const params={
+          $col: 'offer.user.organizationId'
+        };
+        const options=undefined;
+        const expectation={
+          default: '[offer->organization].[id] = [offer->user].[organizationId]',
+          oracle: '"offer->organization".id = "offer->user".organizationId'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
       });
     });
 
-    suite('$gt', () => {
-      testsql('rank', {
-        $gt: 2
-      }, {
-        default: '[rank] > 2',
-        oracle: 'rank > 2'
+    describe('$gt', () => {
+      it('rank > 2', () => {
+        const key='rank';
+        const params={
+          $gt: 2
+        };
+        const options=undefined;
+        const expectation={
+          default: '[rank] > 2',
+          oracle: 'rank > 2'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
       });
 
-      testsql('created_at', {
-        $lt: {
-          $col: 'updated_at'
-        }
-      }, {
-        default: '[created_at] < [updated_at]',
-        oracle: 'created_at < updated_at'
+      it('created_at < updated_at', () => {
+        const key='created_at';
+        const params={
+          $lt: {
+            $col: 'updated_at'
+          }
+        };
+        const options=undefined;
+        const expectation={
+          default: '[created_at] < [updated_at]',
+          oracle: 'created_at < updated_at'
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
       });
     });
 
-    suite('$raw', () => {
-      test('should fail on $raw', () => {
+    describe('$raw', () => {
+      it('should fail on $raw', () => {
         expect(() => {
-          sql.whereItemQuery('rank', {
+          queryGenerator.whereItemQuery('rank', {
             $raw: 'AGHJZ'
           });
         }).to.throw(Error, 'The `$raw` where property is no longer supported.  Use `sequelize.literal` instead.');
       });
     });
 
-    suite('$like', () => {
-      testsql('username', {
-        $like: '%swagger'
-      }, {
-        default: "[username] LIKE '%swagger'",
-        oracle: "username LIKE '%swagger'",
-        mssql: "[username] LIKE N'%swagger'"
+    describe('$like', () => {
+      it("username like '%swagger'", () => {
+        const key='username';
+        const params={
+          $like: '%swagger'
+        };
+        const options=undefined;
+        const expectation={
+          default: "[username] LIKE '%swagger'",
+          oracle: "username LIKE '%swagger'",
+          mssql: "[username] LIKE N'%swagger'"
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
       });
     });
 
-    suite('$between', () => {
-      testsql('date', {
-        $between: ['2013-01-01', '2013-01-11']
-      }, {
-        default: "[date] BETWEEN '2013-01-01' AND '2013-01-11'",
-        oracle: "\"date\" BETWEEN '2013-01-01' AND '2013-01-11'",
-        mssql: "[date] BETWEEN N'2013-01-01' AND N'2013-01-11'"
+    describe('date', () => {
+      it("date between '2013-01-01' and '2013-01-11'", () => {
+        const key='date';
+        const params={
+          $between: ['2013-01-01', '2013-01-11']
+        };
+        const options=undefined;
+        const expectation={
+          default: "[date] BETWEEN '2013-01-01' AND '2013-01-11'",
+          oracle: "\"date\" BETWEEN '2013-01-01' AND '2013-01-11'",
+          mssql: "[date] BETWEEN N'2013-01-01' AND N'2013-01-11'"
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
       });
 
-      testsql('date', {
-        between: ['2012-12-10', '2013-01-02'],
-        nbetween: ['2013-01-04', '2013-01-20']
-      }, {
-        default: "([date] BETWEEN '2012-12-10' AND '2013-01-02' AND [date] NOT BETWEEN '2013-01-04' AND '2013-01-20')",
-        oracle: "(\"date\" BETWEEN '2012-12-10' AND '2013-01-02' AND \"date\" NOT BETWEEN '2013-01-04' AND '2013-01-20')",
-        mssql: "([date] BETWEEN N'2012-12-10' AND N'2013-01-02' AND [date] NOT BETWEEN N'2013-01-04' AND N'2013-01-20')"
+      it("date between '2012-12-10' and '2013-01-02' and date not between '2013-01-04' and '2013-01-20'", () => {
+        const key='date';
+        const params={
+          between: ['2012-12-10', '2013-01-02'],
+          nbetween: ['2013-01-04', '2013-01-20']
+        };
+        const options=undefined;
+        const expectation={
+          default: "([date] BETWEEN '2012-12-10' AND '2013-01-02' AND [date] NOT BETWEEN '2013-01-04' AND '2013-01-20')",
+          oracle: "(\"date\" BETWEEN '2012-12-10' AND '2013-01-02' AND \"date\" NOT BETWEEN '2013-01-04' AND '2013-01-20')",
+          mssql: "([date] BETWEEN N'2012-12-10' AND N'2013-01-02' AND [date] NOT BETWEEN N'2013-01-04' AND N'2013-01-20')"
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
       });
     });
 
-    suite('$notBetween', () => {
-      testsql('date', {
-        $notBetween: ['2013-01-01', '2013-01-11']
-      }, {
-        default: "[date] NOT BETWEEN '2013-01-01' AND '2013-01-11'",
-        oracle: "\"date\" NOT BETWEEN '2013-01-01' AND '2013-01-11'",
-        mssql: "[date] NOT BETWEEN N'2013-01-01' AND N'2013-01-11'"
+    describe('$notBetween', () => {
+      it("date not between '2013-01-01' and '2013-01-11'", () => {
+        const key='date';
+        const params={
+          $notBetween: ['2013-01-01', '2013-01-11']
+        };
+        const options=undefined;
+        const expectation={
+          default: "[date] NOT BETWEEN '2013-01-01' AND '2013-01-11'",
+          oracle: "\"date\" NOT BETWEEN '2013-01-01' AND '2013-01-11'",
+          mssql: "[date] NOT BETWEEN N'2013-01-01' AND N'2013-01-11'"
+        };
+        expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
       });
     });
 
     if (current.dialect.supports.ARRAY) {
-      suite('ARRAY', () => {
-        suite('$contains', () => {
-          testsql('muscles', {
-            $contains: [2, 3]
-          }, {
-            postgres: '"muscles" @> ARRAY[2,3]'
+      describe('ARRAY', () => {
+        describe('$contains', () => {
+          it('muscles @> ARRAY[2,3]', () => {
+            const key='muscles';
+            const params={
+              $contains: [2, 3]
+            };
+            const options=undefined;
+            const expectation={
+              postgres: '"muscles" @> ARRAY[2,3]'
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
           });
 
-          testsql('muscles', {
-            $contained: [6, 8]
-          }, {
-            postgres: '"muscles" <@ ARRAY[6,8]'
+          it('muscles @> ARRAY[6,8]', () => {
+            const key='muscles';
+            const params={
+              $contains: [6, 8]
+            };
+            const options=undefined;
+            const expectation={
+              postgres: '"muscles" @> ARRAY[6,8]'
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
           });
 
-          testsql('muscles', {
-            $contains: [2, 5]
-          }, {
-            field: {
-              type: DataTypes.ARRAY(DataTypes.INTEGER)
-            }
-          }, {
-            postgres: '"muscles" @> ARRAY[2,5]::INTEGER[]'
-          });
-        });
-
-        suite('$overlap', () => {
-          testsql('muscles', {
-            $overlap: [3, 11]
-          }, {
-            postgres: '"muscles" && ARRAY[3,11]'
-          });
-
-          testsql('muscles', {
-            $overlap: [3, 1]
-          }, {
-            postgres: '"muscles" && ARRAY[3,1]'
-          });
-
-          testsql('muscles', {
-            '&&': [9, 182]
-          }, {
-            postgres: '"muscles" && ARRAY[9,182]'
-          });
-        });
-
-        suite('$any', () => {
-          testsql('userId', {
-            $any: [4, 5, 6]
-          }, {
-            postgres: '"userId" = ANY (ARRAY[4,5,6])'
-          });
-
-          testsql('userId', {
-            $any: [2, 5]
-          }, {
-            field: {
-              type: DataTypes.ARRAY(DataTypes.INTEGER)
-            }
-          }, {
-            postgres: '"userId" = ANY (ARRAY[2,5]::INTEGER[])'
-          });
-
-          suite('$values', () => {
-            testsql('userId', {
-              $any: {
-                $values: [4, 5, 6]
-              }
-            }, {
-              postgres: '"userId" = ANY (VALUES (4), (5), (6))'
-            });
-
-            testsql('userId', {
-              $any: {
-                $values: [2, 5]
-              }
-            }, {
+          it('muscles @> ARRAY[2,5]::Integer[]', () => {
+            const key='muscles';
+            const params={
+              $contains: [2, 5]
+            };
+            const options={
               field: {
                 type: DataTypes.ARRAY(DataTypes.INTEGER)
               }
-            }, {
-              postgres: '"userId" = ANY (VALUES (2), (5))'
-            });
+            };
+            const expectation={
+              postgres: '"muscles" @> ARRAY[2,5]::INTEGER[]'
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
           });
         });
 
-        suite('$all', () => {
-          testsql('userId', {
-            $all: [4, 5, 6]
-          }, {
-            postgres: '"userId" = ALL (ARRAY[4,5,6])'
+        describe('$overlap', () => {
+          it('muscles && ARRAY[3,11] ($overlap)', () => {
+            const key='muscles';
+            const params={
+              $overlap: [3, 11]
+            };
+            const options=undefined;
+            const expectation={
+              postgres: '"muscles" && ARRAY[3,11]'
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
           });
 
-          testsql('userId', {
-            $all: [2, 5]
-          }, {
-            field: {
-              type: DataTypes.ARRAY(DataTypes.INTEGER)
-            }
-          }, {
-            postgres: '"userId" = ALL (ARRAY[2,5]::INTEGER[])'
+          it('muscles && ARRAY[3,1] ($overlap)', () => {
+            const key='muscles';
+            const params={
+              $overlap: [3, 1]
+            };
+            const options=undefined;
+            const expectation={
+              postgres: '"muscles" && ARRAY[3,1]'
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
           });
 
-          suite('$values', () => {
-            testsql('userId', {
-              $all: {
-                $values: [4, 5, 6]
-              }
-            }, {
-              postgres: '"userId" = ALL (VALUES (4), (5), (6))'
-            });
+          it('muscles && ARRAY[9,182] (&&)', () => {
+            const key='muscles';
+            const params={
+              '&&': [9, 182]
+            };
+            const options=undefined;
+            const expectation={
+              postgres: '"muscles" && ARRAY[9,182]'
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+          });
+        });
 
-            testsql('userId', {
-              $all: {
-                $values: [2, 5]
-              }
-            }, {
+        describe('$any', () => {
+          it('userId = ANY (ARRAY[4,5,6])', () => {
+            const key='userId';
+            const params={
+              $any: [4, 5, 6]
+            };
+            const options=undefined;
+            const expectation={
+              postgres: '"userId" = ANY (ARRAY[4,5,6])'
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+          });
+
+          it('userId = ANY (ARRAY[2,5]::INTEGER[])', () => {
+            const key='userId';
+            const params={
+              $any: [2, 5]
+            };
+            const options={
               field: {
                 type: DataTypes.ARRAY(DataTypes.INTEGER)
               }
-            }, {
-              postgres: '"userId" = ALL (VALUES (2), (5))'
+            };
+            const expectation={
+              postgres: '"userId" = ANY (ARRAY[2,5]::INTEGER[])'
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+          });
+
+          describe('$values', () => {
+            it('userId = ANY (VALUES (4), (5), (6))', () => {
+              const key='userId';
+              const params={
+                $any: {
+                  $values: [4, 5, 6]
+                }
+              };
+              const options=undefined;
+              const expectation={
+                postgres: '"userId" = ANY (VALUES (4), (5), (6))'
+              };
+              expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+            });
+
+            it('userId = ANY (VALUES (2), (5))', () => {
+              const key='userId';
+              const params={
+                $any: {
+                  $values: [2, 5]
+                }
+              };
+              const options={
+                field: {
+                  type: DataTypes.ARRAY(DataTypes.INTEGER)
+                }
+              };
+              const expectation={
+                postgres: '"userId" = ANY (VALUES (2), (5))'
+              };
+              expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
             });
           });
         });
 
-        suite('$like', () => {
-          testsql('userId', {
-            $like: {
-              $any: ['foo', 'bar', 'baz']
-            }
-          }, {
-            postgres: "\"userId\" LIKE ANY (ARRAY['foo','bar','baz'])"
+        describe('$all', () => {
+          it('userId = ALL (ARRAY[4,5,6])', () => {
+            const key='userId';
+            const params={
+              $all: [4, 5, 6]
+            };
+            const options=undefined;
+            const expectation={
+              postgres: '"userId" = ALL (ARRAY[4,5,6])'
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
           });
 
-          testsql('userId', {
-            $iLike: {
-              $any: ['foo', 'bar', 'baz']
-            }
-          }, {
-            postgres: "\"userId\" ILIKE ANY (ARRAY['foo','bar','baz'])"
+          it('userId = ALL (ARRAY[2,5]::INTEGER[])', () => {
+            const key='userId';
+            const params={
+              $all: [2, 5]
+            };
+            const options={
+              field: {
+                type: DataTypes.ARRAY(DataTypes.INTEGER)
+              }
+            };
+            const expectation={
+              postgres: '"userId" = ALL (ARRAY[2,5]::INTEGER[])'
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
           });
 
-          testsql('userId', {
-            $notLike: {
-              $any: ['foo', 'bar', 'baz']
-            }
-          }, {
-            postgres: "\"userId\" NOT LIKE ANY (ARRAY['foo','bar','baz'])"
+          describe('$values', () => {
+            it('userId = ALL (VALUES (4), (5), (6))', () => {
+              const key='userId';
+              const params={
+                $all: {
+                  $values: [4, 5, 6]
+                }
+              };
+              const options=undefined;
+              const expectation={
+                postgres: '"userId" = ALL (VALUES (4), (5), (6))'
+              };
+              expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+            });
+
+            it('userId = ALL (VALUES (2), (5))', () => {
+              const key='userId';
+              const params={
+                $all: {
+                  $values: [2, 5]
+                }
+              };
+              const options={
+                field: {
+                  type: DataTypes.ARRAY(DataTypes.INTEGER)
+                }
+              };
+              const expectation={
+                postgres: '"userId" = ALL (VALUES (2), (5))'
+              };
+              expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+            });
+          });
+        });
+
+        describe('$like', () => {
+          it("userId LIKE ANY (ARRAY['foo','bar','baz'])", () => {
+            const key='userId';
+            const params={
+              $like: {
+                $any: ['foo', 'bar', 'baz']
+              }
+            };
+            const options=undefined;
+            const expectation={
+              postgres: "\"userId\" LIKE ANY (ARRAY['foo','bar','baz'])"
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
           });
 
-          testsql('userId', {
-            $notILike: {
-              $any: ['foo', 'bar', 'baz']
-            }
-          }, {
-            postgres: "\"userId\" NOT ILIKE ANY (ARRAY['foo','bar','baz'])"
+          it("userId ILIKE ANY (ARRAY['foo','bar','baz'])", () => {
+            const key='userId';
+            const params={
+              $iLike: {
+                $any: ['foo', 'bar', 'baz']
+              }
+            };
+            const options=undefined;
+            const expectation={
+              postgres: "\"userId\" ILIKE ANY (ARRAY['foo','bar','baz'])"
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
           });
 
-          testsql('userId', {
-            $like: {
-              $all: ['foo', 'bar', 'baz']
-            }
-          }, {
-            postgres: "\"userId\" LIKE ALL (ARRAY['foo','bar','baz'])"
+          it("userId NOT LIKE ANY (ARRAY['foo','bar','baz'])", () => {
+            const key='userId';
+            const params={
+              $notLike: {
+                $any: ['foo', 'bar', 'baz']
+              }
+            };
+            const options=undefined;
+            const expectation={
+              postgres: "\"userId\" NOT LIKE ANY (ARRAY['foo','bar','baz'])"
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
           });
 
-          testsql('userId', {
-            $iLike: {
-              $all: ['foo', 'bar', 'baz']
-            }
-          }, {
-            postgres: "\"userId\" ILIKE ALL (ARRAY['foo','bar','baz'])"
+          it("userId NOT ILIKE ANY (ARRAY['foo','bar','baz'])", () => {
+            const key='userId';
+            const params={
+              $notILike: {
+                $any: ['foo', 'bar', 'baz']
+              }
+            };
+            const options=undefined;
+            const expectation={
+              postgres: "\"userId\" NOT ILIKE ANY (ARRAY['foo','bar','baz'])"
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
           });
 
-          testsql('userId', {
-            $notLike: {
-              $all: ['foo', 'bar', 'baz']
-            }
-          }, {
-            postgres: "\"userId\" NOT LIKE ALL (ARRAY['foo','bar','baz'])"
+          it("userId LIKE ALL (ARRAY['foo','bar','baz'])", () => {
+            const key='userId';
+            const params={
+              $like: {
+                $all: ['foo', 'bar', 'baz']
+              }
+            };
+            const options=undefined;
+            const expectation={
+              postgres: "\"userId\" LIKE ALL (ARRAY['foo','bar','baz'])"
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
           });
 
-          testsql('userId', {
-            $notILike: {
-              $all: ['foo', 'bar', 'baz']
-            }
-          }, {
-            postgres: "\"userId\" NOT ILIKE ALL (ARRAY['foo','bar','baz'])"
+          it("userId ILIKE ALL (ARRAY['foo','bar','baz'])", () => {
+            const key='userId';
+            const params={
+              $iLike: {
+                $all: ['foo', 'bar', 'baz']
+              }
+            };
+            const options=undefined;
+            const expectation={
+              postgres: "\"userId\" ILIKE ALL (ARRAY['foo','bar','baz'])"
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+          });
+
+          it("userId NOT LIKE ALL (ARRAY['foo','bar','baz'])", () => {
+            const key='userId';
+            const params={
+              $notLike: {
+                $all: ['foo', 'bar', 'baz']
+              }
+            };
+            const options=undefined;
+            const expectation={
+              postgres: "\"userId\" NOT LIKE ALL (ARRAY['foo','bar','baz'])"
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+          });
+
+          it("userId NOT ILIKE ALL (ARRAY['foo','bar','baz'])", () => {
+            const key='userId';
+            const params={
+              $notILike: {
+                $all: ['foo', 'bar', 'baz']
+              }
+            };
+            const options=undefined;
+            const expectation={
+              postgres: "\"userId\" NOT ILIKE ALL (ARRAY['foo','bar','baz'])"
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
           });
         });
       });
     }
 
     if (current.dialect.supports.RANGE) {
-      suite('RANGE', () => {
-
-        testsql('range', {
-          $contains: new Date(Date.UTC(2000, 1, 1))
-        }, {
-          field: {
-            type: new DataTypes.postgres.RANGE(DataTypes.DATE)
-          },
-          prefix: 'Timeline'
-        }, {
-          postgres: "\"Timeline\".\"range\" @> '2000-02-01 00:00:00.000 +00:00'::timestamptz"
+      describe('RANGE', () => {
+        it("Timeline.range @> '2000-02-01 00:00:00.000 +00:00'::timestamptz", () => {
+          const key='range';
+          const params={
+            $contains: new Date(Date.UTC(2000, 1, 1))
+          };
+          const options={
+            field: {
+              type: new DataTypes.postgres.RANGE(DataTypes.DATE)
+            },
+            prefix: 'Timeline'
+          };
+          const expectation={
+            postgres: "\"Timeline\".\"range\" @> '2000-02-01 00:00:00.000 +00:00'::timestamptz"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+        });
+        
+        it('Timeline.range @> [2000-02-01 00:00:00.000 +00:00,2000-03-01 00:00:00.000 +00:00)', () => {
+          const key='range';
+          const params={
+            $contains: [new Date(Date.UTC(2000, 1, 1)), new Date(Date.UTC(2000, 2, 1))]
+          };
+          const options={
+            field: {
+              type: new DataTypes.postgres.RANGE(DataTypes.DATE)
+            },
+            prefix: 'Timeline'
+          };
+          const expectation={
+            postgres: "\"Timeline\".\"range\" @> '[\"2000-02-01 00:00:00.000 +00:00\",\"2000-03-01 00:00:00.000 +00:00\")'"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('range', {
-          $contains: [new Date(Date.UTC(2000, 1, 1)), new Date(Date.UTC(2000, 2, 1))]
-        }, {
-          field: {
-            type: new DataTypes.postgres.RANGE(DataTypes.DATE)
-          },
-          prefix: 'Timeline'
-        }, {
-          postgres: "\"Timeline\".\"range\" @> '[\"2000-02-01 00:00:00.000 +00:00\",\"2000-03-01 00:00:00.000 +00:00\")'"
+        it('Timeline.range <@ [2000-02-01 00:00:00.000 +00:00,2000-03-01 00:00:00.000 +00:00)', () => {
+          const key='range';
+          const params={
+            $contained: [new Date(Date.UTC(2000, 1, 1)), new Date(Date.UTC(2000, 2, 1))]
+          };
+          const options={
+            field: {
+              type: new DataTypes.postgres.RANGE(DataTypes.DATE)
+            },
+            prefix: 'Timeline'
+          };
+          const expectation={
+            postgres: "\"Timeline\".\"range\" <@ '[\"2000-02-01 00:00:00.000 +00:00\",\"2000-03-01 00:00:00.000 +00:00\")'"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('range', {
-          $contained: [new Date(Date.UTC(2000, 1, 1)), new Date(Date.UTC(2000, 2, 1))]
-        }, {
-          field: {
-            type: new DataTypes.postgres.RANGE(DataTypes.DATE)
-          },
-          prefix: 'Timeline'
-        }, {
-          postgres: "\"Timeline\".\"range\" <@ '[\"2000-02-01 00:00:00.000 +00:00\",\"2000-03-01 00:00:00.000 +00:00\")'"
+        it('Timeline.unboundedRange @> [2000-02-01 00:00:00.000 +00:00,)', () => {
+          const key='unboundedRange';
+          const params={
+            $contains: [new Date(Date.UTC(2000, 1, 1)), null]
+          };
+          const options={
+            field: {
+              type: new DataTypes.postgres.RANGE(DataTypes.DATE)
+            },
+            prefix: 'Timeline'
+          };
+          const expectation={
+            postgres: "\"Timeline\".\"unboundedRange\" @> '[\"2000-02-01 00:00:00.000 +00:00\",)'"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('unboundedRange', {
-          $contains: [new Date(Date.UTC(2000, 1, 1)), null]
-        }, {
-          field: {
-            type: new DataTypes.postgres.RANGE(DataTypes.DATE)
-          },
-          prefix: 'Timeline'
-        }, {
-          postgres: "\"Timeline\".\"unboundedRange\" @> '[\"2000-02-01 00:00:00.000 +00:00\",)'"
+        it("Timeline.unboundedRange @> '[-infinity,infinity)'", () => {
+          const key='unboundedRange';
+          const params={
+            $contains: [-Infinity, Infinity]
+          };
+          const options={
+            field: {
+              type: new DataTypes.postgres.RANGE(DataTypes.DATE)
+            },
+            prefix: 'Timeline'
+          };
+          const expectation={
+            postgres: "\"Timeline\".\"unboundedRange\" @> '[-infinity,infinity)'"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('unboundedRange', {
-          $contains: [-Infinity, Infinity]
-        }, {
-          field: {
-            type: new DataTypes.postgres.RANGE(DataTypes.DATE)
-          },
-          prefix: 'Timeline'
-        }, {
-          postgres: "\"Timeline\".\"unboundedRange\" @> '[-infinity,infinity)'"
+        it("Room.reservedSeats && '[1,4)'", () => {
+          const key='reservedSeats';
+          const params={
+            $overlap: [1, 4]
+          };
+          const options={
+            field: {
+              type: new DataTypes.postgres.RANGE()
+            },
+            prefix: 'Room'
+          };
+          const expectation={
+            postgres: "\"Room\".\"reservedSeats\" && '[1,4)'"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('reservedSeats', {
-          $overlap: [1, 4]
-        }, {
-          field: {
-            type: new DataTypes.postgres.RANGE()
-          },
-          prefix: 'Room'
-        }, {
-          postgres: "\"Room\".\"reservedSeats\" && '[1,4)'"
+        it("Room.reservedSeats -|- '[1,4)'", () => {
+          const key='reservedSeats';
+          const params={
+            $adjacent: [1, 4]
+          };
+          const options={
+            field: {
+              type: new DataTypes.postgres.RANGE()
+            },
+            prefix: 'Room'
+          };
+          const expectation={
+            postgres: "\"Room\".\"reservedSeats\" -|- '[1,4)'"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('reservedSeats', {
-          $adjacent: [1, 4]
-        }, {
-          field: {
-            type: new DataTypes.postgres.RANGE()
-          },
-          prefix: 'Room'
-        }, {
-          postgres: "\"Room\".\"reservedSeats\" -|- '[1,4)'"
+        it("Room.reservedSeats << '[1,4)'", () => {
+          const key='reservedSeats';
+          const params={
+            $strictLeft: [1, 4]
+          };
+          const options={
+            field: {
+              type: new DataTypes.postgres.RANGE()
+            },
+            prefix: 'Room'
+          };
+          const expectation={
+            postgres: "\"Room\".\"reservedSeats\" << '[1,4)'"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('reservedSeats', {
-          $strictLeft: [1, 4]
-        }, {
-          field: {
-            type: new DataTypes.postgres.RANGE()
-          },
-          prefix: 'Room'
-        }, {
-          postgres: "\"Room\".\"reservedSeats\" << '[1,4)'"
+        it("Room.reservedSeats >> '[1,4)'", () => {
+          const key='reservedSeats';
+          const params={
+            $strictRight: [1, 4]
+          };
+          const options={
+            field: {
+              type: new DataTypes.postgres.RANGE()
+            },
+            prefix: 'Room'
+          };
+          const expectation={
+            postgres: "\"Room\".\"reservedSeats\" >> '[1,4)'"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('reservedSeats', {
-          $strictRight: [1, 4]
-        }, {
-          field: {
-            type: new DataTypes.postgres.RANGE()
-          },
-          prefix: 'Room'
-        }, {
-          postgres: "\"Room\".\"reservedSeats\" >> '[1,4)'"
+        it("Room.reservedSeats &< '[1,4)'", () => {
+          const key='reservedSeats';
+          const params={
+            $noExtendRight: [1, 4]
+          };
+          const options={
+            field: {
+              type: new DataTypes.postgres.RANGE()
+            },
+            prefix: 'Room'
+          };
+          const expectation={
+            postgres: "\"Room\".\"reservedSeats\" &< '[1,4)'"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('reservedSeats', {
-          $noExtendRight: [1, 4]
-        }, {
-          field: {
-            type: new DataTypes.postgres.RANGE()
-          },
-          prefix: 'Room'
-        }, {
-          postgres: "\"Room\".\"reservedSeats\" &< '[1,4)'"
+        it("Room.reservedSeats &> '[1,4)'", () => {
+          const key='reservedSeats';
+          const params={
+            $noExtendLeft: [1, 4]
+          };
+          const options={
+            field: {
+              type: new DataTypes.postgres.RANGE()
+            },
+            prefix: 'Room'
+          };
+          const expectation={
+            postgres: "\"Room\".\"reservedSeats\" &> '[1,4)'"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
-
-        testsql('reservedSeats', {
-          $noExtendLeft: [1, 4]
-        }, {
-          field: {
-            type: new DataTypes.postgres.RANGE()
-          },
-          prefix: 'Room'
-        }, {
-          postgres: "\"Room\".\"reservedSeats\" &> '[1,4)'"
-        });
-
       });
     }
 
     if (current.dialect.supports.JSON) {
-      suite('JSON', () => {
-        test('sequelize.json("profile.id"), sequelize.cast(2, \'text\')")', function() {
-          expectsql(sql.whereItemQuery(undefined, this.sequelize.json('profile.id', this.sequelize.cast('12346-78912', 'text'))), {
+      describe('JSON', () => {
+        it('sequelize.json("profile.id"), sequelize.cast(2, \'text\')")', function() {
+          expectsql(queryGenerator.whereItemQuery(undefined, this.sequelize.json('profile.id', this.sequelize.cast('12346-78912', 'text'))), {
             postgres: "(\"profile\"#>>'{id}') = CAST('12346-78912' AS TEXT)",
             sqlite: "json_extract(`profile`, '$.id') = CAST('12346-78912' AS TEXT)",
             mysql: "`profile`->>'$.id' = CAST('12346-78912' AS CHAR)"
           });
         });
 
-        test('sequelize.json({profile: {id: "12346-78912", name: "test"}})', function() {
-          expectsql(sql.whereItemQuery(undefined, this.sequelize.json({profile: {id: '12346-78912', name: 'test'}})), {
+        it('sequelize.json({profile: {id: "12346-78912", name: "test"}})', function() {
+          expectsql(queryGenerator.whereItemQuery(undefined, this.sequelize.json({profile: {id: '12346-78912', name: 'test'}})), {
             postgres: "(\"profile\"#>>'{id}') = '12346-78912' AND (\"profile\"#>>'{name}') = 'test'",
             sqlite: "json_extract(`profile`, '$.id') = '12346-78912' AND json_extract(`profile`, '$.name') = 'test'",
             mysql: "`profile`->>'$.id' = '12346-78912' and `profile`->>'$.name' = 'test'"
           });
         });
 
-        testsql('data', {
-          nested: {
-            attribute: 'value'
-          }
-        }, {
-          field: {
-            type: new DataTypes.JSONB()
-          },
-          prefix: 'User'
-        }, {
-          mysql: "(`User`.`data`->>'$.\"nested\".\"attribute\"') = 'value'",
-          postgres: "(\"User\".\"data\"#>>'{nested,attribute}') = 'value'",
-          sqlite: "json_extract(`User`.`data`, '$.nested.attribute') = 'value'"
+        it('(User.data ->> $.nested.attribute) = value', () => {
+          const key='data';
+          const params={
+            nested: {
+              attribute: 'value'
+            }
+          };
+          const options={
+            field: {
+              type: new DataTypes.JSONB()
+            },
+            prefix: 'User'
+          };
+          const expectation={
+            mysql: "(`User`.`data`->>'$.\"nested\".\"attribute\"') = 'value'",
+            postgres: "(\"User\".\"data\"#>>'{nested,attribute}') = 'value'",
+            sqlite: "json_extract(`User`.`data`, '$.nested.attribute') = 'value'"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('data', {
-          nested: {
-            $in: [1, 2]
-          }
-        }, {
-          field: {
-            type: new DataTypes.JSONB()
-          }
-        }, {
-          mysql: "CAST((`data`->>'$.\"nested\"') AS DECIMAL) IN (1, 2)",
-          postgres: "CAST((\"data\"#>>'{nested}') AS DOUBLE PRECISION) IN (1, 2)",
-          sqlite: "CAST(json_extract(`data`, '$.nested') AS DOUBLE PRECISION) IN (1, 2)"
+        it('cast (( data ->> $.nested ) as decimal) in (1, 2)', () => {
+          const key='data';
+          const params={
+            nested: {
+              $in: [1, 2]
+            }
+          };
+          const options={
+            field: {
+              type: new DataTypes.JSONB()
+            }
+          };
+          const expectation={
+            mysql: "CAST((`data`->>'$.\"nested\"') AS DECIMAL) IN (1, 2)",
+            postgres: "CAST((\"data\"#>>'{nested}') AS DOUBLE PRECISION) IN (1, 2)",
+            sqlite: "CAST(json_extract(`data`, '$.nested') AS DOUBLE PRECISION) IN (1, 2)"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('data', {
-          nested: {
-            $between: [1, 2]
-          }
-        }, {
-          field: {
-            type: new DataTypes.JSONB()
-          }
-        }, {
-          mysql: "CAST((`data`->>'$.\"nested\"') AS DECIMAL) BETWEEN 1 AND 2",
-          postgres: "CAST((\"data\"#>>'{nested}') AS DOUBLE PRECISION) BETWEEN 1 AND 2",
-          sqlite: "CAST(json_extract(`data`, '$.nested') AS DOUBLE PRECISION) BETWEEN 1 AND 2"
+        it('cast (( data ->> $.nested ) as decimal) between 1 and 2', () => {
+          const key='data';
+          const params={
+            nested: {
+              $between: [1, 2]
+            }
+          };
+          const options={
+            field: {
+              type: new DataTypes.JSONB()
+            }
+          };
+          const expectation={
+            mysql: "CAST((`data`->>'$.\"nested\"') AS DECIMAL) BETWEEN 1 AND 2",
+            postgres: "CAST((\"data\"#>>'{nested}') AS DOUBLE PRECISION) BETWEEN 1 AND 2",
+            sqlite: "CAST(json_extract(`data`, '$.nested') AS DOUBLE PRECISION) BETWEEN 1 AND 2"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('data', {
-          nested: {
-            attribute: 'value',
-            prop: {
+        it("(User.data ->> $.nested.attribute) = value and (User.data ->> $.nested.prop) != 'None'", () => {
+          const key='data';
+          const params={
+            nested: {
+              attribute: 'value',
+              prop: {
+                $ne: 'None'
+              }
+            }
+          };
+          const options={
+            field: {
+              type: new DataTypes.JSONB()
+            },
+            prefix: current.literal(queryGenerator.quoteTable.call(current.dialect.QueryGenerator, {tableName: 'User'}))
+          };
+          const expectation={
+            mysql: "((`User`.`data`->>'$.\"nested\".\"attribute\"') = 'value' AND (`User`.`data`->>'$.\"nested\".\"prop\"') != 'None')",
+            postgres: "((\"User\".\"data\"#>>'{nested,attribute}') = 'value' AND (\"User\".\"data\"#>>'{nested,prop}') != 'None')",
+            sqlite: "(json_extract(`User`.`data`, '$.nested.attribute') = 'value' AND json_extract(`User`.`data`, '$.nested.prop') != 'None')"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+        });
+
+        it("(User.data ->> $.name.last) = 'Simpson' and (User.data ->> $.employment) != 'None'", () => {
+          const key='data';
+          const params={
+            name: {
+              last: 'Simpson'
+            },
+            employment: {
               $ne: 'None'
             }
-          }
-        }, {
-          field: {
-            type: new DataTypes.JSONB()
-          },
-          prefix: current.literal(sql.quoteTable.call(current.dialect.QueryGenerator, {tableName: 'User'}))
-        }, {
-          mysql: "((`User`.`data`->>'$.\"nested\".\"attribute\"') = 'value' AND (`User`.`data`->>'$.\"nested\".\"prop\"') != 'None')",
-          postgres: "((\"User\".\"data\"#>>'{nested,attribute}') = 'value' AND (\"User\".\"data\"#>>'{nested,prop}') != 'None')",
-          sqlite: "(json_extract(`User`.`data`, '$.nested.attribute') = 'value' AND json_extract(`User`.`data`, '$.nested.prop') != 'None')"
+          };
+          const options={
+            field: {
+              type: new DataTypes.JSONB()
+            },
+            prefix: 'User'
+          };
+          const expectation={
+            mysql: "((`User`.`data`->>'$.\"name\".\"last\"') = 'Simpson' AND (`User`.`data`->>'$.\"employment\"') != 'None')",
+            postgres: "((\"User\".\"data\"#>>'{name,last}') = 'Simpson' AND (\"User\".\"data\"#>>'{employment}') != 'None')",
+            sqlite: "(json_extract(`User`.`data`, '$.name.last') = 'Simpson' AND json_extract(`User`.`data`, '$.employment') != 'None')"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('data', {
-          name: {
-            last: 'Simpson'
-          },
-          employment: {
-            $ne: 'None'
-          }
-        }, {
-          field: {
-            type: new DataTypes.JSONB()
-          },
-          prefix: 'User'
-        }, {
-          mysql: "((`User`.`data`->>'$.\"name\".\"last\"') = 'Simpson' AND (`User`.`data`->>'$.\"employment\"') != 'None')",
-          postgres: "((\"User\".\"data\"#>>'{name,last}') = 'Simpson' AND (\"User\".\"data\"#>>'{employment}') != 'None')",
-          sqlite: "(json_extract(`User`.`data`, '$.name.last') = 'Simpson' AND json_extract(`User`.`data`, '$.employment') != 'None')"
+        it("CAST((data->>$.price) AS DECIMAL) = 5 AND (data->>$.name) = 'Product'", () => {
+          const key='data';
+          const params={
+            price: 5,
+            name: 'Product'
+          };
+          const options={
+            field: {
+              type: new DataTypes.JSONB()
+            }
+          };
+          const expectation={
+            mysql: "(CAST((`data`->>'$.\"price\"') AS DECIMAL) = 5 AND (`data`->>'$.\"name\"') = 'Product')",
+            postgres: "(CAST((\"data\"#>>'{price}') AS DOUBLE PRECISION) = 5 AND (\"data\"#>>'{name}') = 'Product')",
+            sqlite: "(CAST(json_extract(`data`, '$.price') AS DOUBLE PRECISION) = 5 AND json_extract(`data`, '$.name') = 'Product')"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('data', {
-          price: 5,
-          name: 'Product'
-        }, {
-          field: {
-            type: new DataTypes.JSONB()
-          }
-        }, {
-          mysql: "(CAST((`data`->>'$.\"price\"') AS DECIMAL) = 5 AND (`data`->>'$.\"name\"') = 'Product')",
-          postgres: "(CAST((\"data\"#>>'{price}') AS DOUBLE PRECISION) = 5 AND (\"data\"#>>'{name}') = 'Product')",
-          sqlite: "(CAST(json_extract(`data`, '$.price') AS DOUBLE PRECISION) = 5 AND json_extract(`data`, '$.name') = 'Product')"
-        });
-
-        testsql('data.nested.attribute', 'value', {
-          model: {
-            rawAttributes: {
-              data: {
-                type: new DataTypes.JSONB()
+        it('data ->> $.nested.attribute) = value', () => {
+          const key='data.nested.attribute';
+          const params='value';
+          const options={
+            model: {
+              rawAttributes: {
+                data: {
+                  type: new DataTypes.JSONB()
+                }
               }
             }
-          }
-        }, {
-          mysql: "(`data`->>'$.\"nested\".\"attribute\"') = 'value'",
-          postgres: "(\"data\"#>>'{nested,attribute}') = 'value'",
-          sqlite: "json_extract(`data`, '$.nested.attribute') = 'value'"
+          };
+          const expectation={
+            mysql: "(`data`->>'$.\"nested\".\"attribute\"') = 'value'",
+            postgres: "(\"data\"#>>'{nested,attribute}') = 'value'",
+            sqlite: "json_extract(`data`, '$.nested.attribute') = 'value'"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('data.nested.attribute', 4, {
-          model: {
-            rawAttributes: {
-              data: {
-                type: new DataTypes.JSON()
+        it('CAST((data ->> $.nested.attribute) AS DECIMAL) = 4', () => {
+          const key='data.nested.attribute';
+          const params=4;
+          const options={
+            model: {
+              rawAttributes: {
+                data: {
+                  type: new DataTypes.JSON()
+                }
               }
             }
-          }
-        }, {
-          mysql: "CAST((`data`->>'$.\"nested\".\"attribute\"') AS DECIMAL) = 4",
-          postgres: "CAST((\"data\"#>>'{nested,attribute}') AS DOUBLE PRECISION) = 4",
-          sqlite: "CAST(json_extract(`data`, '$.nested.attribute') AS DOUBLE PRECISION) = 4"
+          };
+          const expectation={
+            mysql: "CAST((`data`->>'$.\"nested\".\"attribute\"') AS DECIMAL) = 4",
+            postgres: "CAST((\"data\"#>>'{nested,attribute}') AS DOUBLE PRECISION) = 4",
+            sqlite: "CAST(json_extract(`data`, '$.nested.attribute') AS DOUBLE PRECISION) = 4"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('data.nested.attribute', {
-          $in: [3, 7]
-        }, {
-          model: {
-            rawAttributes: {
-              data: {
-                type: new DataTypes.JSONB()
+        it('CAST((data ->> $.nested.attribute) AS DECIMAL) IN (3, 7)', () => {
+          const key='data.nested.attribute';
+          const params={
+            $in: [3, 7]
+          };
+          const options={
+            model: {
+              rawAttributes: {
+                data: {
+                  type: new DataTypes.JSONB()
+                }
               }
             }
-          }
-        }, {
-          mysql: "CAST((`data`->>'$.\"nested\".\"attribute\"') AS DECIMAL) IN (3, 7)",
-          postgres: "CAST((\"data\"#>>'{nested,attribute}') AS DOUBLE PRECISION) IN (3, 7)",
-          sqlite: "CAST(json_extract(`data`, '$.nested.attribute') AS DOUBLE PRECISION) IN (3, 7)"
+          };
+          const expectation={
+            mysql: "CAST((`data`->>'$.\"nested\".\"attribute\"') AS DECIMAL) IN (3, 7)",
+            postgres: "CAST((\"data\"#>>'{nested,attribute}') AS DOUBLE PRECISION) IN (3, 7)",
+            sqlite: "CAST(json_extract(`data`, '$.nested.attribute') AS DOUBLE PRECISION) IN (3, 7)"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
-        testsql('data', {
-          nested: {
-            attribute: {
-              $gt: 2
+        it('CAST((data ->> $.nested.attribute) AS DECIMAL) > 2', () => {
+          const key='data';
+          const params={
+            nested: {
+              attribute: {
+                $gt: 2
+              }
             }
-          }
-        }, {
-          field: {
-            type: new DataTypes.JSONB()
-          }
-        }, {
-          mysql: "CAST((`data`->>'$.\"nested\".\"attribute\"') AS DECIMAL) > 2",
-          postgres: "CAST((\"data\"#>>'{nested,attribute}') AS DOUBLE PRECISION) > 2",
-          sqlite: "CAST(json_extract(`data`, '$.nested.attribute') AS DOUBLE PRECISION) > 2"
-        });
-
-        testsql('data', {
-          nested: {
-            'attribute::integer': {
-              $gt: 2
+          };
+          const options={
+            field: {
+              type: new DataTypes.JSONB()
             }
-          }
-        }, {
-          field: {
-            type: new DataTypes.JSONB()
-          }
-        }, {
-          mysql: "CAST((`data`->>'$.\"nested\".\"attribute\"') AS DECIMAL) > 2",
-          postgres: "CAST((\"data\"#>>'{nested,attribute}') AS INTEGER) > 2",
-          sqlite: "CAST(json_extract(`data`, '$.nested.attribute') AS INTEGER) > 2"
+          };
+          const expectation={
+            mysql: "CAST((`data`->>'$.\"nested\".\"attribute\"') AS DECIMAL) > 2",
+            postgres: "CAST((\"data\"#>>'{nested,attribute}') AS DOUBLE PRECISION) > 2",
+            sqlite: "CAST(json_extract(`data`, '$.nested.attribute') AS DOUBLE PRECISION) > 2"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
 
         const dt = new Date();
-        testsql('data', {
-          nested: {
-            attribute: {
-              $gt: dt
-            }
-          }
-        }, {
-          field: {
-            type: new DataTypes.JSONB()
-          }
-        }, {
-          mysql: "CAST((`data`->>'$.\"nested\".\"attribute\"') AS DATETIME) > "+sql.escape(dt),
-          postgres: "CAST((\"data\"#>>'{nested,attribute}') AS TIMESTAMPTZ) > "+sql.escape(dt),
-          sqlite: "json_extract(`data`, '$.nested.attribute') > " + sql.escape(dt.toISOString())
-        });
-
-        testsql('data', {
-          nested: {
-            attribute: true
-          }
-        }, {
-          field: {
-            type: new DataTypes.JSONB()
-          }
-        }, {
-          mysql: "(`data`->>'$.\"nested\".\"attribute\"') = 'true'",
-          postgres: "CAST((\"data\"#>>'{nested,attribute}') AS BOOLEAN) = true",
-          sqlite: "CAST(json_extract(`data`, '$.nested.attribute') AS BOOLEAN) = 1"
-        });
-
-        testsql('metaData.nested.attribute', 'value', {
-          model: {
-            rawAttributes: {
-              metaData: {
-                field: 'meta_data',
-                fieldName: 'metaData',
-                type: new DataTypes.JSONB()
+        it('CAST((data ->> $.nested.attribute) AS DECIMAL) > queryGenerator.escape(date)', () => {
+          const key='data';
+          const params={
+            nested: {
+              attribute: {
+                $gt: dt
               }
             }
-          }
-        }, {
-          mysql: "(`meta_data`->>'$.\"nested\".\"attribute\"') = 'value'",
-          postgres: "(\"meta_data\"#>>'{nested,attribute}') = 'value'",
-          sqlite: "json_extract(`meta_data`, '$.nested.attribute') = 'value'"
+          };
+          const options={
+            field: {
+              type: new DataTypes.JSONB()
+            }
+          };
+          const expectation={
+            mysql: "CAST((`data`->>'$.\"nested\".\"attribute\"') AS DATETIME) > "+queryGenerator.escape(dt),
+            postgres: "CAST((\"data\"#>>'{nested,attribute}') AS TIMESTAMPTZ) > "+queryGenerator.escape(dt),
+            sqlite: "json_extract(`data`, '$.nested.attribute') > " + queryGenerator.escape(dt.toISOString())
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+        });
+
+        it('(data ->> $.nested.attribute) = true', () => {
+          const key='data';
+          const params={
+            nested: {
+              attribute: true
+            }
+          };
+          const options={
+            field: {
+              type: new DataTypes.JSONB()
+            }
+          };
+          const expectation={
+            mysql: "(`data`->>'$.\"nested\".\"attribute\"') = 'true'",
+            postgres: "CAST((\"data\"#>>'{nested,attribute}') AS BOOLEAN) = true",
+            sqlite: "CAST(json_extract(`data`, '$.nested.attribute') AS BOOLEAN) = 1"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+        });
+
+        it('(meta_data ->> $.nested.attribute) = value', () => {
+          const key='metaData.nested.attribute';
+          const params='value';
+          const options={
+            model: {
+              rawAttributes: {
+                metaData: {
+                  field: 'meta_data',
+                  fieldName: 'metaData',
+                  type: new DataTypes.JSONB()
+                }
+              }
+            }
+          };
+          const expectation={
+            mysql: "(`meta_data`->>'$.\"nested\".\"attribute\"') = 'value'",
+            postgres: "(\"meta_data\"#>>'{nested,attribute}') = 'value'",
+            sqlite: "json_extract(`meta_data`, '$.nested.attribute') = 'value'"
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
       });
     }
 
     if (current.dialect.supports.JSONB) {
-      suite('JSONB', () => {
-        testsql('data', {
-          $contains: {
-            company: 'Magnafone'
-          }
-        }, {
-          field: {
-            type: new DataTypes.JSONB()
-          }
-        }, {
-          default: '[data] @> \'{"company":"Magnafone"}\''
+      describe('JSONB', () => {
+        it("data @> {'company' : 'Magnafone'}", () => {
+          const key='data';
+          const params={
+            $contains: {
+              company: 'Magnafone'
+            }
+          };
+          const options={
+            field: {
+              type: new DataTypes.JSONB()
+            }
+          };
+          const expectation={
+            default: '[data] @> \'{"company":"Magnafone"}\''
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
       });
     }
 
     if (current.dialect.supports.REGEXP) {
-      suite('$regexp', () => {
-        testsql('username', {
-          $regexp: '^sw.*r$'
-        }, {
-          mysql: "`username` REGEXP '^sw.*r$'",
-          postgres: '"username" ~ \'^sw.*r$\''
+      describe('$regexp', () => {
+        it("username REGEXP '^sw.*r$'", () => {
+          const key='username';
+          const params={
+            $regexp: '^sw.*r$'
+          };
+          const options=undefined;
+          const expectation={
+            mysql: "`username` REGEXP '^sw.*r$'",
+            postgres: '"username" ~ \'^sw.*r$\''
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+        });
+
+        it("newline REGEXP 'new\nline$'", () => {
+          const key='newline';
+          const params={
+            $regexp: '^new\nline$'
+          };
+          const options=undefined;
+          const expectation={
+            mysql: "`newline` REGEXP '^new\nline$'",
+            postgres: '"newline" ~ \'^new\nline$\''
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
       });
 
-      suite('$regexp', () => {
-        testsql('newline', {
-          $regexp: '^new\nline$'
-        }, {
-          mysql: "`newline` REGEXP '^new\nline$'",
-          postgres: '"newline" ~ \'^new\nline$\''
+      describe('$notRegexp', () => {
+        it("username NOT REGEXP '^sw.*r$'", () => {
+          const key='username';
+          const params={
+            $notRegexp: '^sw.*r$'
+          };
+          const options=undefined;
+          const expectation={
+            mysql: "`username` NOT REGEXP '^sw.*r$'",
+            postgres: '"username" !~ \'^sw.*r$\''
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
-      });
 
-      suite('$notRegexp', () => {
-        testsql('username', {
-          $notRegexp: '^sw.*r$'
-        }, {
-          mysql: "`username` NOT REGEXP '^sw.*r$'",
-          postgres: '"username" !~ \'^sw.*r$\''
-        });
-      });
-
-      suite('$notRegexp', () => {
-        testsql('newline', {
-          $notRegexp: '^new\nline$'
-        }, {
-          mysql: "`newline` NOT REGEXP '^new\nline$'",
-          postgres: '"newline" !~ \'^new\nline$\''
+        it("newline NOT REGEXP 'new\nline$'", () => {
+          const key='newline';
+          const params={
+            $notRegexp: '^new\nline$'
+          };
+          const options=undefined;
+          const expectation={
+            mysql: "`newline` NOT REGEXP '^new\nline$'",
+            postgres: '"newline" !~ \'^new\nline$\''
+          };
+          expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
         });
       });
 
       if (current.dialect.name === 'postgres') {
-        suite('$iRegexp', () => {
-          testsql('username', {
-            $iRegexp: '^sw.*r$'
-          }, {
-            postgres: '"username" ~* \'^sw.*r$\''
+        describe('$iRegexp', () => {
+          it("username iREGEXP '^sw.*r$'", () => {
+            const key='username';
+            const params={
+              $iRegexp: '^sw.*r$'
+            };
+            const options=undefined;
+            const expectation={
+              postgres: '"username" ~* \'^sw.*r$\''
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
+          });
+
+          it("newline iREGEXP 'new\nline$'", () => {
+            const key='newline';
+            const params={
+              $iRegexp: '^new\nline$'
+            };
+            const options=undefined;
+            const expectation={
+              postgres: '"newline" ~* \'^new\nline$\''
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
           });
         });
 
-        suite('$iRegexp', () => {
-          testsql('newline', {
-            $iRegexp: '^new\nline$'
-          }, {
-            postgres: '"newline" ~* \'^new\nline$\''
+        describe('$notIRegexp', () => {
+          it("username NOT IREGEXP '^sw.*r$'", () => {
+            const key='username';
+            const params={
+              $notIRegexp: '^sw.*r$'
+            };
+            const options=undefined;
+            const expectation={
+              postgres: '"username" !~* \'^sw.*r$\''
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
           });
-        });
 
-        suite('$notIRegexp', () => {
-          testsql('username', {
-            $notIRegexp: '^sw.*r$'
-          }, {
-            postgres: '"username" !~* \'^sw.*r$\''
-          });
-        });
-
-        suite('$notIRegexp', () => {
-          testsql('newline', {
-            $notIRegexp: '^new\nline$'
-          }, {
-            postgres: '"newline" !~* \'^new\nline$\''
+          it("newline NOT IREGEXP 'new\nline$'", () => {
+            const key='newline';
+            const params={
+              $notIRegexp: '^new\nline$'
+            };
+            const options=undefined;
+            const expectation={
+              postgres: '"newline" !~* \'^new\nline$\''
+            };
+            expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
           });
         });
       }
     }
 
-    suite('fn', () => {
-      test('{name: this.sequelize.fn(\'LOWER\', \'DERP\')}', function() {
-        expectsql(sql.whereQuery({name: this.sequelize.fn('LOWER', 'DERP')}), {
+    describe('fn', () => {
+      it('{name: this.sequelize.fn(\'LOWER\', \'DERP\')}', function() {
+        expectsql(queryGenerator.whereQuery({name: this.sequelize.fn('LOWER', 'DERP')}), {
           default: "WHERE [name] = LOWER('DERP')",
           oracle: "WHERE name = LOWER('DERP')",
           mssql: "WHERE [name] = LOWER(N'DERP')"
@@ -1141,18 +1696,15 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
     });
   });
 
-  suite('getWhereConditions', () => {
-    const testsql = function(value, expectation) {
+  describe('getWhereConditions', () => {
+    it('lower(name) is null', () => {
       const User = current.define('user', {});
-
-      test(util.inspect(value, {depth: 10}), () => {
-        return expectsql(sql.getWhereConditions(value, User.tableName, User), expectation);
-      });
-    };
-
-    testsql(current.where(current.fn('lower', current.col('name')), null), {
-      default: 'lower([name]) IS NULL',
-      oracle: 'lower(name) IS NULL'
+      const value=current.where(current.fn('lower', current.col('name')), null);
+      const expectation={
+        default: 'lower([name]) IS NULL',
+        oracle: 'lower(name) IS NULL'
+      };
+      expectsql(queryGenerator.getWhereConditions(value, User.tableName, User), expectation);
     });
   });
 });

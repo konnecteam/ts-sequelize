@@ -355,7 +355,8 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       mssql: 'SELECT [id], [name] FROM [subtask] AS [Subtask] ORDER BY RAND();',
       mysql: 'SELECT `id`, `name` FROM `subtask` AS `Subtask` ORDER BY RAND();',
       postgres: 'SELECT "id", "name" FROM "subtask" AS "Subtask" ORDER BY RANDOM();',
-      sqlite: 'SELECT `id`, `name` FROM `subtask` AS `Subtask` ORDER BY RANDOM();'
+      sqlite: 'SELECT `id`, `name` FROM `subtask` AS `Subtask` ORDER BY RANDOM();',
+      oracle: 'SELECT id, name FROM subtask Subtask ORDER BY RAND();'
     });
   
     describe('Invalid', () => {
