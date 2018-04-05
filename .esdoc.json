@@ -1,6 +1,6 @@
 {
   "title": " Sequelize | The node.js ORM for PostgreSQL, MySQL, SQLite and MSSQL",
-  "source": "./lib",
+  "source": "./src/lib",
   "destination": "./esdoc",
   "access": ["public"],
   "builtinExternal": false,

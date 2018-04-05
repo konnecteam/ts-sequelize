@@ -1,7 +1,7 @@
 'use strict';
 
 const path = require('path');
-const Query = require(path.resolve('./lib/dialects/mssql/query.js'));
+const Query = require('./../../../../lib/dialects/mssql/query.js');
 const Support = require(__dirname + '/../../support');
 const dialect = Support.getTestDialect();
 const sequelize = Support.sequelize;
