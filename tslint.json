@@ -1,0 +1,87 @@
+{
+    "defaultSeverity": "error",
+    "rulesDirectory" : ["node_modules/tslint-eslint-rules/dist/rules"],
+    "extends": [
+        "tslint:recommended",
+        "tslint-eslint-rules"
+    ],
+    "jsRules": {},
+    "rules": {
+        "triple-equals":  [true, "allow-null-check", "allow-undefined-check"],
+        "typedef-whitespace": [
+            true,
+            {
+              "call-signature": "onespace",
+              "index-signature": "onespace",
+              "parameter": "onespace",
+              "property-declaration": "onespace",
+              "variable-declaration": "onespace"
+            },
+            {
+              "call-signature": "onespace",
+              "index-signature": "onespace",
+              "parameter": "onespace",
+              "property-declaration": "onespace",
+              "variable-declaration": "onespace"
+            }
+        ],
+        "trailing-comma": [
+            true,
+            {
+                "multiline": {
+                    "objects": "ignore",
+                    "arrays": "always",
+                    "functions": "never",
+                    "typeLiterals": "ignore"
+                }
+            }
+        ],
+        "arrow-parens": [true, "ban-single-arg-parens"],
+        "comment-format": [true],
+        "prefer-for-of": false,
+        "arrow-return-shorthand": { "severity" : "warning" },
+        "no-console": { "severity" : "warning" },
+        "variable-name": [
+            "allow-leading-underscore"
+        ],
+        "member-ordering": [
+            true,
+            {
+                "order": [
+                {
+                    "name": "static - fields - instance",
+                    "kinds": [
+                        "static-field",
+                        "instance-field"
+                    ]
+                }
+                ]
+            }
+        ],
+        "no-empty": false,
+        "object-literal-shorthand" : true,
+        "max-line-length": [true, 250],
+        "no-consecutive-blank-lines" : [true, 2],
+        "no-string-literal" : false,
+        "object-literal-sort-keys": false,
+        "quotemark": [true, "single", "avoid-escape"],
+        "no-var-requires": false,
+        "max-classes-per-file": [
+            false
+        ],
+        "only-arrow-functions": [
+            false
+        ],
+        "indent": [
+            true,
+            "spaces",
+            2
+        ],
+        "ter-indent": [
+            true,
+            2,
+            { "SwitchCase": 1 }
+        ],
+        "align" : [false]
+    }
+}
