@@ -197,7 +197,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
       });
 
-      it.only('should properly escape the single quotes in coordinates', function() {
+      it('should properly escape the single quotes in coordinates', function() {
 
         // MySQL 5.7, those guys finally fixed this
         if (dialect === 'mysql' && semver.gte(this.sequelize.options.databaseVersion, '5.7.0')) {

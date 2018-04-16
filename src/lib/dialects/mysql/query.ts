@@ -138,7 +138,12 @@ export class Query extends AbstractQuery {
     } else if (this.isBulkUpdateQuery() || this.isBulkDeleteQuery() || this.isUpsertQuery()) {
       result = data.affectedRows;
     } else if (this.isVersionQuery()) {
-      result = data[0].version;
+      const fullVersion = data[0].version;
+      if (fullVersion.indexOf('-')> -1) {
+        result = fullVersion.split('-')[0];
+      } else {
+        result = fullVersion;
+      }
     } else if (this.isForeignKeysQuery()) {
       result = data;
     } else if (this.isInsertQuery() || this.isUpdateQuery()) {

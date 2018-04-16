@@ -310,7 +310,7 @@ export function defaultValueSchemable(value) {
 
   // TODO this will be schemable when all supported db
   // have been normalized for this case
-  // if (value instanceof DataTypes.NOW) { return false; }
+  if (value instanceof DataTypes.NOW) { return false; }
 
   if (value instanceof DataTypes.UUIDV1 || value instanceof DataTypes.UUIDV4) { return false; }
 

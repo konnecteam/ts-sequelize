@@ -2574,7 +2574,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         comment: 'asdf'
       };
 
-      idColumn.references = { model: Member, key: 'id' };
+      (idColumn as any).references = { model: Member, key: 'id' };
 
       this.sequelize.define('Profile', { id: idColumn });
 
