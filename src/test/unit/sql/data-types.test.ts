@@ -1,10 +1,10 @@
 'use strict';
 
-const Support   = require(__dirname + '/../support');
-const DataTypes = require(__dirname + '/../../../lib/data-types');
-const Sequelize = Support.Sequelize;
-const chai = require('chai');
-const uuid = require('uuid');
+import Support from '../../support';
+import DataTypes from '../../../lib/data-types';
+import {Sequelize}from '../../../lib/sequelize';
+import * as chai from 'chai';
+import * as uuid from 'uuid';
 const expectsql = Support.expectsql;
 const current   = Support.sequelize;
 const expect = chai.expect;
@@ -56,7 +56,7 @@ describe('Data types', () => {
     });
 
     it('String binary', () => {
-      const result = current.normalizeDataType(DataTypes.STRING.BINARY).toSql();
+      const result = current.normalizeDataType((DataTypes.STRING as any).BINARY).toSql();
 
       expectsql(result, {
         default: 'VARCHAR(255) BINARY',
@@ -191,7 +191,7 @@ describe('Data types', () => {
     });
 
     it('Char binary', () => {
-      const result = current.normalizeDataType(DataTypes.CHAR.BINARY).toSql();
+      const result = current.normalizeDataType((DataTypes.CHAR as any).BINARY).toSql();
 
       expectsql(result, {
         default: 'CHAR(255) BINARY',
@@ -451,7 +451,7 @@ describe('Data types', () => {
     });
 
     it('Integer unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.INTEGER.UNSIGNED).toSql();
+      const result = current.normalizeDataType((DataTypes.INTEGER as any).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'INTEGER UNSIGNED',
@@ -462,7 +462,7 @@ describe('Data types', () => {
     });
 
     it('Integer unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.INTEGER.UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType((DataTypes.INTEGER as any).UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'INTEGER UNSIGNED ZEROFILL',
@@ -597,7 +597,7 @@ describe('Data types', () => {
     });
 
     it('Tinyint unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.TINYINT.UNSIGNED).toSql();
+      const result = current.normalizeDataType((DataTypes.TINYINT as any).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'TINYINT UNSIGNED',
@@ -616,7 +616,7 @@ describe('Data types', () => {
     });
 
     it('Tinyint unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.TINYINT.UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType((DataTypes.TINYINT as any).UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'TINYINT UNSIGNED ZEROFILL',
@@ -635,7 +635,7 @@ describe('Data types', () => {
     });
 
     it('Tinyint zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.TINYINT.ZEROFILL).toSql();
+      const result = current.normalizeDataType((DataTypes.TINYINT as any).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'TINYINT ZEROFILL',
@@ -654,7 +654,7 @@ describe('Data types', () => {
     });
 
     it('Tinyint zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.TINYINT.ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType((DataTypes.TINYINT as any).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'TINYINT UNSIGNED ZEROFILL',
@@ -725,7 +725,7 @@ describe('Data types', () => {
     });
 
     it('Smallint unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.SMALLINT.UNSIGNED).toSql();
+      const result = current.normalizeDataType((DataTypes.SMALLINT as any).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'SMALLINT UNSIGNED',
@@ -746,7 +746,7 @@ describe('Data types', () => {
     });
 
     it('Smallint unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.SMALLINT.UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType((DataTypes.SMALLINT as any).UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'SMALLINT UNSIGNED ZEROFILL',
@@ -767,7 +767,7 @@ describe('Data types', () => {
     });
 
     it('Smallint zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.SMALLINT.ZEROFILL).toSql();
+      const result = current.normalizeDataType((DataTypes.SMALLINT as any).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'SMALLINT ZEROFILL',
@@ -788,7 +788,7 @@ describe('Data types', () => {
     });
 
     it('Smallint zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.SMALLINT.ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType((DataTypes.SMALLINT as any).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'SMALLINT UNSIGNED ZEROFILL',
@@ -857,7 +857,7 @@ describe('Data types', () => {
     });
 
     it('MediumInt unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.MEDIUMINT.UNSIGNED).toSql();
+      const result = current.normalizeDataType((DataTypes.MEDIUMINT as any).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'MEDIUMINT UNSIGNED'
@@ -874,7 +874,7 @@ describe('Data types', () => {
     });
 
     it('MediumInt unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.MEDIUMINT.UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType((DataTypes.MEDIUMINT as any).UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'MEDIUMINT UNSIGNED ZEROFILL'
@@ -891,7 +891,7 @@ describe('Data types', () => {
     });
 
     it('MediumInt zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.MEDIUMINT.ZEROFILL).toSql();
+      const result = current.normalizeDataType((DataTypes.MEDIUMINT as any).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'MEDIUMINT ZEROFILL'
@@ -908,7 +908,7 @@ describe('Data types', () => {
     });
 
     it('MediumInt length zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.MEDIUMINT.ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType((DataTypes.MEDIUMINT as any).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'MEDIUMINT UNSIGNED ZEROFILL'
@@ -980,7 +980,7 @@ describe('Data types', () => {
     });
 
     it('BigInt unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.BIGINT.UNSIGNED).toSql();
+      const result = current.normalizeDataType((DataTypes.BIGINT as any).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'BIGINT UNSIGNED',
@@ -1003,7 +1003,7 @@ describe('Data types', () => {
     });
 
     it('BigInt unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.BIGINT.UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType((DataTypes.BIGINT as any).UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'BIGINT UNSIGNED ZEROFILL',
@@ -1026,7 +1026,7 @@ describe('Data types', () => {
     });
 
     it('BigInt zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.BIGINT.ZEROFILL).toSql();
+      const result = current.normalizeDataType((DataTypes.BIGINT as any).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'BIGINT ZEROFILL',
@@ -1050,7 +1050,7 @@ describe('Data types', () => {
     });
 
     it('BigInt zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.BIGINT.ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType((DataTypes.BIGINT as any).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'BIGINT UNSIGNED ZEROFILL',
@@ -1126,7 +1126,7 @@ describe('Data types', () => {
     });
 
     it('Real unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.REAL.UNSIGNED).toSql();
+      const result = current.normalizeDataType((DataTypes.REAL as any).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'REAL UNSIGNED',
@@ -1149,7 +1149,7 @@ describe('Data types', () => {
     });
 
     it('Real unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.REAL.UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType((DataTypes.REAL as any).UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'REAL UNSIGNED ZEROFILL',
@@ -1173,7 +1173,7 @@ describe('Data types', () => {
     });
 
     it('Real zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.REAL.ZEROFILL).toSql();
+      const result = current.normalizeDataType((DataTypes.REAL as any).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'REAL ZEROFILL',
@@ -1197,7 +1197,7 @@ describe('Data types', () => {
     });
 
     it('Real zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.REAL.ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType((DataTypes.REAL as any).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'REAL UNSIGNED ZEROFILL',
@@ -1325,7 +1325,7 @@ describe('Data types', () => {
     });
 
     it('Double unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.DOUBLE.UNSIGNED).toSql();
+      const result = current.normalizeDataType((DataTypes.DOUBLE as any).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION UNSIGNED',
@@ -1346,7 +1346,7 @@ describe('Data types', () => {
     });
 
     it('Double unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.DOUBLE.UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType((DataTypes.DOUBLE as any).UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION UNSIGNED ZEROFILL',
@@ -1368,7 +1368,7 @@ describe('Data types', () => {
     });
 
     it('Double zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.DOUBLE.ZEROFILL).toSql();
+      const result = current.normalizeDataType((DataTypes.DOUBLE as any).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION ZEROFILL',
@@ -1390,7 +1390,7 @@ describe('Data types', () => {
     });
 
     it('Double zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.DOUBLE.ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType((DataTypes.DOUBLE as any).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION UNSIGNED ZEROFILL',
@@ -1511,7 +1511,7 @@ describe('Data types', () => {
     });
 
     it('Float unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.FLOAT.UNSIGNED).toSql();
+      const result = current.normalizeDataType((DataTypes.FLOAT as any).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'FLOAT UNSIGNED',
@@ -1534,7 +1534,7 @@ describe('Data types', () => {
     });
 
     it('Float unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.FLOAT.UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType((DataTypes.FLOAT as any).UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'FLOAT UNSIGNED ZEROFILL',
@@ -1558,7 +1558,7 @@ describe('Data types', () => {
     });
 
     it('Float zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.FLOAT.ZEROFILL).toSql();
+      const result = current.normalizeDataType((DataTypes.FLOAT as any).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'FLOAT ZEROFILL',
@@ -1582,7 +1582,7 @@ describe('Data types', () => {
     });
 
     it('Float zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.FLOAT.ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType((DataTypes.FLOAT as any).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'FLOAT UNSIGNED ZEROFILL',
@@ -1768,7 +1768,7 @@ describe('Data types', () => {
     });
 
     it('Decimal unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.DECIMAL.UNSIGNED).toSql();
+      const result = current.normalizeDataType((DataTypes.DECIMAL as any).UNSIGNED).toSql();
 
       expectsql(result, {
         mysql: 'DECIMAL UNSIGNED',
@@ -1778,7 +1778,7 @@ describe('Data types', () => {
     });
 
     it('Decimal unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.DECIMAL.UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType((DataTypes.DECIMAL as any).UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         mysql: 'DECIMAL UNSIGNED ZEROFILL',
@@ -1831,7 +1831,7 @@ describe('Data types', () => {
 
   describe('Enum', () => {
     // TODO: Fix Enums and add more tests
-    // testsql('ENUM("value 1", "value 2")', DataTypes.ENUM('value 1', 'value 2'), {
+    // testsql('ENUM("value 1", "value 2")', (DataTypes as any).ENUM('value 1', 'value 2'), {
     //   default: 'ENUM'
     // });
 
@@ -1844,7 +1844,7 @@ describe('Data types', () => {
 
     describe('validate Enum', () => {
       it('should throw an error if `value` is invalid', () => {
-        const type = DataTypes.ENUM('foo');
+        const type = (DataTypes as any).ENUM('foo');
 
         expect(() => {
           type.validate('foobar');
@@ -1852,7 +1852,7 @@ describe('Data types', () => {
       });
 
       it('should return `true` if `value` is a valid choice', () => {
-        const type = DataTypes.ENUM('foobar', 'foobiz');
+        const type = (DataTypes as any).ENUM('foobar', 'foobiz');
 
         expect(type.validate('foobar')).to.equal(true);
         expect(type.validate('foobiz')).to.equal(true);

@@ -1,10 +1,10 @@
 'use strict';
 
-const Support   = require(__dirname + '/../support'),
-  DataTypes = require('../../../lib/data-types'),
-  expectsql = Support.expectsql,
-  current   = Support.sequelize,
-  sql       = current.dialect.QueryGenerator;
+import Support from '../../support';
+import DataTypes from '../../../lib/data-types';
+const expectsql = Support.expectsql;
+const current = Support.sequelize;
+const sql  = current.dialect.QueryGenerator;
 
 
 if (current.dialect.name === 'mysql') {

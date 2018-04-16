@@ -1,6 +1,6 @@
 'use strict';
 
-const Support = require('../support');
+import Support from '../support';
 
 beforeEach(function() {
   this.sequelize.test.trackRunningQueries();
@@ -16,4 +16,4 @@ afterEach(function() {
   }
 });
 
-module.exports = Support;
+export default Support;

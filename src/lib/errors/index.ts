@@ -1,6 +1,6 @@
 'use strict';
 
-const _ = require('lodash');
+import * as _ from 'lodash';
 
 /**
  * Sequelize provides a host of custom error classes, to allow you to do easier debugging. All of these errors are exposed on the sequelize object and the sequelize constructor.
@@ -9,26 +9,24 @@ const _ = require('lodash');
  * This means that errors can be accessed using `Sequelize.ValidationError` or `sequelize.ValidationError`
  * The Base Error all Sequelize Errors inherit from.
  */
-class BaseError extends Error {
+export class BaseError extends Error {
   constructor(message) {
     super(message);
     this.name = 'SequelizeBaseError';
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.BaseError = BaseError;
 
 /**
  * Scope Error. Thrown when the sequelize cannot query the specified scope.
  */
-class SequelizeScopeError extends BaseError {
+export class SequelizeScopeError extends BaseError {
   constructor(parent) {
     super(parent);
     this.name = 'SequelizeScopeError';
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.SequelizeScopeError = SequelizeScopeError;
 
 /**
  * Validation Error. Thrown when the sequelize validation has failed. The error contains an `errors` property,
@@ -39,8 +37,9 @@ exports.SequelizeScopeError = SequelizeScopeError;
  *
  * @property errors {ValidationErrorItems[]}
  */
-class ValidationError extends BaseError {
-  constructor(message, errors) {
+export class ValidationError extends BaseError {
+  errors;
+  constructor(message?, errors?) {
     super(message);
     this.name = 'SequelizeValidationError';
     this.message = 'Validation Error';
@@ -76,12 +75,14 @@ class ValidationError extends BaseError {
     }, []);
   }
 }
-exports.ValidationError = ValidationError;
 
 /**
  * Thrown when attempting to update a stale model instance
  */
-class OptimisticLockError extends BaseError {
+export class OptimisticLockError extends BaseError {
+  modelName;
+  values;
+  where;
   constructor(options) {
     options = options || {};
     options.message = options.message || 'Attempting to update a stale model instance: ' + options.modelName;
@@ -105,16 +106,21 @@ class OptimisticLockError extends BaseError {
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.OptimisticLockError = OptimisticLockError;
 
 /**
  * A base class for all database related errors.
  */
-class DatabaseError extends BaseError {
+export class DatabaseError extends BaseError {
+  parent;
+  original;
+  sql;
   constructor(parent) {
     super(parent.message);
     this.name = 'SequelizeDatabaseError';
-    /**
+    /**rors = options.errors;
+    this.fields = options.fields;
+    this.parent = options.parent;
+    this.origi
      * @type {Error}
      */
     this.parent = parent;
@@ -130,25 +136,27 @@ class DatabaseError extends BaseError {
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.DatabaseError = DatabaseError;
 
 /**
  * Thrown when a database query times out because of a deadlock
  */
-class TimeoutError extends DatabaseError {
+export class TimeoutError extends DatabaseError {
   constructor(parent) {
     super(parent);
     this.name = 'SequelizeTimeoutError';
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.TimeoutError = TimeoutError;
 
 /**
  * Thrown when a unique constraint is violated in the database
  */
-class UniqueConstraintError extends ValidationError {
-  constructor(options) {
+export class UniqueConstraintError extends ValidationError {
+  fields;
+  parent;
+  original;
+  sql;
+  constructor(options?) {
     options = options || {};
     options.parent = options.parent || { sql: '' };
     options.message = options.message || options.parent.message || 'Validation Error';
@@ -164,12 +172,16 @@ class UniqueConstraintError extends ValidationError {
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.UniqueConstraintError = UniqueConstraintError;
 
 /**
  * Thrown when a foreign key constraint is violated in the database
  */
-class ForeignKeyConstraintError extends DatabaseError {
+export class ForeignKeyConstraintError extends DatabaseError {
+  fields;
+  table;
+  value;
+  index;
+  reltype;
   constructor(options) {
     options = options || {};
     options.parent = options.parent || { sql: '' };
@@ -186,12 +198,14 @@ class ForeignKeyConstraintError extends DatabaseError {
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.ForeignKeyConstraintError = ForeignKeyConstraintError;
 
 /**
  * Thrown when an exclusion constraint is violated in the database
  */
-class ExclusionConstraintError extends DatabaseError {
+export class ExclusionConstraintError extends DatabaseError {
+  constraint;
+  fields;
+  table;
   constructor(options) {
     options = options || {};
     options.parent = options.parent || { sql: '' };
@@ -206,12 +220,11 @@ class ExclusionConstraintError extends DatabaseError {
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.ExclusionConstraintError = ExclusionConstraintError;
 
 /**
  * Thrown when constraint name is not found in the database
  */
-class UnknownConstraintError extends DatabaseError {
+export class UnknownConstraintError extends DatabaseError {
   constructor(message) {
     const parent = { message };
     super(parent);
@@ -220,7 +233,6 @@ class UnknownConstraintError extends DatabaseError {
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.UnknownConstraintError = UnknownConstraintError;
 
 /**
  * Validation Error Item
@@ -235,8 +247,19 @@ exports.UnknownConstraintError = UnknownConstraintError;
  * @param {String} [fnName] property name of the BUILT-IN validator function that caused the validation error (e.g. "in" or "len"), if applicable
  * @param {String} [fnArgs] parameters used with the BUILT-IN validator function, if applicable
  */
-class ValidationErrorItem {
-  constructor(message, type, path, value, inst, validatorKey, fnName, fnArgs) {
+export class ValidationErrorItem {
+  message;
+  type;
+  path;
+  value;
+  origin;
+  instance;
+  validatorKey;
+  validatorName;
+  validatorArgs;
+  static Origins;
+  static TypeStringMap;
+  constructor(message, type, path, value?, inst?, validatorKey?, fnName?, fnArgs?) {
     /**
      * An error message
      *
@@ -346,7 +369,6 @@ class ValidationErrorItem {
   }
 }
 
-exports.ValidationErrorItem = ValidationErrorItem;
 
 /**
  * An enum that defines valid ValidationErrorItem `origin` values
@@ -379,7 +401,9 @@ ValidationErrorItem.TypeStringMap = {
 /**
  * A base class for all connection related errors.
  */
-class ConnectionError extends BaseError {
+export class ConnectionError extends BaseError {
+  parent;
+  original;
   constructor(parent) {
     super(parent ? parent.message : '');
     this.name = 'SequelizeConnectionError';
@@ -392,135 +416,123 @@ class ConnectionError extends BaseError {
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.ConnectionError = ConnectionError;
 
 /**
  * Thrown when a connection to a database is refused
  */
-class ConnectionRefusedError extends ConnectionError {
+export class ConnectionRefusedError extends ConnectionError {
   constructor(parent) {
     super(parent);
     this.name = 'SequelizeConnectionRefusedError';
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.ConnectionRefusedError = ConnectionRefusedError;
 
 /**
  * Thrown when a connection to a database is refused due to insufficient privileges
  */
-class AccessDeniedError extends ConnectionError {
+export class AccessDeniedError extends ConnectionError {
   constructor(parent) {
     super(parent);
     this.name = 'SequelizeAccessDeniedError';
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.AccessDeniedError = AccessDeniedError;
 
 /**
  * Thrown when a connection to a database has a hostname that was not found
  */
-class HostNotFoundError extends ConnectionError {
+export class HostNotFoundError extends ConnectionError {
   constructor(parent) {
     super(parent);
     this.name = 'SequelizeHostNotFoundError';
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.HostNotFoundError = HostNotFoundError;
 
 /**
  * Thrown when a connection to a database has a hostname that was not reachable
  */
-class HostNotReachableError extends ConnectionError {
+export class HostNotReachableError extends ConnectionError {
   constructor(parent) {
     super(parent);
     this.name = 'SequelizeHostNotReachableError';
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.HostNotReachableError = HostNotReachableError;
 
 /**
  * Thrown when a connection to a database has invalid values for any of the connection parameters
  */
-class InvalidConnectionError extends ConnectionError {
+export class InvalidConnectionError extends ConnectionError {
   constructor(parent) {
     super(parent);
     this.name = 'SequelizeInvalidConnectionError';
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.InvalidConnectionError = InvalidConnectionError;
 
 /**
  * Thrown when a connection to a database times out
  */
-class ConnectionTimedOutError extends ConnectionError {
+export class ConnectionTimedOutError extends ConnectionError {
   constructor(parent) {
     super(parent);
     this.name = 'SequelizeConnectionTimedOutError';
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.ConnectionTimedOutError = ConnectionTimedOutError;
 
 /**
  * Thrown when a some problem occurred with Instance methods (see message for details)
  */
-class InstanceError extends BaseError {
+export class InstanceError extends BaseError {
   constructor(message) {
     super(message);
     this.name = 'SequelizeInstanceError';
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.InstanceError = InstanceError;
 
 /**
  * Thrown when a record was not found, Usually used with rejectOnEmpty mode (see message for details)
  */
-class EmptyResultError extends BaseError {
-  constructor(message) {
+export class EmptyResultError extends BaseError {
+  constructor(message?) {
     super(message);
     this.name = 'SequelizeEmptyResultError';
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.EmptyResultError = EmptyResultError;
 
 /**
  * Thrown when an include statement is improperly constructed (see message for details)
  */
-class EagerLoadingError extends BaseError {
+export class EagerLoadingError extends BaseError {
   constructor(message) {
     super(message);
     this.name = 'SequelizeEagerLoadingError';
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.EagerLoadingError = EagerLoadingError;
 
 /**
  * Thrown when an association is improperly constructed (see message for details)
  */
-class AssociationError extends BaseError {
+export class AssociationError extends BaseError {
   constructor(message) {
     super(message);
     this.name = 'SequelizeAssociationError';
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.AssociationError = AssociationError;
 /**
  * Thrown when a query is passed invalid options (see message for details)
  */
-class QueryError extends BaseError {
+export class QueryError extends BaseError {
   constructor(message) {
     super(message);
     this.name = 'SequelizeQueryError';
     Error.captureStackTrace(this, this.constructor);
   }
 }
-exports.QueryError = QueryError;

@@ -1,10 +1,10 @@
 'use strict';
 
-const chai = require('chai'),
-  Sequelize = require('../../index'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  current = Support.sequelize;
+import * as chai from 'chai';
+import DataTypes from '../../lib/data-types';
+const expect = chai.expect;
+import Support from '../support';
+const current = Support.sequelize;
 
 if (current.dialect.supports.tmpTableTrigger) {
   describe(Support.getTestDialectTeaser('Model'), () => {
@@ -25,7 +25,7 @@ if (current.dialect.supports.tmpTableTrigger) {
       beforeEach(function() {
         User = this.sequelize.define('user', {
           username: {
-            type: Sequelize.STRING,
+            type: DataTypes.STRING,
             field: 'user_name'
           }
         }, {

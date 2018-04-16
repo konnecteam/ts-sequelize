@@ -1,11 +1,12 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support   = require(__dirname + '/../support'),
-  current   = Support.sequelize,
-  Sequelize = Support.Sequelize,
-  sinon     = require('sinon');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../support';
+const current = Support.sequelize;
+const Sequelize = Support.Sequelize;
+import * as sinon from 'sinon';
+import DataTypes from '../../../lib/data-types';
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
   describe('increment', () => {
@@ -13,7 +14,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       let stub, instance;
       const Model = current.define('User', {
         id: {
-          type: Sequelize.BIGINT,
+          type: DataTypes.BIGINT,
           primaryKey: true,
           autoIncrement: true
         }

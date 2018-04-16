@@ -1,8 +1,8 @@
 'use strict';
 
-const _ = require('lodash');
-const util = require('util');
-const Utils = require('../utils');
+import * as _ from 'lodash';
+import * as util from 'util';
+import * as Utils from '../utils';;
 
 function validateDeprecation(value, expectation, options) {
   if (!options.deprecated) {
@@ -29,7 +29,7 @@ function validate(value, expectation) {
   throw new Error(`The parameter (value: ${value}) is no ${expectation.name}`);
 }
 
-function check(value, expectation, options) {
+export function check(value?, expectation?, options?) {
   options = _.extend({
     deprecated: false,
     index: null,
@@ -51,9 +51,5 @@ function check(value, expectation, options) {
 
   return false
     || validateDeprecation(value, expectation, options)
-    || validate(value, expectation, options);
+    || validate(value, expectation);
 }
-
-module.exports = check;
-module.exports.check = check;
-module.exports.default = check;

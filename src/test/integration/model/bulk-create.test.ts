@@ -1,14 +1,14 @@
 'use strict';
 
-const chai = require('chai'),
-  Sequelize = require('../../../index'),
-  Promise = Sequelize.Promise,
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  dialect = Support.getTestDialect(),
-  _ = require('lodash'),
-  current = Support.sequelize;
+import * as chai from 'chai';
+import {Sequelize}from '../../../index';
+const Promise = Sequelize.Promise;
+const expect = chai.expect;
+import Support from '../support';
+import DataTypes from '../../../lib/data-types';
+const dialect = Support.getTestDialect();
+import * as _ from 'lodash';
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   beforeEach(function() {
@@ -100,7 +100,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('should not fail on validate: true and individualHooks: true', function() {
       const User = this.sequelize.define('user', {
-        name: Sequelize.STRING
+        name: DataTypes.STRING
       });
 
       return User.sync({force: true}).then(() => {
@@ -112,8 +112,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('should not insert NULL for unused fields', function() {
       const Beer = this.sequelize.define('Beer', {
-        style: Sequelize.STRING,
-        size: Sequelize.INTEGER
+        style: DataTypes.STRING,
+        size: DataTypes.INTEGER
       });
 
       return Beer.sync({force: true}).then(() => {
@@ -250,7 +250,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('properly handles a model with a length column', function() {
       const UserWithLength = this.sequelize.define('UserWithLength', {
-        length: Sequelize.INTEGER
+        length: DataTypes.INTEGER
       });
 
       return UserWithLength.sync({force: true}).then(() => {
@@ -267,9 +267,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         return self.User.findAll({order: ['id']}).then(users => {
           expect(users.length).to.equal(2);
           expect(users[0].username).to.equal('Peter');
-          expect(parseInt(+users[0].createdAt / 5000, 10)).to.be.closeTo(parseInt(+new Date() / 5000, 10), 1.5);
+          expect(Math.floor((users[0].createdAt / 5000))).to.be.closeTo(Math.floor((new Date()).getTime() / 5000), 1.5);
           expect(users[1].username).to.equal('Paul');
-          expect(parseInt(+users[1].createdAt / 5000, 10)).to.be.closeTo(parseInt(+new Date() / 5000, 10), 1.5);
+          expect(Math.floor(users[1].createdAt / 5000)).to.be.closeTo(Math.floor((new Date()).getTime() / 5000), 1.5);
         });
       });
     });
@@ -277,11 +277,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     it('emits an error when validate is set to true', function() {
       const Tasks = this.sequelize.define('Task', {
         name: {
-          type: Sequelize.STRING,
+          type: DataTypes.STRING,
           allowNull: false
         },
         code: {
-          type: Sequelize.STRING,
+          type: DataTypes.STRING,
           validate: {
             len: [3, 10]
           }
@@ -312,13 +312,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     it("doesn't emit an error when validate is set to true but our selectedValues are fine", function() {
       const Tasks = this.sequelize.define('Task', {
         name: {
-          type: Sequelize.STRING,
+          type: DataTypes.STRING,
           validate: {
             notEmpty: true
           }
         },
         code: {
-          type: Sequelize.STRING,
+          type: DataTypes.STRING,
           validate: {
             len: [3, 10]
           }
@@ -532,8 +532,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       it('correctly restores enum values', function() {
         const self = this,
           Item = self.sequelize.define('Item', {
-            state: { type: Sequelize.ENUM, values: ['available', 'in_cart', 'shipped'] },
-            name: Sequelize.STRING
+            state: { type: DataTypes.ENUM, values: ['available', 'in_cart', 'shipped'] },
+            name: DataTypes.STRING
           });
 
         return Item.sync({ force: true }).then(() => {
@@ -548,18 +548,18 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('should properly map field names to attribute names', function() {
       const Maya = this.sequelize.define('Maya', {
-        name: Sequelize.STRING,
+        name: DataTypes.STRING,
         secret: {
           field: 'secret_given',
-          type: Sequelize.STRING
+          type: DataTypes.STRING
         },
         createdAt: {
           field: 'created_at',
-          type: Sequelize.DATE
+          type: DataTypes.DATE
         },
         updatedAt: {
           field: 'updated_at',
-          type: Sequelize.DATE
+          type: DataTypes.DATE
         }
       });
 

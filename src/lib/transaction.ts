@@ -1,7 +1,7 @@
 'use strict';
 
-const _ = require('lodash');
-const Utils = require('./utils');
+import * as _ from 'lodash';
+import * as Utils from './utils';
 
 /**
  * The transaction object is used to identify a running transaction. It is created by calling `Sequelize.transaction()`.
@@ -10,7 +10,15 @@ const Utils = require('./utils');
  *
  * @see {@link Sequelize.transaction}
  */
-class Transaction {
+export class Transaction {
+  sequelize;
+  savepoints;
+  options;
+  parent;
+  id;
+  name;
+  finished;
+  connection;
   /**
    * @param {Sequelize} sequelize A configured sequelize Instance
    * @param {Object} options An object with options
@@ -19,7 +27,7 @@ class Transaction {
    * @param {String} options.isolationLevel=true Sets the isolation level of the transaction.
    * @param {String} options.deferrable Sets the constraints to be deferred or immediately checked.
    */
-  constructor(sequelize, options) {
+  constructor(sequelize, options?) {
     this.sequelize = sequelize;
     this.savepoints = [];
 
@@ -102,16 +110,18 @@ class Transaction {
   prepareEnvironment(useCLS) {
     let connectionPromise;
 
-    if (typeof useCLS === 'undefined') {
+    if (useCLS == null) {
       useCLS = true;
     }
 
     if (this.parent) {
       connectionPromise = Utils.Promise.resolve(this.parent.connection);
     } else {
-      const acquireOptions = { uuid: this.id };
+      const acquireOptions = { 
+        uuid: this.id
+      };
       if (this.options.readOnly) {
-        acquireOptions.type = 'SELECT';
+        acquireOptions['type'] = 'SELECT';
       }
       connectionPromise = this.sequelize.connectionManager.getConnection(acquireOptions);
     }
@@ -177,7 +187,7 @@ class Transaction {
 
     if (cls) {
       if (cls.get('transaction') === this) {
-        cls.set('transaction', null);
+        cls.set('transaction');
       }
     }
   }

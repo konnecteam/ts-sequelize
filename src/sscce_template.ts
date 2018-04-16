@@ -6,5 +6,8 @@
  * npm run sscce-{dialect}
  */
 
-const Sequelize = require('./index');
-const sequelize = require('./test/support').createSequelizeInstance();
+import {Sequelize}from './index'
+import support from './test/support'
+
+const sequelize = support.createSequelizeInstance(null);
+

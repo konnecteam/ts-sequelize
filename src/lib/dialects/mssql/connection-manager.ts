@@ -1,16 +1,18 @@
 'use strict';
 
-const AbstractConnectionManager = require('../abstract/connection-manager');
-const ResourceLock = require('./resource-lock');
-const Promise = require('../../promise');
-const Utils = require('../../utils');
+import {AbstractConnectionManager} from '../abstract/connection-manager';
+import ResourceLock from './resource-lock';
+import Promise from '../../promise';
+import * as Utils from '../../utils';
 const debug = Utils.getLogger().debugContext('connection:mssql');
 const debugTedious = Utils.getLogger().debugContext('connection:mssql:tedious');
-const sequelizeErrors = require('../../errors');
-const parserStore = require('../parserStore')('mssql');
-const _ = require('lodash');
+import * as sequelizeErrors from '../../errors/index';
+import { parserStore } from '../parserStore';
+const store = parserStore('mssql');
+import * as _ from 'lodash';
 
-class ConnectionManager extends AbstractConnectionManager {
+export class ConnectionManager extends AbstractConnectionManager {
+
   constructor(dialect, sequelize) {
     super(dialect, sequelize);
 
@@ -32,11 +34,11 @@ class ConnectionManager extends AbstractConnectionManager {
 
   // Expose this as a method so that the parsing may be updated when the user has added additional, custom types
   _refreshTypeParser(dataType) {
-    parserStore.refresh(dataType);
+    store.refresh(dataType);
   }
 
   _clearTypeParser() {
-    parserStore.clear();
+    store.clear();
   }
 
   connect(config) {
@@ -48,7 +50,8 @@ class ConnectionManager extends AbstractConnectionManager {
         options: {
           port: config.port,
           database: config.database
-        }
+        },
+        domain: undefined
       };
 
       if (config.dialectOptions) {
@@ -154,6 +157,7 @@ class ConnectionManager extends AbstractConnectionManager {
     }
   }
 }
+
 
 module.exports = ConnectionManager;
 module.exports.ConnectionManager = ConnectionManager;

@@ -1,11 +1,18 @@
 'use strict';
 
-const Association = require('./base');
-Association.BelongsTo = require('./belongs-to');
-Association.HasOne = require('./has-one');
-Association.HasMany = require('./has-many');
-Association.BelongsToMany = require('./belongs-to-many');
+import * as Base from './base';
+import {BelongsTo} from './belongs-to';
+import {HasOne} from './has-one';
+import {HasMany} from './has-many';
+import {BelongsToMany} from './belongs-to-many';
 
-module.exports = Association;
-module.exports.default = Association;
-module.exports.Association = Association;
+
+const Association = {
+    Base : Base,
+    BelongsTo : BelongsTo,
+    HasOne : HasOne,
+    HasMany : HasMany,
+    BelongsToMany : BelongsToMany
+};
+
+export default Association;

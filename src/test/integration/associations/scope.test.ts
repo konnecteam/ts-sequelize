@@ -1,11 +1,11 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  Sequelize = require('../../../index'),
-  Promise = Sequelize.Promise;
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../support';
+import DataTypes from '../../../lib/data-types';
+import {Sequelize}from '../../../index';
+const Promise = Sequelize.Promise;
 
 describe(Support.getTestDialectTeaser('associations'), () => {
   describe('scope', () => {
@@ -14,11 +14,11 @@ describe(Support.getTestDialectTeaser('associations'), () => {
       this.Image = this.sequelize.define('image', {});
       this.Question = this.sequelize.define('question', {});
       this.Comment = this.sequelize.define('comment', {
-        title: Sequelize.STRING,
-        commentable: Sequelize.STRING,
-        commentable_id: Sequelize.INTEGER,
+        title: DataTypes.STRING,
+        commentable: DataTypes.STRING,
+        commentable_id: DataTypes.INTEGER,
         isMain: {
-          type: Sequelize.BOOLEAN,
+          type: DataTypes.BOOLEAN,
           defaultValue: false
         }
       });

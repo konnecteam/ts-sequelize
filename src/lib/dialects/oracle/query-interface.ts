@@ -1,7 +1,7 @@
 'use strict';
 
-const _ = require('lodash');
-const Promise = require('../../promise');
+import * as _ from 'lodash';
+import Promise from '../../promise';
 
 /**
  * Returns an object that treats Oracle's inabilities to do certain queries.
@@ -11,7 +11,8 @@ const Promise = require('../../promise');
  * A wrapper that fixes Oracle's inability to cleanly drop constraints on multiple tables if the calls are made at the same time 
  * @param  {Object} options
  */
-const dropAllTables = function(options) {
+// const dropAllTables = function(options) {
+  export function dropAllTables(options) {
 
   options = options || {};
   const skip = options.skip || [];
@@ -52,7 +53,7 @@ const dropAllTables = function(options) {
  * @param  {Boolean|Function} [options.logging] A function that logs the sql queries, or false for explicitly not logging these queries
  * @private
  */
-const removeColumn = function(tableName, attributeName, options) {
+export function removeColumn(tableName, attributeName, options) {
   options = Object.assign({ raw: true }, options || {});
 
   const constraintsSql = [];
@@ -124,7 +125,7 @@ const removeColumn = function(tableName, attributeName, options) {
  * A wrapper that adds the currentModel of the describe in options
  * This is used for mapping the real column names to those returned by Oracle
  */
-const addOptionsForDescribe = function(tableName, options) {
+export function addOptionsForDescribe(tableName, options) {
   if (this.sequelize && this.sequelize.models && Object.keys(this.sequelize.models).length > 0) {
     const keys = Object.keys(this.sequelize.models);
     let i = 0, found = false;
@@ -146,9 +147,3 @@ const addOptionsForDescribe = function(tableName, options) {
   return options;
 };
 
-
-module.exports = {
-  dropAllTables,
-  removeColumn,
-  addOptionsForDescribe
-};

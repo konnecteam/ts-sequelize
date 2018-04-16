@@ -1,36 +1,100 @@
 'use strict';
 
-const url = require('url');
-const Path = require('path');
-const retry = require('retry-as-promised');
-const clsBluebird = require('cls-bluebird');
-const Utils = require('./utils');
-const Model = require('./model');
-const DataTypes = require('./data-types');
-const Deferrable = require('./deferrable');
-const ModelManager = require('./model-manager');
-const QueryInterface = require('./query-interface');
-const Transaction = require('./transaction');
-const QueryTypes = require('./query-types');
-const TableHints = require('./table-hints');
-const sequelizeErrors = require('./errors');
-const Promise = require('./promise');
-const Hooks = require('./hooks');
-const Association = require('./associations/index');
-const Validator = require('./utils/validator-extras').validator;
-const _ = require('lodash');
-const Op = require('./operators');
+import * as url from 'url';
+import * as Path from 'path';
+import * as retry from 'retry-as-promised';
+import * as clsBluebird from 'cls-bluebird';
+import * as Utils from './utils';
+import DataTypes from './data-types';
+import Deferrable from './deferrable';
+import {Model} from './model';
+import {ModelManager} from './model-manager';
+import {QueryInterface} from './query-interface';
+import {Transaction} from './transaction';
+import QueryTypes from './query-types';
+import * as TableHints from './table-hints';
+import * as sequelizeErrors from './errors/index';
+import Promise from './promise';
+import * as Hooks from './hooks';
+import * as Association from './associations/index';
+import * as validatorExtras from './utils/validator-extras';
+const Validator = validatorExtras.validator;
+import * as _ from 'lodash';
+import Op from './operators';
 
 /**
  * This is the main class, the entry point to sequelize. To use it, you just need to import sequelize:
  *
  * ```js
- * const Sequelize = require('sequelize');
+ * import {Sequelize}from 'sequelize';
  * ```
  *
  * In addition to sequelize, the connection library for the dialect you want to use should also be installed in your project. You don't need to import it however, as sequelize will take care of that.
  */
-class Sequelize {
+export class Sequelize {
+  options;
+  config;
+  dialect;
+  queryInterface;
+  models;
+  modelManager;
+  connectionManager;
+  importCache;
+  test;
+  fn;
+  col;
+  cast;
+  literal;
+  and;
+  or;
+  json;
+  where;
+  validate;
+
+  asIs;
+  condition;
+  _cls;
+  Sequelize;
+  Utils;
+  Promise;
+  version;
+  QueryTypes;
+  TableHints;
+  Op;
+  Validator;
+  Model;
+  DataTypes;
+  Transaction;
+  Deferrable;
+  Association;
+  useInflection;
+  Error;
+
+  static asIs;
+  static condition;
+  static _cls;
+  static Sequelize;
+  static Utils;
+  static Promise;
+  static version;
+  static options;
+  static QueryTypes;
+  static TableHints;
+  static Op;
+  static Validator;
+  static Model;
+  static DataTypes;
+  static Transaction;
+  static Deferrable;
+  static Association;
+  static useInflection;
+  static Error;
+  static InstanceError;
+  static ValidationError;
+  static ForeignKeyConstraintError;
+  static EmptyResultError;
+  static ConnectionError;
+
 
   /**
    * Instantiate sequelize with name of database, username and password
@@ -99,7 +163,7 @@ class Sequelize {
    * @param {Object|Boolean} [options.operatorsAliases=true] String based operator alias, default value is true which will enable all operators alias. Pass object to limit set of aliased operators or false to disable completely.
    *
    */
-  constructor(database, username, password, options) {
+  constructor(database, username?, password?, options?) {
     let config;
 
     if (arguments.length === 1 && typeof database === 'object') {
@@ -144,7 +208,7 @@ class Sequelize {
       config = {database, username, password};
     }
 
-    Sequelize.runHooks('beforeInit', config, options);
+    (Sequelize as any).runHooks('beforeInit', config, options);
 
     this.options = Object.assign({
       dialect: null,
@@ -189,7 +253,7 @@ class Sequelize {
       this.options.logging = console.log;
     }
 
-    this._setupHooks(options.hooks);
+    (this as any)._setupHooks(options.hooks);
 
     if (['', null, false].indexOf(config.password) > -1 || typeof config.password === 'undefined') {
       config.password = null;
@@ -265,7 +329,7 @@ class Sequelize {
       }
     };
 
-    Sequelize.runHooks('afterInit', this);
+    (Sequelize as any).runHooks('afterInit', this);
   }
 
   refreshTypes() {
@@ -336,7 +400,6 @@ class Sequelize {
     options.sequelize = this;
 
     const model = class extends Model {};
-
     model.init(attributes, options);
 
     return model;
@@ -381,7 +444,7 @@ class Sequelize {
     // is it a relative path?
     if (Path.normalize(path) !== Path.resolve(path)) {
       // make path relative to the caller
-      const callerFilename = Utils.stack()[1].getFileName();
+      const callerFilename = (Utils.stack()[1] as any).getFileName();
       const callerPath = Path.dirname(callerFilename);
 
       path = Path.resolve(callerPath, path);
@@ -521,7 +584,7 @@ class Sequelize {
 
       if (options.transaction && options.transaction.finished) {
         const error = new Error(options.transaction.finished+' has been called on this transaction('+options.transaction.id+'), you can no longer use it. (The rejected query is attached as the \'sql\' property of this error)');
-        error.sql = sql;
+        (error as any).sql = sql;
         return Promise.reject(error);
       }
 
@@ -686,7 +749,7 @@ class Sequelize {
 
     return Promise.try(() => {
       if (options.hooks) {
-        return this.runHooks('beforeBulkSync', options);
+        return (this as any).runHooks('beforeBulkSync', options);
       }
     }).then(() => {
       if (options.force) {
@@ -708,7 +771,7 @@ class Sequelize {
       return Promise.each(models, model => model.sync(options));
     }).then(() => {
       if (options.hooks) {
-        return this.runHooks('afterBulkSync', options);
+        return (this as any).runHooks('afterBulkSync', options);
       }
     }).return(this);
   }
@@ -768,7 +831,7 @@ class Sequelize {
    * @error 'Invalid credentials' if the authentication failed (even if the database did not respond at all...)
    * @return {Promise}
    */
-  authenticate(options) {
+  authenticate(options?) {
     let sql = 'SELECT 1+1 AS result';
 
     if (this.dialect.name === 'oracle') {
@@ -906,7 +969,7 @@ class Sequelize {
    * @memberof Sequelize
    * @return {Sequelize.json}
    */
-  static json(conditionsOrPath, value) {
+  static json(conditionsOrPath, value?) {
     return new Utils.Json(conditionsOrPath, value);
   }
 
@@ -960,9 +1023,9 @@ class Sequelize {
    * To enable CLS, add it do your project, create a namespace and set it on the sequelize constructor:
    *
    * ```js
-   * const cls = require('continuation-local-storage');
+   * import * as cls from 'continuation-local-storage';
    * const ns = cls.createNamespace('....');
-   * const Sequelize = require('sequelize');
+   * import {Sequelize}from 'sequelize';
    * Sequelize.useCLS(ns);
    * ```
    * Note, that CLS is enabled for all sequelize instances, and all instances will share the same namespace
@@ -988,7 +1051,7 @@ class Sequelize {
 
     // autoCallback provided
     return Sequelize._clsRun(() => {
-      return transaction.prepareEnvironment()
+      return transaction.prepareEnvironment(null)
         .then(() => autoCallback(transaction))
         .tap(() => transaction.commit())
         .catch(err => {
@@ -1057,7 +1120,7 @@ class Sequelize {
 
   log() {
     let options;
-    let args = Utils.sliceArgs(arguments);
+    let args = Utils.sliceArgs(arguments,null);
     const last = _.last(args);
 
     if (last && _.isPlainObject(last) && last.hasOwnProperty('logging')) {
@@ -1255,7 +1318,3 @@ for (const error of Object.keys(sequelizeErrors)) {
     Sequelize.prototype[error] = Sequelize[error] = sequelizeErrors[error];
   }
 }
-
-module.exports = Sequelize;
-module.exports.Sequelize = Sequelize;
-module.exports.default = Sequelize;

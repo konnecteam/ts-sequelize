@@ -1,16 +1,16 @@
 'use strict';
 
-const chai = require('chai'),
-  sinon = require('sinon'),
-  expect = chai.expect,
-  stub = sinon.stub,
-  _         = require('lodash'),
-  Support   = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  HasMany   = require(__dirname + '/../../../lib/associations/has-many'),
-  Op        = require(__dirname + '/../../../lib/operators'),
-  current   = Support.sequelize,
-  Promise   = current.Promise;
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+const expect = chai.expect;
+const stub = sinon.stub;
+import * as _ from 'lodash';
+import Support from '../../support';
+import DataTypes from '../../../lib/data-types';
+import {HasMany} from '../../../lib/associations/has-many';
+import Op from '../../../lib/operators';
+const current = Support.sequelize;
+const Promise = current.Promise;
 
 describe(Support.getTestDialectTeaser('hasMany'), () => {
   describe('optimizations using bulk create, destroy and update', () => {

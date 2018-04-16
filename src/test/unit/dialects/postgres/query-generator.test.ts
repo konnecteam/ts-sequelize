@@ -1,15 +1,15 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Operators = require('../../../../lib/operators'),
-  QueryGenerator = require('../../../../lib/dialects/postgres/query-generator'),
-  Support = require(__dirname + '/../../support'),
-  dialect = Support.getTestDialect(),
-  DataTypes = require(__dirname + '/../../../../lib/data-types'),
-  moment = require('moment'),
-  current = Support.sequelize,
-  _ = require('lodash');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Operators from '../../../../lib/operators';
+import QueryGenerator from '../../../../lib/dialects/postgres/query-generator';
+import Support from '../../../support';
+const dialect = Support.getTestDialect();
+import DataTypes from '../../../../lib/data-types';
+import * as moment from 'moment';
+const current = Support.sequelize;
+import * as _ from 'lodash';
 
 if (dialect.match(/^postgres/)) {
   describe('[POSTGRES Specific] QueryGenerator', () => {
@@ -986,7 +986,7 @@ if (dialect.match(/^postgres/)) {
       describe(suiteTitle, () => {
         afterEach(function() {
           this.sequelize.options.quoteIdentifiers = true;
-          QueryGenerator.options.quoteIdentifiers = true;
+          (QueryGenerator.options as any).quoteIdentifiers = true;
         });
 
         tests.forEach(test => {
@@ -1001,9 +1001,9 @@ if (dialect.match(/^postgres/)) {
             }
 
             QueryGenerator.options = _.assign(context.options, { timezone: '+00:00' });
-            QueryGenerator._dialect = this.sequelize.dialect;
-            QueryGenerator.sequelize = this.sequelize;
-            QueryGenerator.setOperatorsAliases(Operators.LegacyAliases);
+            (QueryGenerator as any)._dialect = this.sequelize.dialect;
+            (QueryGenerator as any).sequelize = this.sequelize;
+            (QueryGenerator as any).setOperatorsAliases(Operators.LegacyAliases);
             const conditions = QueryGenerator[suiteTitle].apply(QueryGenerator, test.arguments);
             expect(conditions).to.deep.equal(test.expectation);
           });

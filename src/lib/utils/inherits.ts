@@ -1,17 +1,13 @@
 'use strict';
 
-const util = require('util');
-const _ = require('lodash');
+import * as util from 'util';
+import * as _ from 'lodash';
 
 /**
  * like util.inherits, but also copies over static properties
  * @private
  */
-function inherits(constructor, superConstructor) {
+export default function inherits(constructor, superConstructor) {
   util.inherits(constructor, superConstructor); // Instance (prototype) methods
   _.extend(constructor, superConstructor); // Static methods
 }
-
-module.exports = inherits;
-module.exports.inherits = inherits;
-module.exports.default = inherits;

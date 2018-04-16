@@ -1,10 +1,10 @@
 'use strict';
 
-const dataTypes = require('./data-types');
-const util = require('util');
-const _ = require('lodash');
+import dataTypes from './data-types';
+import * as util from 'util';
+import * as _ from 'lodash';
 
-function escape(val, timeZone, dialect, format) {
+export function escape(val, timeZone, dialect, format?) {
   let prependN = false;
   if (val === undefined || val === null) {
     return 'NULL';
@@ -79,9 +79,8 @@ function escape(val, timeZone, dialect, format) {
   }
   return (prependN ? "N'" : "'") + val + "'";
 }
-exports.escape = escape;
 
-function format(sql, values, timeZone, dialect) {
+export function format(sql, values, timeZone, dialect) {
   values = [].concat(values);
 
   if (typeof sql !== 'string') {
@@ -95,9 +94,8 @@ function format(sql, values, timeZone, dialect) {
     return escape(values.shift(), timeZone, dialect, true);
   });
 }
-exports.format = format;
 
-function formatNamedParameters(sql, values, timeZone, dialect) {
+export function formatNamedParameters(sql, values, timeZone, dialect) {
   return sql.replace(/\:+(?!\d)(\w+)/g, (value, key) => {
     if ('postgres' === dialect && '::' === value.slice(0, 2)) {
       return value;
@@ -110,4 +108,3 @@ function formatNamedParameters(sql, values, timeZone, dialect) {
     }
   });
 }
-exports.formatNamedParameters = formatNamedParameters;

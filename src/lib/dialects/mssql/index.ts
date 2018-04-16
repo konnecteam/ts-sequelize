@@ -1,13 +1,15 @@
 'use strict';
 
-const _ = require('lodash');
-const AbstractDialect = require('../abstract');
-const ConnectionManager = require('./connection-manager');
-const Query = require('./query');
-const QueryGenerator = require('./query-generator');
-const DataTypes = require('../../data-types').mssql;
+import * as _ from 'lodash';
+import {AbstractDialect} from '../abstract';
+import {ConnectionManager} from './connection-manager';
+import {Query} from './query';
+import QueryGenerator from './query-generator';
+import AllDataTypes from '../../data-types';
+const DataTypes = AllDataTypes.mssql; 
 
-class MssqlDialect extends AbstractDialect {
+export class MssqlDialect extends AbstractDialect {
+
   constructor(sequelize) {
     super();
     this.sequelize = sequelize;
@@ -51,7 +53,7 @@ MssqlDialect.prototype.supports = _.merge(_.cloneDeep(AbstractDialect.prototype.
     where: true
   },
   NUMERIC: true,
-  tmpTableTrigger: true
+  tmpTableTrigger: true,
 });
 
 ConnectionManager.prototype.defaultVersion = '12.0.2000'; // SQL Server 2014 Express
@@ -61,5 +63,6 @@ MssqlDialect.prototype.TICK_CHAR = '"';
 MssqlDialect.prototype.TICK_CHAR_LEFT = '[';
 MssqlDialect.prototype.TICK_CHAR_RIGHT = ']';
 MssqlDialect.prototype.DataTypes = DataTypes;
+
 
 module.exports = MssqlDialect;

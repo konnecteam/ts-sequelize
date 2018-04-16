@@ -1,11 +1,11 @@
 'use strict';
 
-const Utils = require('./../utils');
-const Helpers = require('./helpers');
-const _ = require('lodash');
-const Transaction = require('../transaction');
-const Association = require('./base');
-const Op = require('../operators');
+import * as Utils  from './../utils';
+import * as Helpers from './helpers';
+import * as _ from 'lodash';
+import {Transaction} from '../transaction';
+import {Association} from './base';
+import Op from '../operators';
 
 
 /**
@@ -15,7 +15,22 @@ const Op = require('../operators');
  *
  * @see {@link Model.belongsTo}
  */
-class BelongsTo extends Association {
+export class BelongsTo extends Association {
+
+  isSingleAssociation;
+  foreignKeyAttribute;
+  isAliased;
+  foreignKey;
+  identifier;
+  identifierField;
+  targetKey;
+  targetKeyField;
+  targetKeyIsPrimary;
+  targetIdentifier;
+  associationAccessor;
+  accessors;
+  
+
   constructor(source, target, options) {
     super(source, target, options);
 
@@ -219,7 +234,10 @@ class BelongsTo extends Association {
   create(sourceInstance, values, fieldsOrOptions) {
     const association = this;
 
-    const options = {};
+    const options = {
+      transaction: undefined,
+      logging: undefined
+    };
 
     if ((fieldsOrOptions || {}).transaction instanceof Transaction) {
       options.transaction = fieldsOrOptions.transaction;
@@ -231,7 +249,3 @@ class BelongsTo extends Association {
     );
   }
 }
-
-module.exports = BelongsTo;
-module.exports.BelongsTo = BelongsTo;
-module.exports.default = BelongsTo;

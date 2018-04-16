@@ -1,15 +1,15 @@
 'use strict';
 
-const chai = require('chai');
-const sinon = require('sinon');
+import * as chai from 'chai';
+import * as sinon from 'sinon';
 const expect = chai.expect;
 const stub = sinon.stub;
-const _ = require('lodash');
-const Support = require(__dirname + '/../support');
-const DataTypes = require(__dirname + '/../../../lib/data-types');
-const BelongsTo = require(__dirname + '/../../../lib/associations/belongs-to');
-const HasMany = require(__dirname + '/../../../lib/associations/has-many');
-const HasOne = require(__dirname + '/../../../lib/associations/has-one');
+import * as _ from 'lodash';
+import Support from '../../support';
+import DataTypes from '../../../lib/data-types';
+import {BelongsTo} from '../../../lib/associations/belongs-to';
+import {HasMany} from '../../../lib/associations/has-many';
+import {HasOne} from '../../../lib/associations/has-one';
 const current = Support.sequelize;
 const Promise = current.Promise;
 const AssociationError = require(__dirname + '/../../../lib/errors').AssociationError;

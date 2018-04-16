@@ -1,6 +1,17 @@
 'use strict';
 
-class AbstractDialect {}
+export class AbstractDialect {
+  sequelize;
+  connectionManager;
+  QueryGenerator;
+  Query;
+  name;
+  TICK_CHAR;
+  TICK_CHAR_LEFT;
+  TICK_CHAR_RIGHT;
+  DataTypes;
+  supports: {};
+}
 
 AbstractDialect.prototype.supports = {
   'DEFAULT': true,
@@ -66,6 +77,3 @@ AbstractDialect.prototype.supports = {
   deferrableConstraints: false
 };
 
-module.exports = AbstractDialect;
-module.exports.AbstractDialect = AbstractDialect;
-module.exports.default = AbstractDialect;

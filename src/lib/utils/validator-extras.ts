@@ -1,10 +1,11 @@
 'use strict';
 
-const _ = require('lodash');
-const validator = _.cloneDeep(require('validator'));
-const moment = require('moment');
+import * as _ from 'lodash';
+import * as valid from 'validator';
+export const validator = _.cloneDeep(valid);
+import * as moment from 'moment';
 
-const extensions = {
+export const extensions = {
   extend(name, fn) {
     this[name] = fn;
 
@@ -62,9 +63,9 @@ const extensions = {
     return this.regex(str, pattern, modifiers);
   }
 };
-exports.extensions = extensions;
 
-function extendModelValidations(modelInstance) {
+
+export function extendModelValidations(modelInstance) {
   const extensions = {
     isImmutable(str, param, field) {
       return modelInstance.isNewRecord || modelInstance.dataValues[field] === modelInstance._previousDataValues[field];
@@ -75,7 +76,6 @@ function extendModelValidations(modelInstance) {
     validator[key] = extend;
   });
 }
-exports.extendModelValidations = extendModelValidations;
 
 // Deprecate this.
 validator.notNull = function() {
@@ -107,5 +107,3 @@ validator.isDate = function(dateString) {
     return moment(date.toISOString()).isValid();
   }
 };
-
-exports.validator = validator;

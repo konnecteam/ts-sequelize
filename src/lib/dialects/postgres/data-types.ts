@@ -1,10 +1,12 @@
 'use strict';
 
-const _ = require('lodash');
-const wkx = require('wkx');
-const inherits = require('../../utils/inherits');
+import * as _ from 'lodash';
+import * as wkx from 'wkx';
+import inherits from '../../utils/inherits';
+import * as Utils from '../../utils';
+import * as range from './range';
 
-module.exports = BaseTypes => {
+export function DataTypes (BaseTypes) {
   const warn = BaseTypes.ABSTRACT.warn.bind(undefined, 'http://www.postgresql.org/docs/9.4/static/datatype.html');
 
   /**
@@ -37,12 +39,12 @@ module.exports = BaseTypes => {
   };
 
   function DATEONLY() {
-    if (!(this instanceof DATEONLY)) return new DATEONLY();
+    if (!(this instanceof DATEONLY)) return new (DATEONLY as any)();
     BaseTypes.DATEONLY.apply(this, arguments);
   }
   inherits(DATEONLY, BaseTypes.DATEONLY);
 
-  DATEONLY.parse = function parse(value) {
+  (DATEONLY as any).parse = function parse(value) {
     if (value === 'infinity') {
       value = Infinity;
     } else if (value === '-infinity') {
@@ -84,12 +86,12 @@ module.exports = BaseTypes => {
   };
 
   function DECIMAL(precision, scale) {
-    if (!(this instanceof DECIMAL)) return new DECIMAL(precision, scale);
+    if (!(this instanceof DECIMAL)) return new (DECIMAL as any)(precision, scale);
     BaseTypes.DECIMAL.apply(this, arguments);
   }
   inherits(DECIMAL, BaseTypes.DECIMAL);
 
-  DECIMAL.parse = function parse(value) {
+  (DECIMAL as any).parse = function parse(value) {
     return value;
   };
 
@@ -100,7 +102,7 @@ module.exports = BaseTypes => {
   };
 
   function STRING(length, binary) {
-    if (!(this instanceof STRING)) return new STRING(length, binary);
+    if (!(this instanceof STRING)) return new (STRING as any)(length, binary);
     BaseTypes.STRING.apply(this, arguments);
   }
   inherits(STRING, BaseTypes.STRING);
@@ -118,7 +120,7 @@ module.exports = BaseTypes => {
   };
 
   function TEXT(length) {
-    if (!(this instanceof TEXT)) return new TEXT(length);
+    if (!(this instanceof TEXT)) return new (TEXT as any)(length);
     BaseTypes.TEXT.apply(this, arguments);
   }
   inherits(TEXT, BaseTypes.TEXT);
@@ -137,7 +139,7 @@ module.exports = BaseTypes => {
   };
 
   function CHAR(length, binary) {
-    if (!(this instanceof CHAR)) return new CHAR(length, binary);
+    if (!(this instanceof CHAR)) return new (CHAR as any)(length, binary);
     BaseTypes.CHAR.apply(this, arguments);
   }
   inherits(CHAR, BaseTypes.CHAR);
@@ -155,7 +157,7 @@ module.exports = BaseTypes => {
   };
 
   function BOOLEAN() {
-    if (!(this instanceof BOOLEAN)) return new BOOLEAN();
+    if (!(this instanceof BOOLEAN)) return new (BOOLEAN as any)();
     BaseTypes.BOOLEAN.apply(this, arguments);
   }
   inherits(BOOLEAN, BaseTypes.BOOLEAN);
@@ -183,7 +185,7 @@ module.exports = BaseTypes => {
 
     return value;
   };
-  BOOLEAN.parse = BOOLEAN.prototype._sanitize;
+  (BOOLEAN as any).parse = BOOLEAN.prototype._sanitize;
 
   BaseTypes.BOOLEAN.types.postgres = {
     oids: [16],
@@ -191,7 +193,7 @@ module.exports = BaseTypes => {
   };
 
   function DATE(length) {
-    if (!(this instanceof DATE)) return new DATE(length);
+    if (!(this instanceof DATE)) return new (DATE as any)(length);
     BaseTypes.DATE.apply(this, arguments);
   }
   inherits(DATE, BaseTypes.DATE);
@@ -240,7 +242,7 @@ module.exports = BaseTypes => {
   };
 
   function NOW() {
-    if (!(this instanceof NOW)) return new NOW();
+    if (!(this instanceof NOW)) return new (NOW as any)();
     BaseTypes.NOW.apply(this, arguments);
   }
   inherits(NOW, BaseTypes.NOW);
@@ -250,7 +252,7 @@ module.exports = BaseTypes => {
   };
 
   function SMALLINT(length) {
-    if (!(this instanceof SMALLINT)) return new SMALLINT(length);
+    if (!(this instanceof SMALLINT)) return new (SMALLINT as any)(length);
     BaseTypes.SMALLINT.apply(this, arguments);
 
     // POSTGRES does not support any parameters for bigint
@@ -271,7 +273,7 @@ module.exports = BaseTypes => {
   };
 
   function INTEGER(length) {
-    if (!(this instanceof INTEGER)) return new INTEGER(length);
+    if (!(this instanceof INTEGER)) return new (INTEGER as any)(length);
     BaseTypes.INTEGER.apply(this, arguments);
 
     // POSTGRES does not support any parameters for integer
@@ -285,7 +287,7 @@ module.exports = BaseTypes => {
   }
   inherits(INTEGER, BaseTypes.INTEGER);
 
-  INTEGER.parse = function parse(value) {
+  (INTEGER as any).parse = function parse(value) {
     return parseInt(value, 10);
   };
 
@@ -296,7 +298,7 @@ module.exports = BaseTypes => {
   };
 
   function BIGINT(length) {
-    if (!(this instanceof BIGINT)) return new BIGINT(length);
+    if (!(this instanceof BIGINT)) return new (BIGINT as any)(length);
     BaseTypes.BIGINT.apply(this, arguments);
 
     // POSTGRES does not support any parameters for bigint
@@ -317,7 +319,7 @@ module.exports = BaseTypes => {
   };
 
   function REAL(length, decimals) {
-    if (!(this instanceof REAL)) return new REAL(length, decimals);
+    if (!(this instanceof REAL)) return new (REAL as any)(length, decimals);
     BaseTypes.REAL.apply(this, arguments);
 
     // POSTGRES does not support any parameters for real
@@ -338,7 +340,7 @@ module.exports = BaseTypes => {
   };
 
   function DOUBLE(length, decimals) {
-    if (!(this instanceof DOUBLE)) return new DOUBLE(length, decimals);
+    if (!(this instanceof DOUBLE)) return new (DOUBLE as any)(length, decimals);
     BaseTypes.DOUBLE.apply(this, arguments);
 
     // POSTGRES does not support any parameters for double
@@ -359,7 +361,7 @@ module.exports = BaseTypes => {
   };
 
   function FLOAT(length, decimals) {
-    if (!(this instanceof FLOAT)) return new FLOAT(length, decimals);
+    if (!(this instanceof FLOAT)) return new (FLOAT as any)(length, decimals);
     BaseTypes.FLOAT.apply(this, arguments);
 
     // POSTGRES does only support lengths as parameter.
@@ -382,10 +384,10 @@ module.exports = BaseTypes => {
     }
   }
   inherits(FLOAT, BaseTypes.FLOAT);
-  delete FLOAT.parse; // Float has no separate type in PG
+  delete (FLOAT as any).parse; // Float has no separate type in PG
 
   function BLOB(length) {
-    if (!(this instanceof BLOB)) return new BLOB(length);
+    if (!(this instanceof BLOB)) return new (BLOB as any)(length);
     BaseTypes.BLOB.apply(this, arguments);
   }
   inherits(BLOB, BaseTypes.BLOB);
@@ -409,7 +411,7 @@ module.exports = BaseTypes => {
   };
 
   function GEOMETRY(type, srid) {
-    if (!(this instanceof GEOMETRY)) return new GEOMETRY(type, srid);
+    if (!(this instanceof GEOMETRY)) return new (GEOMETRY as any)(type, srid);
     BaseTypes.GEOMETRY.apply(this, arguments);
   }
   inherits(GEOMETRY, BaseTypes.GEOMETRY);
@@ -435,7 +437,7 @@ module.exports = BaseTypes => {
     array_oids: []
   };
 
-  GEOMETRY.parse = GEOMETRY.prototype.parse = function parse(value) {
+  (GEOMETRY as any).parse = GEOMETRY.prototype.parse = function parse(value) {
     const b = new Buffer(value, 'hex');
     return wkx.Geometry.parse(b).toGeoJSON();
   };
@@ -445,7 +447,7 @@ module.exports = BaseTypes => {
   };
 
   function GEOGRAPHY(type, srid) {
-    if (!(this instanceof GEOGRAPHY)) return new GEOGRAPHY(type, srid);
+    if (!(this instanceof GEOGRAPHY)) return new (GEOGRAPHY as any)(type, srid);
     BaseTypes.GEOGRAPHY.apply(this, arguments);
   }
   inherits(GEOGRAPHY, BaseTypes.GEOGRAPHY);
@@ -471,7 +473,7 @@ module.exports = BaseTypes => {
     array_oids: []
   };
 
-  GEOGRAPHY.parse = GEOGRAPHY.prototype.parse = function parse(value) {
+  (GEOGRAPHY as any).parse = GEOGRAPHY.prototype.parse = function parse(value) {
     const b = new Buffer(value, 'hex');
     return wkx.Geometry.parse(b).toGeoJSON();
   };
@@ -482,7 +484,7 @@ module.exports = BaseTypes => {
 
   let hstore;
   function HSTORE() {
-    if (!(this instanceof HSTORE)) return new HSTORE();
+    if (!(this instanceof HSTORE)) return new (HSTORE as any)();
     BaseTypes.HSTORE.apply(this, arguments);
 
     if (!hstore) {
@@ -492,7 +494,7 @@ module.exports = BaseTypes => {
   }
   inherits(HSTORE, BaseTypes.HSTORE);
 
-  HSTORE.parse = function parse(value) {
+  (HSTORE as any).parse = function parse(value) {
     if (!hstore) {
       // All datatype files are loaded at import - make sure we don't load the hstore parser before a hstore is instantiated
       hstore = require('./hstore');
@@ -515,12 +517,12 @@ module.exports = BaseTypes => {
   };
 
   function RANGE(subtype) {
-    if (!(this instanceof RANGE)) return new RANGE(subtype);
+    if (!(this instanceof RANGE)) return new (RANGE as any)(subtype);
     BaseTypes.RANGE.apply(this, arguments);
   }
   inherits(RANGE, BaseTypes.RANGE);
 
-  RANGE.oid_map = {
+  (RANGE as any).oid_map = {
     3904: 23, // int4
     3905: 23,
     3906: 1700, // Numeric
@@ -535,9 +537,9 @@ module.exports = BaseTypes => {
     3927: 20
   };
 
-  const range = require('./range');
-  RANGE.parse = function parse(value, oid, getTypeParser) {
-    const parser = getTypeParser(RANGE.oid_map[oid]);
+  
+  (RANGE as any).parse = function parse(value, oid, getTypeParser) {
+    const parser = getTypeParser((RANGE as any).oid_map[oid]);
 
     return range.parse(value, parser);
   };
@@ -560,7 +562,7 @@ module.exports = BaseTypes => {
     });
 
     // Array.map does not preserve extra array properties
-    valuesStringified.inclusive = values.inclusive;
+    (valuesStringified as any).inclusive = (values as any).inclusive;
 
     return  '\'' + range.stringify(valuesStringified) + '\'';
   };
@@ -584,7 +586,6 @@ module.exports = BaseTypes => {
     }, this).join(',') + ']';
 
     if (this.type) {
-      const Utils = require('../../utils');
       let castKey = this.toSql();
 
       if (this.type instanceof BaseTypes.ENUM) {
@@ -601,12 +602,12 @@ module.exports = BaseTypes => {
   };
 
   function ENUM(options) {
-    if (!(this instanceof ENUM)) return new ENUM(options);
+    if (!(this instanceof ENUM)) return new (ENUM as any)(options);
     BaseTypes.ENUM.apply(this, arguments);
   }
   inherits(ENUM, BaseTypes.ENUM);
 
-  ENUM.parse = function(value) {
+  (ENUM as any).parse = function(value) {
     return value;
   };
 

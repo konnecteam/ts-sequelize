@@ -1,9 +1,9 @@
 'use strict';
 
-const _ = require('lodash');
-const inherits = require('../../utils/inherits');
+import * as _ from 'lodash';
+import inherits from '../../utils/inherits';
 
-module.exports = BaseTypes => {
+export function DataTypes (BaseTypes) {
   const warn = BaseTypes.ABSTRACT.warn.bind(undefined, 'https://www.sqlite.org/datatype3.html');
 
   /**
@@ -33,22 +33,22 @@ module.exports = BaseTypes => {
   BaseTypes.JSON.types.sqlite = ['JSON', 'JSONB'];
 
   function JSONTYPE() {
-    if (!(this instanceof JSONTYPE)) return new JSONTYPE();
+    if (!(this instanceof JSONTYPE)) return new (JSONTYPE as any)();
     BaseTypes.JSON.apply(this, arguments);
   }
   inherits(JSONTYPE, BaseTypes.JSON);
 
-  JSONTYPE.parse = function parse(data) {
+  (JSONTYPE as any).parse = function parse(data) {
     return JSON.parse(data);
   };
 
   function DATE(length) {
-    if (!(this instanceof DATE)) return new DATE(length);
+    if (!(this instanceof DATE)) return new (DATE as any)(length);
     BaseTypes.DATE.apply(this, arguments);
   }
   inherits(DATE, BaseTypes.DATE);
 
-  DATE.parse = function parse(date, options) {
+  (DATE as any).parse = function parse(date, options) {
     if (date.indexOf('+') === -1) {
       // For backwards compat. Dates inserted by sequelize < 2.0dev12 will not have a timestamp set
       return new Date(date + options.timezone);
@@ -58,17 +58,17 @@ module.exports = BaseTypes => {
   };
 
   function DATEONLY() {
-    if (!(this instanceof DATEONLY)) return new DATEONLY();
+    if (!(this instanceof DATEONLY)) return new (DATEONLY as any)();
     BaseTypes.DATEONLY.apply(this, arguments);
   }
   inherits(DATEONLY, BaseTypes.DATEONLY);
 
-  DATEONLY.parse = function parse(date) {
+  (DATEONLY as any).parse = function parse(date) {
     return date;
   };
 
   function STRING(length, binary) {
-    if (!(this instanceof STRING)) return new STRING(length, binary);
+    if (!(this instanceof STRING)) return new (STRING as any)(length, binary);
     BaseTypes.STRING.apply(this, arguments);
   }
   inherits(STRING, BaseTypes.STRING);
@@ -82,7 +82,7 @@ module.exports = BaseTypes => {
   };
 
   function TEXT(length) {
-    if (!(this instanceof TEXT)) return new TEXT(length);
+    if (!(this instanceof TEXT)) return new (TEXT as any)(length);
     BaseTypes.TEXT.apply(this, arguments);
   }
   inherits(TEXT, BaseTypes.TEXT);
@@ -96,7 +96,7 @@ module.exports = BaseTypes => {
   };
 
   function CHAR(length, binary) {
-    if (!(this instanceof CHAR)) return new CHAR(length, binary);
+    if (!(this instanceof CHAR)) return new (CHAR as any)(length, binary);
     BaseTypes.CHAR.apply(this, arguments);
   }
   inherits(CHAR, BaseTypes.CHAR);
@@ -110,7 +110,7 @@ module.exports = BaseTypes => {
   };
 
   function NUMBER(options) {
-    if (!(this instanceof NUMBER)) return new NUMBER(options);
+    if (!(this instanceof NUMBER)) return new (NUMBER as any)(options);
     BaseTypes.NUMBER.apply(this, arguments);
   }
   inherits(NUMBER, BaseTypes.NUMBER);
@@ -136,7 +136,7 @@ module.exports = BaseTypes => {
   };
 
   function TINYINT(length) {
-    if (!(this instanceof TINYINT)) return new TINYINT(length);
+    if (!(this instanceof TINYINT)) return new (TINYINT as any)(length);
     BaseTypes.TINYINT.apply(this, arguments);
   }
   inherits(TINYINT, BaseTypes.TINYINT);
@@ -146,7 +146,7 @@ module.exports = BaseTypes => {
   };
 
   function SMALLINT(length) {
-    if (!(this instanceof SMALLINT)) return new SMALLINT(length);
+    if (!(this instanceof SMALLINT)) return new (SMALLINT as any)(length);
     BaseTypes.SMALLINT.apply(this, arguments);
   }
   inherits(SMALLINT, BaseTypes.SMALLINT);
@@ -156,7 +156,7 @@ module.exports = BaseTypes => {
   };
 
   function MEDIUMINT(length) {
-    if (!(this instanceof MEDIUMINT)) return new MEDIUMINT(length);
+    if (!(this instanceof MEDIUMINT)) return new (MEDIUMINT as any)(length);
     BaseTypes.MEDIUMINT.apply(this, arguments);
   }
   inherits(MEDIUMINT, BaseTypes.MEDIUMINT);
@@ -166,7 +166,7 @@ module.exports = BaseTypes => {
   };
 
   function INTEGER(length) {
-    if (!(this instanceof INTEGER)) return new INTEGER(length);
+    if (!(this instanceof INTEGER)) return new (INTEGER as any)(length);
     BaseTypes.INTEGER.apply(this, arguments);
   }
   inherits(INTEGER, BaseTypes.INTEGER);
@@ -176,7 +176,7 @@ module.exports = BaseTypes => {
   };
 
   function BIGINT(length) {
-    if (!(this instanceof BIGINT)) return new BIGINT(length);
+    if (!(this instanceof BIGINT)) return new (BIGINT as any)(length);
     BaseTypes.BIGINT.apply(this, arguments);
   }
   inherits(BIGINT, BaseTypes.BIGINT);
@@ -186,7 +186,7 @@ module.exports = BaseTypes => {
   };
 
   function FLOAT(length, decimals) {
-    if (!(this instanceof FLOAT)) return new FLOAT(length, decimals);
+    if (!(this instanceof FLOAT)) return new (FLOAT as any)(length, decimals);
     BaseTypes.FLOAT.apply(this, arguments);
   }
   inherits(FLOAT, BaseTypes.FLOAT);
@@ -195,7 +195,7 @@ module.exports = BaseTypes => {
   };
 
   function DOUBLE(length, decimals) {
-    if (!(this instanceof DOUBLE)) return new DOUBLE(length, decimals);
+    if (!(this instanceof DOUBLE)) return new (DOUBLE as any)(length, decimals);
     BaseTypes.DOUBLE.apply(this, arguments);
   }
   inherits(DOUBLE, BaseTypes.DOUBLE);
@@ -204,7 +204,7 @@ module.exports = BaseTypes => {
   };
 
   function REAL(length, decimals) {
-    if (!(this instanceof REAL)) return new REAL(length, decimals);
+    if (!(this instanceof REAL)) return new (REAL as any)(length, decimals);
     BaseTypes.REAL.apply(this, arguments);
   }
   inherits(REAL, BaseTypes.REAL);
@@ -213,7 +213,7 @@ module.exports = BaseTypes => {
   };
 
   [FLOAT, DOUBLE, REAL].forEach(floating => {
-    floating.parse = function parse(value) {
+    (floating as any).parse = function parse(value) {
       if (_.isString(value)) {
         if (value === 'NaN') {
           return NaN;
@@ -264,7 +264,7 @@ module.exports = BaseTypes => {
     if (!DataType.key) DataType.key = key;
     if (!DataType.extend) {
       DataType.extend = oldType => {
-        return new DataType(oldType.options);
+        return DataType(oldType.options);
       };
     }
   });

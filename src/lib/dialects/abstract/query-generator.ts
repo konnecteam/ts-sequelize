@@ -1,23 +1,23 @@
 'use strict';
 
-const Utils = require('../../utils');
-const SqlString = require('../../sql-string');
-const Model = require('../../model');
-const DataTypes = require('../../data-types');
-const util = require('util');
-const _ = require('lodash');
-const Dottie = require('dottie');
-const Association = require('../../associations/base');
-const BelongsTo = require('../../associations/belongs-to');
-const BelongsToMany = require('../../associations/belongs-to-many');
-const HasMany = require('../../associations/has-many');
-const HasOne = require('../../associations/has-one');
-const Op = require('../../operators');
-const uuid = require('uuid');
-const semver = require('semver');
+import * as Utils from '../../utils';
+import * as SqlString from '../../sql-string';
+import {Model} from '../../model';
+import DataTypes from '../../data-types';
+import * as util from 'util';
+import * as _ from 'lodash';
+import * as Dottie from 'dottie';
+import  {Association} from '../../associations/base';
+import {BelongsTo} from '../../associations/belongs-to';
+import {BelongsToMany} from '../../associations/belongs-to-many';
+import {HasMany} from '../../associations/has-many';
+import {HasOne} from '../../associations/has-one';
+import Op from '../../operators';
+import * as uuid from 'uuid';
+import * as semver from 'semver';
 
 const QueryGenerator = {
-  _templateSettings: require('lodash').runInContext().templateSettings,
+  _templateSettings: _.runInContext().templateSettings,
   options: {},
 
   extractTableDetails(tableName, options) {
@@ -2580,11 +2580,11 @@ const QueryGenerator = {
         return this._joinKeyValue(key, this.whereItemQuery(null, value), comparator, options.prefix);
       }
       if (value[Op.any]) {
-        escapeOptions.isList = true;
+        (escapeOptions as any).isList = true;
         return this._joinKeyValue(key, `(${this.escape(value[Op.any], field, escapeOptions)})`, `${comparator} ${this.OperatorMap[Op.any]}`, options.prefix);
       }
       if (value[Op.all]) {
-        escapeOptions.isList = true;
+        (escapeOptions as any).isList = true;
         return this._joinKeyValue(key, `(${this.escape(value[Op.all], field, escapeOptions)})`, `${comparator} ${this.OperatorMap[Op.all]}`, options.prefix);
       }
     }
@@ -2635,12 +2635,12 @@ const QueryGenerator = {
 
       if (primaryKeys.length > 0) {
         // Since we're just a number, assume only the first key
-        primaryKeys = primaryKeys[0];
+        (primaryKeys as any) = primaryKeys[0];
       } else {
-        primaryKeys = 'id';
+        (primaryKeys as any) = 'id';
       }
 
-      where[primaryKeys] = smth;
+      where[(primaryKeys as any)] = smth;
 
       return this.whereItemsQuery(where, {
         model: factory,
@@ -2693,4 +2693,4 @@ const QueryGenerator = {
   }
 };
 
-module.exports = QueryGenerator;
+export default QueryGenerator;

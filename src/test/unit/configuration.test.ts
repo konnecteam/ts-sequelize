@@ -1,10 +1,10 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/support'),
-  Sequelize = Support.Sequelize,
-  dialect = Support.getTestDialect();
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../support';
+const Sequelize = Support.Sequelize;
+const dialect = Support.getTestDialect();
 
 describe('Sequelize', () => {
   describe('dialect is required', () => {
@@ -100,7 +100,7 @@ describe('Sequelize', () => {
 
           // empty host is treated as :memory:
           expect(options.host).to.equal('');
-          expect(options.storage).to.equal(undefined);
+          expect(options.storage).to.equal();
         });
       }
     });

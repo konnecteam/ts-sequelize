@@ -1,11 +1,11 @@
 'use strict';
 
-const chai = require('chai');
+import * as chai from 'chai';
 const expect = chai.expect;
-const Support = require(__dirname + '/../../support');
+import Support from '../../support';
 const dialect = Support.getTestDialect();
-const DataTypes = require(__dirname + '/../../../../lib/data-types');
-const _ = require('lodash');
+import DataTypes from '../../../../lib/data-types';
+import * as _ from 'lodash';
 
 
 if (dialect.match(/^postgres/)) {
@@ -114,7 +114,7 @@ if (dialect.match(/^postgres/)) {
         const body = 'return test;';
 
         // run with null options parameter
-        return this.queryInterface.createFunction('create_job', [{type: 'varchar', name: 'test'}], 'varchar', 'plpgsql', body, null)
+        return this.queryInterface.createFunction('create_job', [{type: 'varchar', name: 'test'}], 'varchar', 'plpgsql', body)
           // validate
           .then(() => this.sequelize.query('select create_job(\'test\');', { type: this.sequelize.QueryTypes.SELECT }))
           .then(res => {

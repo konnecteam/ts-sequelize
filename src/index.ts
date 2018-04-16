@@ -5,4 +5,4 @@
   *
   * @module Sequelize
   */
-module.exports = require('./lib/sequelize');
+export * from './lib/sequelize';

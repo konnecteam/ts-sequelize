@@ -1,10 +1,10 @@
 'use strict';
 
-const chai = require('chai');
-const sinon = require('sinon');
+import * as chai from 'chai';
+import * as sinon from 'sinon';
 const expect = chai.expect;
-const Support = require(__dirname + '/../support');
-const DataTypes = require(__dirname + '/../../../lib/data-types');
+import Support from '../support';
+import DataTypes from '../../../lib/data-types';
 
 describe(Support.getTestDialectTeaser('Hooks'), () => {
   beforeEach(function() {

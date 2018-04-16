@@ -1,28 +1,28 @@
 'use strict';
 
-const chai = require('chai'),
-  Sequelize = require('../../../index'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support');
+import * as chai from 'chai';
+import DataTypes from '../../../lib/data-types';
+const expect = chai.expect;
+import Support from '../support';
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('sync', () => {
     beforeEach(function() {
       this.testSync = this.sequelize.define('testSync', {
-        dummy: Sequelize.STRING
+        dummy: DataTypes.STRING
       });
       return this.testSync.drop();
     });
 
     it('should remove a column if it exists in the databases schema but not the model', function() {
       const User = this.sequelize.define('testSync', {
-        name: Sequelize.STRING,
-        age: Sequelize.INTEGER
+        name: DataTypes.STRING,
+        age: DataTypes.INTEGER
       });
       return this.sequelize.sync()
         .then(() => {
           this.sequelize.define('testSync', {
-            name: Sequelize.STRING
+            name: DataTypes.STRING
           });
         })
         .then(() => this.sequelize.sync({alter: true}))
@@ -35,12 +35,12 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('should add a column if it exists in the model but not the database', function() {
       const testSync = this.sequelize.define('testSync', {
-        name: Sequelize.STRING
+        name: DataTypes.STRING
       });
       return this.sequelize.sync()
         .then(() => this.sequelize.define('testSync', {
-          name: Sequelize.STRING,
-          age: Sequelize.INTEGER
+          name: DataTypes.STRING,
+          age: DataTypes.INTEGER
         }))
         .then(() => this.sequelize.sync({alter: true}))
         .then(() => testSync.describe())
@@ -49,13 +49,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('should change a column if it exists in the model but is different in the database', function() {
       const testSync = this.sequelize.define('testSync', {
-        name: Sequelize.STRING,
-        age: Sequelize.INTEGER
+        name: DataTypes.STRING,
+        age: DataTypes.INTEGER
       });
       return this.sequelize.sync()
         .then(() => this.sequelize.define('testSync', {
-          name: Sequelize.STRING,
-          age: Sequelize.STRING
+          name: DataTypes.STRING,
+          age: DataTypes.STRING
         }))
         .then(() => this.sequelize.sync({alter: true}))
         .then(() => testSync.describe())
@@ -67,8 +67,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('should not alter table if data type does not change', function() {
       const testSync = this.sequelize.define('testSync', {
-        name: Sequelize.STRING,
-        age: Sequelize.STRING
+        name: DataTypes.STRING,
+        age: DataTypes.STRING
       });
       return this.sequelize.sync()
         .then(() => testSync.create({name: 'test', age: '1'}))
@@ -82,8 +82,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('should properly create composite index without affecting individual fields', function() {
       const testSync = this.sequelize.define('testSync', {
-        name: Sequelize.STRING,
-        age: Sequelize.STRING
+        name: DataTypes.STRING,
+        age: DataTypes.STRING
       }, {indexes: [{unique: true, fields: ['name', 'age']}]});
       return this.sequelize.sync()
         .then(() => testSync.create({name: 'test'}))
@@ -103,8 +103,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
     it('should properly create composite index that fails on constraint violation', function() {
       const testSync = this.sequelize.define('testSync', {
-        name: Sequelize.STRING,
-        age: Sequelize.STRING
+        name: DataTypes.STRING,
+        age: DataTypes.STRING
       }, {indexes: [{unique: true, fields: ['name', 'age']}]});
       return this.sequelize.sync()
         .then(() => testSync.create({name: 'test', age: '1'}))
@@ -116,11 +116,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       //Table names too long for Oracle
       it('should properly alter tables when there are foreign keys', function() {
         const foreignKeyTestSyncA = this.sequelize.define('foreignKeyTestSyncA', {
-          dummy: Sequelize.STRING
+          dummy: DataTypes.STRING
         });
   
         const foreignKeyTestSyncB = this.sequelize.define('foreignKeyTestSyncB', {
-          dummy: Sequelize.STRING
+          dummy: DataTypes.STRING
         });
   
         foreignKeyTestSyncA.hasMany(foreignKeyTestSyncB);

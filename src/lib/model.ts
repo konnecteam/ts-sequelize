@@ -1,24 +1,24 @@
 'use strict';
 
-const Utils = require('./utils');
-const BelongsTo = require('./associations/belongs-to');
-const BelongsToMany = require('./associations/belongs-to-many');
-const InstanceValidator = require('./instance-validator');
-const QueryTypes = require('./query-types');
-const sequelizeErrors = require('./errors');
-const Dottie = require('dottie');
-const Promise = require('./promise');
-const _ = require('lodash');
-const moment = require('moment');
-const Association = require('./associations/base');
-const HasMany = require('./associations/has-many');
-const DataTypes = require('./data-types');
-const Hooks = require('./hooks');
-const associationsMixin = require('./associations/mixin');
-const defaultsOptions = { raw: true };
-const assert = require('assert');
-const Op = require('./operators');
+import * as Utils from './utils';
+import {BelongsTo} from './associations/belongs-to';
+import {BelongsToMany} from './associations/belongs-to-many';
+import {InstanceValidator} from './instance-validator';
+import QueryTypes from './query-types';
+import * as sequelizeErrors from './errors/index';
+import * as Dottie from 'dottie';
+import Promise from './promise';
+import * as _ from 'lodash';
+import * as moment from 'moment';
+import { Association } from './associations/base';
+import {HasMany} from './associations/has-many';
+import DataTypes from './data-types';
+import * as Hooks from './hooks';
+import * as associationsMixin from './associations/mixin';
+import * as assert from 'assert';
+import Op from './operators';
 
+const defaultsOptions = { raw: true };
 
 /**
  * A Model represents a table in the database. Instances of this class represent a database row.
@@ -39,7 +39,94 @@ const Op = require('./operators');
  * @class Model
  * @mixes Hooks
  */
-class Model {
+export class Model {
+  static sequelize;
+  static rawAttributes;
+  static _timestampAttributes;
+  static _versionAttribute;
+  static primaryKeys;
+  static autoIncrementAttribute;
+  static associations;
+  static options;
+  static underscored;
+  static underscoredAll;
+  static tableName;
+  static _schema;
+  static _schemaDelimiter;
+  static _readOnlyAttributes;
+  static _hasReadOnlyAttributes;
+  static _isReadOnlyAttribute;
+  static _scope;
+  static _scopeNames;
+  _customGetters;
+  _customSetters;
+  static _dataTypeChanges;
+  static _dataTypeSanitizers;
+  static _booleanAttributes;
+  static _dateAttributes;
+  static _hstoreAttributes;
+  static _rangeAttributes;
+  static _jsonAttributes;
+  static _geometryAttributes;
+  static _virtualAttributes;
+  static _defaultValues;
+  validators;
+  static fieldRawAttributesMap;
+  static uniqueKeys;
+  static _hasBooleanAttributes;
+  static _isBooleanAttribute;
+  static _hasDateAttributes;
+  static _isDateAttribute;
+  static _hasHstoreAttributes;
+  static _isHstoreAttribute;
+  static _hasRangeAttributes;
+  static _isRangeAttribute;
+  static _hasJsonAttributes;
+  static _isJsonAttribute;
+  static _hasVirtualAttributes;
+  static _isVirtualAttribute;
+  static _hasGeometryAttributes;
+  static _isGeometryAttribute;
+  static _hasDefaultValues;
+  static attributes;
+  static tableAttributes;
+  _hasCustomGetters;
+  _hasCustomSetters;
+  rawAttributes;
+  attributes;
+  _isAttribute;
+  static primaryKeyAttributes;
+  static primaryKeyAttribute;
+  static primaryKeyField;
+  static _hasPrimaryKeys;
+  static _isPrimaryKey;
+  static fieldAttributeMap;
+
+  _schema;
+  _schemaDelimiter;
+  _scope;
+  _scopeNames;
+  scoped;
+
+  options;
+  dataValues;
+  _previousDataValues;
+  _changed;
+  _modelOptions;
+  _options;
+  __eagerlyLoadedAssociations;
+  isNewRecord;
+
+  updateAttributes;
+  static findByPrimary;
+  static find;
+  static findAndCountAll;
+  static findOrInitialize;
+  static insertOrUpdate;
+
+  
+
+
   static get QueryInterface() {
     return this.sequelize.getQueryInterface();
   }
@@ -113,7 +200,7 @@ class Model {
 
       head = {
         id: {
-          type: new DataTypes.INTEGER(),
+          type: DataTypes.INTEGER(),
           allowNull: false,
           primaryKey: true,
           autoIncrement: true,
@@ -223,7 +310,7 @@ class Model {
     return include;
   }
 
-  static _conformInclude(include, self) {
+  static _conformInclude(include?, self?) {
     let model;
 
     if (include._pseudo) return include;
@@ -337,7 +424,12 @@ class Model {
         const model = association.target;
         const as = association.options.as;
 
-        const predicate = {model};
+        const predicate : {
+          model : any,
+          as? : string
+        } = {
+          model
+        };
         if (as) {
           // We only add 'as' to the predicate if it actually exists
           predicate.as = as;
@@ -371,7 +463,7 @@ class Model {
     })(this, includes);
   }
 
-  static _validateIncludedElements(options, tableNames) {
+  static _validateIncludedElements(options, tableNames?) {
     if (!options.model) options.model = this;
 
     tableNames = tableNames || {};
@@ -718,12 +810,12 @@ class Model {
   }
 
   static _getIncludedAssociation(targetModel, targetAlias) {
-    const associations = this.getAssociations(targetModel);
+    const associations = (this as any).getAssociations(targetModel);
     let association = null;
     if (associations.length === 0) {
       throw new sequelizeErrors.EagerLoadingError(`${targetModel.name} is not associated to ${this.name}!`);
     } else if (associations.length === 1) {
-      association = this.getAssociationForAlias(targetModel, targetAlias);
+      association = (this as any).getAssociationForAlias(targetModel, targetAlias);
       if (!association) {
         if (targetAlias) {
           throw new sequelizeErrors.EagerLoadingError(`${targetModel.name} is associated to ${this.name} using an alias. ` +
@@ -734,7 +826,7 @@ class Model {
         }
       }
     } else {
-      association = this.getAssociationForAlias(targetModel, targetAlias);
+      association = (this as any).getAssociationForAlias(targetModel, targetAlias);
       if (!association) {
         throw new sequelizeErrors.EagerLoadingError(`${targetModel.name} is associated to ${this.name} multiple times. ` +
           'To identify the correct association, you must use the \'as\' keyword to specify the alias of the association you want to include.');
@@ -913,7 +1005,7 @@ class Model {
     }
 
     this.associations = {};
-    this._setupHooks(options.hooks);
+    (this as any)._setupHooks(options.hooks);
 
     this.underscored = this.underscored || this.underscoredAll;
 
@@ -1118,9 +1210,9 @@ class Model {
         this._booleanAttributes.push(name);
       } else if (definition.type instanceof DataTypes.DATE || definition.type instanceof DataTypes.DATEONLY) {
         this._dateAttributes.push(name);
-      } else if (definition.type instanceof DataTypes.HSTORE || DataTypes.ARRAY.is(definition.type, DataTypes.HSTORE)) {
+      } else if (definition.type instanceof DataTypes.HSTORE || (DataTypes.ARRAY as any).is(definition.type, DataTypes.HSTORE)) {
         this._hstoreAttributes.push(name);
-      } else if (definition.type instanceof DataTypes.RANGE || DataTypes.ARRAY.is(definition.type, DataTypes.RANGE)) {
+      } else if (definition.type instanceof DataTypes.RANGE || (DataTypes.ARRAY as any).is(definition.type, DataTypes.RANGE)) {
         this._rangeAttributes.push(name);
       } else if (definition.type instanceof DataTypes.JSON) {
         this._jsonAttributes.push(name);
@@ -1254,19 +1346,19 @@ class Model {
 
     return Promise.try(() => {
       if (options.hooks) {
-        return this.runHooks('beforeSync', options);
+        return (this as any).runHooks('beforeSync', options);
       }
     }).then(() => {
       if (options.force) {
         return this.drop(options);
       }
     })
-      .then(() => this.QueryInterface.createTable(this.getTableName(options), attributes, options, this))
+      .then(() => this.QueryInterface.createTable((this as any).getTableName(options), attributes, options, this))
       .then(() => {
         if (options.alter) {
           return Promise.all([
-            this.QueryInterface.describeTable(this.getTableName(options)),
-            this.QueryInterface.getForeignKeyReferencesForTable(this.getTableName(options))
+            this.QueryInterface.describeTable((this as any).getTableName(options)),
+            this.QueryInterface.getForeignKeyReferencesForTable((this as any).getTableName(options))
           ])
             .then(tableInfos => {
               const columns = tableInfos[0];
@@ -1278,13 +1370,13 @@ class Model {
 
               _.each(attributes, (columnDesc, columnName) => {
                 if (!columns[columnName]) {
-                  changes.push(() => this.QueryInterface.addColumn(this.getTableName(options), columnName, attributes[columnName]));
+                  changes.push(() => this.QueryInterface.addColumn((this as any).getTableName(options), columnName, attributes[columnName]));
                 }
               });
               _.each(columns, (columnDesc, columnName) => {
                 const currentAttributes = attributes[columnName];
                 if (!currentAttributes) {
-                  changes.push(() => this.QueryInterface.removeColumn(this.getTableName(options), columnName, options));
+                  changes.push(() => this.QueryInterface.removeColumn((this as any).getTableName(options), columnName, options));
                 } else if (!currentAttributes.primaryKey) {
                   // Check foreign keys. If it's a foreign key, it should remove constraint first.
                   const references = currentAttributes.references;
@@ -1302,19 +1394,19 @@ class Model {
                         && (schema ? foreignKeyReference.referencedTableSchema === schema : true)
                         && !removedConstraints[constraintName]) {
                         // Remove constraint on foreign keys.
-                        changes.push(() => this.QueryInterface.removeConstraint(this.getTableName(options), constraintName, options));
+                        changes.push(() => this.QueryInterface.removeConstraint((this as any).getTableName(options), constraintName, options));
                         removedConstraints[constraintName] = true;
                       }
                     });
                   }
-                  changes.push(() => this.QueryInterface.changeColumn(this.getTableName(options), columnName, attributes[columnName]));
+                  changes.push(() => this.QueryInterface.changeColumn((this as any).getTableName(options), columnName, attributes[columnName]));
                 }
               });
               return changes.reduce((p, fn) => p.then(fn), Promise.resolve());
             });
         }
       })
-      .then(() => this.QueryInterface.showIndex(this.getTableName(options), options))
+      .then(() => this.QueryInterface.showIndex((this as any).getTableName(options), options))
       .then(indexes => {
       // Assign an auto-generated name to indexes which are not named by the user
         this.options.indexes = this.QueryInterface.nameIndexes(this.options.indexes, this.tableName);
@@ -1332,7 +1424,7 @@ class Model {
         });
 
         return Promise.map(indexes, index => this.QueryInterface.addIndex(
-          this.getTableName(options),
+          (this as any).getTableName(options),
           _.assign({
             logging: options.logging,
             benchmark: options.benchmark,
@@ -1342,7 +1434,7 @@ class Model {
         ));
       }).then(() => {
         if (options.hooks) {
-          return this.runHooks('afterSync', options);
+          return (this as any).runHooks('afterSync', options);
         }
       }).return(this);
   }
@@ -1356,7 +1448,7 @@ class Model {
    * @return {Promise}
    */
   static drop(options) {
-    return this.QueryInterface.dropTable(this.getTableName(options), options);
+    return this.QueryInterface.dropTable((this as any).getTableName(options), options);
   }
 
   static dropSchema(schema) {
@@ -1385,8 +1477,12 @@ class Model {
    */
   static schema(schema, options) { // testhint options:none
 
-    const clone = class extends this {};
+    //MAGIE !!! class extends this -> référence circulaire, du coup on prend this
+    //On sait pas pourquoi mais ça marche
+    // const self = class extends this {};
+    const clone = (class extends this {}) as any;
     Object.defineProperty(clone, 'name', {value: this.name});
+    // Object.assign(clone, this); 
 
     clone._schema = schema;
 
@@ -1400,6 +1496,7 @@ class Model {
       }
     }
 
+    // return { scopeObj : clone};
     return clone;
   }
 
@@ -1417,9 +1514,11 @@ class Model {
    * @return {Model}
    */
   static unscoped() {
-    return this.scope();
+    return this.scope(null);
+    // return 'scopeObj' in scopeObj ? scopeObj['scopeObj'] : scopeObj;
   }
 
+  
   /**
    * Add a new scope to the model. This is especially useful for adding scopes with includes, when the model you want to include is not available at the time this model is defined.
    *
@@ -1495,14 +1594,33 @@ class Model {
    * @return {Model}                      A reference to the model, with the scope(s) applied. Calling scope again on the returned model will clear the previous scope.
    */
   static scope(option) {
-    const self = class extends this {};
+    //MAGIE !!! class extends this -> référence circulaire, du coup on prend this
+    //On sait pas pourquoi mais ça marche
+    // const self = class extends this {};
+    // let self = this;
+    // try{
+    //   self = new Model();
+    // }catch(gg){
+    //   console.log(gg);
+    // }
+    // const self = _.clone(this);
+    // let toto = _.extend(new Model({}, this.options);
+    // Object.assign(toto, this);
+    // const vm = require('vm');
+    // const trueThis = this;
+    // vm.runInThisContext('self = class extends Model {};');
+    // const self = eval('class extends trueThis {}');
+    // const self = new Model(this);
+    
+    const self = class extends this {} as any;
     let scope;
     let scopeName;
     Object.defineProperty(self, 'name', {value: this.name});
+    Object.assign(self, this);
 
     self._scope = {};
     self._scopeNames = [];
-    self.scoped = true;
+    (self as any).scoped = true;
 
     if (!option) {
       return self;
@@ -1557,8 +1675,10 @@ class Model {
       }
     }
 
+    // return { scopeObj: self };
     return self;
   }
+
 
   static all(options) {
     return this.findAll(options);
@@ -1682,7 +1802,7 @@ class Model {
     const tableNames = {};
     let originalOptions;
 
-    tableNames[this.getTableName(options)] = true;
+    tableNames[(this as any).getTableName(options)] = true;
     options = Utils.cloneDeep(options);
 
     _.defaults(options, { hooks: true, rejectOnEmpty: this.options.rejectOnEmpty });
@@ -1694,14 +1814,14 @@ class Model {
       this._injectScope(options);
 
       if (options.hooks) {
-        return this.runHooks('beforeFind', options);
+        return (this as any).runHooks('beforeFind', options);
       }
     }).then(() => {
       this._conformOptions(options, this);
       this._expandIncludeAll(options);
 
       if (options.hooks) {
-        return this.runHooks('beforeFindAfterExpandIncludeAll', options);
+        return (this as any).runHooks('beforeFindAfterExpandIncludeAll', options);
       }
     }).then(() => {
       if (options.include) {
@@ -1730,15 +1850,15 @@ class Model {
       options = this._paranoidClause(this, options);
 
       if (options.hooks) {
-        return this.runHooks('beforeFindAfterOptions', options);
+        return (this as any).runHooks('beforeFindAfterOptions', options);
       }
     }).then(() => {
       originalOptions = Utils.cloneDeep(options);
       options.tableNames = Object.keys(tableNames);
-      return this.QueryInterface.select(this, this.getTableName(options), options);
+      return this.QueryInterface.select(this, (this as any).getTableName(options), options);
     }).tap(results => {
       if (options.hooks) {
-        return this.runHooks('afterFind', results, options);
+        return (this as any).runHooks('afterFind', results, options);
       }
     }).then(results => {
 
@@ -1937,7 +2057,7 @@ class Model {
         options.dataType = attrOptions.type;
       } else {
         // Use FLOAT as fallback
-        options.dataType = new DataTypes.FLOAT();
+        options.dataType = DataTypes.FLOAT();
       }
     } else {
       options.dataType = this.sequelize.normalizeDataType(options.dataType);
@@ -1946,7 +2066,7 @@ class Model {
     Utils.mapOptionFieldNames(options, this);
     options = this._paranoidClause(this, options);
 
-    return this.QueryInterface.rawSelect(this.getTableName(options), options, aggregateFunction, this);
+    return this.QueryInterface.rawSelect((this as any).getTableName(options), options, aggregateFunction, this);
   }
 
   /**
@@ -1973,7 +2093,7 @@ class Model {
     return Promise.try(() => {
       options = _.defaults(Utils.cloneDeep(options), { hooks: true });
       if (options.hooks) {
-        return this.runHooks('beforeCount', options);
+        return (this as any).runHooks('beforeCount', options);
       }
     }).then(() => {
       let col = options.col || '*';
@@ -1984,7 +2104,7 @@ class Model {
       Utils.mapOptionFieldNames(options, this);
 
       options.plain = !options.group;
-      options.dataType = new DataTypes.INTEGER();
+      options.dataType = DataTypes.INTEGER();
       options.includeIgnoreAttributes = false;
 
       // No limit, offset or order for the options max be given to count()
@@ -1996,6 +2116,7 @@ class Model {
       return this.aggregate(col, 'count', options);
     });
   }
+
 
   /**
    * Find all the rows matching your query, within a specified offset / limit, and get the total number of rows matching your query. This is very useful for paging
@@ -2092,7 +2213,7 @@ class Model {
 
   /**
    * Builds a new model instance.
-   *
+   *class extends Model {}
    * @param {Object}  [(values|values[])={}] An object of key value pairs or an array of such. If an array, the function will return an array of instances.
    * @param {Object}  [options]
    * @param {Boolean} [options.raw=false] If set to true, values will ignore field and virtual setters.
@@ -2101,7 +2222,7 @@ class Model {
    *
    * @return {(Model|Model[])}
    */
-  static build(values, options) { // testhint options:none
+  static build(values, options?) { // testhint options:none
     if (Array.isArray(values)) {
       return this.bulkBuild(values, options);
     }
@@ -2191,7 +2312,7 @@ class Model {
 
     let values;
 
-    return this.find(options).then(instance => {
+    return (this as any).find(options).then(instance => {
       if (instance === null) {
         values = _.clone(options.defaults) || {};
         if (_.isPlainObject(options.where)) {
@@ -2405,13 +2526,13 @@ class Model {
 
       return Promise.try(() => {
         if (options.hooks) {
-          return this.runHooks('beforeUpsert', values, options);
+          return (this as any).runHooks('beforeUpsert', values, options);
         }
       }).then(() => {
-        return this.QueryInterface.upsert(this.getTableName(options), insertValues, updateValues, instance.where(), this, options);
+        return this.QueryInterface.upsert((this as any).getTableName(options), insertValues, updateValues, instance.where(), this, options);
       }).tap(result => {
         if (options.hooks) {
-          return this.runHooks('afterUpsert', result, options);
+          return (this as any).runHooks('afterUpsert', result, options);
         }
       });
     });
@@ -2484,7 +2605,7 @@ class Model {
     return Promise.try(() => {
       // Run before hook
       if (options.hooks) {
-        return this.runHooks('beforeBulkCreate', instances, options);
+        return (this as any).runHooks('beforeBulkCreate', instances, options);
       }
     }).then(() => {
       // Validate
@@ -2548,7 +2669,7 @@ class Model {
           attributes[this.rawAttributes[attr].field] = this.rawAttributes[attr];
         }
 
-        return this.QueryInterface.bulkInsert(this.getTableName(options), records, options, attributes).then(results => {
+        return this.QueryInterface.bulkInsert((this as any).getTableName(options), records, options, attributes).then(results => {
           if (Array.isArray(results)) {
             results.forEach((result, i) => {
               if (instances[i] && !instances[i].get(this.primaryKeyAttribute)) {
@@ -2579,10 +2700,12 @@ class Model {
 
       // Run after hook
       if (options.hooks) {
-        return this.runHooks('afterBulkCreate', instances, options);
+        return (this as any).runHooks('afterBulkCreate', instances, options);
       }
     }).then(() => instances);
   }
+
+
 
   /**
    * Truncate all instances of the model. This is a convenient method for Model.destroy({ truncate: true }).
@@ -2652,13 +2775,13 @@ class Model {
     return Promise.try(() => {
       // Run before hook
       if (options.hooks) {
-        return this.runHooks('beforeBulkDestroy', options);
+        return (this as any).runHooks('beforeBulkDestroy', options);
       }
     }).then(() => {
       // Get daos and run beforeDestroy hook on each record individually
       if (options.individualHooks) {
         return this.findAll({where: options.where, transaction: options.transaction, logging: options.logging, benchmark: options.benchmark})
-          .map(instance => this.runHooks('beforeDestroy', instance, options).then(() => instance))
+          .map(instance => (this as any).runHooks('beforeDestroy', instance, options).then(() => instance))
           .then(_instances => {
             instances = _instances;
           });
@@ -2677,19 +2800,19 @@ class Model {
         where[field] = deletedAtAttribute.hasOwnProperty('defaultValue') ? deletedAtAttribute.defaultValue : null;
 
         attrValueHash[field] = Utils.now(this.sequelize.options.dialect);
-        return this.QueryInterface.bulkUpdate(this.getTableName(options), attrValueHash, Object.assign(where, options.where), options, this.rawAttributes);
+        return this.QueryInterface.bulkUpdate((this as any).getTableName(options), attrValueHash, Object.assign(where, options.where), options, this.rawAttributes);
       } else {
-        return this.QueryInterface.bulkDelete(this.getTableName(options), options.where, options, this);
+        return this.QueryInterface.bulkDelete((this as any).getTableName(options), options.where, options, this);
       }
     }).tap(() => {
       // Run afterDestroy hook on each record individually
       if (options.individualHooks) {
-        return Promise.map(instances, instance => this.runHooks('afterDestroy', instance, options));
+        return Promise.map(instances, instance => (this as any).runHooks('afterDestroy', instance, options));
       }
     }).tap(() => {
       // Run after hook
       if (options.hooks) {
-        return this.runHooks('afterBulkDestroy', options);
+        return (this as any).runHooks('afterBulkDestroy', options);
       }
     });
   }
@@ -2726,13 +2849,13 @@ class Model {
     return Promise.try(() => {
       // Run before hook
       if (options.hooks) {
-        return this.runHooks('beforeBulkRestore', options);
+        return (this as any).runHooks('beforeBulkRestore', options);
       }
     }).then(() => {
       // Get daos and run beforeRestore hook on each record individually
       if (options.individualHooks) {
         return this.findAll({where: options.where, transaction: options.transaction, logging: options.logging, benchmark: options.benchmark, paranoid: false})
-          .map(instance => this.runHooks('beforeRestore', instance, options).then(() => instance))
+          .map(instance => (this as any).runHooks('beforeRestore', instance, options).then(() => instance))
           .then(_instances => {
             instances = _instances;
           });
@@ -2746,16 +2869,16 @@ class Model {
 
       attrValueHash[deletedAtAttribute.field || deletedAtCol] = deletedAtDefaultValue;
       options.omitNull = false;
-      return this.QueryInterface.bulkUpdate(this.getTableName(options), attrValueHash, options.where, options, this._timestampAttributes.deletedAt);
+      return this.QueryInterface.bulkUpdate((this as any).getTableName(options), attrValueHash, options.where, options, this._timestampAttributes.deletedAt);
     }).tap(() => {
       // Run afterDestroy hook on each record individually
       if (options.individualHooks) {
-        return Promise.map(instances, instance => this.runHooks('afterRestore', instance, options));
+        return Promise.map(instances, instance => (this as any).runHooks('afterRestore', instance, options));
       }
     }).tap(() => {
       // Run after hook
       if (options.hooks) {
-        return this.runHooks('afterBulkRestore', options);
+        return (this as any).runHooks('afterBulkRestore', options);
       }
     });
   }
@@ -2851,7 +2974,7 @@ class Model {
       // Run before hook
       if (options.hooks) {
         options.attributes = values;
-        return this.runHooks('beforeBulkUpdate', options).then(() => {
+        return (this as any).runHooks('beforeBulkUpdate', options).then(() => {
           values = options.attributes;
           delete options.attributes;
         });
@@ -2884,7 +3007,7 @@ class Model {
             });
 
             // Run beforeUpdate hook
-            return this.runHooks('beforeUpdate', instance, options).then(() => {
+            return (this as any).runHooks('beforeUpdate', instance, options).then(() => {
               if (!different) {
                 const thisChangedValues = {};
                 _.forIn(instance.dataValues, (newValue, attr) => {
@@ -2942,7 +3065,7 @@ class Model {
       options.hasTrigger =  this.options ? this.options.hasTrigger : false;
 
       // Run query to update all rows
-      return this.QueryInterface.bulkUpdate(this.getTableName(options), valuesUse, options.where, options, this.tableAttributes).then(affectedRows => {
+      return this.QueryInterface.bulkUpdate((this as any).getTableName(options), valuesUse, options.where, options, this.tableAttributes).then(affectedRows => {
         if (options.returning) {
           instances = affectedRows;
           return [affectedRows.length, affectedRows];
@@ -2953,7 +3076,7 @@ class Model {
     }).tap(result => {
       if (options.individualHooks) {
         return Promise.map(instances, instance => {
-          return this.runHooks('afterUpdate', instance, options);
+          return (this as any).runHooks('afterUpdate', instance, options);
         }).then(() => {
           result[1] = instances;
         });
@@ -2962,7 +3085,7 @@ class Model {
       // Run after hook
       if (options.hooks) {
         options.attributes = values;
-        return this.runHooks('afterBulkUpdate', options).then(() => {
+        return (this as any).runHooks('afterBulkUpdate', options).then(() => {
           delete options.attributes;
         });
       }
@@ -3024,7 +3147,7 @@ class Model {
           if (scopeInclude.as) {
             return item.as === scopeInclude.as;
           } else {
-            const association = scopeInclude.association || this.getAssociationForAlias(scopeInclude.model, scopeInclude.as);
+            const association = scopeInclude.association || (this as any).getAssociationForAlias(scopeInclude.model, scopeInclude.as);
             return association ? item.as === association.as : false;
           }
         })) {
@@ -3033,6 +3156,8 @@ class Model {
       }
     }
   }
+
+
 
   static inspect() {
     return this.name;
@@ -3116,9 +3241,9 @@ class Model {
 
     let promise;
     if (!options.increment) {
-      promise = this.sequelize.getQueryInterface().decrement(this, this.getTableName(options), values, where, options);
+      promise = this.sequelize.getQueryInterface().decrement(this, (this as any).getTableName(options), values, where, options);
     } else {
-      promise = this.sequelize.getQueryInterface().increment(this, this.getTableName(options), values, where, options);
+      promise = this.sequelize.getQueryInterface().increment(this, (this as any).getTableName(options), values, where, options);
     }
 
     return promise.then(affectedRows => {
@@ -3144,12 +3269,12 @@ class Model {
    * @param {Boolean} [options.isNewRecord=true]
    * @param {Array}   [options.include] an array of include options - Used to build prefetched/included model instances. See `set`
    */
-  constructor(values, options) {
+  constructor(values?, options?) {
     values = values || {};
     options = _.extend({
       isNewRecord: true,
-      _schema: this.constructor._schema,
-      _schemaDelimiter: this.constructor._schemaDelimiter
+      _schema: (this.constructor as any)._schema,
+      _schemaDelimiter: (this.constructor as any)._schemaDelimiter
     }, options || {});
 
     if (options.attributes) {
@@ -3157,17 +3282,17 @@ class Model {
     }
 
     if (!options.includeValidated) {
-      this.constructor._conformOptions(options, this.constructor);
+      (this.constructor as any)._conformOptions(options, this.constructor);
       if (options.include) {
-        this.constructor._expandIncludeAll(options);
-        this.constructor._validateIncludedElements(options);
+        (this.constructor as any)._expandIncludeAll(options);
+        (this.constructor as any)._validateIncludedElements(options);
       }
     }
 
     this.dataValues = {};
     this._previousDataValues = {};
     this._changed = {};
-    this._modelOptions = this.constructor.options;
+    this._modelOptions = (this.constructor as any).options;
     this._options = options || {};
     this.__eagerlyLoadedAssociations = [];
     /**
@@ -3184,6 +3309,10 @@ class Model {
      * @return {Model}
      */
 
+    if (values == {}) {
+      return;
+    }
+
     this._initValues(values, options);
   }
 
@@ -3196,8 +3325,8 @@ class Model {
     if (options.isNewRecord) {
       defaults = {};
 
-      if (this.constructor._hasDefaultValues) {
-        defaults = _.mapValues(this.constructor._defaultValues, valueFn => {
+      if ((this.constructor as any)._hasDefaultValues) {
+        defaults = _.mapValues((this.constructor as any)._defaultValues, valueFn => {
           const value = valueFn();
           return value && value instanceof Utils.SequelizeMethod ? value : _.cloneDeep(value);
         });
@@ -3206,23 +3335,23 @@ class Model {
       // set id to null if not passed as value, a newly created dao has no id
       // removing this breaks bulkCreate
       // do after default values since it might have UUID as a default value
-      if (this.constructor.primaryKeyAttribute && !defaults.hasOwnProperty(this.constructor.primaryKeyAttribute)) {
-        defaults[this.constructor.primaryKeyAttribute] = null;
+      if ((this.constructor as any).primaryKeyAttribute && !defaults.hasOwnProperty((this.constructor as any).primaryKeyAttribute)) {
+        defaults[(this.constructor as any).primaryKeyAttribute] = null;
       }
 
-      if (this.constructor._timestampAttributes.createdAt && defaults[this.constructor._timestampAttributes.createdAt]) {
-        this.dataValues[this.constructor._timestampAttributes.createdAt] = Utils.toDefaultValue(defaults[this.constructor._timestampAttributes.createdAt], this.sequelize.options.dialect);
-        delete defaults[this.constructor._timestampAttributes.createdAt];
+      if ((this.constructor as any)._timestampAttributes.createdAt && defaults[(this.constructor as any)._timestampAttributes.createdAt]) {
+        this.dataValues[(this.constructor as any)._timestampAttributes.createdAt] = Utils.toDefaultValue(defaults[(this.constructor as any)._timestampAttributes.createdAt], this.sequelize.options.dialect);
+        delete defaults[(this.constructor as any)._timestampAttributes.createdAt];
       }
 
-      if (this.constructor._timestampAttributes.updatedAt && defaults[this.constructor._timestampAttributes.updatedAt]) {
-        this.dataValues[this.constructor._timestampAttributes.updatedAt] = Utils.toDefaultValue(defaults[this.constructor._timestampAttributes.updatedAt], this.sequelize.options.dialect);
-        delete defaults[this.constructor._timestampAttributes.updatedAt];
+      if ((this.constructor as any)._timestampAttributes.updatedAt && defaults[(this.constructor as any)._timestampAttributes.updatedAt]) {
+        this.dataValues[(this.constructor as any)._timestampAttributes.updatedAt] = Utils.toDefaultValue(defaults[(this.constructor as any)._timestampAttributes.updatedAt], this.sequelize.options.dialect);
+        delete defaults[(this.constructor as any)._timestampAttributes.updatedAt];
       }
 
-      if (this.constructor._timestampAttributes.deletedAt && defaults[this.constructor._timestampAttributes.deletedAt]) {
-        this.dataValues[this.constructor._timestampAttributes.deletedAt] = Utils.toDefaultValue(defaults[this.constructor._timestampAttributes.deletedAt], this.sequelize.options.dialect);
-        delete defaults[this.constructor._timestampAttributes.deletedAt];
+      if ((this.constructor as any)._timestampAttributes.deletedAt && defaults[(this.constructor as any)._timestampAttributes.deletedAt]) {
+        this.dataValues[(this.constructor as any)._timestampAttributes.deletedAt] = Utils.toDefaultValue(defaults[(this.constructor as any)._timestampAttributes.deletedAt], this.sequelize.options.dialect);
+        delete defaults[(this.constructor as any)._timestampAttributes.deletedAt];
       }
 
       if (Object.keys(defaults).length) {
@@ -3245,7 +3374,7 @@ class Model {
    * @return {Sequelize}
    */
   get sequelize() {
-    return this.constructor.sequelize;
+    return (this.constructor as any).sequelize;
   }
 
   /**
@@ -3255,7 +3384,7 @@ class Model {
    * @return {Object}
    */
   where(checkVersion) {
-    const where = this.constructor.primaryKeyAttributes.reduce((result, attribute) => {
+    const where = (this.constructor as any).primaryKeyAttributes.reduce((result, attribute) => {
       result[attribute] = this.get(attribute, {raw: true});
       return result;
     }, {});
@@ -3263,7 +3392,7 @@ class Model {
     if (_.size(where) === 0) {
       return this._modelOptions.whereCollection;
     }
-    const versionAttr = this.constructor._versionAttribute;
+    const versionAttr = (this.constructor as any)._versionAttribute;
     if (checkVersion && versionAttr) {
       where[versionAttr] = this.get(versionAttr, {raw: true});
     }
@@ -3271,7 +3400,7 @@ class Model {
   }
 
   toString() {
-    return '[object SequelizeInstance:'+this.constructor.name+']';
+    return '[object SequelizeInstance:'+(this.constructor as any).name+']';
   }
 
   /**
@@ -3310,7 +3439,7 @@ class Model {
    * @param {Boolean} [options.raw=false] If set to true, field and virtual setters will be ignored
    * @return {Object|any}
    */
-  get(key, options) { // testhint options:none
+  get(key?, options?) { // testhint options:none
     if (options === undefined && typeof key === 'object') {
       options = key;
       key = undefined;
@@ -3379,7 +3508,7 @@ class Model {
    * @param {Boolean} [options.raw=false] If set to true, field and virtual setters will be ignored
    * @param {Boolean} [options.reset=false] Clear all previously set data values
    */
-  set(key, value, options) { // testhint options:none
+  set(key?, value?, options?) { // testhint options:none
     let values;
     let originalValue;
 
@@ -3392,7 +3521,7 @@ class Model {
       }
 
       // If raw, and we're not dealing with includes or special attributes, just set it straight on the dataValues object
-      if (options.raw && !(this._options && this._options.include) && !(options && options.attributes) && !this.constructor._hasBooleanAttributes && !this.constructor._hasDateAttributes) {
+      if (options.raw && !(this._options && this._options.include) && !(options && options.attributes) && !(this.constructor as any)._hasBooleanAttributes && !(this.constructor as any)._hasDateAttributes) {
         if (Object.keys(this.dataValues).length) {
           this.dataValues = _.extend(this.dataValues, values);
         } else {
@@ -3404,8 +3533,8 @@ class Model {
         // Loop and call set
         if (options.attributes) {
           let keys = options.attributes;
-          if (this.constructor._hasVirtualAttributes) {
-            keys = keys.concat(this.constructor._virtualAttributes);
+          if ((this.constructor as any)._hasVirtualAttributes) {
+            keys = keys.concat((this.constructor as any)._virtualAttributes);
           }
 
           if (this._options.includeNames) {
@@ -3456,7 +3585,7 @@ class Model {
           if (!options.raw) {
             // If attribute is not in model definition, return
             if (!this._isAttribute(key)) {
-              if (key.indexOf('.') > -1 && this.constructor._isJsonAttribute(key.split('.')[0])) {
+              if (key.indexOf('.') > -1 && (this.constructor as any)._isJsonAttribute(key.split('.')[0])) {
                 const previousDottieValue = Dottie.get(this.dataValues, key);
                 if (!_.isEqual(previousDottieValue, value)) {
                   Dottie.set(this.dataValues, key, value);
@@ -3467,19 +3596,19 @@ class Model {
             }
 
             // If attempting to set primary key and primary key is already defined, return
-            if (this.constructor._hasPrimaryKeys && originalValue && this.constructor._isPrimaryKey(key)) {
+            if ((this.constructor as any)._hasPrimaryKeys && originalValue && (this.constructor as any)._isPrimaryKey(key)) {
               return this;
             }
 
             // If attempting to set read only attributes, return
-            if (!this.isNewRecord && this.constructor._hasReadOnlyAttributes && this.constructor._isReadOnlyAttribute(key)) {
+            if (!this.isNewRecord && (this.constructor as any)._hasReadOnlyAttributes && (this.constructor as any)._isReadOnlyAttribute(key)) {
               return this;
             }
           }
 
           // If there's a data type sanitizer
-          if (!(value instanceof Utils.SequelizeMethod) && this.constructor._dataTypeSanitizers.hasOwnProperty(key)) {
-            value = this.constructor._dataTypeSanitizers[key].call(this, value, options);
+          if (!(value instanceof Utils.SequelizeMethod) && (this.constructor as any)._dataTypeSanitizers.hasOwnProperty(key)) {
+            value = (this.constructor as any)._dataTypeSanitizers[key].call(this, value, options);
           }
 
           // Set when the value has changed and not raw
@@ -3489,9 +3618,9 @@ class Model {
               // True when sequelize method
               value instanceof Utils.SequelizeMethod ||
               // Check for data type type comparators
-              !(value instanceof Utils.SequelizeMethod) && this.constructor._dataTypeChanges[key] && this.constructor._dataTypeChanges[key].call(this, value, originalValue, options) ||
+              !(value instanceof Utils.SequelizeMethod) && (this.constructor as any)._dataTypeChanges[key] && (this.constructor as any)._dataTypeChanges[key].call(this, value, originalValue, options) ||
               // Check default
-              !this.constructor._dataTypeChanges[key] && (!Utils.isPrimitive(value) && value !== null || value !== originalValue)
+              !(this.constructor as any)._dataTypeChanges[key] && (!Utils.isPrimitive(value) && value !== null || value !== originalValue)
             )
           ) {
             this._previousDataValues[key] = originalValue;
@@ -3507,6 +3636,8 @@ class Model {
     return this;
   }
 
+
+
   setAttributes(updates) {
     return this.set(updates);
   }
@@ -3521,7 +3652,7 @@ class Model {
    * @param {String} [key]
    * @return {Boolean|Array}
    */
-  changed(key, value) {
+  changed(key?, value?) {
     if (key) {
       if (value !== undefined) {
         this._changed[key] = value;
@@ -3620,9 +3751,9 @@ class Model {
 
     if (!options.fields) {
       if (this.isNewRecord) {
-        options.fields = Object.keys(this.constructor.rawAttributes);
+        options.fields = Object.keys((this.constructor as any).rawAttributes);
       } else {
-        options.fields = _.intersection(this.changed(), Object.keys(this.constructor.rawAttributes));
+        options.fields = _.intersection(this.changed(), Object.keys((this.constructor as any).rawAttributes));
       }
 
       options.defaultFields = options.fields;
@@ -3636,14 +3767,14 @@ class Model {
       }
     }
 
-    const primaryKeyName = this.constructor.primaryKeyAttribute;
-    const primaryKeyAttribute = primaryKeyName && this.constructor.rawAttributes[primaryKeyName];
-    const createdAtAttr = this.constructor._timestampAttributes.createdAt;
-    const versionAttr = this.constructor._versionAttribute;
+    const primaryKeyName = (this.constructor as any).primaryKeyAttribute;
+    const primaryKeyAttribute = primaryKeyName && (this.constructor as any).rawAttributes[primaryKeyName];
+    const createdAtAttr = (this.constructor as any)._timestampAttributes.createdAt;
+    const versionAttr = (this.constructor as any)._versionAttribute;
     const hook = this.isNewRecord ? 'Create' : 'Update';
     const wasNewRecord = this.isNewRecord;
     const now = Utils.now(this.sequelize.options.dialect);
-    let updatedAtAttr = this.constructor._timestampAttributes.updatedAt;
+    let updatedAtAttr = (this.constructor as any)._timestampAttributes.updatedAt;
 
     if (updatedAtAttr && options.fields.length >= 1 && options.fields.indexOf(updatedAtAttr) === -1) {
       options.fields.push(updatedAtAttr);
@@ -3675,11 +3806,11 @@ class Model {
     }
 
     if (updatedAtAttr && !options.silent && options.fields.indexOf(updatedAtAttr) !== -1) {
-      this.dataValues[updatedAtAttr] = this.constructor._getDefaultTimestamp(updatedAtAttr) || now;
+      this.dataValues[updatedAtAttr] = (this.constructor as any)._getDefaultTimestamp(updatedAtAttr) || now;
     }
 
     if (this.isNewRecord && createdAtAttr && !this.dataValues[createdAtAttr]) {
-      this.dataValues[createdAtAttr] = this.constructor._getDefaultTimestamp(createdAtAttr) || now;
+      this.dataValues[createdAtAttr] = (this.constructor as any)._getDefaultTimestamp(createdAtAttr) || now;
     }
 
     return Promise.try(() => {
@@ -3699,7 +3830,7 @@ class Model {
           ignoreChanged = _.without(ignoreChanged, updatedAtAttr);
         }
 
-        return this.constructor.runHooks('before' + hook, this, options)
+        return (this.constructor as any).runHooks('before' + hook, this, options)
           .then(() => {
             if (options.defaultFields && !this.isNewRecord) {
               afterHookValues = _.pick(this.dataValues, _.difference(this.changed(), ignoreChanged));
@@ -3718,7 +3849,7 @@ class Model {
               if (options.validate) {
               // Validate again
 
-                options.skip = _.difference(Object.keys(this.constructor.rawAttributes), hookChanged);
+                options.skip = _.difference(Object.keys((this.constructor as any).rawAttributes), hookChanged);
                 return this.validate(options).then(() => {
                   delete options.skip;
                 });
@@ -3747,11 +3878,11 @@ class Model {
         return instance.save(includeOptions).then(() => this[include.association.accessors.set](instance, {save: false, logging: options.logging}));
       });
     }).then(() => {
-      const realFields = options.fields.filter(field => !this.constructor._isVirtualAttribute(field));
+      const realFields = options.fields.filter(field => !(this.constructor as any)._isVirtualAttribute(field));
       if (!realFields.length) return this;
       if (!this.changed() && !this.isNewRecord) return this;
 
-      const versionFieldName = _.get(this.constructor.rawAttributes[versionAttr], 'field') || versionAttr;
+      const versionFieldName = _.get((this.constructor as any).rawAttributes[versionAttr], 'field') || versionAttr;
       let values = Utils.mapValueFieldNames(this.dataValues, options.fields, this.constructor);
       let query = null;
       let args = [];
@@ -3759,7 +3890,7 @@ class Model {
 
       if (this.isNewRecord) {
         query = 'insert';
-        args = [this, this.constructor.getTableName(options), values, options];
+        args = [this, (this.constructor as any).getTableName(options), values, options];
       } else {
         where = this.where(true);
         where = Utils.mapValueFieldNames(where, Object.keys(where), this.constructor);
@@ -3767,7 +3898,7 @@ class Model {
           values[versionFieldName] += 1;
         }
         query = 'update';
-        args = [this, this.constructor.getTableName(options), values, where, options];
+        args = [this, (this.constructor as any).getTableName(options), values, where, options];
       }
 
       return this.sequelize.getQueryInterface()[query].apply(this.sequelize.getQueryInterface(), args)
@@ -3779,7 +3910,7 @@ class Model {
             // Check to see that a row was updated, otherwise it's an optimistic locking error.
             if (rowsUpdated < 1) {
               throw new sequelizeErrors.OptimisticLockError({
-                modelName: this.constructor.name,
+                modelName: (this.constructor as any).name,
                 values,
                 where
               });
@@ -3789,13 +3920,13 @@ class Model {
           }
 
           // Transfer database generated values (defaults, autoincrement, etc)
-          for (const attr of Object.keys(this.constructor.rawAttributes)) {
-            if (this.constructor.rawAttributes[attr].field &&
-                values[this.constructor.rawAttributes[attr].field] !== undefined &&
-                this.constructor.rawAttributes[attr].field !== attr
+          for (const attr of Object.keys((this.constructor as any).rawAttributes)) {
+            if ((this.constructor as any).rawAttributes[attr].field &&
+                values[(this.constructor as any).rawAttributes[attr].field] !== undefined &&
+                (this.constructor as any).rawAttributes[attr].field !== attr
             ) {
-              values[attr] = values[this.constructor.rawAttributes[attr].field];
-              delete values[this.constructor.rawAttributes[attr].field];
+              values[attr] = values[(this.constructor as any).rawAttributes[attr].field];
+              delete values[(this.constructor as any).rawAttributes[attr].field];
             }
           }
           values = _.extend(values, result.dataValues);
@@ -3828,14 +3959,14 @@ class Model {
               if (include.association instanceof BelongsToMany) {
                 return instance.save(includeOptions).then(() => {
                   const values = {};
-                  values[include.association.foreignKey] = this.get(this.constructor.primaryKeyAttribute, {raw: true});
+                  values[include.association.foreignKey] = this.get((this.constructor as any).primaryKeyAttribute, {raw: true});
                   values[include.association.otherKey] = instance.get(instance.constructor.primaryKeyAttribute, {raw: true});
                   // Include values defined in the scope of the association
                   _.assign(values, include.association.through.scope);
                   return include.association.throughModel.create(values, includeOptions);
                 });
               } else {
-                instance.set(include.association.foreignKey, this.get(include.association.sourceKey || this.constructor.primaryKeyAttribute, {raw: true}));
+                instance.set(include.association.foreignKey, this.get(include.association.sourceKey || (this.constructor as any).primaryKeyAttribute, {raw: true}));
                 return instance.save(includeOptions);
               }
             });
@@ -3844,7 +3975,7 @@ class Model {
         .tap(result => {
           // Run after hook
           if (options.hooks) {
-            return this.constructor.runHooks('after' + hook, result, options);
+            return (this.constructor as any).runHooks('after' + hook, result, options);
           }
         })
         .then(result => {
@@ -3871,11 +4002,11 @@ class Model {
   */
   reload(options) {
     options = _.defaults({}, options, {
-      where: this.where(),
+      where: (this as any).where(),
       include: this._options.include || null
     });
 
-    return this.constructor.findOne(options)
+    return (this.constructor as any).findOne(options)
       .tap(reload => {
         if (!reload) {
           throw new sequelizeErrors.InstanceError(
@@ -3966,14 +4097,14 @@ class Model {
     return Promise.try(() => {
       // Run before hook
       if (options.hooks) {
-        return this.constructor.runHooks('beforeDestroy', this, options);
+        return (this.constructor as any).runHooks('beforeDestroy', this, options);
       }
     }).then(() => {
       const where = this.where(true);
 
-      if (this.constructor._timestampAttributes.deletedAt && options.force === false) {
-        const attribute = this.constructor.rawAttributes[this.constructor._timestampAttributes.deletedAt];
-        const field = attribute.field || this.constructor._timestampAttributes.deletedAt;
+      if ((this.constructor as any)._timestampAttributes.deletedAt && options.force === false) {
+        const attribute = (this.constructor as any).rawAttributes[(this.constructor as any)._timestampAttributes.deletedAt];
+        const field = attribute.field || (this.constructor as any)._timestampAttributes.deletedAt;
         const values = {};
 
         values[field] = new Date();
@@ -3982,12 +4113,12 @@ class Model {
         this.setDataValue(field, values[field]);
 
         return this.sequelize.getQueryInterface().update(
-          this, this.constructor.getTableName(options), values, where, _.defaults({ hooks: false, model: this.constructor }, options)
+          this, (this.constructor as any).getTableName(options), values, where, _.defaults({ hooks: false, model: this.constructor }, options)
         ).then(results => {
           const rowsUpdated = results[1];
-          if (this.constructor._versionAttribute && rowsUpdated < 1) {
+          if ((this.constructor as any)._versionAttribute && rowsUpdated < 1) {
             throw new sequelizeErrors.OptimisticLockError({
-              modelName: this.constructor.name,
+              modelName: (this.constructor as any).name,
               values,
               where
             });
@@ -3995,12 +4126,12 @@ class Model {
           return _.head(results);
         });
       } else {
-        return this.sequelize.getQueryInterface().delete(this, this.constructor.getTableName(options), where, _.assign({ type: QueryTypes.DELETE, limit: null }, options));
+        return this.sequelize.getQueryInterface().delete(this, (this.constructor as any).getTableName(options), where, _.assign({ type: QueryTypes.DELETE, limit: null }, options));
       }
     }).tap(() => {
       // Run after hook
       if (options.hooks) {
-        return this.constructor.runHooks('afterDestroy', this, options);
+        return (this.constructor as any).runHooks('afterDestroy', this, options);
       }
     });
   }
@@ -4013,13 +4144,13 @@ class Model {
    * @returns {Boolean}
    */
   isSoftDeleted() {
-    if (!this.constructor._timestampAttributes.deletedAt) {
+    if (!(this.constructor as any)._timestampAttributes.deletedAt) {
       throw new Error('Model is not paranoid');
     }
 
-    const deletedAtAttribute = this.constructor.rawAttributes[this.constructor._timestampAttributes.deletedAt];
+    const deletedAtAttribute = (this.constructor as any).rawAttributes[(this.constructor as any)._timestampAttributes.deletedAt];
     const defaultValue = deletedAtAttribute.hasOwnProperty('defaultValue') ? deletedAtAttribute.defaultValue : null;
-    const deletedAt = this.get(this.constructor._timestampAttributes.deletedAt);
+    const deletedAt = this.get((this.constructor as any)._timestampAttributes.deletedAt);
     const isSet = deletedAt !== defaultValue;
 
     // No need to check the value of deletedAt if it's equal to the default
@@ -4047,7 +4178,7 @@ class Model {
    * @return {Promise<undefined>}
    */
   restore(options) {
-    if (!this.constructor._timestampAttributes.deletedAt) throw new Error('Model is not paranoid');
+    if (!(this.constructor as any)._timestampAttributes.deletedAt) throw new Error('Model is not paranoid');
 
     options = _.extend({
       hooks: true,
@@ -4057,11 +4188,11 @@ class Model {
     return Promise.try(() => {
       // Run before hook
       if (options.hooks) {
-        return this.constructor.runHooks('beforeRestore', this, options);
+        return (this.constructor as any).runHooks('beforeRestore', this, options);
       }
     }).then(() => {
-      const deletedAtCol = this.constructor._timestampAttributes.deletedAt;
-      const deletedAtAttribute = this.constructor.rawAttributes[deletedAtCol];
+      const deletedAtCol = (this.constructor as any)._timestampAttributes.deletedAt;
+      const deletedAtAttribute = (this.constructor as any).rawAttributes[deletedAtCol];
       const deletedAtDefaultValue = deletedAtAttribute.hasOwnProperty('defaultValue') ? deletedAtAttribute.defaultValue : null;
 
       this.setDataValue(deletedAtCol, deletedAtDefaultValue);
@@ -4069,7 +4200,7 @@ class Model {
     }).tap(() => {
       // Run after hook
       if (options.hooks) {
-        return this.constructor.runHooks('afterRestore', this, options);
+        return (this.constructor as any).runHooks('afterRestore', this, options);
       }
     });
   }
@@ -4102,13 +4233,13 @@ class Model {
   * @since 4.0.0
   */
   increment(fields, options) {
-    const identifier = this.where();
+    const identifier = (this as any).where();
 
     options = Utils.cloneDeep(options);
     options.where = _.extend({}, options.where, identifier);
     options.instance = this;
 
-    return this.constructor.increment(fields, options).return(this);
+    return (this.constructor as any).increment(fields, options).return(this);
   }
 
   /**
@@ -4161,7 +4292,7 @@ class Model {
       return false;
     }
 
-    return _.every(this.constructor.primaryKeyAttributes, attribute => this.get(attribute, {raw: true}) === other.get(attribute, {raw: true}));
+    return _.every((this.constructor as any).primaryKeyAttributes, attribute => this.get(attribute, {raw: true}) === other.get(attribute, {raw: true}));
   }
 
   /**
@@ -4279,7 +4410,14 @@ class Model {
    * @example
    * Profile.belongsTo(User) // This will add userId to the profile table
    */
-  static belongsTo(target, options) {} // eslint-disable-line
+  static belongsTo(target, options) {
+    // return new BelongsTo(this, target, options);
+  } // eslint-disable-line
+}
+
+
+function anonymizeFuck() {
+  return this; //class extends Model {};
 }
 
 // Aliases
@@ -4294,7 +4432,5 @@ Model.findAndCountAll = Model.findAndCount;
 Model.findOrInitialize = Model.findOrBuild;
 Model.insertOrUpdate = Model.upsert;
 
-_.extend(Model, associationsMixin);
+_.extend(Model, associationsMixin.Mixin);
 Hooks.applyTo(Model);
-
-module.exports = Model;

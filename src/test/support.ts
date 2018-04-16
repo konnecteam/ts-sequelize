@@ -1,21 +1,25 @@
 'use strict';
 
-const fs = require('fs'),
-  path = require('path'),
-  _ = require('lodash'),
-  Sequelize = require(__dirname + '/../index'),
-  DataTypes = require(__dirname + '/../lib/data-types'),
-  Config = require(__dirname + '/config/config'),
-  supportShim = require(__dirname + '/supportShim'),
-  chai = require('chai'),
-  expect = chai.expect,
-  AbstractQueryGenerator = require('../lib/dialects/abstract/query-generator');
+import * as fs from 'fs';
+import * as path from 'path';
+import * as _ from 'lodash';
+import {Sequelize}from '../index';
+import DataTypes from '../lib/data-types';
+import Config from './config/config';
+import * as SupportShim from './supportShim';
+import * as chai from 'chai';
+const expect = chai.expect;
+import AbstractQueryGenerator from '../lib/dialects/abstract/query-generator';
+import * as chaispies from 'chai-spies';
+import * as Literal from '../lib/utils';
+import * as chaidatetime from 'chai-datetime';
+import * as chaiaspromised from 'chai-as-promised';
+import * as sinonchai from 'sinon-chai';
 
-
-chai.use(require('chai-spies'));
-chai.use(require('chai-datetime'));
-chai.use(require('chai-as-promised'));
-chai.use(require('sinon-chai'));
+chai.use(chaispies);
+chai.use(chaidatetime);
+chai.use(chaiaspromised);
+chai.use(sinonchai);
 chai.config.includeStack = true;
 chai.should();
 
@@ -32,10 +36,11 @@ Sequelize.Promise.longStackTraces();
 
 // shim all Sequelize methods for testing for correct `options.logging` passing
 // and no modification of `options` objects
-if (!process.env.COVERAGE && process.env.SHIM) supportShim(Sequelize);
+if (!process.env.COVERAGE && process.env.SHIM) SupportShim.supportShim(Sequelize);
 
 const Support = {
-  Sequelize,
+  sequelize: null,
+  Sequelize: null,
 
   initTests(options) {
     const sequelize = this.createSequelizeInstance(options);
@@ -55,7 +60,7 @@ const Support = {
     });
   },
 
-  prepareTransactionTest(sequelize, callback) {
+  prepareTransactionTest(sequelize, callback = null) {
     const dialect = Support.getTestDialect();
 
     if (dialect === 'sqlite') {
@@ -87,7 +92,7 @@ const Support = {
     }
   },
 
-  createSequelizeInstance(options) {
+  createSequelizeInstance(options = null) {
     options = options || {};
     options.dialect = this.getTestDialect();
 
@@ -232,5 +237,7 @@ if (typeof beforeEach !== 'undefined') {
     this.sequelize = Support.sequelize;
   });
 }
-Support.sequelize = Support.createSequelizeInstance();
-module.exports = Support;
+Support.sequelize = Support.createSequelizeInstance(null);
+Support.Sequelize = Sequelize;
+
+export default Support;

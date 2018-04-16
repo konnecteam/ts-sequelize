@@ -1,10 +1,11 @@
 'use strict';
 
-const chai = require('chai'),
-  Sequelize = require('../../../../index'),
-  expect = chai.expect,
-  Promise = Sequelize.Promise,
-  Support = require(__dirname + '/../../support');
+import * as chai from 'chai';
+import {Sequelize}from '../../../../index';
+import DataTypes from '../../../../lib/data-types';
+const expect = chai.expect;
+const Promise = Sequelize.Promise;
+import Support from '../../support';
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('scope', () => {
@@ -13,11 +14,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         const sequelize = this.sequelize;
 
         this.ScopeMe = this.sequelize.define('ScopeMe', {
-          username: Sequelize.STRING,
-          email: Sequelize.STRING,
-          access_level: Sequelize.INTEGER,
-          other_value: Sequelize.INTEGER,
-          parent_id: Sequelize.INTEGER
+          username: DataTypes.STRING,
+          email: DataTypes.STRING,
+          access_level: DataTypes.INTEGER,
+          other_value: DataTypes.INTEGER,
+          parent_id: DataTypes.INTEGER
         }, {
           defaultScope: {
             where: {
@@ -44,7 +45,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         this.Project = this.sequelize.define('project', {
-          active: Sequelize.BOOLEAN
+          active: DataTypes.BOOLEAN
         }, {
           scopes: {
             active: {
@@ -56,7 +57,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         this.Company = this.sequelize.define('company', {
-          active: Sequelize.BOOLEAN
+          active: DataTypes.BOOLEAN
         }, {
           defaultScope: {
             where: { active: true }
@@ -74,7 +75,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         this.Profile = this.sequelize.define('profile', {
-          active: Sequelize.BOOLEAN
+          active: DataTypes.BOOLEAN
         }, {
           defaultScope: {
             where: { active: true }

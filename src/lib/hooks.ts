@@ -1,11 +1,11 @@
 'use strict';
 
-const _ = require('lodash');
-const Utils = require('./utils');
-const Promise = require('./promise');
+import * as _ from 'lodash';
+import * as Utils from './utils';
+import Promise from './promise';
 const debug = Utils.getLogger().debugContext('hooks');
 
-const hookTypes = {
+export const hookTypes = {
   beforeValidate: {params: 2},
   afterValidate: {params: 2},
   validationFailed: {params: 3},
@@ -45,16 +45,14 @@ const hookTypes = {
   beforeBulkSync: {params: 1},
   afterBulkSync: {params: 1}
 };
-exports.hooks = hookTypes;
 
-const hookAliases = {
+export const hookAliases = {
   beforeDelete: 'beforeDestroy',
   afterDelete: 'afterDestroy',
   beforeBulkDelete: 'beforeBulkDestroy',
   afterBulkDelete: 'afterBulkDestroy',
   beforeConnection: 'beforeConnect'
 };
-exports.hookAliases = hookAliases;
 
 /**
  * get array of current hook and its proxied hooks combined
@@ -80,6 +78,7 @@ const Hooks = {
    * @memberOf Sequelize
    * @memberOf Sequelize.Model
    */
+  hasHooks: undefined,
   _setupHooks(hooks) {
     this.options.hooks = {};
     _.map(hooks || {}, (hooksArray, hookName) => {
@@ -217,7 +216,7 @@ const Hooks = {
 Hooks.hasHooks = Hooks.hasHook;
 
 
-function applyTo(target) {
+export function applyTo(target) {
   _.mixin(target, Hooks);
 
   const allHooks = Object.keys(hookTypes).concat(Object.keys(hookAliases));
@@ -227,7 +226,6 @@ function applyTo(target) {
     };
   }
 }
-exports.applyTo = applyTo;
 
 /**
  * A hook that is run before validation

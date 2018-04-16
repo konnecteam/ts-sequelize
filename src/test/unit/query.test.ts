@@ -1,12 +1,12 @@
 'use strict';
 
-const chai = require('chai'),
-  sinon = require('sinon'),
-  expect = chai.expect,
-  Support = require(__dirname + '/support'),
-  Sequelize = Support.Sequelize,
-  Promise = Sequelize.Promise,
-  current = Support.sequelize;
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+const expect = chai.expect;
+import Support from '../support';
+const Sequelize = Support.sequelize;
+const Promise = Sequelize.Promise;
+const current = Support.sequelize;
 
 describe('sequelize.query', () => {
   it('connection should be released only once when retry fails', () => {

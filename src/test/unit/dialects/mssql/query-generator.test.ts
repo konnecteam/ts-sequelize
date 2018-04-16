@@ -1,12 +1,12 @@
 'use strict';
 
-const Support = require(__dirname + '/../../support');
+import Support from '../../../support';
 const expectsql = Support.expectsql;
 const current = Support.sequelize;
-const Operators = require('../../../../lib/operators');
-const TableHints = require('../../../../lib/table-hints');
-const QueryGenerator = require('../../../../lib/dialects/mssql/query-generator');
-const _ = require('lodash');
+import Operators from '../../../../lib/operators';
+import TableHints from '../../../../lib/table-hints';
+import QueryGenerator from '../../../../lib/dialects/mssql/query-generator';
+import * as _ from 'lodash';
 
 if (current.dialect.name === 'mssql') {
   describe('[MSSQL Specific] QueryGenerator', () => {

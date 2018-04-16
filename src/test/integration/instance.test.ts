@@ -1,15 +1,15 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Sequelize = require('../../index'),
-  Support = require(__dirname + '/support'),
-  DataTypes = require(__dirname + '/../../lib/data-types'),
-  dialect = Support.getTestDialect(),
-  config = require(__dirname + '/../config/config'),
-  sinon = require('sinon'),
-  validateUUID = require('uuid-validate'),
-  current = Support.sequelize;
+import * as chai from 'chai';
+const expect = chai.expect;
+import {Sequelize}from '../../index';
+import Support from './support';
+import DataTypes from '../../lib/data-types';
+const dialect = Support.getTestDialect();
+import config from '../config/config';
+import * as sinon from 'sinon';
+import * as validateUUID from 'uuid-validate';
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
   before(function() {
@@ -130,7 +130,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
         return Support.prepareTransactionTest(this.sequelize).bind({}).then(sequelize => {
-          const User = sequelize.define('User', { number: Support.Sequelize.INTEGER });
+          const User = sequelize.define('User', { number: DataTypes.INTEGER });
 
           return User.sync({ force: true }).then(() => {
             return User.create({ number: 1 }).then(user => {
@@ -300,7 +300,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
         return Support.prepareTransactionTest(this.sequelize).bind({}).then(sequelize => {
-          const User = sequelize.define('User', { number: Support.Sequelize.INTEGER });
+          const User = sequelize.define('User', { number: DataTypes.INTEGER });
 
           return User.sync({ force: true }).then(() => {
             return User.create({ number: 3 }).then(user => {
@@ -467,7 +467,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
         return Support.prepareTransactionTest(this.sequelize).bind({}).then(sequelize => {
-          const User = sequelize.define('User', { username: Support.Sequelize.STRING });
+          const User = sequelize.define('User', { username: DataTypes.STRING });
 
           return User.sync({ force: true }).then(() => {
             return User.create({ username: 'foo' }).then(user => {
@@ -912,7 +912,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
         return Support.prepareTransactionTest(this.sequelize).bind({}).then(sequelize => {
-          const User = sequelize.define('User', { username: Support.Sequelize.STRING });
+          const User = sequelize.define('User', { username: DataTypes.STRING });
           return User.sync({ force: true }).then(() => {
             return sequelize.transaction().then(t => {
               return User.build({ username: 'foo' }).save({ transaction: t }).then(() => {
@@ -1149,7 +1149,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         User2 = this.sequelize.define('User2',
           {
             id: {
-              type: DataTypes.INTEGER.UNSIGNED,
+              type: (DataTypes.INTEGER as any).UNSIGNED,
               autoIncrement: false,
               primaryKey: true
             },
@@ -1859,7 +1859,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
         return Support.prepareTransactionTest(this.sequelize).bind({}).then(sequelize => {
-          const User = sequelize.define('User', { username: Support.Sequelize.STRING });
+          const User = sequelize.define('User', { username: DataTypes.STRING });
 
           return User.sync({ force: true }).then(() => {
             return User.create({ username: 'foo' }).then(user => {
@@ -1882,8 +1882,8 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     it('does not set the deletedAt date in subsequent destroys if dao is paranoid', function() {
       const UserDestroy = this.sequelize.define('UserDestroy', {
-        name: Support.Sequelize.STRING,
-        bio: Support.Sequelize.TEXT
+        name: DataTypes.STRING,
+        bio: DataTypes.TEXT
       }, { paranoid: true });
 
       return UserDestroy.sync({ force: true }).then(() => {
@@ -1905,8 +1905,8 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     it('deletes a record from the database if dao is not paranoid', function() {
       const UserDestroy = this.sequelize.define('UserDestroy', {
-        name: Support.Sequelize.STRING,
-        bio: Support.Sequelize.TEXT
+        name: DataTypes.STRING,
+        bio: DataTypes.TEXT
       });
 
       return UserDestroy.sync({ force: true }).then(() => {
@@ -1925,8 +1925,8 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     it('allows sql logging of delete statements', function() {
       const UserDelete = this.sequelize.define('UserDelete', {
-        name: Support.Sequelize.STRING,
-        bio: Support.Sequelize.TEXT
+        name: DataTypes.STRING,
+        bio: DataTypes.TEXT
       });
 
       return UserDelete.sync({ force: true }).then(() => {
@@ -1947,12 +1947,12 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     it('delete a record of multiple primary keys table', function() {
       const MultiPrimary = this.sequelize.define('MultiPrimary', {
         bilibili: {
-          type: Support.Sequelize.CHAR(2),
+          type: DataTypes.CHAR(2),
           primaryKey: true
         },
 
         guruguru: {
-          type: Support.Sequelize.CHAR(2),
+          type: DataTypes.CHAR(2),
           primaryKey: true
         }
       });

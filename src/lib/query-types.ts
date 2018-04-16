@@ -20,7 +20,7 @@
  * @property FOREIGNKEYS
  * @property SHOWCONSTRAINTS
  */
-const QueryTypes = module.exports = { // eslint-disable-line
+const QueryTypes = { // eslint-disable-line
   SELECT: 'SELECT',
   INSERT: 'INSERT',
   UPDATE: 'UPDATE',
@@ -36,3 +36,5 @@ const QueryTypes = module.exports = { // eslint-disable-line
   FOREIGNKEYS: 'FOREIGNKEYS',
   SHOWCONSTRAINTS: 'SHOWCONSTRAINTS'
 };
+
+export default QueryTypes;

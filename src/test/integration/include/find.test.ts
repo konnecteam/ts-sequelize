@@ -1,11 +1,11 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  Sequelize = require(__dirname + '/../../../index'),
-  Promise = Sequelize.Promise,
-  DataTypes = require(__dirname + '/../../../lib/data-types');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../support';
+import {Sequelize}from '../../../index';
+const Promise = Sequelize.Promise;
+import DataTypes from '../../../lib/data-types';
 
 describe(Support.getTestDialectTeaser('Include'), () => {
   describe('find', () => {
@@ -100,7 +100,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       const User = this.sequelize.define('User', {
           id: {
             type: DataTypes.UUID,
-            defaultValue: Sequelize.UUIDV4,
+            defaultValue: DataTypes.UUIDV4,
             field: 'main_id',
             primaryKey: true
           }
@@ -133,6 +133,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       });
     });
 
+    // je sais pas
     it('should include a model with a through.where and required true clause when the PK field name and attribute name are different', function() {
       const A = this.sequelize.define('a', {}),
         B = this.sequelize.define('b', {}),
@@ -300,7 +301,9 @@ describe(Support.getTestDialectTeaser('Include'), () => {
               b;
 
             singles.forEach(model => {
-              const values = {};
+              const values = {
+                name: undefined
+              };
 
               if (model.name === 'g') {
                 values.name = 'yolo';

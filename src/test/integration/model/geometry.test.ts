@@ -1,11 +1,11 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  dialect = Support.getTestDialect(),
-  semver = require('semver');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../support';
+import DataTypes from '../../../lib/data-types';
+const dialect = Support.getTestDialect();
+import * as semver from 'semver';
 
 const current = Support.sequelize;
 
@@ -197,7 +197,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
       });
 
-      it('should properly escape the single quotes in coordinates', function() {
+      it.only('should properly escape the single quotes in coordinates', function() {
 
         // MySQL 5.7, those guys finally fixed this
         if (dialect === 'mysql' && semver.gte(this.sequelize.options.databaseVersion, '5.7.0')) {

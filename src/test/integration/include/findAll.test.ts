@@ -1,12 +1,12 @@
 'use strict';
 
-const chai = require('chai'),
-  Sequelize = require('../../../index'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  dialect = Support.getTestDialect(),
-  Promise = Sequelize.Promise;
+import * as chai from 'chai';
+import {Sequelize}from '../../../index';
+const expect = chai.expect;
+import Support from '../support';
+import DataTypes from '../../../lib/data-types';
+const dialect = Support.getTestDialect();
+const Promise = Sequelize.Promise;
 
 const sortById = function(a, b) {
   return a.id < b.id ? -1 : 1;
@@ -601,7 +601,9 @@ describe(Support.getTestDialectTeaser('Include'), () => {
               b;
 
             singles.forEach(model => {
-              const values = {};
+              const values = {
+                name: undefined
+              };
 
               if (model.name === 'g') {
                 values.name = 'yolo';
@@ -1500,12 +1502,12 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     it('should be possible not to include the main id in the attributes', function() {
       const Member = this.sequelize.define('Member', {
         id: {
-          type: Sequelize.BIGINT,
+          type: DataTypes.BIGINT,
           primaryKey: true,
           autoIncrement: true
         },
         email: {
-          type: Sequelize.STRING,
+          type: DataTypes.STRING,
           unique: true,
           allowNull: false,
           validate: {
@@ -1514,16 +1516,16 @@ describe(Support.getTestDialectTeaser('Include'), () => {
             notEmpty: true
           }
         },
-        password: Sequelize.STRING
+        password: DataTypes.STRING
       });
       const Album = this.sequelize.define('Album', {
         id: {
-          type: Sequelize.BIGINT,
+          type: DataTypes.BIGINT,
           primaryKey: true,
           autoIncrement: true
         },
         title: {
-          type: Sequelize.STRING(25),
+          type: DataTypes.STRING(25),
           allowNull: false
         }
       });
@@ -1629,10 +1631,10 @@ describe(Support.getTestDialectTeaser('Include'), () => {
 
     it('should support including date fields, with the correct timeszone', function() {
       const User = this.sequelize.define('user', {
-          dateField: Sequelize.DATE
+          dateField: DataTypes.DATE
         }, {timestamps: false}),
         Group = this.sequelize.define('group', {
-          dateField: Sequelize.DATE
+          dateField: DataTypes.DATE
         }, {timestamps: false});
 
       User.belongsToMany(Group, {through: 'group_user'});
@@ -1733,30 +1735,30 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     it('should work on a nested set of required 1:1 relations', function() {
       const Person = this.sequelize.define('Person', {
         name: {
-          type: Sequelize.STRING,
+          type: DataTypes.STRING,
           allowNull: false
         }
       });
 
       const UserPerson = this.sequelize.define('UserPerson', {
         PersonId: {
-          type: Sequelize.INTEGER,
+          type: DataTypes.INTEGER,
           primaryKey: true
         },
 
         rank: {
-          type: Sequelize.STRING
+          type: DataTypes.INTEGER
         }
       });
 
       const User = this.sequelize.define('User', {
         UserPersonId: {
-          type: Sequelize.INTEGER,
+          type: DataTypes.INTEGER,
           primaryKey: true
         },
 
         login: {
-          type: Sequelize.STRING,
+          type: DataTypes.STRING,
           unique: true,
           allowNull: false
         }

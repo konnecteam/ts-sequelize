@@ -1,14 +1,15 @@
 'use strict';
 
-const Utils = require('./../utils');
-const Helpers = require('./helpers');
-const _ = require('lodash');
-const Association = require('./base');
-const BelongsTo = require('./belongs-to');
-const HasMany = require('./has-many');
-const HasOne = require('./has-one');
-const AssociationError = require('../errors').AssociationError;
-const Op = require('../operators');
+import * as _ from 'lodash';
+import * as Errors from '../errors/index';
+import Op from '../operators';
+import * as Utils from './../utils';
+import {Association} from './base';
+import {BelongsTo} from './belongs-to';
+import {HasMany} from './has-many';
+import {HasOne} from './has-one';
+import * as Helpers from './helpers';
+const AssociationError = Errors.AssociationError;
 
 /**
  * Many-to-many association with a join table.
@@ -46,16 +47,47 @@ const Op = require('../operators');
  * Similarly, when fetching through a join table with custom attributes, these attributes will be available as an object with the name of the through model.
  * ```js
  * user.getProjects().then(function (projects) {
-   *   let p1 = projects[0]
-   *   p1.UserProjects.started // Is this project started yet?
-   * })
+ *   let p1 = projects[0]
+ *   p1.UserProjects.started // Is this project started yet?
+ * })
  * ```
  *
  * In the API reference below, add the name of the association to the method, e.g. for `User.belongsToMany(Project)` the getter will be `user.getProjects()`.
  *
  * @see {@link Model.belongsToMany}
  */
-class BelongsToMany extends Association {
+export class BelongsToMany extends Association {
+
+  public targetAssociation;
+  public sequelize;
+  public isMultiAssociation;
+  public doubleLinked;
+  public isAliased;
+  public combinedTableName;
+  public foreignKeyAttribute;
+  public foreignKey;
+  public foreignKeyDefault;
+  public otherKeyAttribute;
+  public otherKey;
+  public otherKeyDefault;
+  public paired;
+  public throughModel;
+  public combinedName;
+  public associationAccessor;
+  public accessors;
+  public identifier;
+  public foreignIdentifier;
+  public primaryKeyDeleted;
+  public identifierField;
+  public foreignIdentifierField;
+  public toSource;
+  public manyFromSource;
+  public oneFromSource;
+  public toTarget;
+  public manyFromTarget;
+  public oneFromTarget;
+
+
   constructor(source, target, options) {
     super(source, target, options);
 
@@ -82,7 +114,6 @@ class BelongsToMany extends Association {
 
     if (this.as) {
       this.isAliased = true;
-
       if (_.isPlainObject(this.as)) {
         this.options.name = this.as;
         this.as = this.as.plural;
@@ -226,7 +257,7 @@ class BelongsToMany extends Association {
 
   // the id is in the target table
   // or in an extra table which connects two tables
-  injectAttributes() {
+  public injectAttributes() {
 
     this.identifier = this.foreignKey;
     this.foreignIdentifier = this.otherKey;
@@ -239,8 +270,7 @@ class BelongsToMany extends Association {
           // this key is still needed as it's part of the association
           // so just set primaryKey to false
           attribute.primaryKey = false;
-        }
-        else {
+        }else {
           delete this.through.model.rawAttributes[attributeName];
         }
         this.primaryKeyDeleted = true;
@@ -319,6 +349,7 @@ class BelongsToMany extends Association {
       foreignKey: this.foreignKey,
       createByBTM : true
     });
+
     this.oneFromSource = new HasOne(this.source, this.through.model, {
       foreignKey: this.foreignKey,
       as: this.through.model.name,
@@ -359,7 +390,7 @@ class BelongsToMany extends Association {
     return this;
   }
 
-  mixin(obj) {
+  public mixin(obj) {
     const methods = ['get', 'count', 'hasSingle', 'hasAll', 'set', 'add', 'addMultiple', 'remove', 'removeMultiple', 'create'];
     const aliases = {
       hasSingle: 'has',
@@ -381,7 +412,7 @@ class BelongsToMany extends Association {
    * @see {@link Model.findAll}  for a full explanation of options
    * @return {Promise<Array<Model>>}
    */
-  get(instance, options) {
+  public get(instance, options) {
     options = Utils.cloneDeep(options) || {};
 
     const association = this;
@@ -738,6 +769,3 @@ class BelongsToMany extends Association {
   }
 }
 
-module.exports = BelongsToMany;
-module.exports.BelongsToMany = BelongsToMany;
-module.exports.default = BelongsToMany;

@@ -1,17 +1,16 @@
 'use strict';
 
-const chai = require('chai'),
-  Sequelize = require('../../../../index'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../../support'),
-  DataTypes = require(__dirname + '/../../../../lib/data-types');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../support';
+import DataTypes from '../../../../lib/data-types';
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('create', () => {
     describe('include', () => {
       it('should create data for BelongsTo relations', function() {
         const Product = this.sequelize.define('Product', {
-          title: Sequelize.STRING
+          title: DataTypes.STRING
         }, {
           hooks: {
             afterCreate(product) {
@@ -20,8 +19,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }
         });
         const User = this.sequelize.define('User', {
-          first_name: Sequelize.STRING,
-          last_name: Sequelize.STRING
+          first_name: DataTypes.STRING,
+          last_name: DataTypes.STRING
         }, {
           hooks: {
             beforeCreate(user, options) {
@@ -62,11 +61,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       it('should create data for BelongsTo relations with alias', function() {
         const Product = this.sequelize.define('Product', {
-          title: Sequelize.STRING
+          title: DataTypes.STRING
         });
         const User = this.sequelize.define('User', {
-          first_name: Sequelize.STRING,
-          last_name: Sequelize.STRING
+          first_name: DataTypes.STRING,
+          last_name: DataTypes.STRING
         });
 
         const Creator = Product.belongsTo(User, {as: 'creator'});
@@ -95,7 +94,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       it('should create data for HasMany relations', function() {
         const Product = this.sequelize.define('Product', {
-          title: Sequelize.STRING
+          title: DataTypes.STRING
         }, {
           hooks: {
             afterCreate(product) {
@@ -107,7 +106,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }
         });
         const Tag = this.sequelize.define('Tag', {
-          name: Sequelize.STRING
+          name: DataTypes.STRING
         }, {
           hooks: {
             afterCreate(tag, options) {
@@ -150,10 +149,10 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       it('should create data for HasMany relations with alias', function() {
         const Product = this.sequelize.define('Product', {
-          title: Sequelize.STRING
+          title: DataTypes.STRING
         });
         const Tag = this.sequelize.define('Tag', {
-          name: Sequelize.STRING
+          name: DataTypes.STRING
         });
 
         const Categories = Product.hasMany(Tag, {as: 'categories'});
@@ -182,11 +181,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       it('should create data for HasOne relations', function() {
         const User = this.sequelize.define('User', {
-          username: Sequelize.STRING
+          username: DataTypes.STRING
         });
 
         const Task = this.sequelize.define('Task', {
-          title: Sequelize.STRING
+          title: DataTypes.STRING
         });
 
         User.hasOne(Task);
@@ -212,11 +211,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       it('should create data for HasOne relations with alias', function() {
         const User = this.sequelize.define('User', {
-          username: Sequelize.STRING
+          username: DataTypes.STRING
         });
 
         const Task = this.sequelize.define('Task', {
-          title: Sequelize.STRING
+          title: DataTypes.STRING
         });
 
         const Job = User.hasOne(Task, {as: 'job'});

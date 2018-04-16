@@ -1,14 +1,14 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Op = require('../../../../lib/operators'),
-  getAbstractQueryGenerator = require(__dirname + '/../../support').getAbstractQueryGenerator;
+import * as chai from 'chai';
+import Op from '../../../../lib/operators';
+import support from '../../../support';
 
+const expect = chai.expect;
 describe('QueryGenerator', () => {
   describe('whereItemQuery', () => {
     it('should generate correct query for Symbol operators', function() {
-      const QG = getAbstractQueryGenerator(this.sequelize);
+      const QG = support.getAbstractQueryGenerator(this.sequelize);
       QG.whereItemQuery(Op.or, [{test: {[Op.gt]: 5}}, {test: {[Op.lt]: 3}}, {test: {[Op.in]: [4]}}])
         .should.be.equal('(test > 5 OR test < 3 OR test IN (4))');
 
@@ -20,7 +20,7 @@ describe('QueryGenerator', () => {
     });
 
     it('should not parse any strings as aliases  operators', function() {
-      const QG = getAbstractQueryGenerator(this.sequelize);
+      const QG = support.getAbstractQueryGenerator(this.sequelize);
       expect(() => QG.whereItemQuery('$or', [{test: 5}, {test: 3}]))
         .to.throw('Invalid value { test: 5 }');
 
@@ -44,7 +44,7 @@ describe('QueryGenerator', () => {
     });
 
     it('should parse set aliases strings as operators', function() {
-      const QG = getAbstractQueryGenerator(this.sequelize),
+      const QG = support.getAbstractQueryGenerator(this.sequelize),
         aliases = {
           OR: Op.or,
           '!': Op.not,

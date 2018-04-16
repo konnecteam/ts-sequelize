@@ -1,13 +1,13 @@
 'use strict';
 
-const chai = require('chai'),
-  sinon = require('sinon'),
-  expect = chai.expect,
-  Sequelize = require(__dirname + '/../../../index'),
-  Support = require(__dirname + '/../support'),
-  current = Support.sequelize,
-  Promise = current.Promise,
-  config = require(__dirname + '/../../config/config');
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+const expect = chai.expect;
+import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
+const current = Support.sequelize;
+const Promise = current.Promise;
+import config from '../../config/config';
 
 
 describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
@@ -190,7 +190,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
 
           const UserFail = this.sequelize.define('User' + config.rand(), {
             name: {
-              type: Sequelize.STRING,
+              type: DataTypes.STRING,
               validate: validations
             }
           });
@@ -203,7 +203,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
           });
         });
       },
-      applyPassTest = function applyPassTest(validatorDetails, j, validator, type) {
+      applyPassTest = function applyPassTest(validatorDetails, j, validator, type = null) {
         const succeedingValue = validatorDetails.pass[j];
         it('correctly specifies an instance as valid using a value of "' + succeedingValue + '" for the validation "' + validator + '"', function() {
           const validations = {},
@@ -222,7 +222,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
 
           const UserSuccess = this.sequelize.define('User' + config.rand(), {
             name: {
-              type: Sequelize.STRING,
+              type: DataTypes.STRING,
               validate: validations
             }
           });
@@ -263,12 +263,12 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
     });
 
     const User = current.define('user', {
-      age: Sequelize.INTEGER,
-      name: Sequelize.STRING,
-      awesome: Sequelize.BOOLEAN,
-      number: Sequelize.DECIMAL,
-      uid: Sequelize.UUID,
-      date: Sequelize.DATE
+      age: DataTypes.INTEGER,
+      name: DataTypes.STRING,
+      awesome: DataTypes.BOOLEAN,
+      number: DataTypes.DECIMAL,
+      uid: DataTypes.UUID,
+      date: DataTypes.DATE
     });
 
     before(function() {
@@ -412,7 +412,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
 
     const User = current.define('user', {
       age: {
-        type: Sequelize.INTEGER,
+        type: DataTypes.STRING,
         validate: {
           customFn(val, next) {
             if (val < 0) {
@@ -423,7 +423,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
           }
         }
       },
-      name: Sequelize.STRING
+      name: DataTypes.STRING
     }, {
       validate: {
         customFn() {
@@ -498,7 +498,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   describe('custom validation functions returning promises', () => {
 
     const User = current.define('user', {
-      name: Sequelize.STRING
+      name: DataTypes.STRING
     }, {
       validate: {
         customFn() {

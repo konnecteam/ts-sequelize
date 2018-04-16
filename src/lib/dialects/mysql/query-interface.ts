@@ -8,8 +8,9 @@
  @private
  */
 
-const _ = require('lodash');
-const UnknownConstraintError = require('../../errors').UnknownConstraintError;
+import * as _ from 'lodash';
+import * as errors from '../../errors/index';
+const UnknownConstraintError = errors.UnknownConstraintError;
 
 /**
   A wrapper that fixes MySQL's inability to cleanly remove columns from existing tables if they have a foreign key constraint.
@@ -22,7 +23,7 @@ const UnknownConstraintError = require('../../errors').UnknownConstraintError;
   @param  {Object} options
  @private
  */
-function removeColumn(tableName, columnName, options) {
+export function removeColumn(tableName, columnName, options) {
   options = options || {};
 
   return this.sequelize.query(
@@ -50,7 +51,7 @@ function removeColumn(tableName, columnName, options) {
 }
 
 
-function removeConstraint(tableName, constraintName, options) {
+export function removeConstraint(tableName, constraintName, options) {
   const sql = this.QueryGenerator.showConstraintsQuery(tableName.tableName ? tableName : {
     tableName,
     schema: this.sequelize.config.database
@@ -74,5 +75,3 @@ function removeConstraint(tableName, constraintName, options) {
     });
 }
 
-exports.removeConstraint = removeConstraint;
-exports.removeColumn = removeColumn;

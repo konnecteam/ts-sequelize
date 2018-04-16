@@ -1,13 +1,13 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  current = Support.sequelize,
-  cls = require('continuation-local-storage'),
-  sinon = require('sinon'),
-  stub = sinon.stub,
-  Promise = require('bluebird');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../support';
+const current = Support.sequelize;
+import * as cls from 'continuation-local-storage';
+import * as sinon from 'sinon';
+const stub = sinon.stub;
+import * as Promise from 'bluebird';
 
 describe(Support.getTestDialectTeaser('Model'), () => {
 

@@ -1,12 +1,13 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  current = Support.sequelize,
-  sinon = require('sinon'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  Promise = require('bluebird').getNewLibraryCopy();
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../support';
+const current = Support.sequelize;
+import * as sinon from 'sinon';
+import DataTypes from '../../../lib/data-types';
+import * as bluebird from 'bluebird';
+const Promise = bluebird.getNewLibraryCopy();
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('findAndCount', () => {

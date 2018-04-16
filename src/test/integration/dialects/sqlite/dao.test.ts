@@ -1,11 +1,11 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../../support'),
-  Sequelize = Support.Sequelize,
-  dialect = Support.getTestDialect(),
-  DataTypes = require(__dirname + '/../../../../lib/data-types');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../support';
+const Sequelize = Support.Sequelize;
+const dialect = Support.getTestDialect();
+import DataTypes from '../../../../lib/data-types';
 
 if (dialect === 'sqlite') {
   describe('[SQLITE Specific] DAO', () => {

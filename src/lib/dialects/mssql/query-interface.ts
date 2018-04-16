@@ -20,7 +20,7 @@
   @param  {Boolean|Function} [options.logging] A function that logs the sql queries, or false for explicitly not logging these queries
  @private
  */
-const removeColumn = function(tableName, attributeName, options) {
+export function removeColumn(tableName, attributeName, options) {
   options = Object.assign({ raw: true }, options || {});
 
   const findConstraintSql = this.QueryGenerator.getDefaultConstraintQuery(tableName, attributeName);
@@ -63,6 +63,3 @@ const removeColumn = function(tableName, attributeName, options) {
     });
 };
 
-module.exports = {
-  removeColumn
-};

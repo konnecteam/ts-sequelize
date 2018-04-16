@@ -1,12 +1,12 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  UniqueConstraintError = require(__dirname + '/../../../lib/errors').UniqueConstraintError,
-  current = Support.sequelize,
-  sinon = require('sinon'),
-  Promise = require('bluebird');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../support';
+import {UniqueConstraintError} from '../../../lib/errors/index';
+const current = Support.sequelize;
+import * as sinon from 'sinon';
+import * as Promise from 'bluebird';
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('findCreateFind', () => {

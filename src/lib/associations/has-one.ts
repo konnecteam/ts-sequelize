@@ -1,10 +1,10 @@
 'use strict';
 
-const Utils = require('./../utils');
-const Helpers = require('./helpers');
-const _ = require('lodash');
-const Association = require('./base');
-const Op = require('../operators');
+import * as Utils  from './../utils';
+import * as Helpers from './helpers';
+import * as _ from 'lodash';
+import {Association} from './base';
+import Op from '../operators';
 
 /**
  * One-to-one association
@@ -14,7 +14,19 @@ const Op = require('../operators');
  *
  * @see {@link Model.hasOne}
  */
-class HasOne extends Association {
+export class HasOne extends Association {
+
+  isSingleAssociation;
+  foreignKeyAttribute;
+  isAliased;
+  foreignKey;
+  sourceIdentifier;
+  sourceKey;
+  sourceKeyIsPrimary;
+  identifierField;
+  associationAccessor;
+  accessors;
+
   constructor(source, target, options) {
     super(source, target, options);
 
@@ -253,5 +265,3 @@ class HasOne extends Association {
     return association.target.create(values, options);
   }
 }
-
-module.exports = HasOne;

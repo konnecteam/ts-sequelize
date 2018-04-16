@@ -1,31 +1,32 @@
 'use strict';
 
-const DataTypes = require('./data-types');
-const SqlString = require('./sql-string');
-const _ = require('lodash');
-const parameterValidator = require('./utils/parameter-validator');
-const Logger = require('./utils/logger');
-const uuid = require('uuid');
-const Promise = require('./promise');
-const operators  = require('./operators');
-const operatorsArray = _.values(operators);
+import DataTypes from './data-types';
+import * as SqlString from './sql-string';
+import * as _ from 'lodash';
+import * as parameterValidator from './utils/parameter-validator';
+import {Logger} from './utils/logger';
+import * as uuid from 'uuid';
+import operators from './operators';
+import promise from './promise';
+import * as Inflection from 'inflection';
+
+let inflection = Inflection;
+const logger = new Logger(null);
+const operatorsArray = Object.values(operators);
 const primitives = ['string', 'number', 'boolean'];
 
-let inflection = require('inflection');
-const logger = new Logger();
+export const Promise = promise;
+export const debug = logger.debug.bind(logger);
+export const deprecate = logger.deprecate.bind(logger);
+export const warn = logger.warn.bind(logger);
+export const getLogger = () =>  logger ;
+export const validateParameter = parameterValidator;
 
-exports.Promise = Promise;
-exports.debug = logger.debug.bind(logger);
-exports.deprecate = logger.deprecate.bind(logger);
-exports.warn = logger.warn.bind(logger);
-exports.getLogger = () =>  logger ;
-
-function useInflection(_inflection) {
+export function useInflection(_inflection) {
   inflection = _inflection;
 }
-exports.useInflection = useInflection;
 
-function camelizeIf(str, condition) {
+export function camelizeIf(str, condition) {
   let result = str;
 
   if (condition) {
@@ -34,9 +35,8 @@ function camelizeIf(str, condition) {
 
   return result;
 }
-exports.camelizeIf = camelizeIf;
 
-function underscoredIf(str, condition) {
+export function underscoredIf(str, condition) {
   let result = str;
 
   if (condition) {
@@ -45,15 +45,13 @@ function underscoredIf(str, condition) {
 
   return result;
 }
-exports.underscoredIf = underscoredIf;
 
-function isPrimitive(val) {
+export function isPrimitive(val) {
   return primitives.indexOf(typeof val) !== -1;
 }
-exports.isPrimitive = isPrimitive;
 
 // Same concept as _.merge, but don't overwrite properties that have already been assigned
-function mergeDefaults(a, b) {
+export function mergeDefaults(a, b) {
   return _.mergeWith(a, b, objectValue => {
     // If it's an object, let _ handle it this time, we will be called again for each property
     if (!_.isPlainObject(objectValue) && objectValue !== undefined) {
@@ -61,12 +59,11 @@ function mergeDefaults(a, b) {
     }
   });
 }
-exports.mergeDefaults = mergeDefaults;
 
 // An alternative to _.merge, which doesn't clone its arguments
 // Cloning is a bad idea because options arguments may contain references to sequelize
 // models - which again reference database libs which don't like to be cloned (in particular pg-native)
-function merge() {
+export function merge(object, options) {
   const result = {};
 
   for (const obj of arguments) {
@@ -87,47 +84,39 @@ function merge() {
 
   return result;
 }
-exports.merge = merge;
 
-function lowercaseFirst(s) {
+export function lowercaseFirst(s) {
   return s[0].toLowerCase() + s.slice(1);
 }
-exports.lowercaseFirst = lowercaseFirst;
 
-function uppercaseFirst(s) {
+export function uppercaseFirst(s) {
   return s[0].toUpperCase() + s.slice(1);
 }
-exports.uppercaseFirst = uppercaseFirst;
 
-function spliceStr(str, index, count, add) {
+export function spliceStr(str, index, count, add) {
   return str.slice(0, index) + add + str.slice(index + count);
 }
-exports.spliceStr = spliceStr;
 
-function camelize(str) {
+export function camelize(str) {
   return str.trim().replace(/[-_\s]+(.)?/g, (match, c) => c.toUpperCase());
 }
-exports.camelize = camelize;
 
-function underscore(str) {
+export function underscore(str) {
   return inflection.underscore(str);
 }
-exports.underscore = underscore;
 
-function format(arr, dialect) {
+export function format(arr, dialect?) {
   const timeZone = null;
   // Make a clone of the array beacuse format modifies the passed args
   return SqlString.format(arr[0], arr.slice(1), timeZone, dialect);
 }
-exports.format = format;
 
-function formatNamedParameters(sql, parameters, dialect) {
+export function formatNamedParameters(sql, parameters, dialect) {
   const timeZone = null;
   return SqlString.formatNamedParameters(sql, parameters, timeZone, dialect);
 }
-exports.formatNamedParameters = formatNamedParameters;
 
-function cloneDeep(obj) {
+export function cloneDeep(obj) {
   obj = obj || {};
   return _.cloneDeepWith(obj, elem => {
     // Do not try to customize cloning of arrays or POJOs
@@ -146,10 +135,9 @@ function cloneDeep(obj) {
     }
   });
 }
-exports.cloneDeep = cloneDeep;
 
 /* Expand and normalize finder options */
-function mapFinderOptions(options, Model) {
+export function mapFinderOptions(options, Model) {
   if (Model._hasVirtualAttributes && Array.isArray(options.attributes)) {
     for (const attribute of options.attributes) {
       if (Model._isVirtualAttribute(attribute) && Model.rawAttributes[attribute].type.fields) {
@@ -164,10 +152,9 @@ function mapFinderOptions(options, Model) {
 
   return options;
 }
-exports.mapFinderOptions = mapFinderOptions;
 
 /* Used to map field names in attributes and where conditions */
-function mapOptionFieldNames(options, Model) {
+export function mapOptionFieldNames(options, Model) {
   if (Array.isArray(options.attributes)) {
     options.attributes = options.attributes.map(attr => {
       // Object lookups will force any variable to strings, we don't want that for special objects etc
@@ -186,9 +173,8 @@ function mapOptionFieldNames(options, Model) {
 
   return options;
 }
-exports.mapOptionFieldNames = mapOptionFieldNames;
 
-function mapWhereFieldNames(attributes, Model) {
+export function mapWhereFieldNames(attributes, Model) {
   if (attributes) {
     getComplexKeys(attributes).forEach(attribute => {
       const rawAttribute = Model.rawAttributes[attribute];
@@ -222,10 +208,9 @@ function mapWhereFieldNames(attributes, Model) {
 
   return attributes;
 }
-exports.mapWhereFieldNames = mapWhereFieldNames;
 
 /* Used to map field names in values */
-function mapValueFieldNames(dataValues, fields, Model) {
+export function mapValueFieldNames(dataValues, fields, Model) {
   const values = {};
 
   for (const attr of fields) {
@@ -241,14 +226,12 @@ function mapValueFieldNames(dataValues, fields, Model) {
 
   return values;
 }
-exports.mapValueFieldNames = mapValueFieldNames;
 
-function isColString(value) {
+export function isColString(value) {
   return typeof value === 'string' && value.substr(0, 1) === '$' && value.substr(value.length - 1, 1) === '$';
 }
-exports.isColString = isColString;
 
-function argsArePrimaryKeys(args, primaryKeys) {
+export function argsArePrimaryKeys(args, primaryKeys) {
   let result = args.length === Object.keys(primaryKeys).length;
   if (result) {
     _.each(args, arg => {
@@ -263,9 +246,8 @@ function argsArePrimaryKeys(args, primaryKeys) {
   }
   return result;
 }
-exports.argsArePrimaryKeys = argsArePrimaryKeys;
 
-function canTreatArrayAsAnd(arr) {
+export function canTreatArrayAsAnd(arr) {
   return arr.reduce((treatAsAnd, arg) => {
     if (treatAsAnd) {
       return treatAsAnd;
@@ -274,32 +256,27 @@ function canTreatArrayAsAnd(arr) {
     }
   }, false);
 }
-exports.canTreatArrayAsAnd = canTreatArrayAsAnd;
 
-function combineTableNames(tableName1, tableName2) {
+export function combineTableNames(tableName1, tableName2) {
   return tableName1.toLowerCase() < tableName2.toLowerCase() ? tableName1 + tableName2 : tableName2 + tableName1;
 }
-exports.combineTableNames = combineTableNames;
 
-function singularize(str) {
+export function singularize(str) {
   return inflection.singularize(str);
 }
-exports.singularize = singularize;
 
-function pluralize(str) {
+export function pluralize(str) {
   return inflection.pluralize(str);
 }
-exports.pluralize = pluralize;
 
-function removeCommentsFromFunctionString(s) {
+export function removeCommentsFromFunctionString(s) {
   s = s.replace(/\s*(\/\/.*)/g, '');
   s = s.replace(/(\/\*[\n\r\s\S]*?\*\/)/mg, '');
 
   return s;
 }
-exports.removeCommentsFromFunctionString = removeCommentsFromFunctionString;
 
-function toDefaultValue(value, dialect) {
+export function toDefaultValue(value, dialect?) {
   if (typeof value === 'function') {
     const tmp = value();
     if (tmp instanceof DataTypes.ABSTRACT) {
@@ -319,7 +296,6 @@ function toDefaultValue(value, dialect) {
     return value;
   }
 }
-exports.toDefaultValue = toDefaultValue;
 
 /**
  * Determine if the default value provided exists and can be described
@@ -329,7 +305,7 @@ exports.toDefaultValue = toDefaultValue;
  * @return {boolean} yes / no.
  * @private
  */
-function defaultValueSchemable(value) {
+export function defaultValueSchemable(value) {
   if (typeof value === 'undefined') { return false; }
 
   // TODO this will be schemable when all supported db
@@ -344,9 +320,8 @@ function defaultValueSchemable(value) {
 
   return true;
 }
-exports.defaultValueSchemable = defaultValueSchemable;
 
-function removeNullValuesFromHash(hash, omitNull, options) {
+export function removeNullValuesFromHash(hash, omitNull, options?) {
   let result = hash;
 
   options = options || {};
@@ -366,9 +341,8 @@ function removeNullValuesFromHash(hash, omitNull, options) {
 
   return result;
 }
-exports.removeNullValuesFromHash = removeNullValuesFromHash;
 
-function stack() {
+export function stack() {
   const orig = Error.prepareStackTrace;
   Error.prepareStackTrace = (_, stack) => stack;
   const err = new Error();
@@ -377,9 +351,8 @@ function stack() {
   Error.prepareStackTrace = orig;
   return errStack;
 }
-exports.stack = stack;
 
-function sliceArgs(args, begin) {
+export function sliceArgs(args, begin?) {
   begin = begin || 0;
   const tmp = new Array(args.length - begin);
   for (let i = begin; i < args.length; ++i) {
@@ -387,34 +360,29 @@ function sliceArgs(args, begin) {
   }
   return tmp;
 }
-exports.sliceArgs = sliceArgs;
 
-function now(dialect) {
+export function now(dialect) {
   const now = new Date();
   if (['mysql', 'postgres', 'sqlite', 'mssql', 'oracle'].indexOf(dialect) === -1) {
     now.setMilliseconds(0);
   }
   return now;
 }
-exports.now = now;
 
 // Note: Use the `quoteIdentifier()` and `escape()` methods on the
 // `QueryInterface` instead for more portable code.
 
-const TICK_CHAR = '`';
-exports.TICK_CHAR = TICK_CHAR;
+export const TICK_CHAR = '`';
 
-function addTicks(s, tickChar) {
+export function addTicks(s, tickChar) {
   tickChar = tickChar || TICK_CHAR;
   return tickChar + removeTicks(s, tickChar) + tickChar;
 }
-exports.addTicks = addTicks;
 
-function removeTicks(s, tickChar) {
+export function removeTicks(s, tickChar?) {
   tickChar = tickChar || TICK_CHAR;
   return s.replace(new RegExp(tickChar, 'g'), '');
 }
-exports.removeTicks = removeTicks;
 
 /**
  * Receives a tree-like object and returns a plain object which depth is 1.
@@ -445,11 +413,10 @@ exports.removeTicks = removeTicks;
  * @return Object, an flattened object
  * @private
  */
-function flattenObjectDeep(value) {
+export function flattenObjectDeep(value) {
   if (!_.isPlainObject(value)) return value;
-  const flattenedObj = {};
 
-  function flattenObject(obj, subPath) {
+  function flattenObject(obj, flattenedObj = {}, subPath?) {
     Object.keys(obj).forEach(key => {
       const pathToProperty = subPath ? `${subPath}.${key}` : `${key}`;
       if (typeof obj[key] === 'object') {
@@ -461,19 +428,19 @@ function flattenObjectDeep(value) {
     return flattenedObj;
   }
 
-  return flattenObject(value, undefined);
+  return flattenObject(value);
 }
-exports.flattenObjectDeep = flattenObjectDeep;
 
 /**
  * Utility functions for representing SQL functions, and columns that should be escaped.
  * Please do not use these functions directly, use Sequelize.fn and Sequelize.col instead.
  * @private
  */
-class SequelizeMethod {}
-exports.SequelizeMethod = SequelizeMethod;
+export class SequelizeMethod {}
 
-class Fn extends SequelizeMethod {
+export class Fn extends SequelizeMethod {
+  fn;
+  args;
   constructor(fn, args) {
     super();
     this.fn = fn;
@@ -483,39 +450,43 @@ class Fn extends SequelizeMethod {
     return new Fn(this.fn, this.args);
   }
 }
-exports.Fn = Fn;
 
-class Col extends SequelizeMethod {
+export class Col extends SequelizeMethod {
+  col;
   constructor(col) {
     super();
     if (arguments.length > 1) {
-      col = this.sliceArgs(arguments);
+      col = sliceArgs(arguments);
     }
     this.col = col;
   }
 }
-exports.Col = Col;
 
-class Cast extends SequelizeMethod {
-  constructor(val, type, json) {
+export class Cast extends SequelizeMethod {
+  val;
+  type;
+  json;
+  constructor(val, type, json?) {
     super();
     this.val = val;
     this.type = (type || '').trim();
     this.json = json || false;
   }
 }
-exports.Cast = Cast;
 
-class Literal extends SequelizeMethod {
+export class Literal extends SequelizeMethod {
+  val;
   constructor(val) {
     super();
     this.val = val;
   }
 }
-exports.Literal = Literal;
 
-class Json extends SequelizeMethod {
-  constructor(conditionsOrPath, value) {
+export class Json extends SequelizeMethod {
+  conditions;
+  path;
+  value;
+  constructor(conditionsOrPath, value?) {
     super();
     if (_.isObject(conditionsOrPath)) {
       this.conditions = conditionsOrPath;
@@ -527,9 +498,11 @@ class Json extends SequelizeMethod {
     }
   }
 }
-exports.Json = Json;
 
-class Where extends SequelizeMethod {
+export class Where extends SequelizeMethod {
+  attribute;
+  comparator;
+  logic;
   constructor(attribute, comparator, logic) {
     super();
     if (logic === undefined) {
@@ -542,12 +515,9 @@ class Where extends SequelizeMethod {
     this.logic = logic;
   }
 }
-exports.Where = Where;
-
-exports.validateParameter = parameterValidator;
 
 
-exports.mapIsolationLevelStringToTedious = (isolationLevel, tedious) => {
+export function mapIsolationLevelStringToTedious (isolationLevel, tedious) {
   if (!tedious) {
     throw new Error('An instance of tedious lib should be passed to this function');
   }
@@ -574,10 +544,9 @@ exports.mapIsolationLevelStringToTedious = (isolationLevel, tedious) => {
  * @return {Array<Symbol>} All operators properties of obj
  * @private
  */
-function getOperators(obj) {
+export function getOperators(obj) {
   return _.intersection(Object.getOwnPropertySymbols(obj || {}), operatorsArray);
 }
-exports.getOperators = getOperators;
 
 /**
  * getComplexKeys
@@ -585,10 +554,9 @@ exports.getOperators = getOperators;
  * @return {Array<String|Symbol>} All keys including operators
  * @private
  */
-function getComplexKeys(obj) {
+export function getComplexKeys(obj) {
   return getOperators(obj).concat(_.keys(obj));
 }
-exports.getComplexKeys = getComplexKeys;
 
 /**
  * getComplexSize
@@ -596,10 +564,9 @@ exports.getComplexKeys = getComplexKeys;
  * @return {Integer}      Length of object properties including operators if obj is array returns its length
  * @private
  */
-function getComplexSize(obj) {
+export function getComplexSize(obj) {
   return Array.isArray(obj) ? obj.length : getComplexKeys(obj).length;
 }
-exports.getComplexSize = getComplexSize;
 
 /**
  * Returns true if a where clause is empty, even with Symbols
@@ -608,10 +575,9 @@ exports.getComplexSize = getComplexSize;
  * @return {Boolean}
  * @private
  */
-function isWhereEmpty(obj) {
+export function isWhereEmpty(obj) {
   return _.isEmpty(obj) && getOperators(obj).length === 0;
 }
-exports.isWhereEmpty = isWhereEmpty;
 
 /**
  * Returns ENUM name by joining table and column name
@@ -621,10 +587,9 @@ exports.isWhereEmpty = isWhereEmpty;
  * @return {String}
  * @private
  */
-function generateEnumName(tableName, columnName) {
+export function generateEnumName(tableName, columnName) {
   return 'enum_' + tableName + '_' + columnName;
 }
-exports.generateEnumName = generateEnumName;
 
 /**
  * Returns an new Object which keys are camelized
@@ -632,13 +597,11 @@ exports.generateEnumName = generateEnumName;
  * @return {String}
  * @private
  */
-function camelizeObjectKeys(obj) {
+export function camelizeObjectKeys(obj) {
   const newObj = new Object();
   Object.keys(obj).forEach(key => {
     newObj[camelize(key)] = obj[key];
   });
   return newObj;
 }
-
-exports.camelizeObjectKeys = camelizeObjectKeys;
 

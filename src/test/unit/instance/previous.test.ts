@@ -1,9 +1,9 @@
 'use strict';
 
-const chai = require('chai');
+import * as chai from 'chai';
 const expect = chai.expect;
-const Support = require(__dirname + '/../support');
-const DataTypes = require(__dirname + '/../../../lib/data-types');
+import Support from '../../support';
+import DataTypes from '../../../lib/data-types';
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Instance'), () => {

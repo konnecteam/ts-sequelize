@@ -1,14 +1,14 @@
 'use strict';
 
-const _ = require('lodash');
-const Utils = require('../../utils');
-const DataTypes = require('../../data-types');
-const TableHints = require('../../table-hints');
-const AbstractQueryGenerator = require('../abstract/query-generator');
-const randomBytes = require('crypto').randomBytes;
-const semver = require('semver');
-
-const Op = require('../../operators');
+import * as _ from 'lodash';
+import * as Utils from '../../utils';
+import DataTypes from '../../data-types';
+import TableHints from '../../table-hints';
+import AbstractQueryGenerator from '../abstract/query-generator';
+import * as crypto from 'crypto'
+const randomBytes = crypto.randomBytes;
+import * as semver from 'semver';
+import Op from '../../operators';
 
 /* istanbul ignore next */
 const throwMethodUndefined = function(methodName) {
@@ -682,7 +682,7 @@ const QueryGenerator = {
    * @param {String} catalogName database name
    * @returns {String}
    */
-  getForeignKeysQuery(table, catalogName) {
+  getForeignKeysQuery(table, catalogName?) {
     const tableName = table.tableName || table;
     let sql = this._getForeignKeysQueryPrefix(catalogName) +
       ' WHERE TB.NAME =' + wrapSingleQuote(tableName);
@@ -854,7 +854,9 @@ const QueryGenerator = {
     const offset = options.offset || 0,
       isSubQuery = options.hasIncludeWhere || options.hasIncludeRequired || options.hasMultiAssociation;
 
-    let orders = {};
+    let orders = {
+      subQueryOrder:undefined
+    };
     if (options.order) {
       orders = this.getQueryOrders(options, model, isSubQuery);
     }
@@ -887,4 +889,4 @@ function wrapSingleQuote(identifier) {
   return Utils.addTicks(Utils.removeTicks(identifier, "'"), "'");
 }
 
-module.exports = QueryGenerator;
+export default _.extend(_.clone(AbstractQueryGenerator), QueryGenerator);

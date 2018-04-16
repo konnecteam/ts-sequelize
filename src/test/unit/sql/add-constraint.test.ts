@@ -1,11 +1,13 @@
 'use strict';
 
-const Support   = require(__dirname + '/../support');
+import Support from '../../support';
 const current   = Support.sequelize;
 const expectsql = Support.expectsql;
 const sql = current.dialect.QueryGenerator;
-const expect = require('chai').expect;
-const sinon = require('sinon');
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+
+const expect = chai.expect;
 
 if (current.dialect.supports.constraints.addConstraint) {
   describe(Support.getTestDialectTeaser('SQL'), () => {
@@ -164,7 +166,7 @@ if (current.dialect.supports.constraints.addConstraint) {
             oracle: 'ALTER TABLE myTable ADD CONSTRAINT foreignkey_mytable_mycolumn FOREIGN KEY (myColumn) REFERENCES myOtherTable (id)'
           });
         });
-
+        expect
         it('uses onDelete, onUpdate', () => {
           expectsql(sql.addConstraintQuery('myTable', {
             type: 'foreign key',

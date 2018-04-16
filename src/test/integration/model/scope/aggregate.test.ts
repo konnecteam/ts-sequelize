@@ -1,23 +1,23 @@
 'use strict';
 
-const chai = require('chai'),
-  Sequelize = require('../../../../index'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../../support'),
-  Promise = require(__dirname + '/../../../../lib/promise');
+import * as chai from 'chai';
+import DataTypes from '../../../../lib/data-types';
+const expect = chai.expect;
+import Support from '../../support';
+import Promise from '../../../../lib/promise';
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('scope', () => {
     describe('aggregate', () => {
       beforeEach(function() {
         this.Child = this.sequelize.define('Child', {
-          priority: Sequelize.INTEGER
+          priority: DataTypes.INTEGER
         });
         this.ScopeMe = this.sequelize.define('ScopeMe', {
-          username: Sequelize.STRING,
-          email: Sequelize.STRING,
-          access_level: Sequelize.INTEGER,
-          other_value: Sequelize.INTEGER
+          username: DataTypes.STRING,
+          email: DataTypes.STRING,
+          access_level: DataTypes.INTEGER,
+          other_value: DataTypes.INTEGER
         }, {
           defaultScope: {
             where: {
@@ -95,7 +95,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       it('should be able to use where on include', function() {
         return expect(this.ScopeMe.scope('withInclude').aggregate( 'ScopeMe.id', 'count', {
           plain: true,
-          dataType: new Sequelize.INTEGER(),
+          dataType: DataTypes.INTEGER(),
           includeIgnoreAttributes: false,
           limit: null,
           offset: null,

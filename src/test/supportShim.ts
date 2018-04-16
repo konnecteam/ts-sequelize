@@ -1,15 +1,15 @@
 'use strict';
 
-const QueryInterface = require(__dirname + '/../lib/query-interface'),
-  hintsModule = require('hints'),
-  _ = require('lodash'),
-  util = require('util');
+import {QueryInterface} from '../lib/query-interface';
+import * as hintsModule from 'hints';
+import * as _ from 'lodash';
+import * as util from 'util';
 
 /**
  * Shims all Sequelize methods to test for logging passing.
  * @param {Object} Sequelize - Sequelize constructor
  */
-module.exports = function(Sequelize) {
+export function supportShim(Sequelize) {
   // Shim all Sequelize methods
   shimAll(Sequelize.prototype, 'Sequelize#');
   shimAll(Sequelize.Model, 'Model.');
@@ -90,7 +90,10 @@ module.exports = function(Sequelize) {
       hints = obj.hints,
       tree = obj.tree;
 
-    const result = {};
+    const result = {
+      conform: undefined,
+      index: undefined
+    };
 
     // extract function arguments
     const args = getFunctionArguments(tree);

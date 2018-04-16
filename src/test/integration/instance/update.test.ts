@@ -1,13 +1,13 @@
 'use strict';
 
-const chai = require('chai'),
-  sinon = require('sinon'),
-  Sequelize = require('../../../index'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  config = require(__dirname + '/../../config/config'),
-  current = Support.sequelize;
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+import {Sequelize}from '../../../index';
+const expect = chai.expect;
+import Support from '../support';
+import DataTypes from '../../../lib/data-types';
+import config from '../../config/config';
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
   before(function() {
@@ -64,7 +64,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
         return Support.prepareTransactionTest(this.sequelize).bind({}).then(sequelize => {
-          const User = sequelize.define('User', { username: Support.Sequelize.STRING });
+          const User = sequelize.define('User', { username: DataTypes.STRING });
 
           return User.sync({ force: true }).then(() => {
             return User.create({ username: 'foo' }).then(user => {

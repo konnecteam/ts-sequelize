@@ -1,15 +1,19 @@
 'use strict';
 
-const Utils = require('../../utils');
+import * as Utils from '../../utils';
 const debug = Utils.getLogger().debugContext('sql:mssql');
-const Promise = require('../../promise');
-const AbstractQuery = require('../abstract/query');
-const sequelizeErrors = require('../../errors.js');
-const parserStore = require('../parserStore')('mssql');
-const _ = require('lodash');
-const TYPES = require('tedious').TYPES;
+import Promise from '../../promise';
+import {AbstractQuery} from '../abstract/query';
+import * as sequelizeErrors from '../../errors/index';
 
-class Query extends AbstractQuery {
+import { parserStore } from '../parserStore'; 
+const store = parserStore('mssql');
+import * as _ from 'lodash';
+import * as tedious from 'tedious';
+const TYPES = tedious.TYPES;
+
+export class Query extends AbstractQuery {
+
   constructor(connection, sequelize, options) {
     super();
     this.connection = connection;
@@ -161,10 +165,10 @@ class Query extends AbstractQuery {
             const row = {};
             for (const column of columns) {
               const typeid = column.metadata.type.id;
-              const parse = parserStore.get(typeid);
+              const parse = store.get(typeid);
               let value = column.value;
 
-              if (value !== null & !!parse) {
+              if (value !== null && !!parse) {
                 value = parse(value);
               }
               row[column.metadata.colName] = value;
@@ -214,7 +218,7 @@ class Query extends AbstractQuery {
    * @param {Array} data - The result of the query execution.
    * @private
    */
-  formatResults(data, rowCount) {
+  formatResults(data?, rowCount?) {
     let result = this.instance;
     if (this.isInsertQuery(data)) {
       this.handleInsertQuery(data);
@@ -331,7 +335,9 @@ class Query extends AbstractQuery {
           field,
           value,
           this.instance,
-          'not_unique'
+          'not_unique',
+          null,
+          null
         ));
       });
 
@@ -409,7 +415,7 @@ class Query extends AbstractQuery {
     }));
   }
 
-  handleInsertQuery(results, metaData) {
+  handleInsertQuery(results, metaData?) {
     if (this.instance) {
       // add the inserted row id to the instance
       const autoIncrementAttribute = this.model.autoIncrementAttribute;
@@ -430,6 +436,3 @@ class Query extends AbstractQuery {
   }
 }
 
-module.exports = Query;
-module.exports.Query = Query;
-module.exports.default = Query;

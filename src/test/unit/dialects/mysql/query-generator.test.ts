@@ -1,12 +1,12 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../../support'),
-  dialect = Support.getTestDialect(),
-  _ = require('lodash'),
-  Operators = require('../../../../lib/operators'),
-  QueryGenerator = require('../../../../lib/dialects/mysql/query-generator');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../../support';
+const dialect = Support.getTestDialect();
+import * as _ from 'lodash';
+import Operators from '../../../../lib/operators';
+import QueryGenerator from '../../../../lib/dialects/mysql/query-generator';
 
 if (dialect === 'mysql') {
   describe('[MYSQL Specific] QueryGenerator', () => {
@@ -595,10 +595,10 @@ if (dialect === 'mysql') {
               if (_.isFunction(test.arguments[1])) test.arguments[1] = test.arguments[1](this.sequelize);
               if (_.isFunction(test.arguments[2])) test.arguments[2] = test.arguments[2](this.sequelize);
             }
-            QueryGenerator.options = _.assign(context.options, { timezone: '+00:00' });
-            QueryGenerator._dialect = this.sequelize.dialect;
-            QueryGenerator.sequelize = this.sequelize;
-            QueryGenerator.setOperatorsAliases(Operators.LegacyAliases);
+            (QueryGenerator as any).options = _.assign(context.options, { timezone: '+00:00' });
+            (QueryGenerator as any)._dialect = this.sequelize.dialect;
+            (QueryGenerator as any).sequelize = this.sequelize;
+            (QueryGenerator as any).setOperatorsAliases(Operators.LegacyAliases);
             const conditions = QueryGenerator[suiteTitle].apply(QueryGenerator, test.arguments);
             expect(conditions).to.deep.equal(test.expectation);
           });

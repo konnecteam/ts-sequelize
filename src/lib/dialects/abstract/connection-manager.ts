@@ -1,11 +1,11 @@
 'use strict';
 
-const Pooling = require('generic-pool');
-const Promise = require('../../promise');
-const _ = require('lodash');
-const Utils = require('../../utils');
+import * as Pooling from 'generic-pool';
+import Promise from '../../promise';
+import * as _ from 'lodash';
+import * as Utils from '../../utils';
 const debug = Utils.getLogger().debugContext('pool');
-const semver = require('semver');
+import * as semver from 'semver';
 
 const defaultPoolingConfig = {
   max: 5,
@@ -24,7 +24,17 @@ const defaultPoolingConfig = {
  *
  * @private
  */
-class ConnectionManager {
+export class AbstractConnectionManager {
+
+  sequelize;
+  config;
+  dialect;
+  versionPromise;
+  dialectName;
+  pool;
+  defaultVersion;
+  lib;
+  
   constructor(dialect, sequelize) {
     const config = _.cloneDeep(sequelize.config);
 
@@ -46,7 +56,7 @@ class ConnectionManager {
     this.initPools();
   }
 
-  refreshTypeParser(dataTypes) {
+  refreshTypeParser(dataTypes) { 
     _.each(dataTypes, dataType => {
       if (dataType.hasOwnProperty('parse')) {
         if (dataType.types[this.dialectName]) {
@@ -57,6 +67,8 @@ class ConnectionManager {
       }
     });
   }
+
+  _refreshTypeParser(dataType) {};
 
   /**
    * Handler which executes on process exit or connection manager shutdown
@@ -249,11 +261,12 @@ class ConnectionManager {
       } else {
         promise = this.versionPromise = this._connect(this.config.replication.write || this.config)
           .then(connection => {
-            const _options = {};
-
-            _options.transaction = {connection}; // Cheat .query to use our private connection
-            _options.logging = () => {};
-            _options.logging.__testLoggingFn = true;
+            const _options = {
+              transaction : {connection},
+              logging : () => {
+                __testLoggingFn : true
+              },
+            };
 
             return this.sequelize.databaseVersion(_options).then(version => {
               this.sequelize.options.databaseVersion = semver.valid(version) ? version : this.defaultVersion;
@@ -284,7 +297,7 @@ class ConnectionManager {
    *
    * @return {Promise}
    */
-  releaseConnection(connection) {
+  releaseConnection(connection, force?) :any{
     return this.pool.release(connection)
       .tap(() => { debug('connection released'); })
       .catch(/Resource not currently part of this pool/, () => {});
@@ -347,7 +360,3 @@ class ConnectionManager {
     return this.dialect.connectionManager.validate(connection);
   }
 }
-
-module.exports = ConnectionManager;
-module.exports.ConnectionManager = ConnectionManager;
-module.exports.default = ConnectionManager;

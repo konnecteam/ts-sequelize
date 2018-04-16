@@ -1,10 +1,11 @@
 'use strict';
 
-const chai = require('chai'),
-  Sequelize = require('../../../index'),
-  Promise = Sequelize.Promise,
-  expect = chai.expect,
-  Support = require(__dirname + '/../support');
+import * as chai from 'chai';
+import DataTypes from '../../../lib/data-types';
+import {Sequelize}from '../../../index';
+const Promise = Sequelize.Promise;
+const expect = chai.expect;
+import Support from '../support';
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('attributes', () => {
@@ -14,25 +15,25 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         self.callCount = 0;
 
         this.Student = this.sequelize.define('student', {
-          no: {type: Sequelize.INTEGER, primaryKey: true},
-          name: Sequelize.STRING
+          no: {type: DataTypes.INTEGER, primaryKey: true},
+          name: DataTypes.STRING
         }, {
           tableName: 'student',
           timestamps: false
         });
 
         this.Course = this.sequelize.define('course', {
-          no: {type: Sequelize.INTEGER, primaryKey: true},
-          name: Sequelize.STRING
+          no: {type: DataTypes.INTEGER, primaryKey: true},
+          name: DataTypes.STRING
         }, {
           tableName: 'course',
           timestamps: false
         });
 
         this.Score = this.sequelize.define('score', {
-          score: Sequelize.INTEGER,
+          score: DataTypes.INTEGER,
           test_value: {
-            type: Sequelize.INTEGER,
+            type: DataTypes.INTEGER,
             set(v) {
               self.callCount++;
               this.setDataValue('test_value', v + 1);
@@ -74,8 +75,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       it('allows for an attribute to be called "toString"', function () {
         const Person = this.sequelize.define('person', {
-          name: Sequelize.STRING,
-          nick: Sequelize.STRING
+          name: DataTypes.STRING,
+          nick: DataTypes.STRING
         }, {
           timestamps: false
         });

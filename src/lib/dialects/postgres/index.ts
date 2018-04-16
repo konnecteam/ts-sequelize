@@ -1,13 +1,15 @@
 'use strict';
 
-const _ = require('lodash');
-const AbstractDialect = require('../abstract');
-const ConnectionManager = require('./connection-manager');
-const Query = require('./query');
-const QueryGenerator = require('./query-generator');
-const DataTypes = require('../../data-types').postgres;
+import * as _ from 'lodash';
+import {AbstractDialect} from '../abstract';
+import {ConnectionManager} from './connection-manager';
+import * as Query from './query';
+import QueryGenerator from './query-generator';
+import AllDataTypes from '../../data-types';
+const DataTypes = AllDataTypes.postgres;
 
 class PostgresDialect extends AbstractDialect {
+
   constructor(sequelize) {
     super();
     this.sequelize = sequelize;
@@ -62,5 +64,5 @@ PostgresDialect.prototype.TICK_CHAR_LEFT = PostgresDialect.prototype.TICK_CHAR;
 PostgresDialect.prototype.TICK_CHAR_RIGHT = PostgresDialect.prototype.TICK_CHAR;
 
 module.exports = PostgresDialect;
-module.exports.default = PostgresDialect;
-module.exports.PostgresDialect = PostgresDialect;
+// module.exports.default = PostgresDialect;
+// module.exports.PostgresDialect = PostgresDialect;

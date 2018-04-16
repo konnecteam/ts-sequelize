@@ -1,12 +1,13 @@
 'use strict';
 
-const validator = require('./utils/validator-extras').validator;
-const extendModelValidations = require('./utils/validator-extras').extendModelValidations;
-const Utils = require('./utils');
-const sequelizeError = require('./errors');
-const Promise = require('./promise');
-const DataTypes = require('./data-types');
-const _ = require('lodash');
+import * as validatorExtras from './utils/validator-extras';
+const validator = validatorExtras.validator;
+const extendModelValidations = validatorExtras.extendModelValidations;
+import * as Utils from './utils';
+import * as sequelizeError from './errors/index';
+import Promise from './promise';
+import DataTypes from './data-types';
+import * as _ from 'lodash';
 
 /**
  * The Main Instance Validator.
@@ -16,9 +17,16 @@ const _ = require('lodash');
  * @constructor
  * @private
  */
-class InstanceValidator {
+export class InstanceValidator {
+  options;
+  modelInstance;
+  validator;
+  errors;
+  inProgress;
+  static RAW_KEY_NAME;
 
-  constructor(modelInstance, options) {
+
+  constructor(modelInstance?, options?) {
     options = _.clone(options) || {};
 
     if (options.fields && !options.skip) {
@@ -179,7 +187,7 @@ class InstanceValidator {
    */
   _builtinAttrValidate(value, field) {
     // check if value is null (if null not allowed the Schema pass will capture it)
-    if (value === null || typeof value === 'undefined') {
+    if (value == null) {
       return Promise.resolve();
     }
 
@@ -224,7 +232,7 @@ class InstanceValidator {
    * @return {Promise} A promise.
    * @private
    */
-  _invokeCustomValidator(validator, validatorType, optAttrDefined, optValue, optField) {
+  _invokeCustomValidator(validator, validatorType, optAttrDefined?, optValue?, optField?) {
     let validatorFunction = null;  // the validation function to call
     let isAsync = false;
 
@@ -381,7 +389,7 @@ class InstanceValidator {
    *
    * @private
    */
-  _pushError(isBuiltin, errorKey, rawError, value, fnName, fnArgs) {
+  _pushError(isBuiltin, errorKey, rawError, value, fnName, fnArgs?) {
     const message = rawError.message || rawError || 'Validation error';
     const error = new sequelizeError.ValidationErrorItem(
       message,
@@ -404,7 +412,3 @@ class InstanceValidator {
  * @private
  */
 InstanceValidator.RAW_KEY_NAME = '__raw';
-
-module.exports = InstanceValidator;
-module.exports.InstanceValidator = InstanceValidator;
-module.exports.default = InstanceValidator;

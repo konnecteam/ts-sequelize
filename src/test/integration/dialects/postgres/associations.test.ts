@@ -1,11 +1,11 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../../support'),
-  dialect = Support.getTestDialect(),
-  config = require(__dirname + '/../../../config/config'),
-  DataTypes = require(__dirname + '/../../../../lib/data-types');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../support';
+const dialect = Support.getTestDialect();
+import config from '../../../config/config';
+import DataTypes from '../../../../lib/data-types';
 
 if (dialect.match(/^postgres/)) {
   describe('[POSTGRES Specific] associations', () => {

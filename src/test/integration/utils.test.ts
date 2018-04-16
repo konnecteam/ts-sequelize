@@ -1,11 +1,12 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Utils = require(__dirname + '/../../lib/utils'),
-  Support = require(__dirname + '/support'),
-  DataTypes = require(__dirname + '/../../lib/data-types'),
-  Sequelize = require('../../index');
+import * as chai from 'chai';
+const expect = chai.expect;
+import * as Utils from '../../lib/utils';
+import Support from './support';
+import DataTypes from '../../lib/data-types';
+import {Sequelize}from '../../index';
+import queryGenerator from '../../lib/dialects/postgres/query-generator';
 
 describe(Support.getTestDialectTeaser('Utils'), () => {
   describe('removeCommentsFromFunctionString', () => {
@@ -137,7 +138,7 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
     it('should not call clone methods on arrays', () => {
       expect(() => {
         const arr = [];
-        arr.clone = function() {
+        (arr as any).clone = function() {
           throw new Error('clone method called');
         };
 
@@ -150,33 +151,33 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
     describe('method signature', () => {
       it('throws an error if the value is not defined', () => {
         expect(() => {
-          Utils.validateParameter();
+          Utils.validateParameter.check();
         }).to.throw('No value has been passed.');
       });
 
       it('does not throw an error if the value is not defined and the parameter is optional', () => {
         expect(() => {
-          Utils.validateParameter(undefined, Object, { optional: true });
+          Utils.validateParameter.check(undefined, Object, { optional: true });
         }).to.not.throw();
       });
 
       it('throws an error if the expectation is not defined', () => {
         expect(() => {
-          Utils.validateParameter(1);
+          Utils.validateParameter.check(1);
         }).to.throw('No expectation has been passed.');
       });
     });
 
     describe('expectation', () => {
       it('uses the instanceof method if the expectation is a class', () => {
-        expect(Utils.validateParameter(new Number(1), Number)).to.be.true;
+        expect(Utils.validateParameter.check(new Number(1), Number)).to.be.true;
       });
     });
 
     describe('failing expectations', () => {
       it('throws an error if the expectation does not match', () => {
         expect(() => {
-          Utils.validateParameter(1, String);
+          Utils.validateParameter.check(1, String);
         }).to.throw(/The parameter.*is no.*/);
       });
     });
@@ -184,7 +185,6 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
 
   if (Support.getTestDialect() === 'postgres') {
     describe('json', () => {
-      const queryGenerator = require('../../lib/dialects/postgres/query-generator.js');
 
       it('successfully parses a complex nested condition hash', () => {
         const conditions = {
@@ -195,23 +195,23 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
           another_json_field: { x: 1 }
         };
         const expected = '("metadata"#>>\'{language}\') = \'icelandic\' AND ("metadata"#>>\'{pg_rating,dk}\') = \'G\' AND ("another_json_field"#>>\'{x}\') = \'1\'';
-        expect(queryGenerator.handleSequelizeMethod(new Utils.Json(conditions))).to.deep.equal(expected);
+        expect((queryGenerator as any).handleSequelizeMethod(new Utils.Json(conditions))).to.deep.equal(expected);
       });
 
       it('successfully parses a string using dot notation', () => {
         const path = 'metadata.pg_rating.dk';
-        expect(queryGenerator.handleSequelizeMethod(new Utils.Json(path))).to.equal('("metadata"#>>\'{pg_rating,dk}\')');
+        expect((queryGenerator as any).handleSequelizeMethod(new Utils.Json(path))).to.equal('("metadata"#>>\'{pg_rating,dk}\')');
       });
 
       it('allows postgres json syntax', () => {
         const path = 'metadata->pg_rating->>dk';
-        expect(queryGenerator.handleSequelizeMethod(new Utils.Json(path))).to.equal(path);
+        expect((queryGenerator as any).handleSequelizeMethod(new Utils.Json(path))).to.equal(path);
       });
 
       it('can take a value to compare against', () => {
         const path = 'metadata.pg_rating.is';
         const value = 'U';
-        expect(queryGenerator.handleSequelizeMethod(new Utils.Json(path, value))).to.equal('("metadata"#>>\'{pg_rating,is}\') = \'U\'');
+        expect((queryGenerator as any).handleSequelizeMethod(new Utils.Json(path, value))).to.equal('("metadata"#>>\'{pg_rating,is}\') = \'U\'');
       });
     });
   }
@@ -259,10 +259,10 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
         return Airplane.findAll({
           attributes: [
             [this.sequelize.fn('COUNT', '*'), 'count'],
-            [Sequelize.fn('SUM', Sequelize.cast({
+            [(Sequelize as any).fn('SUM', Sequelize.cast({
               engines: 1
             }, type)), 'count-engines'],
-            [Sequelize.fn('SUM', Sequelize.cast({
+            [(Sequelize as any).fn('SUM', Sequelize.cast({
               $or: {
                 engines: {
                   $gt: 1
@@ -284,10 +284,10 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
         return Airplane.findAll({
           attributes: [
             [this.sequelize.fn('COUNT', '*'), 'count'],
-            [Sequelize.fn('SUM', {
+            [(Sequelize as any).fn('SUM', {
               engines: 1
             }), 'count-engines'],
-            [Sequelize.fn('SUM', {
+            [(Sequelize as any).fn('SUM', {
               $or: {
                 engines: {
                   $gt: 1

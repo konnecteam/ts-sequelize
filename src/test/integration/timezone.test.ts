@@ -1,11 +1,11 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/support'),
-  dialect = Support.getTestDialect(),
-  Sequelize = require(__dirname + '/../../index'),
-  Promise = Sequelize.Promise;
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from './support';
+const dialect = Support.getTestDialect();
+import {Sequelize}from '../../index';
+const Promise = Sequelize.Promise;
 
 if (dialect !== 'sqlite') {
   // Sqlite does not support setting timezone

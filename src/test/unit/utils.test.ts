@@ -1,11 +1,11 @@
 'use strict';
 
-const chai = require('chai');
+import * as chai from 'chai';
 const expect = chai.expect;
-const Support = require(__dirname + '/support');
-const DataTypes = require(__dirname + '/../../lib/data-types');
-const Utils = require(__dirname + '/../../lib/utils');
-const tedious = require('tedious');
+import Support from '../support';
+import DataTypes from '../../lib/data-types';
+import * as Utils from '../../lib/utils';
+import * as tedious from 'tedious';
 const tediousIsolationLevel = tedious.ISOLATION_LEVEL;
 
 describe(Support.getTestDialectTeaser('Utils'), () => {
@@ -53,7 +53,7 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
           field: 'created_at'
         },
         active: {
-          type: new DataTypes.VIRTUAL(DataTypes.BOOLEAN, ['createdAt'])
+          type: new (DataTypes as any).VIRTUAL(DataTypes.BOOLEAN, ['createdAt'])
         }
       })).attributes).to.eql([
         [
@@ -70,7 +70,7 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
           field: 'created_at'
         },
         active: {
-          type: new DataTypes.VIRTUAL(DataTypes.BOOLEAN, ['createdAt'])
+          type: new (DataTypes as any).VIRTUAL(DataTypes.BOOLEAN, ['createdAt'])
         }
       });
 
@@ -215,10 +215,10 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
 
       const stack = a();
 
-      expect(stack[0].getFunctionName()).to.eql('c');
-      expect(stack[1].getFunctionName()).to.eql('b');
-      expect(stack[2].getFunctionName()).to.eql('a');
-      expect(stack[3].getFunctionName()).to.eql('this_here_test');
+      expect((stack[0] as any).getFunctionName()).to.eql('c');
+      expect((stack[1] as any).getFunctionName()).to.eql('b');
+      expect((stack[2] as any).getFunctionName()).to.eql('a');
+      expect((stack[3] as any).getFunctionName()).to.eql('this_here_test');
     });
   });
 

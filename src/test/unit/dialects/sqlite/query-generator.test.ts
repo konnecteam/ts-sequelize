@@ -1,14 +1,14 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../../support'),
-  DataTypes = require(__dirname + '/../../../../lib/data-types'),
-  dialect = Support.getTestDialect(),
-  _ = require('lodash'),
-  moment = require('moment'),
-  Operators = require('../../../../lib/operators'),
-  QueryGenerator = require('../../../../lib/dialects/sqlite/query-generator');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../../support';
+import DataTypes from '../../../../lib/data-types';
+const dialect = Support.getTestDialect();
+import * as _ from 'lodash';
+import * as moment from 'moment';
+import Operators from '../../../../lib/operators';
+import QueryGenerator from '../../../../lib/dialects/sqlite/query-generator';
 
 if (dialect === 'sqlite') {
   describe('[SQLITE Specific] QueryGenerator', () => {
@@ -549,9 +549,9 @@ if (dialect === 'sqlite') {
               if (_.isFunction(test.arguments[2])) test.arguments[2] = test.arguments[2](this.sequelize);
             }
             QueryGenerator.options = _.assign(context.options, { timezone: '+00:00' });
-            QueryGenerator._dialect = this.sequelize.dialect;
-            QueryGenerator.sequelize = this.sequelize;
-            QueryGenerator.setOperatorsAliases(Operators.LegacyAliases);
+            (QueryGenerator as any)._dialect = this.sequelize.dialect;
+            (QueryGenerator as any).sequelize = this.sequelize;
+            (QueryGenerator as any).setOperatorsAliases(Operators.LegacyAliases);
             const conditions = QueryGenerator[suiteTitle].apply(QueryGenerator, test.arguments);
             expect(conditions).to.deep.equal(test.expectation);
           });

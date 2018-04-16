@@ -1,10 +1,10 @@
 'use strict';
 
-const ResourceLock = require('../../../../lib/dialects/mssql/resource-lock'),
-  Promise = require('../../../../lib/promise'),
-  assert = require('assert'),
-  Support = require(__dirname + '/../../support'),
-  dialect = Support.getTestDialect();
+import ResourceLock from '../../../../lib/dialects/mssql/resource-lock';
+import Promise from '../../../../lib/promise';
+import * as assert from 'assert';
+import Support from '../../../support';
+const dialect = Support.getTestDialect();
 
 if (dialect === 'mssql') {
   describe('[MSSQL Specific] ResourceLock', () => {

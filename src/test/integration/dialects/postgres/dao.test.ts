@@ -1,13 +1,13 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../../support'),
-  Sequelize = Support.Sequelize,
-  Promise = Sequelize.Promise,
-  dialect = Support.getTestDialect(),
-  DataTypes = require(__dirname + '/../../../../lib/data-types'),
-  sequelize = require(__dirname + '/../../../../lib/sequelize');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../support';
+const Sequelize = Support.Sequelize;
+const Promise = Sequelize.Promise;
+const dialect = Support.getTestDialect();
+import DataTypes from '../../../../lib/data-types';
+import {Sequelize as sequelize} from '../../../../lib/sequelize';
 
 if (dialect.match(/^postgres/)) {
   describe('[POSTGRES Specific] DAO', () => {
@@ -267,7 +267,7 @@ if (dialect.match(/^postgres/)) {
     describe('enums', () => {
       it('should be able to ignore enum types that already exist', function() {
         const User = this.sequelize.define('UserEnums', {
-          mood: DataTypes.ENUM('happy', 'sad', 'meh')
+          mood: (DataTypes as any).ENUM('happy', 'sad', 'meh')
         });
 
         return User.sync({ force: true }).then(() => {
@@ -277,7 +277,7 @@ if (dialect.match(/^postgres/)) {
 
       it('should be able to create/drop enums multiple times', function() {
         const User = this.sequelize.define('UserEnums', {
-          mood: DataTypes.ENUM('happy', 'sad', 'meh')
+          mood: (DataTypes as any).ENUM('happy', 'sad', 'meh')
         });
 
         return User.sync({ force: true }).then(() => {
@@ -349,12 +349,12 @@ if (dialect.match(/^postgres/)) {
 
       it('should be able to add values to enum types', function() {
         let User = this.sequelize.define('UserEnums', {
-          mood: DataTypes.ENUM('happy', 'sad', 'meh')
+          mood: (DataTypes as any).ENUM('happy', 'sad', 'meh')
         });
 
         return User.sync({ force: true }).then(() => {
           User = this.sequelize.define('UserEnums', {
-            mood: DataTypes.ENUM('neutral', 'happy', 'sad', 'ecstatic', 'meh', 'joyful')
+            mood: (DataTypes as any).ENUM('neutral', 'happy', 'sad', 'ecstatic', 'meh', 'joyful')
           });
 
           return User.sync();
@@ -406,7 +406,7 @@ if (dialect.match(/^postgres/)) {
           return User.sync({ force: true }).then(() => {
             User = this.sequelize.define('UserEnums', {
               permissions: DataTypes.ARRAY(
-                DataTypes.ENUM('view', 'access', 'edit', 'write', 'check', 'delete')
+                (DataTypes as any).ENUM('view', 'access', 'edit', 'write', 'check', 'delete')
               )
             });
 
@@ -422,7 +422,7 @@ if (dialect.match(/^postgres/)) {
         it('should be able to insert new record', function() {
           const User = this.sequelize.define('UserEnums', {
             name: DataTypes.STRING,
-            type: DataTypes.ENUM('A', 'B', 'C'),
+            type: (DataTypes as any).ENUM('A', 'B', 'C'),
             owners: DataTypes.ARRAY(DataTypes.STRING),
             permissions: DataTypes.ARRAY(DataTypes.ENUM([
               'access',
@@ -452,7 +452,7 @@ if (dialect.match(/^postgres/)) {
         it('should fail when trying to insert foreign element on ARRAY(ENUM)', function() {
           const User = this.sequelize.define('UserEnums', {
             name: DataTypes.STRING,
-            type: DataTypes.ENUM('A', 'B', 'C'),
+            type: (DataTypes as any).ENUM('A', 'B', 'C'),
             owners: DataTypes.ARRAY(DataTypes.STRING),
             permissions: DataTypes.ARRAY(DataTypes.ENUM([
               'access',
@@ -475,7 +475,7 @@ if (dialect.match(/^postgres/)) {
         it('should be able to find records', function() {
           const User = this.sequelize.define('UserEnums', {
             name: DataTypes.STRING,
-            type: DataTypes.ENUM('A', 'B', 'C'),
+            type: (DataTypes as any).ENUM('A', 'B', 'C'),
             permissions: DataTypes.ARRAY(DataTypes.ENUM([
               'access',
               'write',
@@ -885,7 +885,7 @@ if (dialect.match(/^postgres/)) {
         const User = this.User;
 
         const course_period = [new Date(2015, 1, 1), new Date(2015, 10, 30)];
-        course_period.inclusive = [false, false];
+        (course_period as any).inclusive = [false, false];
 
         const data = { username: 'user', email: ['foo@bar.com'], course_period };
 
@@ -906,8 +906,8 @@ if (dialect.match(/^postgres/)) {
           [new Date(2015, 8, 1), new Date(2015, 9, 15)]
         ];
 
-        holidays[0].inclusive = [true, true];
-        holidays[1].inclusive = [true, true];
+        (holidays[0] as any).inclusive = [true, true];
+        (holidays[1] as any).inclusive = [true, true];
 
         const data = { username: 'user', email: ['foo@bar.com'], holidays };
 

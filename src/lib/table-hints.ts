@@ -19,7 +19,7 @@
  * @property SNAPSHOT
  * @property NOEXPAND
  */
-const TableHints = module.exports = { // eslint-disable-line
+const TableHints = { // eslint-disable-line
   NOLOCK: 'NOLOCK',
   READUNCOMMITTED: 'READUNCOMMITTED',
   UPDLOCK: 'UPDLOCK',
@@ -36,3 +36,5 @@ const TableHints = module.exports = { // eslint-disable-line
   SNAPSHOT: 'SNAPSHOT',
   NOEXPAND: 'NOEXPAND'
 };
+
+export default TableHints;

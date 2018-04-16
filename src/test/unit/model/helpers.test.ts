@@ -1,8 +1,8 @@
 'use strict';
 
-const chai = require('chai');
+import * as chai from 'chai';
 const expect = chai.expect;
-const Support = require(__dirname + '/../support');
+import Support from '../../support';
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {

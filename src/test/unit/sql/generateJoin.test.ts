@@ -1,10 +1,9 @@
 'use strict';
 
-const Support        = require(__dirname + '/../support');
-const DataTypes      = require(__dirname + '/../../../lib/data-types');
-const Sequelize      = require(__dirname + '/../../../lib/sequelize');
-const util           = require('util');
-const _              = require('lodash');
+import Support from '../../support';
+import DataTypes from '../../../lib/data-types';
+import {Sequelize}from '../../../lib/sequelize';
+import * as _ from 'lodash';
 const expectsql      = Support.expectsql;
 const current        = Support.sequelize;
 const queryGenerator = current.dialect.QueryGenerator;
@@ -28,7 +27,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       tableName: 'user'
     });
     const Task = current.define('Task', {
-      title: Sequelize.STRING,
+      title: DataTypes.STRING,
       userId: {
         type: DataTypes.INTEGER,
         field: 'user_id'
@@ -38,20 +37,20 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
     });
 
     const Company = current.define('Company', {
-      name: Sequelize.STRING,
+      name: DataTypes.STRING,
       ownerId: {
-        type: Sequelize.INTEGER,
+        type: DataTypes.STRING,
         field: 'owner_id'
       },
       public: {
-        type: Sequelize.BOOLEAN
+        type: DataTypes.BOOLEAN
       }
     }, {
       tableName: 'company'
     });
 
     const Profession = current.define('Profession', {
-      name: Sequelize.STRING
+      name: DataTypes.STRING
     }, {
       tableName: 'profession'
     });

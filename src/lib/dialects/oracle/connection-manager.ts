@@ -1,11 +1,12 @@
 'use strict';
 
-const AbstractConnectionManager = require('../abstract/connection-manager');
-const Promise = require('../../promise');
-const sequelizeErrors = require('../../errors');
-const parserStore = require('../parserStore')('oracle');
+import {AbstractConnectionManager} from '../abstract/connection-manager';
+import Promise from '../../promise';
+import * as sequelizeErrors from '../../errors/index';
+import {parserStore} from '../parserStore';
+const store = parserStore('oracle');
 
-class ConnectionManager extends AbstractConnectionManager  {
+export class ConnectionManager extends AbstractConnectionManager  {
 
   constructor(dialect, sequelize) {
     super(dialect, sequelize);
@@ -76,11 +77,11 @@ class ConnectionManager extends AbstractConnectionManager  {
 
   // Expose this as a method so that the parsing may be updated when the user has added additional, custom types
   _refreshTypeParser(dataType) {
-    parserStore.refresh(dataType);
+    store.refresh(dataType);
   }
 
   _clearTypeParser() {
-    parserStore.clear();
+    store.clear();
   }
 
   connect(config) {
@@ -101,7 +102,7 @@ class ConnectionManager extends AbstractConnectionManager  {
       this.checkConfigObject(connectionConfig);
       
       //We assume that the database has been correctly formed
-      connectionConfig.connectString = connectionConfig.database;
+      (connectionConfig as any).connectString = connectionConfig.database;
       
       //We check if there are dialect options
       if (config.dialectOptions) {

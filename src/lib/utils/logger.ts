@@ -8,11 +8,13 @@
  * @private
  */
 
-const depd = require('depd'),
-  debug = require('debug'),
-  _ = require('lodash');
+import * as depd from 'depd';
+import * as debug from 'debug';
+import * as _ from 'lodash';
 
-class Logger {
+export class Logger {
+  config;
+  depd;
   constructor(config) {
 
     this.config = _.extend({
@@ -43,5 +45,3 @@ class Logger {
     return debug([this.config.context, childContext].join(':'));
   }
 }
-
-module.exports = Logger;

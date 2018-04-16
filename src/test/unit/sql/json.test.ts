@@ -1,10 +1,11 @@
 'use strict';
 
-const Support = require(__dirname + '/../support');
-const DataTypes = require(__dirname + '/../../../lib/data-types');
-const expect = require('chai').expect;
+import Support from '../../support';
+import DataTypes from '../../../lib/data-types';
+import * as chai from 'chai';
+const expect = chai.expect;
 const expectsql = Support.expectsql;
-const Sequelize = Support.Sequelize;
+import {Sequelize}from '../../../lib/sequelize';
 const current = Support.sequelize;
 const sql = current.dialect.QueryGenerator;
 
@@ -14,38 +15,38 @@ if (current.dialect.supports.JSON) {
     describe('JSON', () => {
       describe('escape', () => {
         it('plain string', () => {
-          expectsql(sql.escape('string', { type: new DataTypes.JSON() }), {
+          expectsql(sql.escape('string', { type: new (DataTypes as any).JSON() }), {
             default: '\'"string"\'',
             mysql: '\'\\"string\\"\''
           });
         });
 
         it('plain int', () => {
-          expectsql(sql.escape(0, { type: new DataTypes.JSON() }), {
+          expectsql(sql.escape(0, { type: new (DataTypes as any).JSON() }), {
             default: '\'0\''
           });
-          expectsql(sql.escape(123, { type: new DataTypes.JSON() }), {
+          expectsql(sql.escape(123, { type: new (DataTypes as any).JSON() }), {
             default: '\'123\''
           });
         });
 
         it('boolean', () => {
-          expectsql(sql.escape(true, { type: new DataTypes.JSON() }), {
+          expectsql(sql.escape(true, { type: new (DataTypes as any).JSON() }), {
             default: '\'true\''
           });
-          expectsql(sql.escape(false, { type: new DataTypes.JSON() }), {
+          expectsql(sql.escape(false, { type: new (DataTypes as any).JSON() }), {
             default: '\'false\''
           });
         });
 
         it('NULL', () => {
-          expectsql(sql.escape(null, { type: new DataTypes.JSON() }), {
+          expectsql(sql.escape(null, { type: new (DataTypes as any).JSON() }), {
             default: 'NULL'
           });
         });
 
         it('nested object', () => {
-          expectsql(sql.escape({ some: 'nested', more: { nested: true }, answer: 42 }, { type: new DataTypes.JSON() }), {
+          expectsql(sql.escape({ some: 'nested', more: { nested: true }, answer: 42 }, { type: new (DataTypes as any).JSON() }), {
             default: '\'{"some":"nested","more":{"nested":true},"answer":42}\'',
             mysql: '\'{\\"some\\":\\"nested\\",\\"more\\":{\\"nested\\":true},\\"answer\\":42}\''
           });

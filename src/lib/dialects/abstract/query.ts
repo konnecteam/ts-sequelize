@@ -1,12 +1,19 @@
 'use strict';
 
-const _ = require('lodash');
-const Utils = require('../../utils');
-const SqlString = require('../../sql-string');
-const Dot = require('dottie');
-const QueryTypes = require('../../query-types');
+import * as _ from 'lodash';
+import * as Utils from '../../utils';
+import * as SqlString from '../../sql-string';
+import * as Dot from 'dottie';
+import QueryTypes from '../../query-types';
 
-class AbstractQuery {
+export class AbstractQuery {
+
+  options;
+  model;
+  sql;
+  instance;
+  connection;
+  sequelize;
 
   /**
    * rewrite query with parameters
@@ -22,7 +29,7 @@ class AbstractQuery {
    *   skipValueReplace: bool, do not replace (but do unescape $$). Check correct syntax and if all values are available
    * @private
    */
-  static formatBindParameters(sql, values, dialect, replacementFunc, options) {
+  static formatBindParameters(sql, values, dialect, replacementFunc, options?) {
     if (!values) {
       return [sql, []];
     }
@@ -98,7 +105,7 @@ class AbstractQuery {
    * @param {String} sql - The SQL query which should be executed.
    * @private
    */
-  run() {
+  run(sql, paramters?) : any{
     throw new Error('The run method wasn\'t overwritten!');
   }
 
@@ -177,7 +184,7 @@ class AbstractQuery {
     return this.options.type === QueryTypes.UPSERT;
   }
 
-  isInsertQuery(results, metaData) {
+  isInsertQuery(results?, metaData?) {
     let result = true;
 
     if (this.options.type === QueryTypes.INSERT) {
@@ -196,7 +203,7 @@ class AbstractQuery {
     return result;
   }
 
-  handleInsertQuery(results, metaData) {
+  handleInsertQuery(results, metaData?) {
     if (this.instance) {
       // add the inserted row id to the instance
       const autoIncrementAttribute = this.model.autoIncrementAttribute;
@@ -702,7 +709,3 @@ class AbstractQuery {
     return results;
   }
 }
-
-module.exports = AbstractQuery;
-module.exports.AbstractQuery = AbstractQuery;
-module.exports.default = AbstractQuery;

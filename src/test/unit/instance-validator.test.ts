@@ -1,12 +1,13 @@
 'use strict';
 
-const chai = require('chai');
+import * as chai from 'chai';
 const expect = chai.expect;
-const Support = require(__dirname + '/support');
-const InstanceValidator = require('../../lib/instance-validator');
-const sinon = require('sinon');
+import Support from '../support';
+import {InstanceValidator} from '../../lib/instance-validator';
+import * as sinon from 'sinon';
 const Promise = Support.sequelize.Promise;
-const SequelizeValidationError = require('../../lib/errors').ValidationError;
+import * as errors from '../../lib/errors/index';
+const SequelizeValidationError = errors.ValidationError;
 
 describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   beforeEach(() => {

@@ -1,15 +1,17 @@
 'use strict';
 
-const _ = require('lodash');
-const Utils = require('../../utils');
+import * as _ from 'lodash';
+import * as Utils from '../../utils';
 const debug = Utils.getLogger().debugContext('sql:sqlite');
-const Promise = require('../../promise');
-const AbstractQuery = require('../abstract/query');
-const QueryTypes = require('../../query-types');
-const sequelizeErrors = require('../../errors.js');
-const parserStore = require('../parserStore')('sqlite');
+import Promise from '../../promise';
+import {AbstractQuery} from '../abstract/query';
+import QueryTypes from '../../query-types';
+import * as sequelizeErrors from '../../errors/index';
+import {parserStore} from '../parserStore';
+const store = parserStore('sqlite');
 
-class Query extends AbstractQuery {
+export class Query extends AbstractQuery {
+  database;
 
   constructor(database, sequelize, options) {
     super();
@@ -54,7 +56,7 @@ class Query extends AbstractQuery {
     return [sql, bindParam];
   }
 
-  _collectModels(include, prefix) {
+  _collectModels(include, prefix?) {
     const ret = {};
 
     if (include) {
@@ -66,6 +68,15 @@ class Query extends AbstractQuery {
           key = prefix + '.' + _include.as;
         }
         ret[key] = _include.model;
+
+        //In case of belongsToMany, other models are in includeMap and not include, so we have to add them
+        if (_include.includeMap) {
+          const includeMapKeys = Object.keys(_include.includeMap);
+          includeMapKeys.forEach(includeMapKey => {
+            const currIncludeMap = _include.includeMap[includeMapKey];
+            ret[`${key}.${includeMapKey}`] = currIncludeMap.model;
+          })
+        }
 
         if (_include.include) {
           _.merge(ret, this._collectModels(_include.include, key));
@@ -357,7 +368,7 @@ class Query extends AbstractQuery {
     }
     type = type.replace('UNSIGNED', '').replace('ZEROFILL', '');
     type = type.trim().toUpperCase();
-    const parse = parserStore.get(type);
+    const parse = store.get(type);
 
     if (value !== null && parse) {
       return parse(value, { timezone: this.sequelize.options.timezone });
@@ -432,7 +443,7 @@ class Query extends AbstractQuery {
       item.primary = false;
       item.unique = !!item.unique;
       item.constraintName = item.name;
-      return this.run('PRAGMA INDEX_INFO(`' + item.name + '`)').then(columns => {
+      return (this as any).run('PRAGMA INDEX_INFO(`' + item.name + '`)').then(columns => {
         for (const column of columns) {
           item.fields[column.seqno] = {
             attribute: column.name,
@@ -456,7 +467,3 @@ class Query extends AbstractQuery {
     }
   }
 }
-
-module.exports = Query;
-module.exports.Query = Query;
-module.exports.default = Query;

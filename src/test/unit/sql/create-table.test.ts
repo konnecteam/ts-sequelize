@@ -1,16 +1,16 @@
 'use strict';
 
-const Support   = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  expectsql = Support.expectsql,
-  current   = Support.sequelize,
-  sql       = current.dialect.QueryGenerator,
-  _         = require('lodash');
+import Support from '../../support';
+import DataTypes from '../../../lib/data-types';
+const expectsql = Support.expectsql;
+const current = Support.sequelize;
+const  sql = current.dialect.QueryGenerator;
+import * as _ from 'lodash';
 
 describe(Support.getTestDialectTeaser('SQL'), () => {
   describe('createTable', () => {
     const FooUser = current.define('user', {
-      mood: DataTypes.ENUM('happy', 'sad')
+      mood: (DataTypes as any).ENUM('happy', 'sad')
     }, {
       schema: 'foo',
       timestamps: false

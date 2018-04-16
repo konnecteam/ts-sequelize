@@ -1,3 +1,3 @@
 'use strict';
 
-module.exports = require('./errors/index.js');
+//export * from './errors/index.js';

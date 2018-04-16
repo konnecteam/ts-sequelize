@@ -1,9 +1,11 @@
 'use strict';
 
-const Toposort = require('toposort-class');
-const _ = require('lodash');
+import * as Toposort from 'toposort-class';
+import * as _ from 'lodash';
 
-class ModelManager {
+export class ModelManager {
+  models;
+  sequelize;
   constructor(sequelize) {
     this.models = [];
     this.sequelize = sequelize;
@@ -92,7 +94,3 @@ class ModelManager {
     }
   }
 }
-
-module.exports = ModelManager;
-module.exports.ModelManager = ModelManager;
-module.exports.default = ModelManager;

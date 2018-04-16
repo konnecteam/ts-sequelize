@@ -1,12 +1,13 @@
 'use strict';
 
-const chai      = require('chai'),
-  expect    = chai.expect,
-  Support   = require(__dirname + '/support'),
-  Sequelize = Support.Sequelize,
-  Promise   = Sequelize.Promise,
-  cls       = require('continuation-local-storage'),
-  current = Support.sequelize;
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from './support';
+const Sequelize = Support.Sequelize;
+const Promise = Sequelize.Promise;
+import * as cls from 'continuation-local-storage';
+import DataTypes from '../../lib/data-types';
+const current = Support.sequelize;
 
 if (current.dialect.supports.transactions) {
   describe(Support.getTestDialectTeaser('Continuation local storage'), () => {
@@ -26,7 +27,7 @@ if (current.dialect.supports.transactions) {
         this.ns = cls.getNamespace('sequelize');
 
         this.User = this.sequelize.define('user', {
-          name: Sequelize.STRING
+          name: DataTypes.STRING
         });
         return this.sequelize.sync({ force: true });
       });

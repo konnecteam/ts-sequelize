@@ -1,12 +1,12 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  sinon = require('sinon'),
-  dialect = Support.getTestDialect(),
-  Promise = require('bluebird');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../support';
+import DataTypes from '../../../lib/data-types';
+import * as sinon from 'sinon';
+const dialect = Support.getTestDialect();
+import * as Promise from 'bluebird';
 
 describe(Support.getTestDialectTeaser('Hooks'), () => {
   beforeEach(function() {

@@ -1,23 +1,25 @@
 'use strict';
 
-const Utils = require('./utils');
-const _ = require('lodash');
-const DataTypes = require('./data-types');
-const SQLiteQueryInterface = require('./dialects/sqlite/query-interface');
-const MSSSQLQueryInterface = require('./dialects/mssql/query-interface');
-const MySQLQueryInterface = require('./dialects/mysql/query-interface');
-const OracleQueryInterface = require('./dialects/oracle/query-interface');
-const Transaction = require('./transaction');
-const Promise = require('./promise');
-const QueryTypes = require('./query-types');
-const Op = require('./operators');
+import * as Utils from './utils';
+import * as _ from 'lodash';
+import DataTypes from './data-types';
+import * as SQLiteQueryInterface from './dialects/sqlite/query-interface';
+import * as MSSSQLQueryInterface from './dialects/mssql/query-interface';
+import * as MySQLQueryInterface from './dialects/mysql/query-interface';
+import * as OracleQueryInterface from './dialects/oracle/query-interface';
+import {Transaction} from './transaction';
+import Promise from './promise';
+import QueryTypes from './query-types';
+import Op from './operators';
 
 /**
  * The interface that Sequelize uses to talk to all databases
  *
  * @class QueryInterface
  */
-class QueryInterface {
+export class QueryInterface {
+  sequelize;
+  QueryGenerator;
   constructor(sequelize) {
     this.sequelize = sequelize;
     this.QueryGenerator = this.sequelize.dialect.QueryGenerator;
@@ -1444,7 +1446,3 @@ class QueryInterface {
     return promise;
   }
 }
-
-module.exports = QueryInterface;
-module.exports.QueryInterface = QueryInterface;
-module.exports.default = QueryInterface;

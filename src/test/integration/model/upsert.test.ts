@@ -1,14 +1,14 @@
 'use strict';
 
-const chai = require('chai'),
-  sinon = require('sinon'),
-  Sequelize = require('../../../index'),
-  Promise = Sequelize.Promise,
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  dialect = Support.getTestDialect(),
-  current = Support.sequelize;
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+import {Sequelize}from '../../../index';
+const Promise = Sequelize.Promise;
+const expect = chai.expect;
+import Support from '../support';
+import DataTypes from '../../../lib/data-types';
+const dialect = Support.getTestDialect();
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   before(function() {
@@ -37,7 +37,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     this.ModelWithFieldPK = this.sequelize.define('ModelWithFieldPK', {
       userId: {
         field: 'user_id',
-        type: Sequelize.INTEGER,
+        type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true
       },
@@ -112,12 +112,12 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             primaryKey: true,
             allowNull: false,
             unique: true,
-            type: Sequelize.UUID,
-            defaultValue: Sequelize.UUIDV4
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4
           },
 
           name: {
-            type: Sequelize.STRING
+            type: DataTypes.STRING
           }
         });
 
@@ -129,11 +129,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       it('works with upsert on a composite primary key', function() {
         const User = this.sequelize.define('user', {
           a: {
-            type: Sequelize.STRING,
+            type: DataTypes.STRING,
             primaryKey: true
           },
           b: {
-            type: Sequelize.STRING,
+            type: DataTypes.STRING,
             primaryKey: true
           },
           username: DataTypes.STRING
@@ -183,7 +183,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       it('supports validations', function() {
         const User = this.sequelize.define('user', {
           email: {
-            type: Sequelize.STRING,
+            type: DataTypes.STRING,
             validate: {
               isEmail: true
             }
@@ -356,15 +356,15 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       it('Works when two separate uniqueKeys are passed', function() {
         const User = this.sequelize.define('User', {
           username: {
-            type: Sequelize.STRING,
+            type: DataTypes.STRING,
             unique: true
           },
           email: {
-            type: Sequelize.STRING,
+            type: DataTypes.STRING,
             unique: true
           },
           city: {
-            type: Sequelize.STRING
+            type: DataTypes.STRING
           }
         });
         const clock = sinon.useFakeTimers();
@@ -397,9 +397,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       it('works when indexes are created via indexes array', function() {
         const User = this.sequelize.define('User', {
-          username: Sequelize.STRING,
-          email: Sequelize.STRING,
-          city: Sequelize.STRING
+          username: DataTypes.STRING,
+          email: DataTypes.STRING,
+          city: DataTypes.STRING
         }, {
           indexes: [{
             unique: true,

@@ -1,6 +1,6 @@
 'use strict';
 
-const util = require('util');
+import * as util from 'util';
 
 
 /**
@@ -40,7 +40,7 @@ const util = require('util');
  * @property SET_DEFERRED
  * @property SET_IMMEDIATE
  */
-const Deferrable = module.exports = {
+const Deferrable ={
   INITIALLY_DEFERRED,
   INITIALLY_IMMEDIATE,
   NOT,
@@ -56,7 +56,7 @@ ABSTRACT.prototype.toString = function() {
 
 function INITIALLY_DEFERRED() {
   if (!(this instanceof INITIALLY_DEFERRED)) {
-    return new INITIALLY_DEFERRED();
+    return new (INITIALLY_DEFERRED as any)();
   }
 }
 util.inherits(INITIALLY_DEFERRED, ABSTRACT);
@@ -67,7 +67,7 @@ INITIALLY_DEFERRED.prototype.toSql = function() {
 
 function INITIALLY_IMMEDIATE() {
   if (!(this instanceof INITIALLY_IMMEDIATE)) {
-    return new INITIALLY_IMMEDIATE();
+    return new (INITIALLY_IMMEDIATE as any)();
   }
 }
 util.inherits(INITIALLY_IMMEDIATE, ABSTRACT);
@@ -78,7 +78,7 @@ INITIALLY_IMMEDIATE.prototype.toSql = function() {
 
 function NOT() {
   if (!(this instanceof NOT)) {
-    return new NOT();
+    return new (NOT as any)();
   }
 }
 util.inherits(NOT, ABSTRACT);
@@ -89,7 +89,7 @@ NOT.prototype.toSql = function() {
 
 function SET_DEFERRED(constraints) {
   if (!(this instanceof SET_DEFERRED)) {
-    return new SET_DEFERRED(constraints);
+    return new (SET_DEFERRED as any)(constraints);
   }
 
   this.constraints = constraints;
@@ -102,7 +102,7 @@ SET_DEFERRED.prototype.toSql = function(queryGenerator) {
 
 function SET_IMMEDIATE(constraints) {
   if (!(this instanceof SET_IMMEDIATE)) {
-    return new SET_IMMEDIATE(constraints);
+    return new (SET_IMMEDIATE as any)(constraints);
   }
 
   this.constraints = constraints;
@@ -121,3 +121,5 @@ Object.keys(Deferrable).forEach(key => {
     return instance.toString.apply(instance, arguments);
   };
 });
+
+export default Deferrable;

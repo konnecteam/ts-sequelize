@@ -1,16 +1,17 @@
 'use strict';
 
-const _ = require('lodash');
-const AbstractConnectionManager = require('../abstract/connection-manager');
-const Utils = require('../../utils');
+import * as _ from 'lodash';
+import {AbstractConnectionManager} from '../abstract/connection-manager';
+import * as Utils from '../../utils';
 const debug = Utils.getLogger().debugContext('connection:pg');
-const Promise = require('../../promise');
-const sequelizeErrors = require('../../errors');
-const semver = require('semver');
-const dataTypes = require('../../data-types');
-const moment = require('moment-timezone');
+import Promise from '../../promise';
+import * as sequelizeErrors from '../../errors/index';
+import * as semver from 'semver';
+import AllDataTypes from '../../data-types';
+const dataTypes = AllDataTypes;
+import * as moment from 'moment-timezone';
 
-class ConnectionManager extends AbstractConnectionManager {
+export class ConnectionManager extends AbstractConnectionManager {
   constructor(dialect, sequelize) {
     super(dialect, sequelize);
 
@@ -31,7 +32,7 @@ class ConnectionManager extends AbstractConnectionManager {
       throw err;
     }
 
-    this.refreshTypeParser(dataTypes.postgres);
+    this.refreshTypeParser((dataTypes as any).postgres);
   }
 
   // Expose this as a method so that the parsing may be updated when the user has added additional, custom types
@@ -156,10 +157,10 @@ class ConnectionManager extends AbstractConnectionManager {
       }
     }).tap(connection => {
       if (
-        dataTypes.GEOGRAPHY.types.postgres.oids.length === 0 &&
-        dataTypes.GEOMETRY.types.postgres.oids.length === 0 &&
-        dataTypes.HSTORE.types.postgres.oids.length === 0 &&
-        dataTypes.ENUM.types.postgres.oids.length === 0
+        (dataTypes as any).GEOGRAPHY.types.postgres.oids.length === 0 &&
+        (dataTypes as any).GEOMETRY.types.postgres.oids.length === 0 &&
+        (dataTypes as any).HSTORE.types.postgres.oids.length === 0 &&
+        (dataTypes as any).ENUM.types.postgres.oids.length === 0
       ) {
         return this._refreshDynamicOIDs(connection);
       }
@@ -195,10 +196,10 @@ class ConnectionManager extends AbstractConnectionManager {
 
       // Reset OID mapping for dynamic type
       [
-        dataTypes.postgres.GEOMETRY,
-        dataTypes.postgres.HSTORE,
-        dataTypes.postgres.GEOGRAPHY,
-        dataTypes.postgres.ENUM
+        (dataTypes as any).postgres.GEOMETRY,
+        (dataTypes as any).postgres.HSTORE,
+        (dataTypes as any).postgres.GEOGRAPHY,
+        (dataTypes as any).postgres.ENUM
       ].forEach(type => {
         type.types.postgres.oids = [];
         type.types.postgres.array_oids = [];
@@ -208,13 +209,13 @@ class ConnectionManager extends AbstractConnectionManager {
         let type;
 
         if (row.typname === 'geometry') {
-          type = dataTypes.postgres.GEOMETRY;
+          type = (dataTypes as any).postgres.GEOMETRY;
         } else if (row.typname === 'hstore') {
-          type = dataTypes.postgres.HSTORE;
+          type = (dataTypes as any).postgres.HSTORE;
         } else if (row.typname === 'geography') {
-          type = dataTypes.postgres.GEOGRAPHY;
+          type = (dataTypes as any).postgres.GEOGRAPHY;
         } else if (row.typtype === 'e') {
-          type = dataTypes.postgres.ENUM;
+          type = (dataTypes as any).postgres.ENUM;
         }
 
         type.types.postgres.oids.push(row.oid);
@@ -225,9 +226,3 @@ class ConnectionManager extends AbstractConnectionManager {
     });
   }
 }
-
-_.extend(ConnectionManager.prototype, AbstractConnectionManager.prototype);
-
-module.exports = ConnectionManager;
-module.exports.ConnectionManager = ConnectionManager;
-module.exports.default = ConnectionManager;

@@ -1,6 +1,6 @@
 'use strict';
 
-const _ = require('lodash');
+import * as _ from 'lodash';
 
 function stringifyRangeBound(bound) {
   if (bound === null) {
@@ -24,7 +24,7 @@ function parseRangeBound(bound, parseType) {
   }
 }
 
-function stringify(data) {
+export function stringify(data?) {
   if (data === null) return null;
 
   if (!_.isArray(data)) throw new Error('range must be an array');
@@ -51,13 +51,12 @@ function stringify(data) {
 
   return (data.inclusive[0] ? '[' : '(') + lowerBound + ',' + upperBound + (data.inclusive[1] ? ']' : ')');
 }
-exports.stringify = stringify;
 
-function parse(value, parser) {
+export function parse(value?, parser?) {
   if (value === null) return null;
   if (value === 'empty') {
     const empty = [];
-    empty.inclusive = [];
+    (empty as any).inclusive = [];
     return empty;
   }
 
@@ -73,4 +72,3 @@ function parse(value, parser) {
 
   return result;
 }
-exports.parse = parse;

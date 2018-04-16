@@ -1,13 +1,15 @@
 'use strict';
 
 /* jshint -W110 */
-const Utils = require('../../utils');
-const DataTypes = require('../../data-types');
-const oracleDb = require('oracledb');
-const AbstractQueryGenerator = require('../abstract/query-generator');
-const _ = require('lodash');
-const crc32 = require('js-crc').crc32;
-const uuid = require('uuid');
+import * as Utils from '../../utils';
+import AllDataTypes from '../../data-types';
+const DataTypes = AllDataTypes.oracle;
+import * as oracleDb from 'oracledb';
+import AbstractQueryGenerator from '../abstract/query-generator';
+import * as _ from 'lodash';
+import * as jscrc from 'js-crc'
+const crc32 = jscrc.crc32;
+import * as uuid from 'uuid';
 
 //List of Oracle reserved words https://docs.oracle.com/cd/B19306_01/em.102/b40103/app_oracle_reserved_words.htm
 const oracleReservedWords = ['ACCESS', 'ACCOUNT', 'ACTIVATE', 'ADD', 'ADMIN', 'ADVISE', 'AFTER', 'ALL', 'ALL_ROWS', 'ALLOCATE', 'ALTER', 'ANALYZE', 'AND', 'ANY', 'ARCHIVE',
@@ -40,6 +42,7 @@ const oracleReservedWords = ['ACCESS', 'ACCOUNT', 'ACTIVATE', 'ADD', 'ADMIN', 'A
   'TRIGGER', 'TRIGGERS', 'TRUE', 'TRUNCATE', 'TX', 'TYPE', 'UB2', 'UBA', 'UID', 'UNARCHIVED', 'UNDO', 'UNION', 'UNIQUE', 'UNLIMITED', 'UNLOCK', 'UNRECOVERABLE', 'UNTIL', 'UNUSABLE', 'UNUSED',
   'UPDATABLE', 'UPDATE', 'USAGE', 'USE', 'USER', 'USING', 'VALIDATE', 'VALIDATION', 'VALUE', 'VALUES', 'VARCHAR', 'VARCHAR2', 'VARYING', 'VIEW', 'WHEN', 'WHENEVER', 'WHERE', 'WITH', 'WITHOUT',
   'WORK', 'WRITE', 'WRITEDOWN', 'WRITEUP', 'XID', 'YEAR', 'ZONE'];
+
 
 /* istanbul ignore next */
 const throwMethodUndefined = function (methodName) {
@@ -94,7 +97,7 @@ const QueryGenerator = {
     const primaryKeys = [], foreignKeys = {}, attrStr = [], checkStr = [];
 
     const values = {
-      table: this.quoteTable(tableName)
+      table: this.quoteTable(tableName),
     };
 
     const regex = /REFERENCES ([a-zA-Z_.0-9]*) \((.*)\)/g; //Global regex
@@ -188,7 +191,7 @@ const QueryGenerator = {
         }
       }
 
-      values.attributes += ',CONSTRAINT ' + primaryKeyName + ' PRIMARY KEY (' + pkString + ')';
+      (values as any).attributes += ',CONSTRAINT ' + primaryKeyName + ' PRIMARY KEY (' + pkString + ')';
     }
 
     //Dealing with FKs
@@ -211,12 +214,12 @@ const QueryGenerator = {
           }
         }
 
-        values.attributes += ',CONSTRAINT ' + fkName + ' FOREIGN KEY (' + this.quoteIdentifier(fkey) + ') ' + foreignKeys[fkey];
+        (values as any).attributes += ',CONSTRAINT ' + fkName + ' FOREIGN KEY (' + this.quoteIdentifier(fkey) + ') ' + foreignKeys[fkey];
       }
     }
 
     if (checkStr.length > 0) {
-      values.attributes += ', ' + checkStr.join(', ');
+      (values as any).attributes += ', ' + checkStr.join(', ');
     }
 
     //Specific case for unique indexes with Oracle, we have to set the constraint on the column, if not, no FK will be possible (ORA-02270: no matching unique or primary key for this column-list)
@@ -311,7 +314,7 @@ const QueryGenerator = {
               //We generate the attribute without UNIQUE
               const attrToReplace = attributes[currField].replace('UNIQUE', '');
               //We replace in the final string
-              values.attributes = values.attributes.replace(attributes[currField], attrToReplace);
+              (values as any).attributes = (values as any).attributes.replace(attributes[currField], attrToReplace);
             }
           }
         });
@@ -338,7 +341,7 @@ const QueryGenerator = {
           indexName = indexName.replace(/[.,\s]/g, '');
           columns.name = indexName;
           options.uniqueKeys[indexName] = index;
-          values.attributes += ', CONSTRAINT ' + indexName + ' UNIQUE (' + _.map(columns.fields, self.quoteIdentifier).join(', ') + ')';
+          (values as any).attributes += ', CONSTRAINT ' + indexName + ' UNIQUE (' + _.map(columns.fields, self.quoteIdentifier).join(', ') + ')';
         }
       });
     }
@@ -346,7 +349,7 @@ const QueryGenerator = {
     query = _.template(query)(values).trim();
     //we replace single quotes by two quotes in order for the execute statement to work
     query = query.replace(/'/g, "''");
-    values.createTableQuery = query;
+    (values as any).createTableQuery = query;
 
     return _.template(completeQuery)(values).trim();
   },
@@ -639,7 +642,7 @@ const QueryGenerator = {
             value = ' ';
           }
           const currAttribute = modelAttributeMap[key];
-          if (currAttribute && currAttribute.type != null && (currAttribute.type.key === DataTypes.TEXT.key || currAttribute.type.key === DataTypes.BLOB.key)) {
+          if (currAttribute && currAttribute.type != null && (currAttribute.type.key === (DataTypes as any).TEXT.key || currAttribute.type.key === (DataTypes as any).BLOB.key)) {
             //If we try to insert into TEXT or BLOB, we need to pass by input-parameters to avoid the 4000 char length limit
 
             const paramName = `:input${key}${inputParamCpt}`;
@@ -648,7 +651,7 @@ const QueryGenerator = {
               val : value
             };
             //Binding type to parameter
-            if (modelAttributes[key].type.key === DataTypes.TEXT.key) {
+            if (modelAttributes[key].type.key === (DataTypes as any).TEXT.key) {
               //if text with length, it's generated as a String inside Oracle, 
               if (modelAttributes[key].type._length !== '') {
                 inputParam['type'] = oracleDb.STRING;
@@ -724,7 +727,7 @@ const QueryGenerator = {
 
     if (options.returning && replacements.attributes && replacements.attributes.length > 0) {
       query = returningQuery;
-      replacements.valueQuery = _.template(valueQuery)(replacements);
+      (replacements as any).valueQuery = _.template(valueQuery)(replacements);
     } else {
       query = (replacements.attributes.length ? valueQuery : emptyQuery);
     }
@@ -792,7 +795,7 @@ const QueryGenerator = {
               }
             }  
           }
-          if (currAttribute && currAttribute.type != null && (currAttribute.type.key === DataTypes.TEXT.key || currAttribute.type.key === DataTypes.BLOB.key)) {
+          if (currAttribute && currAttribute.type != null && (currAttribute.type.key === (DataTypes as any).TEXT.key || currAttribute.type.key === (DataTypes as any).BLOB.key)) {
             //If we try to insert into TEXT or BLOB, we need to pass by input-parameters to avoid the 4000 char length limit
 
             const paramName = `:input${key}${inputParamCpt}`;
@@ -801,7 +804,7 @@ const QueryGenerator = {
               val : attrValueHash[key]
             };
             //Binding type to parameter
-            if (options.model.attributes[key].type.key === DataTypes.TEXT.key) {
+            if (options.model.attributes[key].type.key === (DataTypes as any).TEXT.key) {
               //if text with length, it's generated as a String inside Oracle, 
               if (options.model.attributes[key].type._length !== '') {
                 inputParam['type'] = oracleDb.STRING;
@@ -939,7 +942,7 @@ const QueryGenerator = {
 
     let template;
 
-    if (attribute.type instanceof DataTypes.ENUM) {
+    if (attribute.type instanceof (DataTypes as any).ENUM) {
       if (attribute.type.values && !attribute.values) attribute.values = attribute.type.values;
 
       // enums are a special case
@@ -952,7 +955,7 @@ const QueryGenerator = {
       if (attribute.autoIncrement) {
         template = ' NUMBER(*,0) GENERATED BY DEFAULT ON NULL AS IDENTITY';
       } else {
-        if (attribute.type && attribute.type.key === DataTypes.DOUBLE.key) {
+        if (attribute.type && attribute.type.key === (DataTypes as any).DOUBLE.key) {
           template = attribute.type.toSql();
         } else {
           if (attribute.type) {
@@ -967,7 +970,7 @@ const QueryGenerator = {
     // Blobs/texts cannot have a defaultValue
     if (attribute.type && attribute.type !== 'TEXT' && attribute.type._binary !== true &&
       Utils.defaultValueSchemable(attribute.defaultValue)) {
-      if (attribute.defaultValue instanceof DataTypes.NOW) {
+      if (attribute.defaultValue instanceof (DataTypes as any).NOW) {
         template += ' DEFAULT ' + DataTypes[this.dialect].NOW().toSql();
       } else {
         template += ' DEFAULT ' + this.escape(attribute.defaultValue, attribute);
@@ -1275,7 +1278,7 @@ const QueryGenerator = {
     }
 
     if (options.limit || options.offset) {
-      if (!(options.order && options.group) && (!options.order || options.include && !orders.subQueryOrder.length)) {
+      if (!(options.order && options.group) && (!options.order || options.include && !(orders as any).subQueryOrder.length)) {
         fragment += (options.order && !isSubQuery) ? ', ' : ' ORDER BY ';
         fragment += this.quoteTable(options.tableAs || model.name) + '.' + this.quoteIdentifier(model.primaryKeyField);
       }
@@ -1303,4 +1306,4 @@ function wrapSingleQuote(identifier) {
   return Utils.addTicks(identifier, "'");
 }
 
-module.exports = _.extend(_.clone(AbstractQueryGenerator), QueryGenerator);
+export default _.extend(_.clone(AbstractQueryGenerator), QueryGenerator);

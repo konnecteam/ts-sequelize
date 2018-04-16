@@ -1,14 +1,19 @@
 'use strict';
 
-const AbstractConnectionManager = require('../abstract/connection-manager');
-const Promise = require('../../promise');
-const Utils = require('../../utils');
+import {AbstractConnectionManager} from '../abstract/connection-manager';
+import Promise from '../../promise';
+import * as Utils from '../../utils';
 const debug = Utils.getLogger().debugContext('connection:sqlite');
-const dataTypes = require('../../data-types').sqlite;
-const sequelizeErrors = require('../../errors');
-const parserStore = require('../parserStore')('sqlite');
+import AllDataTypes from '../../data-types';
+const dataTypes = AllDataTypes.sqlite;
+import * as sequelizeErrors from '../../errors/index';
+import {parserStore} from '../parserStore';
+const store = parserStore('sqlite');
+const fs = require('fs');
 
-class ConnectionManager extends AbstractConnectionManager {
+export class ConnectionManager extends AbstractConnectionManager {
+  connections;
+
   constructor(dialect, sequelize) {
     super(dialect, sequelize);
     this.sequelize = sequelize;
@@ -24,8 +29,8 @@ class ConnectionManager extends AbstractConnectionManager {
       if (sequelize.config.dialectModulePath) {
         this.lib = require(sequelize.config.dialectModulePath).verbose();
       } else {
-        this.lib = require('sqlite3').verbose();
       }
+      this.lib = require('sqlite3').verbose();
     } catch (err) {
       if (err.code === 'MODULE_NOT_FOUND') {
         throw new Error('Please install sqlite3 package manually');
@@ -38,11 +43,11 @@ class ConnectionManager extends AbstractConnectionManager {
 
   // Expose this as a method so that the parsing may be updated when the user has added additional, custom types
   _refreshTypeParser(dataType) {
-    parserStore.refresh(dataType);
+    store.refresh(dataType);
   }
 
   _clearTypeParser() {
-    parserStore.clear();
+    store.clear();
   }
 
   getConnection(options) {
@@ -58,6 +63,16 @@ class ConnectionManager extends AbstractConnectionManager {
     }
 
     return new Promise((resolve, reject) => {
+      if (this.sequelize.options.storage && this.sequelize.options.storage.indexOf('/') !== -1 && this.sequelize.options.storage.indexOf('.sqlite') !== -1) {
+        const fullPath = this.sequelize.options.storage.split('/').filter((item, idx, tab) => { if (idx !== tab.length -1) { return true}}).join('/');
+        try {
+          fs.mkdirSync(fullPath)
+        } catch (err) {
+          if (err.code !== 'EEXIST') throw err
+        }
+      }
+
+
       this.connections[options.inMemory || options.uuid] = new this.lib.Database(
         this.sequelize.options.storage || this.sequelize.options.host || ':memory:',
         options.readWriteMode || this.lib.OPEN_READWRITE | this.lib.OPEN_CREATE, // default mode
@@ -93,8 +108,3 @@ class ConnectionManager extends AbstractConnectionManager {
     }
   }
 }
-
-
-module.exports = ConnectionManager;
-module.exports.ConnectionManager = ConnectionManager;
-module.exports.default = ConnectionManager;

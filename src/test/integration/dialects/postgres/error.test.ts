@@ -1,12 +1,12 @@
 'use strict';
 
-const chai      = require('chai'),
-  expect    = chai.expect,
-  DataTypes = require(__dirname + '/../../../../lib/data-types'),
-  Support   = require(__dirname + '/../../support'),
-  Sequelize = Support.Sequelize,
-  dialect   = Support.getTestDialect(),
-  _ = require('lodash');
+import * as chai from 'chai';
+const expect = chai.expect;
+import DataTypes from '../../../../lib/data-types';
+import Support from '../../support';
+const Sequelize = Support.Sequelize;
+const dialect   = Support.getTestDialect();
+import * as _ from 'lodash';
 
 if (dialect.match(/^postgres/)) {
   const constraintName = 'overlap_period';

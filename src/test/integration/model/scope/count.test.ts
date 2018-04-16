@@ -1,23 +1,23 @@
 'use strict';
 
-const chai = require('chai'),
-  Sequelize = require('../../../../index'),
-  expect = chai.expect,
-  Promise = require(__dirname + '/../../../../lib/promise'),
-  Support = require(__dirname + '/../../support');
+import * as chai from 'chai';
+import DataTypes from '../../../../lib/data-types';
+const expect = chai.expect;
+import Promise from '../../../../lib/promise';
+import Support from '../../support';
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('scope', () => {
     describe('count', () => {
       beforeEach(function() {
         this.Child = this.sequelize.define('Child', {
-          priority: Sequelize.INTEGER
+          priority: DataTypes.INTEGER
         });
         this.ScopeMe = this.sequelize.define('ScopeMe', {
-          username: Sequelize.STRING,
-          email: Sequelize.STRING,
-          access_level: Sequelize.INTEGER,
-          other_value: Sequelize.INTEGER
+          username: DataTypes.STRING,
+          email: DataTypes.STRING,
+          access_level: DataTypes.INTEGER,
+          other_value: DataTypes.INTEGER
         }, {
           defaultScope: {
             where: {

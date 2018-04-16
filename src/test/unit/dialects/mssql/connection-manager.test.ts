@@ -1,13 +1,13 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Sequelize = require(__dirname + '/../../../../index'),
-  Support = require(__dirname + '/../../support'),
-  dialect = Support.getTestDialect(),
-  tedious = require('tedious'),
-  sinon = require('sinon'),
-  connectionStub = sinon.stub(tedious, 'Connection');
+import * as chai from 'chai';
+const expect = chai.expect;
+import {Sequelize}from '../../../../index';
+import Support from '../../../support';
+const dialect = Support.getTestDialect();
+import * as tedious from 'tedious';
+import * as sinon from 'sinon';
+const connectionStub = sinon.stub(tedious, 'Connection');
 
 connectionStub.returns({on() {}});
 

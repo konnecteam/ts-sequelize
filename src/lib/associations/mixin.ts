@@ -1,13 +1,15 @@
 'use strict';
 
-const Utils = require('./../utils');
-const _ = require('lodash');
-const HasOne = require('./has-one');
-const HasMany = require('./has-many');
-const BelongsToMany = require('./belongs-to-many');
-const BelongsTo = require('./belongs-to');
+import * as Utils  from './../utils';
+import * as _ from 'lodash';
+import {HasOne} from './has-one';
+import {HasMany} from './has-many';
+import {BelongsToMany} from './belongs-to-many';
+import {BelongsTo} from './belongs-to';
 
-const Mixin = {
+export const Mixin = {
+  hasOne : null,
+  belongsTo : null,
   hasMany(target, options) { // testhint options:none
     if (!target || !target.prototype || !(target.prototype instanceof this.sequelize.Model)) {
       throw new Error(this.name + '.hasMany called with something that\'s not a subclass of Sequelize.Model');
@@ -75,7 +77,7 @@ const Mixin = {
 };
 
 // The logic for hasOne and belongsTo is exactly the same
-function singleLinked(Type) {
+export function singleLinked(Type) {
   return function(target, options) { // testhint options:none
     if (!target || !target.prototype || !(target.prototype instanceof this.sequelize.Model)) {
       throw new Error(this.name + '.' + Utils.lowercaseFirst(Type.toString()) + ' called with something that\'s not a subclass of Sequelize.Model');
@@ -103,6 +105,3 @@ Mixin.hasOne = singleLinked(HasOne);
 
 Mixin.belongsTo = singleLinked(BelongsTo);
 
-module.exports = Mixin;
-module.exports.Mixin = Mixin;
-module.exports.default = Mixin;

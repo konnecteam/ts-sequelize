@@ -1,11 +1,11 @@
 'use strict';
 
-const Utils = require('../../utils');
-const util = require('util');
-const Transaction = require('../../transaction');
-const _ = require('lodash');
-const MySqlQueryGenerator = require('../mysql/query-generator');
-const AbstractQueryGenerator = require('../abstract/query-generator');
+import * as Utils from '../../utils';
+import * as util from 'util';
+import {Transaction} from '../../transaction';
+import * as _ from 'lodash';
+import MySqlQueryGenerator from '../mysql/query-generator';
+import AbstractQueryGenerator from '../abstract/query-generator';
 
 const QueryGenerator = {
   __proto__: MySqlQueryGenerator,
@@ -129,7 +129,7 @@ const QueryGenerator = {
     }
 
     // Check invalid json statement
-    hasInvalidToken |= openingBrackets !== closingBrackets;
+    hasInvalidToken = hasInvalidToken || openingBrackets !== closingBrackets;
     if (hasJsonFunction && hasInvalidToken) {
       throw new Error('Invalid json statement: ' + stmt);
     }
@@ -297,7 +297,7 @@ const QueryGenerator = {
           sql += ' NOT NULL';
         }
 
-        if (Utils.defaultValueSchemable(dataType.defaultValue)) {
+        if ('defaultValue' in dataType && Utils.defaultValueSchemable(dataType.defaultValue)) {
           // TODO thoroughly check that DataTypes.NOW will properly
           // get populated on all databases as DEFAULT value
           // i.e. mysql requires: DEFAULT CURRENT_TIMESTAMP
@@ -513,4 +513,4 @@ const QueryGenerator = {
   }
 };
 
-module.exports = QueryGenerator;
+export default QueryGenerator;

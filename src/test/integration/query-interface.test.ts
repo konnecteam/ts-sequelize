@@ -1,13 +1,13 @@
 'use strict';
 
-const chai = require('chai');
+import * as chai from 'chai';
 const expect = chai.expect;
-const Support = require(__dirname + '/support');
-const DataTypes = require(__dirname + '/../../lib/data-types');
+import Support from './support';
+import DataTypes from '../../lib/data-types';
 const dialect = Support.getTestDialect();
-const Sequelize = Support.Sequelize;
+const Sequelize = Support.sequelize;
 const current = Support.sequelize;
-const _ = require('lodash');
+import * as _ from 'lodash';
 let count = 0;
 const log = function() {
   // sqlite fires a lot more querys than the other dbs. this is just a simple hack, since i'm lazy
@@ -169,7 +169,7 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
           defaultValue: null
         },
         isAdmin: DataTypes.BOOLEAN,
-        enumVals: DataTypes.ENUM('hello', 'world')
+        enumVals: (DataTypes as any).ENUM('hello', 'world')
       }, { freezeTableName: true });
 
       return Users.sync({ force: true }).then(() => {
@@ -307,7 +307,7 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
 
     it('should work with enums (1)', function() {
       return this.queryInterface.createTable('SomeTable', {
-        someEnum: DataTypes.ENUM('value1', 'value2', 'value3')
+        someEnum: (DataTypes as any).ENUM('value1', 'value2', 'value3')
       });
     });
 
@@ -680,7 +680,7 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
     });
 
     it('should work with enums (1)', function() {
-      return this.queryInterface.addColumn('users', 'someEnum', DataTypes.ENUM('value1', 'value2', 'value3'));
+      return this.queryInterface.addColumn('users', 'someEnum', (DataTypes as any).ENUM('value1', 'value2', 'value3'));
     });
 
     it('should work with enums (2)', function() {

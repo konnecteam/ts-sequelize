@@ -1,10 +1,10 @@
 'use strict';
 
-const chai = require('chai'),
-  sinon = require('sinon'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  dialect = Support.getTestDialect();
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+const expect = chai.expect;
+import Support from '../support';
+const dialect = Support.getTestDialect();
 
 describe(Support.getTestDialectTeaser('Sequelize'), () => {
   describe('log', () => {
@@ -13,7 +13,7 @@ describe(Support.getTestDialectTeaser('Sequelize'), () => {
     });
 
     afterEach(() => {
-      console.log.restore();
+      (console.log as any).restore();
     });
 
     describe('with disabled logging', () => {

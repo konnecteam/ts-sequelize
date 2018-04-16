@@ -1,10 +1,11 @@
 'use strict';
 
-const  chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  Sequelize = require('../../../index'),
-  Promise = Sequelize.Promise;
+
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../support';
+import {Sequelize} from '../../../index';
+const Promise = Sequelize.Promise;
 
 describe(Support.getTestDialectTeaser('Alias'), () => {
   it('should uppercase the first letter in alias getter, but not in eager loading', function() {

@@ -1,13 +1,18 @@
 'use strict';
 
-const Promise = require('../../promise');
-const AbstractQuery = require('../abstract/query');
-const sequelizeErrors = require('../../errors.js');
-const parserStore = require('../parserStore')('oracle');
-const _ = require('lodash');
-const semver = require('semver');
+import Promise from '../../promise';
+import {AbstractQuery} from '../abstract/query';
+import * as sequelizeErrors from '../../errors/index';
+import {parserStore} from '../parserStore';
+const store = parserStore('oracle');
+import * as _ from 'lodash';
+import * as semver from 'semver';
 
 class Query extends AbstractQuery {
+  outFormat;
+  outParameters;
+  autocommit;
+  autoCommit;
 
   constructor(connection, sequelize, options) {
     super();
@@ -218,7 +223,7 @@ class Query extends AbstractQuery {
         if (isMinorTwelveTwo && self.options.type === 'SELECT') {
           // Dealing with long names in sql - we only come here if this is a select statement from selectQuery
           opts = this._dealWithLongAliasesBeforeSelect(self.sql);
-          sqlToExec = opts.sql;
+          sqlToExec = (opts as any).sql;
           if (logAliasesQry) {
             //We will log aliases query only if asked
             this.sequelize.log('Executing reformated (' + (connection.uuid || 'default') + '): ' + sqlToExec, this.options);
@@ -233,7 +238,7 @@ class Query extends AbstractQuery {
           }
           if (isMinorTwelveTwo && Object.keys(opts).length === 2) {
             //Replacing aliases by real names
-            result = this._replaceLongAliases(opts.tableAliases, result);
+            result = this._replaceLongAliases((opts as any).tableAliases, result);
           }
           const formatedResult = self.formatResults(result);
           return formatedResult === undefined ? {} : formatedResult;
@@ -520,7 +525,7 @@ class Query extends AbstractQuery {
 
               //if plain, we have only one row and we don't want to return it into an array
               if (this.options.plain) {
-                finalRows = returnObject;
+                (finalRows as any) = returnObject;
               } else {
                 finalRows.push(returnObject);
               }
@@ -598,10 +603,10 @@ class Query extends AbstractQuery {
                 typeid = typeid.substr(0, typeid.indexOf('('));
               }
 
-              const parse = parserStore.get(typeid);
+              const parse = store.get(typeid);
               let value =  element[key];
 
-              if (value !== null & !!parse) {
+              if (value !== null && !!parse) {
                 value = parse(value);
               }
               newRow[attrs[key.toLowerCase()]] = value;
@@ -809,7 +814,7 @@ class Query extends AbstractQuery {
     return returnIndexes;
   };
 
-  handleInsertQuery(results, metaData) {
+  handleInsertQuery(results, metaData?) {
     if (this.instance && results.length > 0) {
       if ('pkReturnVal' in results[0]) {
         //The PK of the table is a reserved word (ex : uuid), we have to change the name in the result for the model to find the value correctly

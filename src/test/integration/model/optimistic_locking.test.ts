@@ -1,8 +1,8 @@
 'use strict';
 
-const Support = require(__dirname + '/../support');
-const DataTypes = require(__dirname + '/../../../lib/data-types');
-const chai = require('chai');
+import Support from '../support';
+import DataTypes from '../../../lib/data-types';
+import * as chai from 'chai';
 const expect = chai.expect;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
@@ -54,7 +54,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         }).then(accountB => {
           accountB.number += 1;
           return accountB.save();
-        })).to.eventually.be.rejectedWith(Support.Sequelize.OptimisticLockError);
+        })).to.eventually.be.rejectedWith(Support.sequelize.OptimisticLockError);
       });
     }
 

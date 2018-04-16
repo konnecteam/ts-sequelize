@@ -1,15 +1,17 @@
 'use strict';
 
-const Utils = require('../../utils');
+import * as Utils from '../../utils';
 const debug = Utils.getLogger().debugContext('sql:pg');
-const AbstractQuery = require('../abstract/query');
-const QueryTypes = require('../../query-types');
-const Promise = require('../../promise');
-const sequelizeErrors = require('../../errors.js');
-const _ = require('lodash');
-const Cursor = require('pg-cursor')
+import {AbstractQuery} from '../abstract/query';
+import QueryTypes from '../../query-types';
+import Promise from '../../promise';
+import * as sequelizeErrors from '../../errors/index';
+import * as _ from 'lodash';
+import * as Cursor from 'pg-cursor';
 
 class Query extends AbstractQuery {
+  client;
+
   constructor(client, sequelize, options) {
     super();
     this.client = client;
@@ -320,7 +322,9 @@ class Query extends AbstractQuery {
               field,
               value,
               this.instance,
-              'not_unique'
+              'not_unique',
+              null,
+              null
             ));
           });
 

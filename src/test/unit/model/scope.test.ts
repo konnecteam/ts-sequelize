@@ -1,10 +1,10 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support   = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  current   = Support.sequelize;
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../support';
+import DataTypes from '../../../lib/data-types';
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   const Project = current.define('project'),
@@ -145,8 +145,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('should support multiple, coexistent scoped models', () => {
-      const scoped1 = Company.scope('somethingTrue'),
-        scoped2 = Company.scope('somethingFalse');
+      const scoped1 = Company.scope('somethingTrue');
+      const scoped2 = Company.scope('somethingFalse');
 
       expect(scoped1._scope).to.deep.equal(scopes.somethingTrue);
       expect(scoped2._scope).to.deep.equal(scopes.somethingFalse);
@@ -359,7 +359,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         ]
       };
 
-      const options = {};
+      const options = {
+        include: undefined
+      };
 
       current.Model._injectScope.call({
         _scope: scope

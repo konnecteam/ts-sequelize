@@ -1,12 +1,11 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support   = require(__dirname + '/../support'),
-  current   = Support.sequelize,
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  Sequelize = Support.Sequelize,
-  moment    = require('moment');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../support';
+const current = Support.sequelize;
+import DataTypes from '../../../lib/data-types';
+import * as moment from 'moment';
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
   describe('isSoftDeleted', () => {
@@ -16,7 +15,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         birthdate: DataTypes.DATE,
         meta: DataTypes.JSON,
         deletedAt: {
-          type: Sequelize.DATE
+          type: DataTypes.DATE
         }
       });
 
@@ -25,7 +24,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         birthdate: DataTypes.DATE,
         meta: DataTypes.JSON,
         deletedAt: {
-          type: Sequelize.DATE
+          type: DataTypes.DATE
         }
       }, {
         paranoid: true

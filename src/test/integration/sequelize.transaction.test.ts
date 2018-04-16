@@ -1,12 +1,13 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/support'),
-  Promise = require(__dirname + '/../../lib/promise'),
-  Transaction = require(__dirname + '/../../lib/transaction'),
-  sinon = require('sinon'),
-  current = Support.sequelize;
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from './support';
+import Promise from '../../lib/promise';
+import * as Transaction from '../../lib/transaction';
+import * as sinon from 'sinon';
+import DataTypes from '../../lib/data-types';
+const current = Support.sequelize;
 
 if (current.dialect.supports.transactions) {
 
@@ -26,7 +27,7 @@ if (current.dialect.supports.transactions) {
           .sequelize
           .transaction().then(t => {
             return t.commit().then(() => {
-              called = 1;
+              called = true;
             });
           })
           .then(() => {
@@ -40,7 +41,7 @@ if (current.dialect.supports.transactions) {
           .sequelize
           .transaction().then(t => {
             return t.rollback().then(() => {
-              called = 1;
+              called = true;
             });
           })
           .then(() => {
@@ -54,7 +55,7 @@ if (current.dialect.supports.transactions) {
             this.sequelize = sequelize;
 
             this.User = sequelize.define('User', {
-              name: Support.Sequelize.STRING
+              name: DataTypes.STRING
             }, { timestamps: false });
 
             return sequelize.sync({ force: true });
@@ -101,8 +102,8 @@ if (current.dialect.supports.transactions) {
       it('works with promise syntax', function() {
         return Support.prepareTransactionTest(this.sequelize).then(sequelize => {
           const Test = sequelize.define('Test', {
-            id: { type: Support.Sequelize.INTEGER, primaryKey: true, autoIncrement: true},
-            name: { type: Support.Sequelize.STRING }
+            id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true},
+            name: { type: DataTypes.STRING }
           });
 
           return sequelize.sync({ force: true }).then(() => {
@@ -136,7 +137,7 @@ if (current.dialect.supports.transactions) {
             self.sequelize = sequelize;
 
             self.Model = sequelize.define('Model', {
-              name: { type: Support.Sequelize.STRING, unique: true }
+              name: { type: DataTypes.STRING, unique: true }
             }, {
               timestamps: false
             });

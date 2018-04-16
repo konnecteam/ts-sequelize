@@ -1,13 +1,13 @@
 'use strict';
 
-const Support   = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  util = require('util'),
-  chai = require('chai'),
-  expect = chai.expect,
-  expectsql = Support.expectsql,
-  current = Support.sequelize,
-  queryGenerator = current.dialect.QueryGenerator;
+import Support from '../../support';
+import DataTypes from '../../../lib/data-types';
+import * as util from 'util';
+import * as chai from 'chai';
+const expect = chai.expect;
+const expectsql = Support.expectsql;
+const current = Support.sequelize;
+const queryGenerator = current.dialect.QueryGenerator;
 
 // Notice: [] will be replaced by dialect specific tick/quote character when there is not dialect specific expectation but only a default expectation
 
@@ -1072,7 +1072,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.postgres.RANGE(DataTypes.DATE)
+              type: new (DataTypes as any).postgres.RANGE(DataTypes.DATE)
             },
             prefix: 'Timeline'
           };
@@ -1089,7 +1089,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.postgres.RANGE(DataTypes.DATE)
+              type: new (DataTypes as any).postgres.RANGE(DataTypes.DATE)
             },
             prefix: 'Timeline'
           };
@@ -1106,7 +1106,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.postgres.RANGE(DataTypes.DATE)
+              type: new (DataTypes as any).postgres.RANGE(DataTypes.DATE)
             },
             prefix: 'Timeline'
           };
@@ -1123,7 +1123,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.postgres.RANGE(DataTypes.DATE)
+              type: new (DataTypes as any).postgres.RANGE(DataTypes.DATE)
             },
             prefix: 'Timeline'
           };
@@ -1140,7 +1140,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.postgres.RANGE(DataTypes.DATE)
+              type: new (DataTypes as any).postgres.RANGE(DataTypes.DATE)
             },
             prefix: 'Timeline'
           };
@@ -1157,7 +1157,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.postgres.RANGE()
+              type: new (DataTypes as any).postgres.RANGE()
             },
             prefix: 'Room'
           };
@@ -1174,7 +1174,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.postgres.RANGE()
+              type: new (DataTypes as any).postgres.RANGE()
             },
             prefix: 'Room'
           };
@@ -1191,7 +1191,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.postgres.RANGE()
+              type: new (DataTypes as any).postgres.RANGE()
             },
             prefix: 'Room'
           };
@@ -1208,7 +1208,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.postgres.RANGE()
+              type: new (DataTypes as any).postgres.RANGE()
             },
             prefix: 'Room'
           };
@@ -1225,7 +1225,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.postgres.RANGE()
+              type: new (DataTypes as any).postgres.RANGE()
             },
             prefix: 'Room'
           };
@@ -1242,7 +1242,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.postgres.RANGE()
+              type: new (DataTypes as any).postgres.RANGE()
             },
             prefix: 'Room'
           };
@@ -1281,7 +1281,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.JSONB()
+              type: new (DataTypes as any).JSONB()
             },
             prefix: 'User'
           };
@@ -1302,7 +1302,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.JSONB()
+              type: new (DataTypes as any).JSONB()
             }
           };
           const expectation={
@@ -1322,7 +1322,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.JSONB()
+              type: new (DataTypes as any).JSONB()
             }
           };
           const expectation={
@@ -1345,7 +1345,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.JSONB()
+              type: new (DataTypes as any).JSONB()
             },
             prefix: current.literal(queryGenerator.quoteTable.call(current.dialect.QueryGenerator, {tableName: 'User'}))
           };
@@ -1369,7 +1369,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.JSONB()
+              type: new (DataTypes as any).JSONB()
             },
             prefix: 'User'
           };
@@ -1389,7 +1389,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.JSONB()
+              type: new (DataTypes as any).JSONB()
             }
           };
           const expectation={
@@ -1407,7 +1407,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             model: {
               rawAttributes: {
                 data: {
-                  type: new DataTypes.JSONB()
+                  type: new (DataTypes as any).JSONB()
                 }
               }
             }
@@ -1427,7 +1427,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             model: {
               rawAttributes: {
                 data: {
-                  type: new DataTypes.JSON()
+                  type: new (DataTypes as any).JSON()
                 }
               }
             }
@@ -1449,7 +1449,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             model: {
               rawAttributes: {
                 data: {
-                  type: new DataTypes.JSONB()
+                  type: new (DataTypes as any).JSONB()
                 }
               }
             }
@@ -1473,7 +1473,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.JSONB()
+              type: new (DataTypes as any).JSONB()
             }
           };
           const expectation={
@@ -1496,7 +1496,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.JSONB()
+              type: new (DataTypes as any).JSONB()
             }
           };
           const expectation={
@@ -1516,7 +1516,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.JSONB()
+              type: new (DataTypes as any).JSONB()
             }
           };
           const expectation={
@@ -1536,7 +1536,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
                 metaData: {
                   field: 'meta_data',
                   fieldName: 'metaData',
-                  type: new DataTypes.JSONB()
+                  type: new (DataTypes as any).JSONB()
                 }
               }
             }
@@ -1562,7 +1562,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options={
             field: {
-              type: new DataTypes.JSONB()
+              type: new (DataTypes as any).JSONB()
             }
           };
           const expectation={
@@ -1699,7 +1699,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
   describe('getWhereConditions', () => {
     it('lower(name) is null', () => {
       const User = current.define('user', {});
-      const value=current.where(current.fn('lower', current.col('name')), null);
+      const value=current.where(current.fn('lower', current.col('name')));
       const expectation={
         default: 'lower([name]) IS NULL',
         oracle: 'lower(name) IS NULL'

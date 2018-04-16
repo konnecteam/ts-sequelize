@@ -1,11 +1,11 @@
 'use strict';
 
-const Support   = require(__dirname + '/../support'),
-  DataTypes = require('../../../lib/data-types'),
-  expectsql = Support.expectsql,
-  sinon = require('sinon'),
-  current   = Support.sequelize,
-  Promise = current.Promise;
+import Support from '../../support';
+import DataTypes from '../../../lib/data-types';
+const expectsql = Support.expectsql;
+import * as sinon from 'sinon';
+const current = Support.sequelize;
+const Promise = current.Promise;
 
 
 if (current.dialect.name !== 'sqlite') {

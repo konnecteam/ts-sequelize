@@ -1,10 +1,10 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  _         = require('lodash'),
-  Support   = require(__dirname + '/../support'),
-  current   = Support.sequelize;
+import * as chai from 'chai';
+const expect = chai.expect;
+import * as _ from 'lodash';
+import Support from '../../support';
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('belongsTo'), () => {
   it('should not override custom methods with association mixin', () => {

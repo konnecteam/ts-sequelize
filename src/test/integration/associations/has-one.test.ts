@@ -1,11 +1,12 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  Sequelize = require('../../../index'),
-  Promise = Sequelize.Promise,
-  current = Support.sequelize;
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../support';
+import {Sequelize}from '../../../index';
+import DataTypes from '../../../lib/data-types';
+const Promise = Sequelize.Promise;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('HasOne'), () => {
   describe('Model.associations', () => {
@@ -63,8 +64,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
         return Support.prepareTransactionTest(this.sequelize).then(sequelize => {
-          const User = sequelize.define('User', { username: Support.Sequelize.STRING }),
-            Group = sequelize.define('Group', { name: Support.Sequelize.STRING });
+          const User = sequelize.define('User', { username: DataTypes.STRING }),
+            Group = sequelize.define('Group', { name: DataTypes.STRING });
 
           Group.hasOne(User);
 
@@ -99,8 +100,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
 
     if (Support.getTestDialect() !== 'oracle') {
       it('should be able to handle a where object that\'s a first class citizen.', function() {
-        const User = this.sequelize.define('UserXYZ', { username: Sequelize.STRING }),
-          Task = this.sequelize.define('TaskXYZ', { title: Sequelize.STRING, status: Sequelize.STRING });
+        const User = this.sequelize.define('UserXYZ', { username: DataTypes.STRING }),
+          Task = this.sequelize.define('TaskXYZ', { title: DataTypes.STRING, status: DataTypes.STRING });
 
         User.hasOne(Task);
 
@@ -125,8 +126,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
         return Support.prepareTransactionTest(this.sequelize).then(sequelize => {
-          const User = sequelize.define('User', { username: Support.Sequelize.STRING }),
-            Group = sequelize.define('Group', { name: Support.Sequelize.STRING });
+          const User = sequelize.define('User', { username: DataTypes.STRING }),
+            Group = sequelize.define('Group', { name: DataTypes.STRING });
 
           Group.hasOne(User);
 
@@ -151,8 +152,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
     }
 
     it('can set an association with predefined primary keys', function() {
-      const User = this.sequelize.define('UserXYZZ', { userCoolIdTag: { type: Sequelize.INTEGER, primaryKey: true }, username: Sequelize.STRING }),
-        Task = this.sequelize.define('TaskXYZZ', { taskOrSomething: { type: Sequelize.INTEGER, primaryKey: true }, title: Sequelize.STRING });
+      const User = this.sequelize.define('UserXYZZ', { userCoolIdTag: { type: DataTypes.INTEGER, primaryKey: true }, username: DataTypes.STRING }),
+        Task = this.sequelize.define('TaskXYZZ', { taskOrSomething: { type: DataTypes.INTEGER, primaryKey: true }, title: DataTypes.STRING });
 
       User.hasOne(Task, {foreignKey: 'userCoolIdTag'});
 
@@ -178,8 +179,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
     });
 
     it('clears the association if null is passed', function() {
-      const User = this.sequelize.define('UserXYZ', { username: Sequelize.STRING }),
-        Task = this.sequelize.define('TaskXYZ', { title: Sequelize.STRING });
+      const User = this.sequelize.define('UserXYZ', { username: DataTypes.STRING }),
+        Task = this.sequelize.define('TaskXYZ', { title: DataTypes.STRING });
 
       User.hasOne(Task);
 
@@ -205,8 +206,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
     });
 
     it('should throw a ForeignKeyConstraintError if the associated record does not exist', function() {
-      const User = this.sequelize.define('UserXYZ', { username: Sequelize.STRING }),
-        Task = this.sequelize.define('TaskXYZ', { title: Sequelize.STRING });
+      const User = this.sequelize.define('UserXYZ', { username: DataTypes.STRING }),
+        Task = this.sequelize.define('TaskXYZ', { title: DataTypes.STRING });
 
       User.hasOne(Task);
 
@@ -222,8 +223,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
     });
 
     it('supports passing the primary key instead of an object', function() {
-      const User = this.sequelize.define('UserXYZ', { username: Sequelize.STRING }),
-        Task = this.sequelize.define('TaskXYZ', { title: Sequelize.STRING });
+      const User = this.sequelize.define('UserXYZ', { username: DataTypes.STRING }),
+        Task = this.sequelize.define('TaskXYZ', { title: DataTypes.STRING });
 
       User.hasOne(Task);
 
@@ -241,8 +242,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
     });
 
     it('supports updating with a primary key instead of an object', function() {
-      const User = this.sequelize.define('UserXYZ', { username: Sequelize.STRING }),
-        Task = this.sequelize.define('TaskXYZ', { title: Sequelize.STRING });
+      const User = this.sequelize.define('UserXYZ', { username: DataTypes.STRING }),
+        Task = this.sequelize.define('TaskXYZ', { title: DataTypes.STRING });
 
       User.hasOne(Task);
 
@@ -297,8 +298,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
 
   describe('createAssociation', () => {
     it('creates an associated model instance', function() {
-      const User = this.sequelize.define('User', { username: Sequelize.STRING }),
-        Task = this.sequelize.define('Task', { title: Sequelize.STRING });
+      const User = this.sequelize.define('User', { username: DataTypes.STRING }),
+        Task = this.sequelize.define('Task', { title: DataTypes.STRING });
 
       User.hasOne(Task);
 
@@ -317,8 +318,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
         return Support.prepareTransactionTest(this.sequelize).then(sequelize => {
-          const User = sequelize.define('User', { username: Sequelize.STRING }),
-            Group = sequelize.define('Group', { name: Sequelize.STRING });
+          const User = sequelize.define('User', { username: DataTypes.STRING }),
+            Group = sequelize.define('Group', { name: DataTypes.STRING });
 
           User.hasOne(Group);
 
@@ -349,8 +350,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
 
   describe('foreign key', () => {
     it('should lowercase foreign keys when using underscored', function() {
-      const User = this.sequelize.define('User', { username: Sequelize.STRING }, { underscored: true }),
-        Account = this.sequelize.define('Account', { name: Sequelize.STRING }, { underscored: true });
+      const User = this.sequelize.define('User', { username: DataTypes.STRING }, { underscored: true }),
+        Account = this.sequelize.define('Account', { name: DataTypes.STRING }, { underscored: true });
 
       Account.hasOne(User);
 
@@ -358,8 +359,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
     });
 
     it('should use model name when using camelcase', function() {
-      const User = this.sequelize.define('User', { username: Sequelize.STRING }, { underscored: false }),
-        Account = this.sequelize.define('Account', { name: Sequelize.STRING }, { underscored: false });
+      const User = this.sequelize.define('User', { username: DataTypes.STRING }, { underscored: false }),
+        Account = this.sequelize.define('Account', { name: DataTypes.STRING }, { underscored: false });
 
       Account.hasOne(User);
 
@@ -367,8 +368,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
     });
 
     it('should support specifying the field of a foreign key', function() {
-      const User = this.sequelize.define('UserXYZ', { username: Sequelize.STRING, gender: Sequelize.STRING }),
-        Task = this.sequelize.define('TaskXYZ', { title: Sequelize.STRING, status: Sequelize.STRING });
+      const User = this.sequelize.define('UserXYZ', { username: DataTypes.STRING, gender: DataTypes.STRING }),
+        Task = this.sequelize.define('TaskXYZ', { title: DataTypes.STRING, status: DataTypes.STRING });
 
       Task.hasOne(User, {
         foreignKey: {
@@ -406,8 +407,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
 
   describe('foreign key constraints', () => {
     it('are enabled by default', function() {
-      const Task = this.sequelize.define('Task', { title: Sequelize.STRING }),
-        User = this.sequelize.define('User', { username: Sequelize.STRING });
+      const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
+        User = this.sequelize.define('User', { username: DataTypes.STRING });
 
       User.hasOne(Task); // defaults to set NULL
 
@@ -429,8 +430,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
     });
 
     it('sets to CASCADE if allowNull: false', function() {
-      const Task = this.sequelize.define('Task', { title: Sequelize.STRING }),
-        User = this.sequelize.define('User', { username: Sequelize.STRING });
+      const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
+        User = this.sequelize.define('User', { username: DataTypes.STRING });
 
       User.hasOne(Task, { foreignKey: { allowNull: false }}); // defaults to CASCADE
 
@@ -448,8 +449,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
     });
 
     it('should be possible to disable them', function() {
-      const Task = this.sequelize.define('Task', { title: Sequelize.STRING }),
-        User = this.sequelize.define('User', { username: Sequelize.STRING });
+      const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
+        User = this.sequelize.define('User', { username: DataTypes.STRING });
 
       User.hasOne(Task, { constraints: false });
 
@@ -471,8 +472,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
     });
 
     it('can cascade deletes', function() {
-      const Task = this.sequelize.define('Task', { title: Sequelize.STRING }),
-        User = this.sequelize.define('User', { username: Sequelize.STRING });
+      const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
+        User = this.sequelize.define('User', { username: DataTypes.STRING });
 
       User.hasOne(Task, {onDelete: 'cascade'});
 
@@ -494,8 +495,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
     });
 
     it('works when cascading a delete with hooks but there is no associate (i.e. "has zero")', function() {
-      const Task = this.sequelize.define('Task', { title: Sequelize.STRING }),
-        User = this.sequelize.define('User', { username: Sequelize.STRING });
+      const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
+        User = this.sequelize.define('User', { username: DataTypes.STRING });
 
       User.hasOne(Task, {onDelete: 'cascade', hooks: true});
 
@@ -512,8 +513,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
     // oracle neither
     if (Support.getTestDialect() !== 'mssql' && Support.getTestDialect() !== 'oracle') {
       it('can cascade updates', function() {
-        const Task = this.sequelize.define('Task', { title: Sequelize.STRING }),
-          User = this.sequelize.define('User', { username: Sequelize.STRING });
+        const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
+          User = this.sequelize.define('User', { username: DataTypes.STRING });
 
         User.hasOne(Task, {onUpdate: 'cascade'});
 
@@ -545,8 +546,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
     if (current.dialect.supports.constraints.restrict) {
 
       it('can restrict deletes', function() {
-        const Task = this.sequelize.define('Task', { title: Sequelize.STRING }),
-          User = this.sequelize.define('User', { username: Sequelize.STRING });
+        const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
+          User = this.sequelize.define('User', { username: DataTypes.STRING });
 
         User.hasOne(Task, {onDelete: 'restrict'});
 
@@ -568,8 +569,8 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
       });
 
       it('can restrict updates', function() {
-        const Task = this.sequelize.define('Task', { title: Sequelize.STRING }),
-          User = this.sequelize.define('User', { username: Sequelize.STRING });
+        const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
+          User = this.sequelize.define('User', { username: DataTypes.STRING });
 
         User.hasOne(Task, {onUpdate: 'restrict'});
 
@@ -607,13 +608,13 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
     it('has correct type for non-id primary keys with non-integer type', function() {
       const User = this.sequelize.define('UserPKBT', {
         username: {
-          type: Sequelize.STRING
+          type: DataTypes.STRING
         }
       });
 
       const Group = this.sequelize.define('GroupPKBT', {
         name: {
-          type: Sequelize.STRING,
+          type: DataTypes.STRING,
           primaryKey: true
         }
       });
@@ -621,21 +622,21 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
       Group.hasOne(User);
 
       return this.sequelize.sync({ force: true }).then(() => {
-        expect(User.rawAttributes.GroupPKBTName.type).to.an.instanceof(Sequelize.STRING);
+        expect(User.rawAttributes.GroupPKBTName.type).to.an.instanceof(DataTypes.STRING);
       });
     });
   });
 
   describe('Association options', () => {
     it('can specify data type for autogenerated relational keys', function() {
-      const User = this.sequelize.define('UserXYZ', { username: Sequelize.STRING }),
-        dataTypes = [Sequelize.INTEGER, Sequelize.BIGINT, Sequelize.STRING],
+      const User = this.sequelize.define('UserXYZ', { username: DataTypes.STRING }),
+        dataTypes = [DataTypes.INTEGER, DataTypes.BIGINT, DataTypes.STRING],
         self = this,
         Tasks = {};
 
       return Promise.map(dataTypes, dataType => {
         const tableName = 'TaskXYZ_' + dataType.key;
-        Tasks[dataType] = self.sequelize.define(tableName, { title: Sequelize.STRING });
+        Tasks[dataType] = self.sequelize.define(tableName, { title: DataTypes.STRING });
 
         User.hasOne(Tasks[dataType], { foreignKey: 'userId', keyType: dataType, constraints: false });
 
@@ -680,13 +681,13 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
       it('works when taking a column directly from the object', function() {
         const User = this.sequelize.define('user', {
             uid: {
-              type: Sequelize.INTEGER,
+              type: DataTypes.INTEGER,
               primaryKey: true
             }
           }),
           Profile = this.sequelize.define('project', {
             user_id: {
-              type: Sequelize.INTEGER,
+              type: DataTypes.INTEGER,
               allowNull: false
             }
           });
@@ -702,13 +703,13 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
       it('works when merging with an existing definition', function() {
         const User = this.sequelize.define('user', {
             uid: {
-              type: Sequelize.INTEGER,
+              type: DataTypes.INTEGER,
               primaryKey: true
             }
           }),
           Project = this.sequelize.define('project', {
             userUid: {
-              type: Sequelize.INTEGER,
+              type: DataTypes.INTEGER,
               defaultValue: 42
             }
           });
@@ -725,7 +726,7 @@ describe(Support.getTestDialectTeaser('HasOne'), () => {
 
     it('should throw an error if an association clashes with the name of an already define attribute', function() {
       const User = this.sequelize.define('user', {
-          attribute: Sequelize.STRING
+          attribute: DataTypes.STRING
         }),
         Attribute = this.sequelize.define('attribute', {});
 

@@ -1,10 +1,9 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  Sequelize = require('../../../index');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../support';
+import DataTypes from '../../../lib/data-types';
 
 describe(Support.getTestDialectTeaser('associations'), () => {
   describe('Test options.foreignKey', () => {
@@ -18,7 +17,7 @@ describe(Support.getTestDialectTeaser('associations'), () => {
       });
       this.B = this.sequelize.define('B', {
         id: {
-          type: Sequelize.CHAR(20),
+          type: DataTypes.CHAR(20),
           primaryKey: true
         }
       });

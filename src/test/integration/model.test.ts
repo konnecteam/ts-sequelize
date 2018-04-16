@@ -1,17 +1,18 @@
 'use strict';
 
-const chai = require('chai'),
-  Sequelize = require('../../index'),
-  expect = chai.expect,
-  Support = require(__dirname + '/support'),
-  DataTypes = require(__dirname + '/../../lib/data-types'),
-  dialect = Support.getTestDialect(),
-  sinon = require('sinon'),
-  _ = require('lodash'),
-  moment = require('moment'),
-  Promise = require('bluebird'),
-  current = Support.sequelize,
-  semver = require('semver');
+import * as chai from 'chai';
+// import {Sequelize} from '../../index';
+const expect = chai.expect;
+import Support from './support';
+import DataTypes from '../../lib/data-types';
+const dialect = Support.getTestDialect();
+import * as sinon from 'sinon';
+import * as _ from 'lodash';
+import * as moment from 'moment';
+import * as Promise from 'bluebird';
+const current = Support.sequelize;
+const Sequelize = Support.Sequelize;
+import * as semver from 'semver';
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   before(function() {
@@ -382,13 +383,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       }];
 
       if (dialect !== 'mssql') {
-        indices.push({
+        (indices as any).push({
           type: 'FULLTEXT',
           fields: ['fieldC'],
           concurrently: true
         });
 
-        indices.push({
+        (indices as any).push({
           type: 'FULLTEXT',
           fields: ['fieldD']
         });

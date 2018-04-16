@@ -1,10 +1,10 @@
 'use strict';
 
-const Utils = require('./../utils');
-const Helpers = require('./helpers');
-const _ = require('lodash');
-const Association = require('./base');
-const Op = require('../operators');
+import * as Utils  from './../utils';
+import * as Helpers from './helpers';
+import * as _ from 'lodash';
+import {Association} from './base';
+import Op from '../operators';
 
 /**
  * One-to-many association
@@ -14,7 +14,26 @@ const Op = require('../operators');
  *
  * @see {@link Model.hasMany}
  */
-class HasMany extends Association {
+export class HasMany extends Association {
+
+  targetAssociation;
+  sequelize;
+  through;
+  isMultiAssociation;
+  foreignKeyAttribute;
+  isAliased;
+  foreignKey;
+  identifierField;
+  foreignKeyField;
+  sourceKey;
+  sourceKeyField;
+  sourceKeyAttribute;
+  sourceIdentifier;
+  associationAccessor;
+  accessors;
+
+
+
   constructor(source, target, options) {
     super(source, target, options);
 
@@ -459,7 +478,3 @@ class HasMany extends Association {
     return association.target.create(values, options);
   }
 }
-
-module.exports = HasMany;
-module.exports.HasMany = HasMany;
-module.exports.default = HasMany;

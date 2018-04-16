@@ -1,10 +1,10 @@
 'use strict';
 
-const _ = require('lodash');
-const moment = require('moment');
-const inherits = require('../../utils/inherits');
+import * as _ from 'lodash';
+import * as moment from 'moment';
+import inherits from '../../utils/inherits';
 
-module.exports = BaseTypes => {
+export function DataTypes (BaseTypes) {
   const warn = BaseTypes.ABSTRACT.warn.bind(undefined, 'https://msdn.microsoft.com/en-us/library/ms187752%28v=sql.110%29.aspx');
 
   /**
@@ -36,7 +36,7 @@ module.exports = BaseTypes => {
   BaseTypes.GEOMETRY.types.mssql = false;
 
   function BLOB(length) {
-    if (!(this instanceof BLOB)) return new BLOB(length);
+    if (!(this instanceof BLOB)) return new (BLOB as any)(length);
     BaseTypes.BLOB.apply(this, arguments);
   }
   inherits(BLOB, BaseTypes.BLOB);
@@ -57,7 +57,7 @@ module.exports = BaseTypes => {
   };
 
   function STRING(length, binary) {
-    if (!(this instanceof STRING)) return new STRING(length, binary);
+    if (!(this instanceof STRING)) return new (STRING as any)(length, binary);
     BaseTypes.STRING.apply(this, arguments);
   }
   inherits(STRING, BaseTypes.STRING);
@@ -80,7 +80,7 @@ module.exports = BaseTypes => {
   };
 
   function TEXT(length) {
-    if (!(this instanceof TEXT)) return new TEXT(length);
+    if (!(this instanceof TEXT)) return new (TEXT as any)(length);
     BaseTypes.TEXT.apply(this, arguments);
   }
   inherits(TEXT, BaseTypes.TEXT);
@@ -99,7 +99,7 @@ module.exports = BaseTypes => {
   };
 
   function BOOLEAN() {
-    if (!(this instanceof BOOLEAN)) return new BOOLEAN();
+    if (!(this instanceof BOOLEAN)) return new (BOOLEAN as any)();
     BaseTypes.BOOLEAN.apply(this, arguments);
   }
   inherits(BOOLEAN, BaseTypes.BOOLEAN);
@@ -109,7 +109,7 @@ module.exports = BaseTypes => {
   };
 
   function UUID() {
-    if (!(this instanceof UUID)) return new UUID();
+    if (!(this instanceof UUID)) return new (UUID as any)();
     BaseTypes.UUID.apply(this, arguments);
   }
   inherits(UUID, BaseTypes.UUID);
@@ -119,7 +119,7 @@ module.exports = BaseTypes => {
   };
 
   function NOW() {
-    if (!(this instanceof NOW)) return new NOW();
+    if (!(this instanceof NOW)) return new (NOW as any)();
     BaseTypes.NOW.apply(this, arguments);
   }
   inherits(NOW, BaseTypes.NOW);
@@ -129,7 +129,7 @@ module.exports = BaseTypes => {
   };
 
   function DATE(length) {
-    if (!(this instanceof DATE)) return new DATE(length);
+    if (!(this instanceof DATE)) return new (DATE as any)(length);
     BaseTypes.DATE.apply(this, arguments);
   }
   inherits(DATE, BaseTypes.DATE);
@@ -139,17 +139,17 @@ module.exports = BaseTypes => {
   };
 
   function DATEONLY() {
-    if (!(this instanceof DATEONLY)) return new DATEONLY();
+    if (!(this instanceof DATEONLY)) return new (DATEONLY as any)();
     BaseTypes.DATEONLY.apply(this, arguments);
   }
   inherits(DATEONLY, BaseTypes.DATEONLY);
 
-  DATEONLY.parse = function(value) {
+  (DATEONLY as any).parse = function(value) {
     return moment(value).format('YYYY-MM-DD');
   };
 
   function INTEGER(length) {
-    if (!(this instanceof INTEGER)) return new INTEGER(length);
+    if (!(this instanceof INTEGER)) return new (INTEGER as any)(length);
     BaseTypes.INTEGER.apply(this, arguments);
 
     // MSSQL does not support any options for integer
@@ -164,7 +164,7 @@ module.exports = BaseTypes => {
   inherits(INTEGER, BaseTypes.INTEGER);
 
   function TINYINT(length) {
-    if (!(this instanceof TINYINT)) return new TINYINT(length);
+    if (!(this instanceof TINYINT)) return new (TINYINT as any)(length);
     BaseTypes.TINYINT.apply(this, arguments);
 
     // MSSQL does not support any options for tinyint
@@ -179,7 +179,7 @@ module.exports = BaseTypes => {
   inherits(TINYINT, BaseTypes.TINYINT);
 
   function SMALLINT(length) {
-    if (!(this instanceof SMALLINT)) return new SMALLINT(length);
+    if (!(this instanceof SMALLINT)) return new (SMALLINT as any)(length);
     BaseTypes.SMALLINT.apply(this, arguments);
 
     // MSSQL does not support any options for smallint
@@ -194,7 +194,7 @@ module.exports = BaseTypes => {
   inherits(SMALLINT, BaseTypes.SMALLINT);
 
   function BIGINT(length) {
-    if (!(this instanceof BIGINT)) return new BIGINT(length);
+    if (!(this instanceof BIGINT)) return new (BIGINT as any)(length);
     BaseTypes.BIGINT.apply(this, arguments);
 
     // MSSQL does not support any options for bigint
@@ -209,7 +209,7 @@ module.exports = BaseTypes => {
   inherits(BIGINT, BaseTypes.BIGINT);
 
   function REAL(length, decimals) {
-    if (!(this instanceof REAL)) return new REAL(length, decimals);
+    if (!(this instanceof REAL)) return new (REAL as any)(length, decimals);
     BaseTypes.REAL.apply(this, arguments);
 
     // MSSQL does not support any options for real
@@ -224,7 +224,7 @@ module.exports = BaseTypes => {
   inherits(REAL, BaseTypes.REAL);
 
   function FLOAT(length, decimals) {
-    if (!(this instanceof FLOAT)) return new FLOAT(length, decimals);
+    if (!(this instanceof FLOAT)) return new (FLOAT as any)(length, decimals);
     BaseTypes.FLOAT.apply(this, arguments);
 
     // MSSQL does only support lengths as option.
@@ -283,7 +283,7 @@ module.exports = BaseTypes => {
     if (!DataType.key) DataType.key = key;
     if (!DataType.extend) {
       DataType.extend = function extend(oldType) {
-        return new DataType(oldType.options);
+        return DataType(oldType.options);
       };
     }
   });

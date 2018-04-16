@@ -1,9 +1,9 @@
 'use strict';
 
-const chai = require('chai');
+import * as chai from 'chai';
 const expect = chai.expect;
-const Sequelize = require(__dirname + '/../../../../index');
-const Support = require(__dirname + '/../../support');
+import {Sequelize}from '../../../../index';
+import Support from '../../../support';
 const dialect = Support.getTestDialect();
 
 describe('[ORACLE] Connection Manager', () => {

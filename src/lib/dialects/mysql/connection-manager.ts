@@ -1,11 +1,12 @@
 'use strict';
 
-const _ = require('lodash');
-const AbstractConnectionManager = require('../abstract/connection-manager');
-const SequelizeErrors = require('../../errors');
-const Utils = require('../../utils');
-const DataTypes = require('../../data-types').mysql;
-const momentTz = require('moment-timezone');
+import * as _ from 'lodash';
+import {AbstractConnectionManager} from '../abstract/connection-manager';
+import * as SequelizeErrors from '../../errors/index';
+import * as Utils from '../../utils';
+import AllDataTypes from '../../data-types';
+const DataTypes = AllDataTypes.mysql;
+import * as momentTz from 'moment-timezone';
 const debug = Utils.getLogger().debugContext('connection:mysql');
 const parserMap = new Map();
 
@@ -21,7 +22,9 @@ const parserMap = new Map();
  * @private
  */
 
-class ConnectionManager extends AbstractConnectionManager {
+export class ConnectionManager extends AbstractConnectionManager {
+  static sequelize;
+
   constructor(dialect, sequelize) {
     super(dialect, sequelize);
 
@@ -39,7 +42,6 @@ class ConnectionManager extends AbstractConnectionManager {
       }
       throw err;
     }
-
     this.refreshTypeParser(DataTypes);
   }
 
@@ -177,6 +179,7 @@ class ConnectionManager extends AbstractConnectionManager {
 }
 
 _.extend(ConnectionManager.prototype, AbstractConnectionManager.prototype);
+
 
 module.exports = ConnectionManager;
 module.exports.ConnectionManager = ConnectionManager;

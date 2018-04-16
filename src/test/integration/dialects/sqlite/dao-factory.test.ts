@@ -1,12 +1,12 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../../support'),
-  DataTypes = require(__dirname + '/../../../../lib/data-types'),
-  dialect = Support.getTestDialect(),
-  dbFile = __dirname + '/test.sqlite',
-  storages = [dbFile];
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../support';
+import DataTypes from '../../../../lib/data-types';
+const dialect = Support.getTestDialect();
+const dbFile = __dirname + '/test.sqlite';
+const storages = [dbFile];
 
 if (dialect === 'sqlite') {
   describe('[SQLITE Specific] DAOFactory', () => {

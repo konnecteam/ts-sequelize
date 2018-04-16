@@ -79,7 +79,9 @@ const Op = {
   col: Symbol.for('col'),
   placeholder: Symbol.for('placeholder'),
   join: Symbol.for('join'),
-  raw: Symbol.for('raw') //deprecated remove by v5.0
+  raw: Symbol.for('raw'), //deprecated remove by v5.0,
+  Aliases : undefined,
+  LegacyAliases : undefined
 };
 
 const Aliases = {
@@ -148,4 +150,5 @@ const LegacyAliases = { //deprecated remove by v5.0
 
 Op.Aliases = Aliases;
 Op.LegacyAliases = Object.assign({}, LegacyAliases, Aliases);
-module.exports = Op;
+
+export default Op;

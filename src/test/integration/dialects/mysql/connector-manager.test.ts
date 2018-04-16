@@ -1,11 +1,11 @@
 'use strict';
 
-const chai = require('chai');
+import * as chai from 'chai';
 const expect = chai.expect;
-const Support = require(__dirname + '/../../support');
+import Support from '../../support';
 const dialect = Support.getTestDialect();
-const sinon = require('sinon');
-const DataTypes = require(__dirname + '/../../../../lib/data-types');
+import * as sinon from 'sinon';
+import DataTypes from '../../../../lib/data-types';
 
 if (dialect === 'mysql') {
   describe('[MYSQL Specific] Connection Manager', () => {

@@ -1,8 +1,8 @@
 'use strict';
 
-const chai = require('chai');
+import * as chai from 'chai';
 const expect = chai.expect;
-const Support = require(__dirname + '/../../support');
+import Support from '../../../support';
 const dialect = Support.getTestDialect();
 const queryProto = Support.sequelize.dialect.Query.prototype;
 
@@ -11,11 +11,11 @@ if (dialect === 'mysql') {
     it('FK Errors with ` quotation char are parsed correctly', () => {
       const fakeErr = new Error('Cannot delete or update a parent row: a foreign key constraint fails (`table`.`brothers`, CONSTRAINT `brothers_ibfk_1` FOREIGN KEY (`personId`) REFERENCES `people` (`id`) ON UPDATE CASCADE).');
 
-      fakeErr.code = 1451;
+      (fakeErr as any).code = 1451;
 
       const parsedErr = queryProto.formatError(fakeErr);
 
-      expect(parsedErr).to.be.instanceOf(Support.sequelize.ForeignKeyConstraintError);
+      expect(parsedErr).to.be.instanceOf(Support.Sequelize.ForeignKeyConstraintError);
       expect(parsedErr.parent).to.equal(fakeErr);
       expect(parsedErr.reltype).to.equal('parent');
       expect(parsedErr.table).to.equal('people');
@@ -27,11 +27,11 @@ if (dialect === 'mysql') {
     it('FK Errors with " quotation char are parsed correctly', () => {
       const fakeErr = new Error('Cannot delete or update a parent row: a foreign key constraint fails ("table"."brothers", CONSTRAINT "brothers_ibfk_1" FOREIGN KEY ("personId") REFERENCES "people" ("id") ON UPDATE CASCADE).');
 
-      fakeErr.code = 1451;
+      (fakeErr as any).code = 1451;
 
       const parsedErr = queryProto.formatError(fakeErr);
 
-      expect(parsedErr).to.be.instanceOf(Support.sequelize.ForeignKeyConstraintError);
+      expect(parsedErr).to.be.instanceOf(Support.Sequelize.ForeignKeyConstraintError);
       expect(parsedErr.parent).to.equal(fakeErr);
       expect(parsedErr.reltype).to.equal('parent');
       expect(parsedErr.table).to.equal('people');

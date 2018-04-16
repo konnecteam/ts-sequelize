@@ -1,14 +1,14 @@
 'use strict';
 
-const chai = require('chai'),
-  sinon = require('sinon'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../../support'),
-  Sequelize = Support.Sequelize,
-  DataTypes = require(__dirname + '/../../../../lib/data-types'),
-  current = Support.sequelize,
-  Promise = current.Promise,
-  _ = require('lodash');
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+const expect = chai.expect;
+import Support from '../../support';
+const Sequelize = Support.Sequelize;
+import DataTypes from '../../../../lib/data-types';
+const current = Support.sequelize;
+const Promise = current.Promise;
+import * as _ from 'lodash';
 
 if (current.dialect.supports['UNION ALL']) {
   describe(Support.getTestDialectTeaser('Model'), () => {
@@ -28,7 +28,7 @@ if (current.dialect.supports['UNION ALL']) {
 
         beforeEach(function() {
           this.User = this.sequelize.define('user', {
-            age: Sequelize.INTEGER
+            age: DataTypes.INTEGER
           });
           this.Project = this.sequelize.define('project', {
             title: DataTypes.STRING

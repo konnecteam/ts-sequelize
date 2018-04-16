@@ -1,13 +1,15 @@
 'use strict';
 
-const Utils = require('../../utils');
+import * as Utils from '../../utils';
 const debug = Utils.getLogger().debugContext('sql:mysql');
-const AbstractQuery = require('../abstract/query');
-const uuid = require('uuid');
-const sequelizeErrors = require('../../errors.js');
-const _ = require('lodash');
+import {AbstractQuery} from '../abstract/query';
+import * as uuid from 'uuid';
+import * as sequelizeErrors from '../../errors/index';
+import * as _ from 'lodash';
 
-class Query extends AbstractQuery {
+export class Query extends AbstractQuery {
+  uuid;
+
   constructor(connection, sequelize, options) {
     super();
     this.connection = connection;
@@ -200,7 +202,9 @@ class Query extends AbstractQuery {
             field,
             value,
             this.instance,
-            'not_unique'
+            'not_unique',
+            null,
+            null
           ));
         });
 

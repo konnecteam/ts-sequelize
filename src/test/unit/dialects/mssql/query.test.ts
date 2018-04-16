@@ -1,20 +1,23 @@
 'use strict';
 
-const path = require('path');
-const Query = require('./../../../../lib/dialects/mssql/query.js');
-const Support = require(__dirname + '/../../support');
+import {Query} from './../../../../lib/dialects/mssql/query';
+import Support from '../../../support';
 const dialect = Support.getTestDialect();
 const sequelize = Support.sequelize;
-const sinon = require('sinon');
-const expect = require('chai').expect;
-const tedious = require('tedious');
+import * as sinon from 'sinon';
+import * as chai from 'chai';
+const expect = chai.expect;
+import * as tedious from 'tedious';
 const tediousIsolationLevel = tedious.ISOLATION_LEVEL;
-const connectionStub = { beginTransaction: () => {}, lib: tedious };
+const connectionStub = { 
+  beginTransaction: () => {},
+  lib: tedious
+};
 
 let sandbox, query;
 
 if (dialect === 'mssql') {
-  describe('[MSSQL Specific] Query', () => {
+  describe('[MSSQL Specific] Query', () => { 
     describe('beginTransaction', () => {
       beforeEach(() => {
         sandbox = sinon.sandbox.create();
@@ -32,9 +35,9 @@ if (dialect === 'mssql') {
       it('should call beginTransaction with correct arguments', () => {
         return query._run(connectionStub, 'BEGIN TRANSACTION')
           .then(() => {
-            expect(connectionStub.beginTransaction.called).to.equal(true);
-            expect(connectionStub.beginTransaction.args[0][1]).to.equal('transactionName');
-            expect(connectionStub.beginTransaction.args[0][2]).to.equal(tediousIsolationLevel.REPEATABLE_READ);
+            expect((connectionStub.beginTransaction as any).called).to.equal(true);
+            expect((connectionStub.beginTransaction as any).args[0][1]).to.equal('transactionName');
+            expect((connectionStub.beginTransaction as any).args[0][2]).to.equal(tediousIsolationLevel.REPEATABLE_READ);
           });
       });
 

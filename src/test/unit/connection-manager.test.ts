@@ -1,12 +1,12 @@
 'use strict';
 
-const chai = require('chai'),
-  sinon = require('sinon'),
-  expect = chai.expect,
-  Support = require(__dirname + '/support'),
-  Sequelize = require(__dirname + '/../../index'),
-  ConnectionManager = require(__dirname + '/../../lib/dialects/abstract/connection-manager'),
-  Promise = Sequelize.Promise;
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+const expect = chai.expect;
+import Support from '../support';
+import {Sequelize}from '../../index';
+import {AbstractConnectionManager as ConnectionManager} from '../../lib/dialects/abstract/connection-manager';
+const Promise = Sequelize.Promise;
 
 describe('connection manager', () => {
   describe('_connect', () => {

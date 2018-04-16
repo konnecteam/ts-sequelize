@@ -1,12 +1,12 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  Sequelize = require(__dirname + '/../../../index'),
-  Promise = Sequelize.Promise,
-  _ = require('lodash');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../support';
+import DataTypes from '../../../lib/data-types';
+import {Sequelize}from '../../../index';
+const Promise = Sequelize.Promise;
+import * as _ from 'lodash';
 
 describe(Support.getTestDialectTeaser('Self'), () => {
   it('supports freezeTableName', function() {

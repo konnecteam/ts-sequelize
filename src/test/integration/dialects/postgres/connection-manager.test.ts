@@ -1,11 +1,11 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../../support'),
-  dialect = Support.getTestDialect(),
-  DataTypes = require(__dirname + '/../../../../lib/data-types'),
-  _ = require('lodash');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../support';
+const dialect = Support.getTestDialect();
+import DataTypes from '../../../../lib/data-types';
+import * as _ from 'lodash';
 
 if (dialect.match(/^postgres/)) {
   describe('[POSTGRES] Sequelize', () => {
@@ -27,8 +27,8 @@ if (dialect.match(/^postgres/)) {
 
     it('should correctly parse the moment based timezone while fetching hstore oids', function() {
       // reset oids so we need to refetch them
-      DataTypes.HSTORE.types.postgres.oids = [];
-      DataTypes.HSTORE.types.postgres.array_oids = [];
+      (DataTypes.HSTORE as any).types.postgres.oids = [];
+      (DataTypes.HSTORE as any).types.postgres.array_oids = [];
       return checkTimezoneParsing(this.sequelize.options);
     });
   });

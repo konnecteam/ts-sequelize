@@ -1,11 +1,11 @@
 'use strict';
 
-const util = require('util');
-const chai = require('chai');
+import * as util from 'util';
+import * as chai from 'chai';
 const expect = chai.expect;
-const Support   = require(__dirname + '/../support');
-const DataTypes = require(__dirname + '/../../../lib/data-types');
-const Model = require(__dirname + '/../../../lib/model');
+import Support from '../../support';
+import DataTypes from '../../../lib/data-types';
+import {Model} from '../../../lib/model';
 const expectsql = Support.expectsql;
 const current = Support.sequelize;
 const sql = current.dialect.QueryGenerator;

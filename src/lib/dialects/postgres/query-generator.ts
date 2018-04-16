@@ -1,14 +1,14 @@
 'use strict';
 
-const Utils = require('../../utils');
-const util = require('util');
-const DataTypes = require('../../data-types');
-const AbstractQueryGenerator = require('../abstract/query-generator');
-const semver = require('semver');
-const _ = require('lodash');
+import * as Utils from '../../utils';
+import * as util from 'util';
+import DataTypes from '../../data-types';
+import AbstractQueryGenerator from '../abstract/query-generator';
+import * as semver from 'semver';
+import * as _ from 'lodash';
 
 const QueryGenerator = {
-  __proto__: AbstractQueryGenerator,
+  // __proto__: AbstractQueryGenerator,
   options: {},
   dialect: 'postgres',
 
@@ -40,8 +40,10 @@ const QueryGenerator = {
 
   createTableQuery(tableName, attributes, options) {
 
-    options = _.extend({
-    }, options || {});
+    // options = _.extend({
+    // }, options || {});
+
+    options = Object.assign({}, options || {});
 
     //Postgres 9.0 does not support CREATE TABLE IF NOT EXISTS, 9.1 and above do
     const databaseVersion = _.get(this, 'sequelize.options.databaseVersion', 0);
@@ -183,7 +185,7 @@ const QueryGenerator = {
     }
 
     // Check invalid json statement
-    hasInvalidToken |= openingBrackets !== closingBrackets;
+    hasInvalidToken = hasInvalidToken || openingBrackets !== closingBrackets;
     if (hasJsonFunction && hasInvalidToken) {
       throw new Error('Invalid json statement: ' + stmt);
     }
@@ -404,7 +406,9 @@ const QueryGenerator = {
     const replacements = {
       table: tableName,
       where: this.getWhereConditions(where, null, model, options),
-      limit: options.limit ? ' LIMIT ' + this.escape(options.limit) : ''
+      limit: options.limit ? ' LIMIT ' + this.escape(options.limit) : '',
+      primaryKeys: undefined,
+      primaryKeysSelection: undefined
     };
 
     if (options.limit) {
@@ -963,4 +967,4 @@ const QueryGenerator = {
   }
 };
 
-module.exports = QueryGenerator;
+export default _.extend(_.clone(AbstractQueryGenerator), QueryGenerator);

@@ -1,9 +1,9 @@
 'use strict';
 
-const path = require('path');
-const Query = require('./../../../../lib/dialects/abstract/query.js');
-const Support = require(path.join(__dirname, './../../support'));
-const chai = require('chai');
+import {AbstractQuery as Query} from '../../../../lib/dialects/abstract/query';
+import Support from '../../../support';
+import * as chai from 'chai';
+import DataTypes from '../../../../lib/data-types';
 
 const current = Support.sequelize;
 const expect = chai.expect;
@@ -15,14 +15,14 @@ describe('[ABSTRACT]', () => {
       const Team = current.define('team', {
         id: {
           primaryKey: true,
-          type: current.Sequelize.STRING(1)
+          type: DataTypes.STRING(1)
         }
       });
 
       const Player = current.define('player', {
         id: {
           primaryKey: true,
-          type: current.Sequelize.STRING(1)
+          type: DataTypes.STRING(1)
         }
       });
 
@@ -33,7 +33,7 @@ describe('[ABSTRACT]', () => {
         },
         id: {
           primaryKey: true,
-          type: current.Sequelize.STRING(1)
+          type: DataTypes.STRING(1)
         }
       });
 
@@ -101,14 +101,14 @@ describe('[ABSTRACT]', () => {
       const Team = current.define('team', {
         id: {
           primaryKey: true,
-          type: current.Sequelize.STRING(1)
+          type: DataTypes.STRING(1)
         }
       });
 
       const Player = current.define('player', {
         id: {
           primaryKey: true,
-          type: current.Sequelize.STRING(1)
+          type: DataTypes.STRING(1)
         }
       });
 
@@ -183,14 +183,14 @@ describe('[ABSTRACT]', () => {
         },
         id: {
           primaryKey: true,
-          type: current.Sequelize.STRING(1)
+          type: DataTypes.STRING(1)
         }
       });
 
       const Player = current.define('player', {
         id: {
           primaryKey: true,
-          type: current.Sequelize.STRING(1)
+          type: DataTypes.STRING(1)
         }
       });
 
@@ -270,7 +270,7 @@ describe('[ABSTRACT]', () => {
       const Player = current.define('player', {
         id: {
           primaryKey: true,
-          type: current.Sequelize.STRING(1)
+          type: DataTypes.STRING(1)
         }
       });
 
@@ -340,7 +340,7 @@ describe('[ABSTRACT]', () => {
       const Team = current.define('team', {
         id: {
           primaryKey: true,
-          type: current.Sequelize.STRING(1)
+          type: DataTypes.STRING(1)
         }
       });
 
@@ -404,7 +404,7 @@ describe('[ABSTRACT]', () => {
       const Team = current.define('team', {
         id: {
           primaryKey: true,
-          type: current.Sequelize.STRING(1)
+          type: DataTypes.STRING(1)
         }
       });
 
@@ -415,7 +415,7 @@ describe('[ABSTRACT]', () => {
         },
         id: {
           primaryKey: true,
-          type: current.Sequelize.STRING(1)
+          type: DataTypes.STRING(1)
         }
       });
 

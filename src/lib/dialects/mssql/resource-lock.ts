@@ -1,6 +1,6 @@
 'use strict';
 
-const Promise = require('../../promise');
+import Promise from '../../promise';
 
 function ResourceLock(resource) {
   this.resource = resource;
@@ -22,4 +22,4 @@ ResourceLock.prototype.lock = function() {
   return lock.disposer(resolve);
 };
 
-module.exports = ResourceLock;
+export default ResourceLock;

@@ -1,12 +1,11 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  Sequelize = Support.Sequelize,
-  sinon = require('sinon'),
-  Promise = require('bluebird');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../support';
+import DataTypes from '../../../lib/data-types';
+import * as sinon from 'sinon';
+import * as Promise from 'bluebird';
 
 describe(Support.getTestDialectTeaser('Hooks'), () => {
   beforeEach(function() {
@@ -94,10 +93,10 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
     it('should not trigger hooks on parent when using N:M association setters', function() {
       const A = this.sequelize.define('A', {
-        name: Sequelize.STRING
+        name: DataTypes.STRING
       });
       const B = this.sequelize.define('B', {
-        name: Sequelize.STRING
+        name: DataTypes.STRING
       });
 
       let hookCalled = 0;

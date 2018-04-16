@@ -1,11 +1,11 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../../support'),
-  dialect = Support.getTestDialect(),
-  DataTypes = require(__dirname + '/../../../../lib/data-types'),
-  config = require(__dirname + '/../../../config/config');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../support';
+const dialect = Support.getTestDialect();
+import DataTypes from '../../../../lib/data-types';
+import config from '../../../config/config';
 
 if (dialect === 'mysql') {
   describe('[MYSQL Specific] DAOFactory', () => {
@@ -63,7 +63,7 @@ if (dialect === 'mysql') {
       });
 
       it('omits blobs fields with defaultValues', function() {
-        const User = this.sequelize.define('User' + config.rand(), {name: {type: DataTypes.STRING.BINARY, defaultValue: 'helloworld'}});
+        const User = this.sequelize.define('User' + config.rand(), {name: {type: (DataTypes.STRING as any).BINARY, defaultValue: 'helloworld'}});
         expect(User.attributes.name.type.toString()).to.equal('VARCHAR(255) BINARY');
       });
     });

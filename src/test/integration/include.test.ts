@@ -1,13 +1,13 @@
 'use strict';
 
-const chai = require('chai'),
-  Sequelize = require('../../index'),
-  Promise = Sequelize.Promise,
-  expect = chai.expect,
-  Support = require(__dirname + '/support'),
-  DataTypes = require(__dirname + '/../../lib/data-types'),
-  _ = require('lodash'),
-  dialect = Support.getTestDialect();
+import * as chai from 'chai';
+import {Sequelize}from '../../index';
+const Promise = Sequelize.Promise;
+const expect = chai.expect;
+import Support from './support';
+import DataTypes from '../../lib/data-types';
+import * as _ from 'lodash';
+const dialect = Support.getTestDialect();
 
 const sortById = function(a, b) {
   return a.id < b.id ? -1 : 1;
@@ -563,12 +563,12 @@ describe(Support.getTestDialectTeaser('Include'), () => {
 
     it('should support specifying attributes', function() {
       const Project = this.sequelize.define('Project', {
-        title: Sequelize.STRING
+        title: DataTypes.STRING
       });
 
       const Task = this.sequelize.define('Task', {
-        title: Sequelize.STRING,
-        description: Sequelize.TEXT
+        title: DataTypes.STRING,
+        description: DataTypes.TEXT
       });
 
       Project.hasMany(Task);
@@ -600,8 +600,8 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     it('should support Sequelize.literal and renaming of attributes in included model attributes', function() {
       const Post = this.sequelize.define('Post', {});
       const PostComment = this.sequelize.define('PostComment', {
-        someProperty: Sequelize.VIRTUAL, // Since we specify the AS part as a part of the literal string, not with sequelize syntax, we have to tell sequelize about the field
-        comment_title: Sequelize.STRING
+        someProperty: DataTypes.VIRTUAL, // Since we specify the AS part as a part of the literal string, not with sequelize syntax, we have to tell sequelize about the field
+        comment_title: DataTypes.STRING
       });
 
       Post.hasMany(PostComment);
@@ -681,10 +681,10 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     //TODO Oracle - the correct datatype is not supported for now
     it('should support including date fields, with the correct timeszone', function() {
       const User = this.sequelize.define('user', {
-          dateField: Sequelize.DATE
+          dateField: DataTypes.DATE
         }, {timestamps: false}),
         Group = this.sequelize.define('group', {
-          dateField: Sequelize.DATE
+          dateField: DataTypes.DATE
         }, {timestamps: false});
 
       User.belongsToMany(Group, {through: 'group_user'});
@@ -802,7 +802,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     it('should support Sequelize.and()', function() {
       return this.User.findAll({
         include: [
-          {model: this.Item, where: Sequelize.and({ test: 'def' })}
+          {model: this.Item, where: (Sequelize as any).and({ test: 'def' })}
         ]
       }).then(result => {
         expect(result.length).to.eql(1);
@@ -813,7 +813,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     it('should support Sequelize.or()', function() {
       return expect(this.User.findAll({
         include: [
-          {model: this.Item, where: Sequelize.or({
+          {model: this.Item, where: (Sequelize as any).or({
             test: 'def'
           }, {
             test: 'abc'

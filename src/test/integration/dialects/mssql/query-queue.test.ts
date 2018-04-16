@@ -1,11 +1,11 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Promise = require('../../../../lib/promise'),
-  DataTypes = require('../../../../lib/data-types'),
-  Support = require('../../support'),
-  dialect = Support.getTestDialect();
+import * as chai from 'chai';
+const expect = chai.expect;
+import Promise from '../../../../lib/promise';
+import DataTypes from '../../../../lib/data-types';
+import Support from '../../support';
+const dialect = Support.getTestDialect();
 
 if (dialect.match(/^mssql/)) {
   describe('[MSSQL Specific] Query Queue', () => {

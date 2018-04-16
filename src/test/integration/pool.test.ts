@@ -1,25 +1,25 @@
 'use strict';
 
-const chai = require('chai');
+import * as chai from 'chai';
 const expect = chai.expect;
-const Support = require(__dirname + '/support');
+import Support from './support';
 const dialect = Support.getTestDialect();
-const sinon = require('sinon');
+import * as sinon from 'sinon';
 const Sequelize = Support.Sequelize;
 
 describe(Support.getTestDialectTeaser('Pooling'), function() {
   if (dialect === 'sqlite') return;
 
   beforeEach(() => {
-    this.sinon = sinon.sandbox.create();
+    (this as any).sinon = sinon.sandbox.create();
   });
 
   afterEach(() => {
-    this.sinon.restore();
+    (this as any).sinon.restore();
   });
 
   it('should reject when unable to acquire connection in given time', () => {
-    this.testInstance = new Sequelize('localhost', 'ffd', 'dfdf', {
+    (this as any).testInstance = new Sequelize('localhost', 'ffd', 'dfdf', {
       dialect,
       databaseVersion: '1.2.3',
       pool: {
@@ -27,10 +27,10 @@ describe(Support.getTestDialectTeaser('Pooling'), function() {
       }
     });
 
-    this.sinon.stub(this.testInstance.connectionManager, '_connect')
+    (this as any).sinon.stub((this as any).testInstance.connectionManager, '_connect')
       .returns(new Sequelize.Promise(() => {}));
 
-    return expect(this.testInstance.authenticate())
+    return expect((this as any).testInstance.authenticate())
       .to.eventually.be.rejectedWith('ResourceRequest timed out');
   });
 });

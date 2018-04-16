@@ -1,11 +1,10 @@
 'use strict';
 
-const chai = require('chai'),
-  Sequelize = require('../../../index'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  dialect = Support.getTestDialect(),
-  DataTypes = require(__dirname + '/../../../lib/data-types');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../support';
+const dialect = Support.getTestDialect();
+import DataTypes from '../../../lib/data-types';
 
 describe(Support.getTestDialectTeaser('DAO'), () => {
   describe('Values', () => {
@@ -148,14 +147,14 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       describe('includes', () => {
         it('should support basic includes', function() {
           const Product = this.sequelize.define('product', {
-            title: Sequelize.STRING
+            title: DataTypes.STRING
           });
           const Tag = this.sequelize.define('tag', {
-            name: Sequelize.STRING
+            name: DataTypes.STRING
           });
           const User = this.sequelize.define('user', {
-            first_name: Sequelize.STRING,
-            last_name: Sequelize.STRING
+            first_name: DataTypes.STRING,
+            last_name: DataTypes.STRING
           });
 
           Product.hasMany(Tag);
@@ -191,14 +190,14 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
 
         it('should support basic includes (with raw: true)', function() {
           const Product = this.sequelize.define('Product', {
-            title: Sequelize.STRING
+            title: DataTypes.STRING
           });
           const Tag = this.sequelize.define('tag', {
-            name: Sequelize.STRING
+            name: DataTypes.STRING
           });
           const User = this.sequelize.define('user', {
-            first_name: Sequelize.STRING,
-            last_name: Sequelize.STRING
+            first_name: DataTypes.STRING,
+            last_name: DataTypes.STRING
           });
 
           Product.hasMany(Tag);
@@ -238,7 +237,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       it('should use custom attribute getters in get(key)', function() {
         const Product = this.sequelize.define('Product', {
           price: {
-            type: Sequelize.FLOAT,
+            type: DataTypes.FLOAT,
             get() {
               return this.dataValues.price * 100;
             }
@@ -254,7 +253,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       it('should custom virtual getters in get(key)', function() {
         const Product = this.sequelize.define('Product', {
           priceInCents: {
-            type: Sequelize.FLOAT
+            type: DataTypes.FLOAT
           }
         }, {
           getterMethods: {
@@ -273,7 +272,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       it('should use custom getters in toJSON', function() {
         const Product = this.sequelize.define('Product', {
           price: {
-            type: Sequelize.STRING,
+            type: DataTypes.STRING,
             get() {
               return this.dataValues.price * 100;
             }
@@ -294,10 +293,10 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
 
       it('should work with save', function() {
         const Contact = this.sequelize.define('Contact', {
-          first: { type: Sequelize.STRING },
-          last: { type: Sequelize.STRING },
+          first: { type: DataTypes.STRING },
+          last: { type: DataTypes.STRING },
           tags: {
-            type: Sequelize.STRING,
+            type: DataTypes.STRING,
             get(field) {
               const val = this.getDataValue(field);
               return JSON.parse(val);
@@ -325,11 +324,11 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       describe('plain', () => {
         it('should return plain values when true', function() {
           const Product = this.sequelize.define('product', {
-            title: Sequelize.STRING
+            title: DataTypes.STRING
           });
           const User = this.sequelize.define('user', {
-            first_name: Sequelize.STRING,
-            last_name: Sequelize.STRING
+            first_name: DataTypes.STRING,
+            last_name: DataTypes.STRING
           });
 
           Product.belongsTo(User);
@@ -358,7 +357,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       describe('clone', () => {
         it('should copy the values', function() {
           const Product = this.sequelize.define('product', {
-            title: Sequelize.STRING
+            title: DataTypes.STRING
           });
 
           const product = Product.build({
@@ -375,7 +374,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
 
       it('can pass parameters to getters', function() {
         const Product = this.sequelize.define('product', {
-          title: Sequelize.STRING
+          title: DataTypes.STRING
         }, {
           getterMethods: {
             rating(key, options) {
@@ -389,8 +388,8 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
         });
 
         const User = this.sequelize.define('user', {
-          first_name: Sequelize.STRING,
-          last_name: Sequelize.STRING
+          first_name: DataTypes.STRING,
+          last_name: DataTypes.STRING
         }, {
           getterMethods: {
             height(key, options) {

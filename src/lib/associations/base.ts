@@ -1,5 +1,6 @@
 'use strict';
-const AssociationError = require('./../errors').AssociationError;
+import * as Errors from '../errors/index';
+const AssociationError = Errors.AssociationError;
 
 
 /**
@@ -14,7 +15,8 @@ const AssociationError = require('./../errors').AssociationError;
  *
  * When creating associations, you can provide an alias, via the `as` option. This is useful if the same model is associated twice, or you want your association to be called something other than the name of the target model.
  *
- * As an example, consider the case where users have many pictures, one of which is their profile picture. All pictures have a `userId`, but in addition the user model also has a `profilePictureId`, to be able to easily load the user's profile picture.
+ * As an example, consider the case where users have many pictures, one of which is their profile picture. All pictures have a `userId`, but in addition the user model also has a `profilePictureId`,
+ * to be able to easily load the user's profile picture.
  *
  * ```js
  * User.hasMany(Picture)
@@ -50,7 +52,8 @@ const AssociationError = require('./../errors').AssociationError;
  * })
  * ```
  *
- * This specifies that the `uid` column cannot be null. In most cases this will already be covered by the foreign key constraints, which sequelize creates automatically, but can be useful in case where the foreign keys are disabled, e.g. due to circular references (see `constraints: false` below).
+ * This specifies that the `uid` column cannot be null. In most cases this will already be covered by the foreign key constraints,
+ * which sequelize creates automatically, but can be useful in case where the foreign keys are disabled, e.g. due to circular references (see `constraints: false` below).
  *
  * When fetching associated models, you can limit your query to only load some models. These queries are written in the same way as queries to `find`/`findAll`. To only get pictures in JPG, you can do:
  *
@@ -77,9 +80,22 @@ const AssociationError = require('./../errors').AssociationError;
  *
  * In the example above we have specified that a user belongs to his profile picture. Conceptually, this might not make sense, but since we want to add the foreign key to the user model this is the way to do it.
  *
- * Note how we also specified `constraints: false` for profile picture. This is because we add a foreign key from user to picture (profilePictureId), and from picture to user (userId). If we were to add foreign keys to both, it would create a cyclic dependency, and sequelize would not know which table to create first, since user depends on picture, and picture depends on user. These kinds of problems are detected by sequelize before the models are synced to the database, and you will get an error along the lines of `Error: Cyclic dependency found. 'users' is dependent of itself`. If you encounter this, you should either disable some constraints, or rethink your associations completely.
+ * Note how we also specified `constraints: false` for profile picture.
+ * This is because we add a foreign key from user to picture (profilePictureId), and from picture to user (userId).
+ * If we were to add foreign keys to both, it would create a cyclic dependency, and sequelize would not know which table to create first, since user depends on picture, and picture depends on user.
+ * These kinds of problems are detected by sequelize before the models are synced to the database, and you will get an error along the lines of `Error: Cyclic dependency found.
+ * 'users' is dependent of itself`. If you encounter this, you should either disable some constraints, or rethink your associations completely.
  */
-class Association {
+export class Association {
+  public target;
+  public options;
+  public scope;
+  public isSelfAssociation;
+  public source;
+  public as;
+  public associationType;
+  public through;
+
   constructor(source, target, options) {
     options = options || {};
     /**
@@ -107,7 +123,7 @@ class Association {
     }
   }
   // Normalize input - may be array or single obj, instance or primary key - convert it to an array of built objects
-  toInstanceArray(objs) {
+  public toInstanceArray(objs) {
     if (!Array.isArray(objs)) {
       objs = [objs];
     }
@@ -122,9 +138,7 @@ class Association {
       return obj;
     }, this);
   }
-  inspect() {
+  public inspect() {
     return this.as;
   }
 }
-
-module.exports = Association;

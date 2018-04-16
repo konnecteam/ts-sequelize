@@ -1,12 +1,7 @@
 'use strict';
 
-const chai = require('chai'),
-  Sequelize = require('../../../index'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  dialect = Support.getTestDialect(),
-  Promise = Sequelize.Promise;
+import Support from '../support';
+import DataTypes from '../../../lib/data-types';
 
 describe(Support.getTestDialectTeaser('IncludeAdvanced'), () => {
   describe('findAll', () => {
@@ -34,7 +29,7 @@ describe(Support.getTestDialectTeaser('IncludeAdvanced'), () => {
                 {
                   '$issue.issueType.id$' : null
                 }, {
-                  '$issue.IssuePriority.id$' : null
+                  '$issue.issuePriority.id$' : null
                 }
               ]
             },
@@ -75,7 +70,7 @@ describe(Support.getTestDialectTeaser('IncludeAdvanced'), () => {
                 {
                   '$issue.issueType.id$' : null
                 }, {
-                  '$issue.IssuePriority.id$' : null
+                  '$issue.issuePriority.id$' : null
                 }
               ]
             },
@@ -118,7 +113,7 @@ describe(Support.getTestDialectTeaser('IncludeAdvanced'), () => {
                 {
                   '$issue.issueType.id$' : null
                 }, {
-                  '$issue.IssuePriority.id$' : null
+                  '$issue.issuePriority.id$' : null
                 }
               ]
             },
@@ -165,7 +160,7 @@ describe(Support.getTestDialectTeaser('IncludeAdvanced'), () => {
                 {
                   '$issue.issueType.id$' : null
                 }, {
-                  '$issue.IssuePriority.id$' : null
+                  '$issue.issuePriority.id$' : null
                 }
               ]
             },
@@ -211,7 +206,7 @@ describe(Support.getTestDialectTeaser('IncludeAdvanced'), () => {
                 {
                   '$issue.issueType.id$' : null
                 }, {
-                  '$issue.IssuePriority.id$' : null
+                  '$issue.issuePriority.id$' : null
                 }
               ]
             },
@@ -254,7 +249,7 @@ describe(Support.getTestDialectTeaser('IncludeAdvanced'), () => {
             model: Issue,
             required: true,
             where : {
-              $or : [ { '$issue.issueType.id$' : null }, { '$issue.IssuePriority.id$' : null } ]
+              $or : [ { '$issue.issueType.id$' : null }, { '$issue.issuePriority.id$' : null } ]
             },
             include: [{
               attributes: [], model: IssueComment, required: false, mismatch: true
@@ -286,7 +281,7 @@ describe(Support.getTestDialectTeaser('IncludeAdvanced'), () => {
             model: Issue,
             required: true,
             where : {
-              $or : [ { '$issue.issueType.id$' : null }, { '$issue.IssuePriority.id$' : null } ]
+              $or : [ { '$issue.issueType.id$' : null }, { '$issue.issuePriority.id$' : null } ]
             },
             include: [{
               model: IssueComment, required: false, mismatch: true
@@ -318,7 +313,7 @@ describe(Support.getTestDialectTeaser('IncludeAdvanced'), () => {
             model: Issue,
             required: true,
             where : {
-              $or : [ { '$issue.issueType.id$' : null }, { '$issue.IssuePriority.id$' : null } ]
+              $or : [ { '$issue.issueType.id$' : null }, { '$issue.issuePriority.id$' : null } ]
             },
             include: [{
               model: IssueComment, required: false, mismatch: true

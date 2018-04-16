@@ -1,10 +1,10 @@
 'use strict';
 
-const _ = require('lodash');
-const Utils = require('../../utils');
-const AbstractQueryGenerator = require('../abstract/query-generator');
-const util = require('util');
-const Op = require('../../operators');
+import * as _ from 'lodash';
+import * as Utils from '../../utils';
+import AbstractQueryGenerator from '../abstract/query-generator';
+import * as util from 'util';
+import Op from '../../operators';
 
 const QueryGenerator = {
   __proto__: AbstractQueryGenerator,
@@ -451,7 +451,7 @@ const QueryGenerator = {
     }
 
     // Check invalid json statement
-    hasInvalidToken |= openingBrackets !== closingBrackets;
+    hasInvalidToken = hasInvalidToken || openingBrackets !== closingBrackets;
     if (hasJsonFunction && hasInvalidToken) {
       throw new Error('Invalid json statement: ' + stmt);
     }
@@ -557,4 +557,4 @@ function wrapSingleQuote(identifier) {
   return Utils.addTicks(identifier, '\'');
 }
 
-module.exports = QueryGenerator;
+export default _.extend(_.clone(AbstractQueryGenerator), QueryGenerator);

@@ -1,10 +1,10 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support   = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  current   = Support.sequelize;
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../support';
+import DataTypes from '../../../lib/data-types';
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
   describe('changed', () => {
@@ -27,7 +27,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
       expect(user.changed('meta')).to.equal(false);
       user.set('name', 'b');
-      user.set('meta', null);
+      user.set('meta');
       expect(user.changed('name')).to.equal(true);
       expect(user.changed('meta')).to.equal(true);
     });
@@ -50,7 +50,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     it('should return true for multiple changed values', function() {
       const user = this.User.build({
         name: 'a',
-        birthday: new Date(new Date() - 10)
+        birthday: new Date(new Date().getTime() - 10)
       }, {
         isNewRecord: false,
         raw: true
@@ -104,7 +104,6 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         isNewRecord: false,
         raw: true
       });
-
       user.set('meta.city', 'Gothenburg');
       expect(user.changed('meta')).to.equal(true);
     });

@@ -1,36 +1,36 @@
 'use strict';
 
-const chai = require('chai');
+import * as chai from 'chai';
 const expect = chai.expect;
-const sinon = require('sinon');
-const Support = require(__dirname + '/support');
-const Sequelize = Support.Sequelize;
+import * as sinon from 'sinon';
+import Support from '../support';
+const Sequelize = Support.sequelize;
 const dialect = Support.getTestDialect();
 const current = Support.sequelize;
 
 describe('Transaction', function() {
   before(() => {
-    this.stub = sinon.stub(current, 'query').returns(Sequelize.Promise.resolve({}));
+    (this as any).stub = sinon.stub(current, 'query').returns(Sequelize.Promise.resolve({}));
 
-    this.stubConnection = sinon.stub(current.connectionManager, 'getConnection')
+    (this as any).stubConnection = sinon.stub(current.connectionManager, 'getConnection')
       .returns(Sequelize.Promise.resolve({
         uuid: 'ssfdjd-434fd-43dfg23-2d',
         close() {}
       }));
 
-    this.stubRelease = sinon.stub(current.connectionManager, 'releaseConnection')
+      (this as any).stubRelease = sinon.stub(current.connectionManager, 'releaseConnection')
       .returns(Sequelize.Promise.resolve());
   });
 
   beforeEach(() => {
-    this.stub.resetHistory();
-    this.stubConnection.resetHistory();
-    this.stubRelease.resetHistory();
+    (this as any).stub.resetHistory();
+    (this as any).stubConnection.resetHistory();
+    (this as any).stubRelease.resetHistory();
   });
 
   after(() => {
-    this.stub.restore();
-    this.stubConnection.restore();
+    (this as any).stub.restore();
+    (this as any).stubConnection.restore();
   });
 
   it('should run auto commit query only when needed', () => {
@@ -49,7 +49,7 @@ describe('Transaction', function() {
       ]
     };
     return current.transaction(() => {
-      expect(this.stub.args.map(arg => arg[0])).to.deep.equal(expectations[dialect] || expectations.all);
+      expect((this as any).stub.args.map(arg => arg[0])).to.deep.equal(expectations[dialect] || expectations.all);
       return Sequelize.Promise.resolve();
     });
   });

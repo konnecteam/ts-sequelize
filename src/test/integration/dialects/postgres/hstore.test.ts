@@ -1,10 +1,10 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require(__dirname + '/../../support'),
-  dialect = Support.getTestDialect(),
-  hstore = require('../../../../lib/dialects/postgres/hstore');
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../support';
+const dialect = Support.getTestDialect();
+import * as hstore from '../../../../lib/dialects/postgres/hstore';
 
 if (dialect.match(/^postgres/)) {
   describe('[POSTGRES Specific] hstore', () => {

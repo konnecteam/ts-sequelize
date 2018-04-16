@@ -1,12 +1,13 @@
 'use strict';
 
-const chai = require('chai'),
-  sinon = require('sinon'),
-  expect = chai.expect,
-  Support = require(__dirname + '/support'),
-  _ = require('lodash'),
-  current = Support.sequelize,
-  Promise = current.Promise;
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+const expect = chai.expect;
+import Support from '../support';
+import * as _ from 'lodash';
+import DataTypes from '../../lib/data-types';
+const current = Support.sequelize;
+const Promise = current.Promise;
 
 describe(Support.getTestDialectTeaser('Hooks'), () => {
   beforeEach(function() {
@@ -19,7 +20,9 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         options.answer = 41;
       });
 
-      const options = {};
+      const options = {
+        answer: undefined
+      };
       return this.Model.runHooks('beforeCreate', options).then(() => {
         expect(options.answer).to.equal(41);
       });
@@ -45,7 +48,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         this.afterCreateHook = sinon.spy();
 
         this.Model = current.define('m', {
-          name: Support.Sequelize.STRING
+          name: DataTypes.STRING
         }, {
           hooks: {
             beforeSave: this.beforeSaveHook,
@@ -70,7 +73,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         this.afterSaveHook = sinon.spy();
 
         this.Model = current.define('m', {
-          name: Support.Sequelize.STRING
+          name: DataTypes.STRING
         });
 
         this.Model.addHook('beforeSave', this.beforeSaveHook);
@@ -91,7 +94,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         this.afterSaveHook = sinon.spy();
 
         this.Model = current.define('m', {
-          name: Support.Sequelize.STRING
+          name: DataTypes.STRING
         });
 
         this.Model.hook('beforeSave', this.beforeSaveHook);
@@ -436,7 +439,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       expect(this.hook3).to.have.been.calledOnce;
       expect(this.hook4).to.have.been.calledOnce;
 
-      // cleanup hooks on Support.Sequelize
+      // cleanup hooks on Support.sequelize
       Support.Sequelize.removeHook('beforeInit', 'h1');
       Support.Sequelize.removeHook('beforeInit', 'h2');
       Support.Sequelize.removeHook('afterInit', 'h3');

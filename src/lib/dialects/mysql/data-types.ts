@@ -1,11 +1,11 @@
 'use strict';
 
-const wkx = require('wkx');
-const _ = require('lodash');
-const moment = require('moment-timezone');
-const inherits = require('../../utils/inherits');
+import * as wkx from 'wkx';
+import * as _ from 'lodash';
+import * as moment from 'moment-timezone';
+import inherits from '../../utils/inherits';
 
-module.exports = BaseTypes => {
+export function DataTypes(BaseTypes) {
   BaseTypes.ABSTRACT.prototype.dialectTypes = 'https://dev.mysql.com/doc/refman/5.7/en/data-types.html';
 
   /**
@@ -37,12 +37,12 @@ module.exports = BaseTypes => {
   BaseTypes.JSON.types.mysql = ['JSON'];
 
   function BLOB(length) {
-    if (!(this instanceof BLOB)) return new BLOB(length);
+    if (!(this instanceof BLOB)) return new (BLOB as any)(length);
     BaseTypes.BLOB.apply(this, arguments);
   }
   inherits(BLOB, BaseTypes.BLOB);
 
-  BLOB.parse = function(value, options, next) {
+  (BLOB as any).parse = function(value, options, next) {
     const data = next();
 
     if (Buffer.isBuffer(data) && data.length === 0) {
@@ -53,7 +53,7 @@ module.exports = BaseTypes => {
   };
 
   function DECIMAL(precision, scale) {
-    if (!(this instanceof DECIMAL)) return new DECIMAL(precision, scale);
+    if (!(this instanceof DECIMAL)) return new (DECIMAL as any)(precision, scale);
     BaseTypes.DECIMAL.apply(this, arguments);
   }
   inherits(DECIMAL, BaseTypes.DECIMAL);
@@ -73,7 +73,7 @@ module.exports = BaseTypes => {
   };
 
   function DATE(length) {
-    if (!(this instanceof DATE)) return new DATE(length);
+    if (!(this instanceof DATE)) return new (DATE as any)(length);
     BaseTypes.DATE.apply(this, arguments);
   }
   inherits(DATE, BaseTypes.DATE);
@@ -92,7 +92,7 @@ module.exports = BaseTypes => {
     return date.format('YYYY-MM-DD HH:mm:ss');
   };
 
-  DATE.parse = function parse(value, options) {
+  (DATE as any).parse = function parse(value, options) {
     value = value.string();
 
     if (value === null) {
@@ -109,17 +109,17 @@ module.exports = BaseTypes => {
   };
 
   function DATEONLY() {
-    if (!(this instanceof DATEONLY)) return new DATEONLY();
+    if (!(this instanceof DATEONLY)) return new (DATEONLY as any)();
     BaseTypes.DATEONLY.apply(this, arguments);
   }
   inherits(DATEONLY, BaseTypes.DATEONLY);
 
-  DATEONLY.parse = function parse(value) {
+  (DATEONLY as any).parse = function parse(value) {
     return value.string();
   };
 
   function UUID() {
-    if (!(this instanceof UUID)) return new UUID();
+    if (!(this instanceof UUID)) return new (UUID as any)();
     BaseTypes.UUID.apply(this, arguments);
   }
   inherits(UUID, BaseTypes.UUID);
@@ -132,7 +132,7 @@ module.exports = BaseTypes => {
   const SUPPORTED_GEOMETRY_TYPES = ['POINT', 'LINESTRING', 'POLYGON'];
 
   function GEOMETRY(type, srid) {
-    if (!(this instanceof GEOMETRY)) return new GEOMETRY(type, srid);
+    if (!(this instanceof GEOMETRY)) return new (GEOMETRY as any)(type, srid);
     BaseTypes.GEOMETRY.apply(this, arguments);
 
     if (_.isEmpty(this.type)) {
@@ -145,7 +145,7 @@ module.exports = BaseTypes => {
   }
   inherits(GEOMETRY, BaseTypes.GEOMETRY);
 
-  GEOMETRY.parse = GEOMETRY.prototype.parse = function parse(value) {
+  (GEOMETRY as any).parse = GEOMETRY.prototype.parse = function parse(value) {
     value = value.buffer();
 
     // Empty buffer, MySQL doesn't support POINT EMPTY
@@ -164,6 +164,7 @@ module.exports = BaseTypes => {
     return this.sqlType;
   };
 
+
   function ENUM() {
     if (!(this instanceof ENUM)) {
       const obj = Object.create(ENUM.prototype);
@@ -179,7 +180,7 @@ module.exports = BaseTypes => {
   };
 
   function JSONTYPE() {
-    if (!(this instanceof JSONTYPE)) return new JSONTYPE();
+    if (!(this instanceof JSONTYPE)) return new (JSONTYPE as any)();
     BaseTypes.JSON.apply(this, arguments);
   }
   inherits(JSONTYPE, BaseTypes.JSON);
@@ -203,7 +204,7 @@ module.exports = BaseTypes => {
     if (!DataType.key) DataType.key = key;
     if (!DataType.extend) {
       DataType.extend = function extend(oldType) {
-        return new DataType(oldType.options);
+        return DataType(oldType.options);
       };
     }
   });

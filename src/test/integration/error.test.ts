@@ -1,11 +1,11 @@
 'use strict';
 
-const chai      = require('chai'),
-  sinon     = require('sinon'),
-  expect    = chai.expect,
-  errors    = require('../../lib/errors'),
-  Support   = require(__dirname + '/support'),
-  Sequelize = Support.Sequelize;
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+const expect = chai.expect;
+import * as errors from '../../lib/errors/index';
+import Support from './support';
+const Sequelize = Support.Sequelize;
 
 describe(Support.getTestDialectTeaser('Sequelize Errors'), () => {
   describe('API Surface', () => {
@@ -24,8 +24,8 @@ describe(Support.getTestDialectTeaser('Sequelize Errors'), () => {
       const error = new Sequelize.Error();
       const errorMessage = 'error message';
       const validationError = new Sequelize.ValidationError(errorMessage, [
-        new errors.ValidationErrorItem('<field name> cannot be null', 'notNull Violation', '<field name>', null),
-        new errors.ValidationErrorItem('<field name> cannot be an array or an object', 'string violation', '<field name>', null)
+        new errors.ValidationErrorItem('<field name> cannot be null', 'notNull Violation', '<field name>'),
+        new errors.ValidationErrorItem('<field name> cannot be an array or an object', 'string violation', '<field name>')
       ]);
       const optimisticLockError = new Sequelize.OptimisticLockError();
 
@@ -57,8 +57,8 @@ describe(Support.getTestDialectTeaser('Sequelize Errors'), () => {
 
     it('SequelizeValidationError should find errors by path', () => {
       const errorItems = [
-        new Sequelize.ValidationErrorItem('invalid', 'type', 'first_name', null),
-        new Sequelize.ValidationErrorItem('invalid', 'type', 'last_name', null)
+        new Sequelize.ValidationErrorItem('invalid', 'type', 'first_name'),
+        new Sequelize.ValidationErrorItem('invalid', 'type', 'last_name')
       ];
       const validationError = new Sequelize.ValidationError('Validation error', errorItems);
       expect(validationError).to.have.property('get');
@@ -72,8 +72,8 @@ describe(Support.getTestDialectTeaser('Sequelize Errors'), () => {
 
     it('SequelizeValidationError should override message property when message parameter is specified', () => {
       const errorItems = [
-          new Sequelize.ValidationErrorItem('invalid', 'type', 'first_name', null),
-          new Sequelize.ValidationErrorItem('invalid', 'type', 'last_name', null)
+          new Sequelize.ValidationErrorItem('invalid', 'type', 'first_name'),
+          new Sequelize.ValidationErrorItem('invalid', 'type', 'last_name')
         ],
         customErrorMessage = 'Custom validation error message',
         validationError = new Sequelize.ValidationError(customErrorMessage, errorItems);
@@ -84,8 +84,8 @@ describe(Support.getTestDialectTeaser('Sequelize Errors'), () => {
 
     it('SequelizeValidationError should concatenate an error messages from given errors if no explicit message is defined', () => {
       const errorItems = [
-          new Sequelize.ValidationErrorItem('<field name> cannot be null', 'notNull Violation', '<field name>', null),
-          new Sequelize.ValidationErrorItem('<field name> cannot be an array or an object', 'string violation', '<field name>', null)
+          new Sequelize.ValidationErrorItem('<field name> cannot be null', 'notNull Violation', '<field name>'),
+          new Sequelize.ValidationErrorItem('<field name> cannot be an array or an object', 'string violation', '<field name>')
         ],
         validationError = new Sequelize.ValidationError(null, errorItems);
 
@@ -139,7 +139,7 @@ describe(Support.getTestDialectTeaser('Sequelize Errors'), () => {
 
       expect(() => error.getValidatorKey(false, {})).to.not.throw();
       expect(() => error.getValidatorKey(false, [])).to.not.throw();
-      expect(() => error.getValidatorKey(false, null)).to.not.throw();
+      expect(() => error.getValidatorKey(false)).to.not.throw();
       expect(() => error.getValidatorKey(false, '')).to.not.throw();
       expect(() => error.getValidatorKey(false, false)).to.not.throw();
       expect(() => error.getValidatorKey(false, true)).to.not.throw();
@@ -163,7 +163,7 @@ describe(Support.getTestDialectTeaser('Sequelize Errors'), () => {
       };
 
       Object.keys(data).forEach(k => {
-        const error = new Sequelize.ValidationErrorItem('error!', k, 'foo', null);
+        const error = new Sequelize.ValidationErrorItem('error!', k, 'foo');
 
         expect(error).to.have.property('origin', data[k]);
         expect(error).to.have.property('type', k);

@@ -1,11 +1,11 @@
 'use strict';
 
-const _ = require('lodash');
-const inherits = require('../../utils/inherits');
-const moment = require('moment');
-const momentTz = require('moment-timezone');
+import * as _ from 'lodash';
+import inherits from '../../utils/inherits';
+import * as moment from 'moment';
+import * as momentTz from 'moment-timezone';
 
-module.exports = BaseTypes => {
+export function DataTypes (BaseTypes) {
   const warn = BaseTypes.ABSTRACT.warn.bind(undefined, 'https://docs.oracle.com/database/122/SQLRF/Data-Types.htm#SQLRF30020');
 
   BaseTypes.DATE.types.oracle = ['TIMESTAMP', 'TIMESTAMP WITH LOCAL TIME ZONE'];
@@ -29,7 +29,7 @@ module.exports = BaseTypes => {
 
 
   function BLOB(length) {
-    if (!(this instanceof BLOB)) return new BLOB(length);
+    if (!(this instanceof BLOB)) return new (BLOB as any)(length);
     BaseTypes.BLOB.apply(this, arguments);
   }
   inherits(BLOB, BaseTypes.BLOB);
@@ -55,7 +55,7 @@ module.exports = BaseTypes => {
   };
 
   function CHAR(length) {
-    if (!(this instanceof CHAR)) return new CHAR(length);
+    if (!(this instanceof CHAR)) return new (CHAR as any)(length);
     BaseTypes.CHAR.apply(this, arguments);
   }
   inherits(CHAR, BaseTypes.CHAR);
@@ -68,7 +68,7 @@ module.exports = BaseTypes => {
   };
 
   function STRING(length, binary) {
-    if (!(this instanceof STRING)) return new STRING(length, binary);
+    if (!(this instanceof STRING)) return new (STRING as any)(length, binary);
     BaseTypes.STRING.apply(this, arguments);
   }
   inherits(STRING, BaseTypes.STRING);
@@ -95,7 +95,7 @@ module.exports = BaseTypes => {
   };
 
   function TEXT(length) {
-    if (!(this instanceof TEXT)) return new TEXT(length);
+    if (!(this instanceof TEXT)) return new (TEXT as any)(length);
     BaseTypes.TEXT.apply(this, arguments);
   }
   inherits(TEXT, BaseTypes.TEXT);
@@ -123,7 +123,7 @@ module.exports = BaseTypes => {
   };
 
   function BOOLEAN() {
-    if (!(this instanceof BOOLEAN)) return new BOOLEAN();
+    if (!(this instanceof BOOLEAN)) return new (BOOLEAN as any)();
     BaseTypes.BOOLEAN.apply(this, arguments);
   }
   inherits(BOOLEAN, BaseTypes.BOOLEAN);
@@ -138,7 +138,7 @@ module.exports = BaseTypes => {
   };
 
   function UUID() {
-    if (!(this instanceof UUID)) return new UUID();
+    if (!(this instanceof UUID)) return new (UUID as any)();
     BaseTypes.UUID.apply(this, arguments);
   }
   inherits(UUID, BaseTypes.UUID);
@@ -148,7 +148,7 @@ module.exports = BaseTypes => {
   };
 
   function NOW() {
-    if (!(this instanceof NOW)) return new NOW();
+    if (!(this instanceof NOW)) return new (NOW as any)();
     BaseTypes.NOW.apply(this, arguments);
   }
   inherits(NOW, BaseTypes.NOW);
@@ -164,7 +164,7 @@ module.exports = BaseTypes => {
   };
 
   function TIME(length) {
-    if (!(this instanceof TIME)) return new TIME(length);
+    if (!(this instanceof TIME)) return new (TIME as any)(length);
     BaseTypes.TIME.apply(this, arguments);
   }
   inherits(TIME, BaseTypes.TIME);
@@ -201,7 +201,7 @@ module.exports = BaseTypes => {
   };
 
   function DATE(length) {
-    if (!(this instanceof DATE)) return new DATE(length);
+    if (!(this instanceof DATE)) return new (DATE as any)(length);
     BaseTypes.DATE.apply(this, arguments);
   }
   inherits(DATE, BaseTypes.DATE);
@@ -223,12 +223,12 @@ module.exports = BaseTypes => {
   };
 
   function DECIMAL(precision, scale) {
-    if (!(this instanceof DECIMAL)) return new DECIMAL(precision, scale);
+    if (!(this instanceof DECIMAL)) return new (DECIMAL as any)(precision, scale);
     BaseTypes.DECIMAL.apply(this, arguments);
   }
   inherits(DECIMAL, BaseTypes.DECIMAL);
 
-  DECIMAL.prototype.key = DECIMAL.key = 'DECIMAL';
+  DECIMAL.prototype.key = (DECIMAL as any).key = 'DECIMAL';
 
   DECIMAL.prototype.toSql = function toSql() {
     let result = '';
@@ -252,7 +252,7 @@ module.exports = BaseTypes => {
   };
 
   function INTEGER(length) {
-    if (!(this instanceof BaseTypes.INTEGER)) return new INTEGER(length);
+    if (!(this instanceof BaseTypes.INTEGER)) return new (INTEGER as any)(length);
     BaseTypes.INTEGER.apply(this, arguments);
 
     if (this._zerofill) {
@@ -276,7 +276,7 @@ module.exports = BaseTypes => {
 
   function BIGINT(length) {
     warn('Oracle does not support BIGINT. Plain `NUMBER(19)` will be used instead.');
-    if (!(this instanceof BIGINT)) return new BIGINT(length);
+    if (!(this instanceof BIGINT)) return new (BIGINT as any)(length);
     BaseTypes.BIGINT.apply(this, arguments);
 
     // ORACLE does not support any options for bigint
@@ -294,7 +294,7 @@ module.exports = BaseTypes => {
   };
 
   function REAL(length, decimals) {
-    if (!(this instanceof REAL)) return new REAL(length, decimals);
+    if (!(this instanceof REAL)) return new (REAL as any)(length, decimals);
     BaseTypes.REAL.apply(this, arguments);
   }
   inherits(REAL, BaseTypes.REAL);
@@ -305,7 +305,7 @@ module.exports = BaseTypes => {
 
 
   function FLOAT(length, decimals) {
-    if (!(this instanceof FLOAT)) return new FLOAT(length, decimals);
+    if (!(this instanceof FLOAT)) return new (FLOAT as any)(length, decimals);
     BaseTypes.FLOAT.apply(this, arguments);
   }
   inherits(FLOAT, BaseTypes.FLOAT);
@@ -318,7 +318,7 @@ module.exports = BaseTypes => {
   };
 
   function DOUBLE(length, decimals) {
-    if (!(this instanceof DOUBLE)) return new BaseTypes.DOUBLE(length, decimals);
+    if (!(this instanceof DOUBLE)) return new (DOUBLE as any)(length, decimals);
     BaseTypes.DOUBLE.apply(this, arguments);
 
     if (this._length || this._unsigned || this._zerofill) {
@@ -329,7 +329,7 @@ module.exports = BaseTypes => {
     }
   }
 
-  DOUBLE.prototype.key = DOUBLE.key = 'DOUBLE PRECISION';
+  DOUBLE.prototype.key = (DOUBLE as any).key = 'DOUBLE PRECISION';
 
   DOUBLE.prototype.toSql = function toSql() {
     return 'NUMBER(15,5)';
@@ -350,12 +350,12 @@ module.exports = BaseTypes => {
   };
 
   function DATEONLY() {
-    if (!(this instanceof DATEONLY)) return new DATEONLY();
+    if (!(this instanceof DATEONLY)) return new (DATEONLY as any)();
     BaseTypes.DATEONLY.apply(this, arguments);
   }
   inherits(DATEONLY, BaseTypes.DATEONLY);
 
-  DATEONLY.parse = function (value) {
+  (DATEONLY as any).parse = function (value) {
     return moment(value).format('YYYY-MM-DD');
   };
 
@@ -389,7 +389,7 @@ module.exports = BaseTypes => {
     if (!DataType.key) DataType.key = key;
     if (!DataType.extend) {
       DataType.extend = function(oldType) {
-        return new DataType(oldType.options);
+        return DataType(oldType.options);
       };
     }
   });

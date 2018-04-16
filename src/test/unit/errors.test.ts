@@ -1,7 +1,8 @@
 'use strict';
 
-const errors = require('../../lib/errors');
-const expect = require('chai').expect;
+import * as errors from '../../lib/errors/index';
+import * as chai from 'chai';
+const expect = chai.expect;
 
 describe('errors', () => {
   it('should maintain stack trace with message', () => {

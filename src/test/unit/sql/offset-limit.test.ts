@@ -1,7 +1,6 @@
 'use strict';
 
-const Support        = require(__dirname + '/../support');
-const util           = require('util');
+import Support from '../../support';
 const expectsql      = Support.expectsql;
 const current        = Support.sequelize;
 const queryGenerator = current.dialect.QueryGenerator;
@@ -35,7 +34,8 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         limit: 10,
         order: [
           ['email', 'DESC'] // for MSSQL
-        ]
+        ],
+        model: undefined
       };
       const expectation = {
         default: ' LIMIT 10',
@@ -57,7 +57,8 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         offset: 20,
         order: [
           ['email', 'DESC'] // for MSSQL
-        ]
+        ],
+        model: undefined
       };
       const expectation = {
         default: ' LIMIT 20, 10',
@@ -79,7 +80,8 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         limit: "';DELETE FROM user",
         order: [
           ['email', 'DESC'] // for MSSQL
-        ]
+        ],
+        model: undefined
       };
       const expectation = {
         default: " LIMIT ''';DELETE FROM user'",
@@ -102,7 +104,8 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         offset: "';DELETE FROM user",
         order: [
           ['email', 'DESC'] // for MSSQL
-        ]
+        ],
+        model: undefined
       };
       const expectation = {
         sqlite: " LIMIT ''';DELETE FROM user', 10",

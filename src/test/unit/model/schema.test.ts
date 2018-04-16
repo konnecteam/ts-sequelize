@@ -1,9 +1,9 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support   = require(__dirname + '/../support'),
-  current   = Support.sequelize;
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from '../../support';
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model') + 'Schemas', () => {
   if (current.dialect.supports.schemas) {
@@ -23,6 +23,7 @@ describe(Support.getTestDialectTeaser('Model') + 'Schemas', () => {
       });
 
       it('should be able to override the default schema', () => {
+        // const companySchema = 
         expect(Company.schema('newSchema')._schema).to.equal('newSchema');
       });
 

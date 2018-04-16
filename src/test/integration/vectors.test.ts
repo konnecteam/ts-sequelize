@@ -1,16 +1,16 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Sequelize = require('../../index'),
-  Support = require(__dirname + '/support');
+import * as chai from 'chai';
+const expect = chai.expect;
+import DataTypes from '../../lib/data-types';
+import Support from './support';
 
 chai.should();
 
 describe(Support.getTestDialectTeaser('Vectors'), () => {
   it('should not allow insert backslash', function() {
     const Student = this.sequelize.define('student', {
-      name: Sequelize.STRING
+      name: DataTypes.STRING
     }, {
       tableName: 'student'
     });

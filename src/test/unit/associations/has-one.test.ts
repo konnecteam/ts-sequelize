@@ -1,11 +1,11 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  _         = require('lodash'),
-  Support   = require(__dirname + '/../support'),
-  DataTypes = require(__dirname + '/../../../lib/data-types'),
-  current   = Support.sequelize;
+import * as chai from 'chai';
+const expect = chai.expect;
+import * as _ from 'lodash';
+import Support from '../../support';
+import DataTypes from '../../../lib/data-types';
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('hasOne'), () => {
   it('properly use the `as` key to generate foreign key name', () => {

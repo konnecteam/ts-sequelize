@@ -1,8 +1,9 @@
 'use strict';
 
-const _ = require('lodash');
-const Promise = require('../../promise');
-const UnknownConstraintError = require('../../errors').UnknownConstraintError;
+import * as _ from 'lodash';
+import Promise from '../../promise';
+import * as errors from '../../errors/index';
+const UnknownConstraintError = errors.UnknownConstraintError;
 
 /**
  Returns an object that treats SQLite's inabilities to do certain queries.
@@ -28,7 +29,7 @@ const UnknownConstraintError = require('../../errors').UnknownConstraintError;
   @since 1.6.0
   @private
  */
-function removeColumn(tableName, attributeName, options) {
+export function removeColumn(tableName, attributeName, options) {
   options = options || {};
 
   return this.describeTable(tableName, options).then(fields => {
@@ -40,7 +41,7 @@ function removeColumn(tableName, attributeName, options) {
     return Promise.each(subQueries, subQuery => this.sequelize.query(subQuery + ';', _.assign({raw: true}, options)));
   });
 }
-exports.removeColumn = removeColumn;
+
 
 /**
   A wrapper that fixes SQLite's inability to change columns from existing tables.
@@ -58,7 +59,7 @@ exports.removeColumn = removeColumn;
   @since 1.6.0
   @private
  */
-function changeColumn(tableName, attributes, options) {
+export function changeColumn(tableName, attributes, options) {
   const attributeName = Object.keys(attributes)[0];
   options = options || {};
 
@@ -71,7 +72,6 @@ function changeColumn(tableName, attributes, options) {
     return Promise.each(subQueries, subQuery => this.sequelize.query(subQuery + ';', _.assign({raw: true}, options)));
   });
 }
-exports.changeColumn = changeColumn;
 
 /**
   A wrapper that fixes SQLite's inability to rename columns from existing tables.
@@ -90,7 +90,7 @@ exports.changeColumn = changeColumn;
   @since 1.6.0
   @private
  */
-function renameColumn(tableName, attrNameBefore, attrNameAfter, options) {
+export function renameColumn(tableName, attrNameBefore, attrNameAfter, options) {
   options = options || {};
 
   return this.describeTable(tableName, options).then(fields => {
@@ -103,9 +103,8 @@ function renameColumn(tableName, attrNameBefore, attrNameAfter, options) {
     return Promise.each(subQueries, subQuery => this.sequelize.query(subQuery + ';', _.assign({raw: true}, options)));
   });
 }
-exports.renameColumn = renameColumn;
 
-function removeConstraint(tableName, constraintName, options) {
+export function removeConstraint(tableName, constraintName, options) {
   let createTableSql;
 
   return this.showConstraint(tableName, constraintName)
@@ -141,9 +140,8 @@ function removeConstraint(tableName, constraintName, options) {
       return Promise.each(subQueries, subQuery => this.sequelize.query(subQuery + ';', _.assign({raw: true}, options)));
     });
 }
-exports.removeConstraint = removeConstraint;
 
-function addConstraint(tableName, options) {
+export function addConstraint(tableName, options) {
   const constraintSnippet = this.QueryGenerator.getConstraintSnippet(tableName, options);
   const describeCreateTableSql = this.QueryGenerator.describeCreateTableQuery(tableName);
   let createTableSql;
@@ -165,7 +163,6 @@ function addConstraint(tableName, options) {
       return Promise.each(subQueries, subQuery => this.sequelize.query(subQuery + ';', _.assign({raw: true}, options)));
     });
 }
-exports.addConstraint = addConstraint;
 
 /**
  *
@@ -173,7 +170,7 @@ exports.addConstraint = addConstraint;
  * @param {Object} options  Query Options
  * @returns {Promise}
  */
-function getForeignKeyReferencesForTable(tableName, options) {
+export function getForeignKeyReferencesForTable(tableName, options) {
   const database = this.sequelize.config.database;
   const query = this.QueryGenerator.getForeignKeysQuery(tableName, database);
   return this.sequelize.query(query, options)
@@ -189,4 +186,3 @@ function getForeignKeyReferencesForTable(tableName, options) {
     });
 }
 
-exports.getForeignKeyReferencesForTable = getForeignKeyReferencesForTable;

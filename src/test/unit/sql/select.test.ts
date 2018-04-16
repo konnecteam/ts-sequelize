@@ -1,10 +1,9 @@
 'use strict';
 
-const Support        = require(__dirname + '/../support');
-const DataTypes      = require(__dirname + '/../../../lib/data-types');
-const Model          = require(__dirname + '/../../../lib/model');
-const util           = require('util');
-const chai           = require('chai');
+import Support from '../../support';
+import DataTypes from '../../../lib/data-types';
+import {Model} from '../../../lib/model';
+import * as chai from 'chai';
 const expect         = chai.expect;
 const expectsql      = Support.expectsql;
 const current        = Support.sequelize;
@@ -32,7 +31,8 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         order: [
           ['email', 'DESC']
         ],
-        limit: 10
+        limit: 10,
+        model: undefined
       };
       const expectation = {
         default: "SELECT [email], [first_name] AS [firstName] FROM [User] WHERE [User].[email] = 'jon.snow@gmail.com' ORDER BY [email] DESC LIMIT 10;",
@@ -69,7 +69,8 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             1,
             5
           ]
-        }
+        },
+        model: undefined
       };
       const expectation = {
         default: 'SELECT [User].* FROM ('+

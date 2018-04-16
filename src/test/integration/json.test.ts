@@ -1,11 +1,11 @@
 'use strict';
 
-const chai = require('chai'),
-  expect = chai.expect,
-  Support = require('./support'),
-  Sequelize = Support.Sequelize,
-  current = Support.sequelize,
-  DataTypes = Sequelize.DataTypes;
+import * as chai from 'chai';
+const expect = chai.expect;
+import Support from './support';
+const Sequelize = Support.Sequelize;
+const current = Support.sequelize;
+const DataTypes = Sequelize.DataTypes;
 
 describe('model', () => {
   if (current.dialect.supports.JSON) {

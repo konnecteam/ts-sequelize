@@ -2,7 +2,7 @@
 
 const stores = new Map();
 
-module.exports = dialect => {
+export function parserStore(dialect : string) {
 
   if (!stores.has(dialect)) {
     stores.set(dialect, new Map());
@@ -21,4 +21,4 @@ module.exports = dialect => {
       return stores.get(dialect).get(type);
     }
   };
-};
+}
