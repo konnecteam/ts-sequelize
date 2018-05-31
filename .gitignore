@@ -22,5 +22,5 @@ esdoc
 .history
 package-lock.json
 yarn.lock
-docs/
+docs/api
 get-pip.py

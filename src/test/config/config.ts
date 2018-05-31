@@ -19,7 +19,7 @@ export default {
   },
 
   rand() {
-    return parseInt(Math.random() * 999, 10);
+    return parseInt('' + Math.random() * 999, 10);
   },
 
   mssql: mssqlConfig || {
@@ -60,7 +60,7 @@ export default {
     // https://github.com/oracle/node-oracledb/blob/master/doc/api.md#connectionstrings
     database : process.env.NODE_ORACLEDB_CONNECTIONSTRING || 'xe.oracle.docker',
     host : process.env.NODE_ORACLEDB_HOST || 'localhost',
-    dialectOptions : {stmtCacheSize:0, logAliasesQry:false},
+    dialectOptions : {stmtCacheSize: 0, logAliasesQry: false},
     port : process.env.NODE_ORACLEDB_PORT || 1521,
     // https://github.com/oracle/node-oracledb/blob/master/doc/api.md#extauth
     externalAuth : process.env.NODE_ORACLEDB_EXTERNALAUTH ? process.env.NODE_ORACLEDB_EXTERNALAUTH : false
