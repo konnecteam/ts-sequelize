@@ -66,6 +66,7 @@ before_script:
     fi
 
 script:
+  - npm run build
   - npm run lint
   - "if [ $COVERAGE ]; then npm run cover && bash <(curl -s https://codecov.io/bash) -f coverage/lcov.info; else npm run test; fi"
 
