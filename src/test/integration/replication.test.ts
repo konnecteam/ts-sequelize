@@ -1,17 +1,20 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from './support';
-import DataTypes from '../../lib/data-types';
-const dialect = Support.getTestDialect();
 import * as sinon from 'sinon';
+import DataTypes from '../../lib/data-types';
+import Support from './support';
+const expect = chai.expect;
+const dialect = Support.getTestDialect();
 
 describe(Support.getTestDialectTeaser('Replication'), function() {
-  if (dialect === 'sqlite') return;
+  if (dialect === 'sqlite') {
+    return;
+  }
 
   let sandbox;
-  let readSpy, writeSpy;
+  let readSpy;
+  let writeSpy;
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
@@ -28,7 +31,7 @@ describe(Support.getTestDialectTeaser('Replication'), function() {
 
     (this as any).User = (this as any).sequelize.define('User', {
       firstName: {
-        type: DataTypes.STRING,
+        type: new DataTypes.STRING(),
         field: 'first_name'
       }
     });

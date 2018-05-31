@@ -1,12 +1,12 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../../support';
-const dialect = Support.getTestDialect();
 import * as _ from 'lodash';
 import Operators from '../../../../lib/operators';
-import QueryGenerator from '../../../../lib/dialects/mysql/query-generator';
+import Support from '../../../support';
+const expect = chai.expect;
+const dialect = Support.getTestDialect();
+const QueryGenerator = Support.sequelize.dialect.QueryGenerator;
 
 if (dialect === 'mysql') {
   describe('[MYSQL Specific] QueryGenerator', () => {
@@ -36,7 +36,7 @@ if (dialect === 'mysql') {
           title: 'Should use the minus operator with where clause',
           arguments: ['-', 'myTable', { foo: 'bar' }, { bar: 'biz'}, {}],
           expectation: 'UPDATE `myTable` SET `foo`=`foo`- \'bar\' WHERE `bar` = \'biz\''
-        }
+        },
       ],
       attributesToSQL: [
         {
@@ -116,7 +116,7 @@ if (dialect === 'mysql') {
         {
           arguments: [{id: {type: 'INTEGER', allowNull: false, autoIncrement: true, defaultValue: 1, references: { model: 'Bar' }, onDelete: 'CASCADE', onUpdate: 'RESTRICT'}}],
           expectation: {id: 'INTEGER NOT NULL auto_increment DEFAULT 1 REFERENCES `Bar` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT'}
-        }
+        },
       ],
 
       createTableQuery: [
@@ -167,14 +167,14 @@ if (dialect === 'mysql') {
         {
           arguments: ['myTable', {id: 'INTEGER auto_increment PRIMARY KEY'}, {initialAutoIncrement: 1000001}],
           expectation: 'CREATE TABLE IF NOT EXISTS `myTable` (`id` INTEGER auto_increment , PRIMARY KEY (`id`)) ENGINE=InnoDB AUTO_INCREMENT=1000001;'
-        }
+        },
       ],
 
       dropTableQuery: [
         {
           arguments: ['myTable'],
           expectation: 'DROP TABLE IF EXISTS `myTable`;'
-        }
+        },
       ],
 
       selectQuery: [
@@ -223,12 +223,12 @@ if (dialect === 'mysql') {
           expectation: 'SELECT * FROM `myTable` ORDER BY `myTable`.`id` DESC;',
           context: QueryGenerator
         }, {
-          arguments: ['myTable', {order: [['id', 'DESC']]}, function(sequelize) {return sequelize.define('myTable', {});}],
+          arguments: ['myTable', {order: [['id', 'DESC']]}, function(sequelize) {return sequelize.define('myTable', {}); }],
           expectation: 'SELECT * FROM `myTable` AS `myTable` ORDER BY `myTable`.`id` DESC;',
           context: QueryGenerator,
           needsSequelize: true
         }, {
-          arguments: ['myTable', {order: [['id', 'DESC'], ['name']]}, function(sequelize) {return sequelize.define('myTable', {});}],
+          arguments: ['myTable', {order: [['id', 'DESC'], ['name']]}, function(sequelize) {return sequelize.define('myTable', {}); }],
           expectation: 'SELECT * FROM `myTable` AS `myTable` ORDER BY `myTable`.`id` DESC, `myTable`.`name`;',
           context: QueryGenerator,
           needsSequelize: true
@@ -248,7 +248,7 @@ if (dialect === 'mysql') {
             return {
               order: [
                 [sequelize.fn('f1', sequelize.col('myTable.id')), 'DESC'],
-                [sequelize.fn('f2', 12, 'lalala', new Date(Date.UTC(2011, 2, 27, 10, 1, 55))), 'ASC']
+                [sequelize.fn('f2', 12, 'lalala', new Date(Date.UTC(2011, 2, 27, 10, 1, 55))), 'ASC'],
               ]
             };
           }],
@@ -417,7 +417,7 @@ if (dialect === 'mysql') {
           arguments: ['myTable', {where: {field: {$notRegexp: '^[h|a|t]'}}}],
           expectation: "SELECT * FROM `myTable` WHERE `myTable`.`field` NOT REGEXP '^[h|a|t]';",
           context: QueryGenerator
-        }
+        },
       ],
 
       insertQuery: [
@@ -465,7 +465,7 @@ if (dialect === 'mysql') {
           }],
           expectation: 'INSERT INTO `myTable` (`foo`) VALUES (NOW());',
           needsSequelize: true
-        }
+        },
       ],
 
       bulkInsertQuery: [
@@ -505,7 +505,7 @@ if (dialect === 'mysql') {
         }, {
           arguments: ['myTable', [{name: 'foo'}, {name: 'bar'}], {updateOnDuplicate: ['name']}],
           expectation: "INSERT INTO `myTable` (`name`) VALUES ('foo'),('bar') ON DUPLICATE KEY UPDATE `name`=VALUES(`name`);"
-        }
+        },
       ],
 
       updateQuery: [
@@ -554,7 +554,7 @@ if (dialect === 'mysql') {
           }, {name: 'foo'}],
           expectation: "UPDATE `myTable` SET `bar`=`foo` WHERE `name` = 'foo'",
           needsSequelize: true
-        }
+        },
       ],
 
       showIndexesQuery: [
@@ -564,7 +564,7 @@ if (dialect === 'mysql') {
         }, {
           arguments: ['User', { database: 'sequelize' }],
           expectation: 'SHOW INDEX FROM `User` FROM `sequelize`'
-        }
+        },
       ],
 
       removeIndexQuery: [
@@ -574,31 +574,37 @@ if (dialect === 'mysql') {
         }, {
           arguments: ['User', ['foo', 'bar']],
           expectation: 'DROP INDEX `user_foo_bar` ON `User`'
-        }
+        },
       ],
       getForeignKeyQuery: [
         {
           arguments: ['User', 'email'],
-          expectation: "SELECT CONSTRAINT_NAME as constraint_name,CONSTRAINT_NAME as constraintName,CONSTRAINT_SCHEMA as constraintSchema,CONSTRAINT_SCHEMA as constraintCatalog,TABLE_NAME as tableName,TABLE_SCHEMA as tableSchema,TABLE_SCHEMA as tableCatalog,COLUMN_NAME as columnName,REFERENCED_TABLE_SCHEMA as referencedTableSchema,REFERENCED_TABLE_SCHEMA as referencedTableCatalog,REFERENCED_TABLE_NAME as referencedTableName,REFERENCED_COLUMN_NAME as referencedColumnName FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE (REFERENCED_TABLE_NAME = 'User' AND REFERENCED_COLUMN_NAME = 'email') OR (TABLE_NAME = 'User' AND COLUMN_NAME = 'email' AND REFERENCED_TABLE_NAME IS NOT NULL)"
-        }
+          expectation: 'SELECT CONSTRAINT_NAME as constraint_name,CONSTRAINT_NAME as constraintName,CONSTRAINT_SCHEMA as constraintSchema,CONSTRAINT_SCHEMA as constraintCatalog,TABLE_NAME as tableName,TABLE_SCHEMA as tableSchema,'
+          + 'TABLE_SCHEMA as tableCatalog,COLUMN_NAME as columnName,REFERENCED_TABLE_SCHEMA as referencedTableSchema,REFERENCED_TABLE_SCHEMA as referencedTableCatalog,REFERENCED_TABLE_NAME as referencedTableName,REFERENCED_COLUMN_NAME as'
+          + " referencedColumnName FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE (REFERENCED_TABLE_NAME = 'User' AND REFERENCED_COLUMN_NAME = 'email') OR (TABLE_NAME = 'User' AND COLUMN_NAME = 'email' AND REFERENCED_TABLE_NAME IS NOT NULL)"
+        },
       ]
     };
 
     _.each(suites, (tests, suiteTitle) => {
       describe(suiteTitle, () => {
-        tests.forEach(test => {
+        (tests as any).forEach(test => {
           const title = test.title || 'MySQL correctly returns ' + test.expectation + ' for ' + JSON.stringify(test.arguments);
           it(title, function() {
             // Options would normally be set by the query interface that instantiates the query-generator, but here we specify it explicitly
             const context = test.context || {options: {}};
             if (test.needsSequelize) {
-              if (_.isFunction(test.arguments[1])) test.arguments[1] = test.arguments[1](this.sequelize);
-              if (_.isFunction(test.arguments[2])) test.arguments[2] = test.arguments[2](this.sequelize);
+              if (_.isFunction(test.arguments[1])) {
+                test.arguments[1] = test.arguments[1](this.sequelize);
+              }
+              if (_.isFunction(test.arguments[2])) {
+                test.arguments[2] = test.arguments[2](this.sequelize);
+              }
             }
-            (QueryGenerator as any).options = _.assign(context.options, { timezone: '+00:00' });
-            (QueryGenerator as any)._dialect = this.sequelize.dialect;
-            (QueryGenerator as any).sequelize = this.sequelize;
-            (QueryGenerator as any).setOperatorsAliases(Operators.LegacyAliases);
+            QueryGenerator.options = _.assign(context.options, { timezone: '+00:00' });
+            QueryGenerator._dialect = this.sequelize.dialect;
+            QueryGenerator.sequelize = this.sequelize;
+            QueryGenerator.setOperatorsAliases(Operators.LegacyAliases);
             const conditions = QueryGenerator[suiteTitle].apply(QueryGenerator, test.arguments);
             expect(conditions).to.deep.equal(test.expectation);
           });

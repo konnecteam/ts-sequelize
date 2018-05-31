@@ -22,8 +22,8 @@ Built instances will automatically get default values when they were defined&col
 ```js
 // first define the model
 const Task = sequelize.define('task', {
-  title: Sequelize.STRING,
-  rating: { type: Sequelize.STRING, defaultValue: 3 }
+  title: new Sequelize.STRING(),
+  rating: { type: new Sequelize.STRING(), defaultValue: 3 }
 })
  
 // now instantiate an object
@@ -213,13 +213,13 @@ User.bulkCreate([
 ```js
 const Tasks = sequelize.define('task', {
   name: {
-    type: Sequelize.STRING,
+    type: new Sequelize.STRING(),
     validate: {
       notNull: { args: true, msg: 'name cannot be null' }
     }
   },
   code: {
-    type: Sequelize.STRING,
+    type: new Sequelize.STRING(),
     validate: {
       len: [3, 10]
     }

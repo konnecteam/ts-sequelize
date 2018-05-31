@@ -1,22 +1,22 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../support';
-import DataTypes from '../../../lib/data-types';
-import {Sequelize}from '../../../index';
+import * as _ from 'lodash';
 import * as moment from 'moment';
 import * as sinon from 'sinon';
+import {Sequelize} from '../../../index';
+import DataTypes from '../../../lib/data-types';
+import Support from '../support';
+const expect = chai.expect;
 const Promise = Sequelize.Promise;
 const current = Support.sequelize;
-import * as _ from 'lodash';
 const dialect = Support.getTestDialect();
 
 describe(Support.getTestDialectTeaser('HasMany'), () => {
   describe('Model.associations', () => {
     it('should store all assocations when associting to the same table multiple times', function() {
-      const User = this.sequelize.define('User', {}),
-        Group = this.sequelize.define('Group', {});
+      const User = this.sequelize.define('User', {});
+      const Group = this.sequelize.define('Group', {});
 
       Group.hasMany(User);
       Group.hasMany(User, { foreignKey: 'primaryGroupId', as: 'primaryUsers' });
@@ -28,8 +28,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
 
   describe('count', () => {
     it('should not fail due to ambiguous field', function() {
-      const User = this.sequelize.define('User', { username: DataTypes.STRING }),
-        Task = this.sequelize.define('Task', { title: DataTypes.STRING, active: DataTypes.BOOLEAN });
+      const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
+      const Task = this.sequelize.define('Task', { title: new DataTypes.STRING(), active: new DataTypes.BOOLEAN() });
 
       User.hasMany(Task);
       const subtasks = Task.hasMany(Task, { as: 'subtasks' });
@@ -68,8 +68,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
     if (current.dialect.supports.groupedLimit) {
       describe('multiple', () => {
         it('should fetch associations for multiple instances', function() {
-          const User = this.sequelize.define('User', {}),
-            Task = this.sequelize.define('Task', {});
+          const User = this.sequelize.define('User', {});
+          const Task = this.sequelize.define('Task', {});
 
           User.Tasks = User.hasMany(Task, {as: 'tasks'});
 
@@ -80,7 +80,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
                 tasks: [
                   {},
                   {},
-                  {}
+                  {},
                 ]
               }, {
                 include: [User.Tasks]
@@ -88,7 +88,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
               User.create({
                 id: 2,
                 tasks: [
-                  {}
+                  {},
                 ]
               }, {
                 include: [User.Tasks]
@@ -107,10 +107,10 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         });
 
         it('should fetch associations for multiple instances with limit and order', function() {
-          const User = this.sequelize.define('User', {}),
-            Task = this.sequelize.define('Task', {
-              title: DataTypes.STRING
-            });
+          const User = this.sequelize.define('User', {});
+          const Task = this.sequelize.define('Task', {
+            title: new DataTypes.STRING()
+          });
 
           User.Tasks = User.hasMany(Task, {as: 'tasks'});
 
@@ -121,7 +121,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
                   {title: 'b'},
                   {title: 'd'},
                   {title: 'c'},
-                  {title: 'a'}
+                  {title: 'a'},
                 ]
               }, {
                 include: [User.Tasks]
@@ -130,7 +130,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
                 tasks: [
                   {title: 'a'},
                   {title: 'c'},
-                  {title: 'b'}
+                  {title: 'b'},
                 ]
               }, {
                 include: [User.Tasks]
@@ -140,7 +140,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
             return User.Tasks.get(users, {
               limit: 2,
               order: [
-                ['title', 'ASC']
+                ['title', 'ASC'],
               ]
             }).then(result => {
               expect(result[users[0].id].length).to.equal(2);
@@ -155,13 +155,13 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         });
 
         it('should fetch multiple layers of associations with limit and order with separate=true', function() {
-          const User = this.sequelize.define('User', {}),
-            Task = this.sequelize.define('Task', {
-              title: DataTypes.STRING
-            }),
-            SubTask = this.sequelize.define('SubTask', {
-              title: DataTypes.STRING
-            });
+          const User = this.sequelize.define('User', {});
+          const Task = this.sequelize.define('Task', {
+            title: new DataTypes.STRING()
+          });
+          const SubTask = this.sequelize.define('SubTask', {
+            title: new DataTypes.STRING()
+          });
 
           User.Tasks = User.hasMany(Task, {as: 'tasks'});
           Task.SubTasks = Task.hasMany(SubTask, {as: 'subtasks'});
@@ -173,19 +173,19 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
                 tasks: [
                   {title: 'b', subtasks: [
                     {title: 'c'},
-                    {title: 'a'}
+                    {title: 'a'},
                   ]},
                   {title: 'd'},
                   {title: 'c', subtasks: [
                     {title: 'b'},
                     {title: 'a'},
-                    {title: 'c'}
+                    {title: 'c'},
                   ]},
                   {title: 'a', subtasks: [
                     {title: 'c'},
                     {title: 'a'},
-                    {title: 'b'}
-                  ]}
+                    {title: 'b'},
+                  ]},
                 ]
               }, {
                 include: [{association: User.Tasks, include: [Task.SubTasks]}]
@@ -196,15 +196,15 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
                   {title: 'a', subtasks: [
                     {title: 'b'},
                     {title: 'a'},
-                    {title: 'c'}
+                    {title: 'c'},
                   ]},
                   {title: 'c', subtasks: [
-                    {title: 'a'}
+                    {title: 'a'},
                   ]},
                   {title: 'b', subtasks: [
                     {title: 'a'},
-                    {title: 'b'}
-                  ]}
+                    {title: 'b'},
+                  ]},
                 ]
               }, {
                 include: [{association: User.Tasks, include: [Task.SubTasks]}]
@@ -224,11 +224,11 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
                     order: [['title', 'DESC']],
                     separate: true,
                     as: 'subtasks'
-                  }
+                  },
                 ]
               }],
               order: [
-                ['id', 'ASC']
+                ['id', 'ASC'],
               ]
             }).then(users => {
               expect(users[0].tasks.length).to.equal(2);
@@ -260,15 +260,15 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         });
 
         it('should fetch associations for multiple instances with limit and order and a belongsTo relation', function() {
-          const User = this.sequelize.define('User', {}),
-            Task = this.sequelize.define('Task', {
-              title: DataTypes.STRING,
-              categoryId: {
-                type: DataTypes.INTEGER,
-                field: 'category_id'
-              }
-            }),
-            Category = this.sequelize.define('Category', {});
+          const User = this.sequelize.define('User', {});
+          const Task = this.sequelize.define('Task', {
+            title: new DataTypes.STRING(),
+            categoryId: {
+              type: new DataTypes.INTEGER(),
+              field: 'category_id'
+            }
+          });
+          const Category = this.sequelize.define('Category', {});
 
           User.Tasks = User.hasMany(Task, {as: 'tasks'});
           Task.Category = Task.belongsTo(Category, {as: 'category', foreignKey: 'categoryId'});
@@ -280,7 +280,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
                   {title: 'b', category: {}},
                   {title: 'd', category: {}},
                   {title: 'c', category: {}},
-                  {title: 'a', category: {}}
+                  {title: 'a', category: {}},
                 ]
               }, {
                 include: [{association: User.Tasks, include: [Task.Category]}]
@@ -289,7 +289,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
                 tasks: [
                   {title: 'a', category: {}},
                   {title: 'c', category: {}},
-                  {title: 'b', category: {}}
+                  {title: 'b', category: {}},
                 ]
               }, {
                 include: [{association: User.Tasks, include: [Task.Category]}]
@@ -299,7 +299,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
             return User.Tasks.get(users, {
               limit: 2,
               order: [
-                ['title', 'ASC']
+                ['title', 'ASC'],
               ],
               include: [Task.Category]
             }).then(result => {
@@ -329,8 +329,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
 
     describe('hasSingle', () => {
       beforeEach(function() {
-        this.Article = this.sequelize.define('Article', { 'title': DataTypes.STRING });
-        this.Label = this.sequelize.define('Label', { 'text': DataTypes.STRING });
+        this.Article = this.sequelize.define('Article', { title: new DataTypes.STRING() });
+        this.Label = this.sequelize.define('Label', { text: new DataTypes.STRING() });
 
         this.Article.hasMany(this.Label);
 
@@ -338,8 +338,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
       });
 
       it('should only generate one set of foreignKeys', function() {
-        this.Article = this.sequelize.define('Article', { 'title': DataTypes.STRING }, {timestamps: false});
-        this.Label = this.sequelize.define('Label', { 'text': DataTypes.STRING }, {timestamps: false});
+        this.Article = this.sequelize.define('Article', { title: new DataTypes.STRING() }, {timestamps: false});
+        this.Label = this.sequelize.define('Label', { text: new DataTypes.STRING() }, {timestamps: false});
 
         this.Label.belongsTo(this.Article);
         this.Article.hasMany(this.Label);
@@ -350,11 +350,16 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
 
       if (current.dialect.supports.transactions) {
         it('supports transactions', function() {
-          let Article, Label, sequelize, article, label, t;
+          let Article;
+          let Label;
+          let sequelize;
+          let article;
+          let label;
+          let t;
           return Support.prepareTransactionTest(this.sequelize).then(_sequelize => {
             sequelize = _sequelize;
-            Article = sequelize.define('Article', { 'title': DataTypes.STRING });
-            Label = sequelize.define('Label', { 'text': DataTypes.STRING });
+            Article = sequelize.define('Article', { title: new DataTypes.STRING() });
+            Label = sequelize.define('Label', { text: new DataTypes.STRING() });
 
             Article.hasMany(Label);
 
@@ -362,7 +367,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
           }).then(() => {
             return Promise.all([
               Article.create({ title: 'foo' }),
-              Label.create({ text: 'bar' })
+              Label.create({ text: 'bar' }),
             ]);
           }).spread((_article, _label) => {
             article = _article;
@@ -392,11 +397,11 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         return Promise.all([
           this.Article.create({ title: 'Article' }),
           this.Label.create({ text: 'Awesomeness' }),
-          this.Label.create({ text: 'Epicness' })
+          this.Label.create({ text: 'Epicness' }),
         ]).spread((article, label1, label2) => {
           return Promise.all([
             article.hasLabel(label1),
-            article.hasLabel(label2)
+            article.hasLabel(label2),
           ]);
         }).spread((hasLabel1, hasLabel2) => {
           expect(hasLabel1).to.be.false;
@@ -408,12 +413,12 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         return Promise.all([
           this.Article.create({ title: 'Article' }),
           this.Label.create({ text: 'Awesomeness' }),
-          this.Label.create({ text: 'Epicness' })
+          this.Label.create({ text: 'Epicness' }),
         ]).spread((article, label1, label2) => {
           return article.addLabel(label1).then(() => {
             return Promise.all([
               article.hasLabel(label1),
-              article.hasLabel(label2)
+              article.hasLabel(label2),
             ]);
           });
         }).spread((hasLabel1, hasLabel2) => {
@@ -426,12 +431,12 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         return Promise.all([
           this.Article.create({ title: 'Article' }),
           this.Label.create({ text: 'Awesomeness' }),
-          this.Label.create({ text: 'Epicness' })
+          this.Label.create({ text: 'Epicness' }),
         ]).spread((article, label1, label2) => {
           return article.addLabel(label1).then(() => {
             return Promise.all([
               article.hasLabel(label1.id),
-              article.hasLabel(label2.id)
+              article.hasLabel(label2.id),
             ]);
           });
         }).spread((hasLabel1, hasLabel2) => {
@@ -444,10 +449,10 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
     describe('hasAll', () => {
       beforeEach(function() {
         this.Article = this.sequelize.define('Article', {
-          'title': DataTypes.STRING
+          title: new DataTypes.STRING()
         });
         this.Label = this.sequelize.define('Label', {
-          'text': DataTypes.STRING
+          text: new DataTypes.STRING()
         });
 
         this.Article.hasMany(this.Label);
@@ -459,8 +464,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         it('supports transactions', function() {
           return Support.prepareTransactionTest(this.sequelize).bind({}).then(function(sequelize) {
             this.sequelize = sequelize;
-            this.Article = sequelize.define('Article', { 'title': DataTypes.STRING });
-            this.Label = sequelize.define('Label', { 'text': DataTypes.STRING });
+            this.Article = sequelize.define('Article', { title: new DataTypes.STRING() });
+            this.Label = sequelize.define('Label', { text: new DataTypes.STRING() });
 
             this.Article.hasMany(this.Label);
 
@@ -468,7 +473,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
           }).then(function() {
             return Promise.all([
               this.Article.create({ title: 'foo' }),
-              this.Label.create({ text: 'bar' })
+              this.Label.create({ text: 'bar' }),
             ]);
           }).spread(function(article, label) {
             this.article = article;
@@ -482,7 +487,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
           }).then(function(articles) {
             return Promise.all([
               articles[0].hasLabels([this.label]),
-              articles[0].hasLabels([this.label], { transaction: this.t })
+              articles[0].hasLabels([this.label], { transaction: this.t }),
             ]);
           }).spread(function(hasLabel1, hasLabel2) {
             expect(hasLabel1).to.be.false;
@@ -497,7 +502,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         return Promise.all([
           this.Article.create({ title: 'Article' }),
           this.Label.create({ text: 'Awesomeness' }),
-          this.Label.create({ text: 'Epicness' })
+          this.Label.create({ text: 'Epicness' }),
         ]).spread((article, label1, label2) => {
           return article.addLabel(label1).then(() => {
             return article.hasLabels([label1, label2]);
@@ -511,7 +516,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         return Promise.all([
           this.Article.create({ title: 'Article' }),
           this.Label.create({ text: 'Awesomeness' }),
-          this.Label.create({ text: 'Epicness' })
+          this.Label.create({ text: 'Epicness' }),
         ]).spread((article, label1, label2) => {
           return article.addLabel(label1).then(() => {
             return article.hasLabels([label1.id, label2.id]).then(result => {
@@ -525,7 +530,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         return Promise.all([
           this.Article.create({ title: 'Article' }),
           this.Label.create({ text: 'Awesomeness' }),
-          this.Label.create({ text: 'Epicness' })
+          this.Label.create({ text: 'Epicness' }),
         ]).spread((article, label1, label2) => {
           return article.setLabels([label1, label2]).then(() => {
             return article.hasLabels([label1, label2]).then(result => {
@@ -539,7 +544,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         return Promise.all([
           this.Article.create({ title: 'Article' }),
           this.Label.create({ text: 'Awesomeness' }),
-          this.Label.create({ text: 'Epicness' })
+          this.Label.create({ text: 'Epicness' }),
         ]).spread((article, label1, label2) => {
           return article.setLabels([label1, label2]).then(() => {
             return article.hasLabels([label1.id, label2.id]).then(result => {
@@ -555,8 +560,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
       if (current.dialect.supports.transactions) {
         it('supports transactions', function() {
           return Support.prepareTransactionTest(this.sequelize).bind({}).then(function(sequelize) {
-            this.Article = sequelize.define('Article', { 'title': DataTypes.STRING });
-            this.Label = sequelize.define('Label', { 'text': DataTypes.STRING });
+            this.Article = sequelize.define('Article', { title: new DataTypes.STRING() });
+            this.Label = sequelize.define('Label', { text: new DataTypes.STRING() });
 
             this.Article.hasMany(this.Label);
 
@@ -566,7 +571,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
             return Promise.all([
               this.Article.create({ title: 'foo' }),
               this.Label.create({ text: 'bar' }),
-              this.sequelize.transaction()
+              this.sequelize.transaction(),
             ]);
           }).spread(function(article, label, t) {
             this.article = article;
@@ -586,15 +591,15 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
       }
 
       it('clears associations when passing null to the set-method', function() {
-        const User = this.sequelize.define('User', { username: DataTypes.STRING }),
-          Task = this.sequelize.define('Task', { title: DataTypes.STRING });
+        const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
+        const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
 
         Task.hasMany(User);
 
         return this.sequelize.sync({ force: true }).then(() => {
           return Promise.all([
             User.create({ username: 'foo' }),
-            Task.create({ title: 'task' })
+            Task.create({ title: 'task' }),
           ]);
         }).bind({}).spread(function(user, task) {
           this.task = task;
@@ -613,8 +618,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
       });
 
       it('supports passing the primary key instead of an object', function() {
-        const Article = this.sequelize.define('Article', { title: DataTypes.STRING }),
-          Label = this.sequelize.define('Label', { text: DataTypes.STRING });
+        const Article = this.sequelize.define('Article', { title: new DataTypes.STRING() });
+        const Label = this.sequelize.define('Label', { text: new DataTypes.STRING() });
 
         Article.hasMany(Label);
 
@@ -622,7 +627,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
           return Promise.all([
             Article.create({}),
             Label.create({ text: 'label one' }),
-            Label.create({ text: 'label two' })
+            Label.create({ text: 'label two' }),
           ]);
         }).bind({}).spread(function(article, label1, label2) {
           this.article = article;
@@ -644,8 +649,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
       if (current.dialect.supports.transactions) {
         it('supports transactions', function() {
           return Support.prepareTransactionTest(this.sequelize).bind({}).then(function(sequelize) {
-            this.Article = sequelize.define('Article', { 'title': DataTypes.STRING });
-            this.Label = sequelize.define('Label', { 'text': DataTypes.STRING });
+            this.Article = sequelize.define('Article', { title: new DataTypes.STRING() });
+            this.Label = sequelize.define('Label', { text: new DataTypes.STRING() });
             this.Article.hasMany(this.Label);
 
             this.sequelize = sequelize;
@@ -653,7 +658,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
           }).then(function() {
             return Promise.all([
               this.Article.create({ title: 'foo' }),
-              this.Label.create({ text: 'bar' })
+              this.Label.create({ text: 'bar' }),
             ]);
           }).spread(function(article, label) {
             this.article = article;
@@ -676,15 +681,15 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
       }
 
       it('supports passing the primary key instead of an object', function() {
-        const Article = this.sequelize.define('Article', { 'title': DataTypes.STRING }),
-          Label = this.sequelize.define('Label', { 'text': DataTypes.STRING });
+        const Article = this.sequelize.define('Article', { title: new DataTypes.STRING() });
+        const Label = this.sequelize.define('Label', { text: new DataTypes.STRING() });
 
         Article.hasMany(Label);
 
         return this.sequelize.sync({ force: true }).then(() => {
           return Promise.all([
             Article.create({}),
-            Label.create({ text: 'label one' })
+            Label.create({ text: 'label one' }),
           ]);
         }).bind({}).spread(function(article, label) {
           this.article = article;
@@ -699,8 +704,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
 
     describe('addMultipleAssociations', () => {
       it('adds associations without removing the current ones', function() {
-        const User = this.sequelize.define('User', { username: DataTypes.STRING }),
-          Task = this.sequelize.define('Task', { title: DataTypes.STRING });
+        const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
+        const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
 
         Task.hasMany(User);
 
@@ -708,7 +713,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
           return User.bulkCreate([
             { username: 'foo '},
             { username: 'bar '},
-            { username: 'baz '}
+            { username: 'baz '},
           ]);
         }).bind({}).then(() => {
           return Task.create({ title: 'task' });
@@ -728,8 +733,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
       });
 
       it('handles decent sized bulk creates', function() {
-        const User = this.sequelize.define('User', { username: DataTypes.STRING, num: DataTypes.INTEGER, status: DataTypes.STRING }),
-          Task = this.sequelize.define('Task', { title: DataTypes.STRING });
+        const User = this.sequelize.define('User', { username: new DataTypes.STRING(), num: new DataTypes.INTEGER(), status: new DataTypes.STRING() });
+        const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
 
         Task.hasMany(User);
 
@@ -741,7 +746,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         }).then(function(task) {
           this.task = task;
           return User.findAll();
-        }).then(users=> {
+        }).then(users => {
           expect(users).to.have.length(1000);
         });
       });
@@ -749,8 +754,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
     it('clears associations when passing null to the set-method with omitNull set to true', function() {
       this.sequelize.options.omitNull = true;
 
-      const User = this.sequelize.define('User', { username: DataTypes.STRING }),
-        Task = this.sequelize.define('Task', { title: DataTypes.STRING });
+      const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
+      const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
 
       Task.hasMany(User);
 
@@ -779,8 +784,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
 
     describe('createAssociations', () => {
       it('creates a new associated object', function() {
-        const Article = this.sequelize.define('Article', { 'title': DataTypes.STRING }),
-          Label = this.sequelize.define('Label', { 'text': DataTypes.STRING });
+        const Article = this.sequelize.define('Article', { title: new DataTypes.STRING() });
+        const Label = this.sequelize.define('Label', { text: new DataTypes.STRING() });
 
         Article.hasMany(Label);
 
@@ -799,12 +804,12 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         const spy = sinon.spy();
 
         const Article = this.sequelize.define('Article', {
-            'title': DataTypes.STRING
+          title: new DataTypes.STRING()
 
-          }),
-          Label = this.sequelize.define('Label', {
-            'text': DataTypes.STRING
-          });
+        });
+        const Label = this.sequelize.define('Label', {
+          text: new DataTypes.STRING()
+        });
 
         Article.hasMany(Label);
 
@@ -823,8 +828,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         it('supports transactions', function() {
           return Support.prepareTransactionTest(this.sequelize).bind({}).then(function(sequelize) {
             this.sequelize = sequelize;
-            this.Article = sequelize.define('Article', { 'title': DataTypes.STRING });
-            this.Label = sequelize.define('Label', { 'text': DataTypes.STRING });
+            this.Article = sequelize.define('Article', { title: new DataTypes.STRING() });
+            this.Label = sequelize.define('Label', { text: new DataTypes.STRING() });
 
             this.Article.hasMany(this.Label);
 
@@ -854,11 +859,11 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
 
       it('supports passing the field option', function() {
         const Article = this.sequelize.define('Article', {
-            'title': DataTypes.STRING
-          }),
-          Label = this.sequelize.define('Label', {
-            'text': DataTypes.STRING
-          });
+          title: new DataTypes.STRING()
+        });
+        const Label = this.sequelize.define('Label', {
+          text: new DataTypes.STRING()
+        });
 
         Article.hasMany(Label);
 
@@ -882,8 +887,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
       beforeEach(function() {
         const self = this;
 
-        this.User = this.sequelize.define('User', { username: DataTypes.STRING });
-        this.Task = this.sequelize.define('Task', { title: DataTypes.STRING, active: DataTypes.BOOLEAN });
+        this.User = this.sequelize.define('User', { username: new DataTypes.STRING() });
+        this.Task = this.sequelize.define('Task', { title: new DataTypes.STRING(), active: new DataTypes.BOOLEAN() });
 
         this.User.hasMany(self.Task);
 
@@ -891,7 +896,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
           return Promise.all([
             self.User.create({ username: 'John'}),
             self.Task.create({ title: 'Get rich', active: true}),
-            self.Task.create({ title: 'Die trying', active: false})
+            self.Task.create({ title: 'Die trying', active: false}),
           ]);
         }).spread((john, task1, task2) => {
           return john.setTasks([task1, task2]);
@@ -902,11 +907,11 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         it('should treat the where object of associations as a first class citizen', function() {
           const self = this;
           this.Article = this.sequelize.define('Article', {
-            'title': DataTypes.STRING
+            title: new DataTypes.STRING()
           });
           this.Label = this.sequelize.define('Label', {
-            'text': DataTypes.STRING,
-            'until': DataTypes.DATE
+            text: new DataTypes.STRING(),
+            until: new DataTypes.DATE()
           });
 
           this.Article.hasMany(this.Label);
@@ -915,7 +920,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
             return Promise.all([
               self.Article.create({ title: 'Article' }),
               self.Label.create({ text: 'Awesomeness', until: '2014-01-01 01:00:00' }),
-              self.Label.create({ text: 'Epicness', until: '2014-01-03 01:00:00' })
+              self.Label.create({ text: 'Epicness', until: '2014-01-03 01:00:00' }),
             ]);
           }).bind({}).spread(function(article, label1, label2) {
             this.article = article;
@@ -951,8 +956,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
       beforeEach(function() {
         const self = this;
 
-        this.User = this.sequelize.define('User', { username: DataTypes.STRING });
-        this.Task = this.sequelize.define('Task', { title: DataTypes.STRING, active: DataTypes.BOOLEAN });
+        this.User = this.sequelize.define('User', { username: new DataTypes.STRING() });
+        this.Task = this.sequelize.define('Task', { title: new DataTypes.STRING(), active: new DataTypes.BOOLEAN() });
 
         this.User.hasMany(self.Task, {
           foreignKey: 'userId'
@@ -962,7 +967,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
           return Promise.all([
             self.User.create({ username: 'John'}),
             self.Task.create({ title: 'Get rich', active: true}),
-            self.Task.create({ title: 'Die trying', active: false})
+            self.Task.create({ title: 'Die trying', active: false}),
           ]);
         }).spread((john, task1, task2) => {
           self.user = john;
@@ -1009,15 +1014,15 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
   describe('Foreign key constraints', () => {
     describe('1:m', () => {
       it('sets null by default', function() {
-        const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
-          User = this.sequelize.define('User', { username: DataTypes.STRING });
+        const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
+        const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
 
         User.hasMany(Task);
 
         return this.sequelize.sync({ force: true }).then(() => {
           return Promise.all([
             User.create({ username: 'foo' }),
-            Task.create({ title: 'task' })
+            Task.create({ title: 'task' }),
           ]);
         }).spread((user, task) => {
           return user.setTasks([task]).then(() => {
@@ -1031,8 +1036,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
       });
 
       it('sets to CASCADE if allowNull: false', function() {
-        const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
-          User = this.sequelize.define('User', { username: DataTypes.STRING });
+        const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
+        const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
 
         User.hasMany(Task, { foreignKey: { allowNull: false }}); // defaults to CASCADE
 
@@ -1050,15 +1055,15 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
       });
 
       it('should be possible to remove all constraints', function() {
-        const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
-          User = this.sequelize.define('User', { username: DataTypes.STRING });
+        const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
+        const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
 
         User.hasMany(Task, { constraints: false });
 
         return this.sequelize.sync({ force: true }).bind({}).then(() => {
           return Promise.all([
             User.create({ username: 'foo' }),
-            Task.create({ title: 'task' })
+            Task.create({ title: 'task' }),
           ]);
         }).spread(function(user, task) {
           this.user = user;
@@ -1074,15 +1079,15 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
       });
 
       it('can cascade deletes', function() {
-        const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
-          User = this.sequelize.define('User', { username: DataTypes.STRING });
+        const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
+        const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
 
         User.hasMany(Task, {onDelete: 'cascade'});
 
         return this.sequelize.sync({ force: true }).bind({}).then(() => {
           return Promise.all([
             User.create({ username: 'foo' }),
-            Task.create({ title: 'task' })
+            Task.create({ title: 'task' }),
           ]);
         }).spread(function(user, task) {
           this.user = user;
@@ -1101,15 +1106,15 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
       // NOTE: oracle does not support cascade constrait -> ORA-02292: integrity constraint - child record found
       if (dialect !== 'mssql' && dialect !== 'oracle') {
         it('can cascade updates', function() {
-          const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
-            User = this.sequelize.define('User', { username: DataTypes.STRING });
+          const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
+          const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
 
           User.hasMany(Task, {onUpdate: 'cascade'});
 
           return this.sequelize.sync({ force: true }).then(() => {
             return Promise.all([
               User.create({ username: 'foo' }),
-              Task.create({ title: 'task' })
+              Task.create({ title: 'task' }),
             ]);
           }).spread((user, task) => {
             return user.setTasks([task]).return (user);
@@ -1132,15 +1137,15 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
       if (current.dialect.supports.constraints.restrict) {
         it('can restrict deletes', function() {
           const self = this;
-          const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
-            User = this.sequelize.define('User', { username: DataTypes.STRING });
+          const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
+          const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
 
           User.hasMany(Task, {onDelete: 'restrict'});
 
           return this.sequelize.sync({ force: true }).bind({}).then(() => {
             return Promise.all([
               User.create({ username: 'foo' }),
-              Task.create({ title: 'task' })
+              Task.create({ title: 'task' }),
             ]);
           }).spread(function(user, task) {
             this.user = user;
@@ -1158,15 +1163,15 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
 
         it('can restrict updates', function() {
           const self = this;
-          const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
-            User = this.sequelize.define('User', { username: DataTypes.STRING });
+          const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
+          const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
 
           User.hasMany(Task, {onUpdate: 'restrict'});
 
           return this.sequelize.sync({ force: true }).then(() => {
             return Promise.all([
               User.create({ username: 'foo' }),
-              Task.create({ title: 'task' })
+              Task.create({ title: 'task' }),
             ]);
           }).spread((user, task) => {
             return user.setTasks([task]).return (user);
@@ -1193,14 +1198,14 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
 
   describe('Association options', () => {
     it('can specify data type for autogenerated relational keys', function() {
-      const User = this.sequelize.define('UserXYZ', { username: DataTypes.STRING }),
-        dataTypes = [DataTypes.INTEGER, DataTypes.BIGINT, DataTypes.STRING],
-        self = this,
-        Tasks = {};
+      const User = this.sequelize.define('UserXYZ', { username: new DataTypes.STRING() });
+      const dataTypes = [DataTypes.INTEGER, DataTypes.BIGINT, DataTypes.STRING];
+      const self = this;
+      const Tasks = {};
 
       return Promise.each(dataTypes, dataType => {
         const tableName = 'TaskXYZ_' + dataType.key;
-        Tasks[dataType] = self.sequelize.define(tableName, { title: DataTypes.STRING });
+        Tasks[dataType] = self.sequelize.define(tableName, { title: new DataTypes.STRING() });
 
         User.hasMany(Tasks[dataType], { foreignKey: 'userId', keyType: dataType, constraints: false });
 
@@ -1212,12 +1217,12 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
 
     it('infers the keyType if none provided', function() {
       const User = this.sequelize.define('User', {
-          id: { type: DataTypes.STRING, primaryKey: true },
-          username: DataTypes.STRING
-        }),
-        Task = this.sequelize.define('Task', {
-          title: DataTypes.STRING
-        });
+        id: { type: new DataTypes.STRING(), primaryKey: true },
+        username: new DataTypes.STRING()
+      });
+      const Task = this.sequelize.define('Task', {
+        title: new DataTypes.STRING()
+      });
 
       User.hasMany(Task);
 
@@ -1228,8 +1233,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
 
     describe('allows the user to provide an attribute definition object as foreignKey', () => {
       it('works with a column that hasnt been defined before', function() {
-        const Task = this.sequelize.define('task', {}),
-          User = this.sequelize.define('user', {});
+        const Task = this.sequelize.define('task', {});
+        const User = this.sequelize.define('user', {});
 
         User.hasMany(Task, {
           foreignKey: {
@@ -1246,17 +1251,17 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
 
       it('works when taking a column directly from the object', function() {
         const Project = this.sequelize.define('project', {
-            user_id: {
-              type: DataTypes.INTEGER,
-              defaultValue: 42
-            }
-          }),
-          User = this.sequelize.define('user', {
-            uid: {
-              type: DataTypes.INTEGER,
-              primaryKey: true
-            }
-          });
+          user_id: {
+            type: new DataTypes.INTEGER(),
+            defaultValue: 42
+          }
+        });
+        const User = this.sequelize.define('user', {
+          uid: {
+            type: new DataTypes.INTEGER(),
+            primaryKey: true
+          }
+        });
 
         User.hasMany(Project, { foreignKey: Project.rawAttributes.user_id});
 
@@ -1268,12 +1273,12 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
 
       it('works when merging with an existing definition', function() {
         const Task = this.sequelize.define('task', {
-            userId: {
-              defaultValue: 42,
-              type: DataTypes.INTEGER
-            }
-          }),
-          User = this.sequelize.define('user', {});
+          userId: {
+            defaultValue: 42,
+            type: new DataTypes.INTEGER()
+          }
+        });
+        const User = this.sequelize.define('user', {});
 
         User.hasMany(Task, { foreignKey: { allowNull: true }});
 
@@ -1285,7 +1290,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
 
     it('should throw an error if foreignKey and as result in a name clash', function() {
       const User = this.sequelize.define('user', {
-        user: DataTypes.INTEGER
+        user: new DataTypes.INTEGER()
       });
 
       expect(User.hasMany.bind(User, User, { as: 'user' })).to
@@ -1296,11 +1301,11 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
   describe('sourceKey', () => {
     beforeEach(function() {
       const User = this.sequelize.define('UserXYZ',
-        { username: DataTypes.STRING, email: DataTypes.STRING },
+        { username: new DataTypes.STRING(), email: new DataTypes.STRING() },
         { indexes: [{fields: ['email'], unique: true}] }
       );
       const Task = this.sequelize.define('TaskXYZ',
-        { title: DataTypes.STRING, userEmail: { type: DataTypes.STRING, field: 'user_email_xyz'} });
+        { title: new DataTypes.STRING(), userEmail: { type: new DataTypes.STRING(), field: 'user_email_xyz'} });
 
       User.hasMany(Task, {foreignKey: 'userEmail', sourceKey: 'email', as: 'tasks'});
 
@@ -1311,8 +1316,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
     });
 
     it('should use sourceKey', function() {
-      const User = this.User,
-        Task = this.Task;
+      const User = this.User;
+      const Task = this.Task;
 
       return User.create({ username: 'John', email: 'john@example.com' }).then(user => {
         return Task.create({title: 'Fix PR', userEmail: 'john@example.com'}).then(() => {
@@ -1325,8 +1330,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
     });
 
     it('should count related records', function() {
-      const User = this.User,
-        Task = this.Task;
+      const User = this.User;
+      const Task = this.Task;
 
       return User.create({ username: 'John', email: 'john@example.com' }).then(user => {
         return Task.create({title: 'Fix PR', userEmail: 'john@example.com'}).then(() => {
@@ -1338,8 +1343,8 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
     });
 
     it('should set right field when add relative', function() {
-      const User = this.User,
-        Task = this.Task;
+      const User = this.User;
+      const Task = this.Task;
 
       return User.create({ username: 'John', email: 'john@example.com' }).then(user => {
         return Task.create({title: 'Fix PR'}).then(task => {
@@ -1353,12 +1358,12 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
     });
 
     it('should create with nested associated models', function() {
-      const User = this.User,
-        values = {
-          username: 'John',
-          email: 'john@example.com',
-          tasks: [{ title: 'Fix new PR' }]
-        };
+      const User = this.User;
+      const values = {
+        username: 'John',
+        email: 'john@example.com',
+        tasks: [{ title: 'Fix new PR' }]
+      };
 
       return User.create(values, { include: ['tasks'] })
         .then(user => {
@@ -1384,11 +1389,11 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
   describe('sourceKey with where clause in include', () => {
     beforeEach(function() {
       this.User = this.sequelize.define('User',
-        { username: DataTypes.STRING, email: { type: DataTypes.STRING, field: 'mail'} },
+        { username: new DataTypes.STRING(), email: { type: new DataTypes.STRING(), field: 'mail'} },
         { indexes: [{fields: ['mail'], unique: true}] }
       );
       this.Task = this.sequelize.define('Task',
-        { title: DataTypes.STRING, userEmail: DataTypes.STRING, taskStatus: DataTypes.STRING });
+        { title: new DataTypes.STRING(), userEmail: new DataTypes.STRING(), taskStatus: new DataTypes.STRING() });
 
       this.User.hasMany(this.Task, {foreignKey: 'userEmail', sourceKey: 'mail'});
 
@@ -1399,7 +1404,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
       return this.User.create({ username: 'John', email: 'john@example.com'}).then(() =>
         this.Task.bulkCreate([
           {title: 'Active Task', userEmail: 'john@example.com', taskStatus: 'Active'},
-          {title: 'Inactive Task', userEmail: 'john@example.com', taskStatus: 'Inactive'}
+          {title: 'Inactive Task', userEmail: 'john@example.com', taskStatus: 'Inactive'},
         ])
       ).then(() =>
         this.User.find({
@@ -1407,7 +1412,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
             {
               model: this.Task,
               where: {taskStatus: 'Active'}
-            }
+            },
           ],
           where: {username: 'John'}
         })

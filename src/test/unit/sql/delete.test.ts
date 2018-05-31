@@ -1,8 +1,8 @@
 'use strict';
 
-import Support from '../../support';
 import * as util from 'util';
-import DataTypes from '../../../lib/data-types'
+import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
 const expectsql = Support.expectsql;
 const current   = Support.sequelize;
 const sql       = current.dialect.QueryGenerator;
@@ -154,9 +154,9 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
     });
 
     describe('delete when the primary key has a different field name', () => {
-      const User = current.define('test_user', {
+      const _User = current.define('test_user', {
         id: {
-          type: DataTypes.STRING,
+          type: new DataTypes.STRING(),
           primaryKey: true,
           field: 'test_user_id'
         }
@@ -167,7 +167,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
 
       const options = {
         table: 'test_user',
-        where: { 'test_user_id': 100 }
+        where: { test_user_id: 100 }
       };
 
       it(util.inspect(options, {depth: 2}), () => {
@@ -176,7 +176,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             options.table,
             options.where,
             options,
-            User
+            _User
           ), {
             postgres: 'DELETE FROM "test_user" WHERE "test_user_id" IN (SELECT "test_user_id" FROM "test_user" WHERE "test_user_id" = 100 LIMIT 1)',
             sqlite: 'DELETE FROM `test_user` WHERE rowid IN (SELECT rowid FROM `test_user` WHERE `test_user_id` = 100 LIMIT 1)',

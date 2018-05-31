@@ -1,11 +1,11 @@
 'use strict';
 
 import * as chai from 'chai';
-import {Sequelize}from '../../../../index';
+import {Sequelize} from '../../../../index';
 import DataTypes from '../../../../lib/data-types';
-const Promise = Sequelize.Promise;
-const expect = chai.expect;
 import Support from '../../support';
+const expect = chai.expect;
+const Promise = Sequelize.Promise;
 const dialect = Support.getTestDialect();
 
 describe(Support.getTestDialectTeaser('Model'), () => {
@@ -14,9 +14,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       describe('VIRTUAL', () => {
         beforeEach(function() {
           this.User = this.sequelize.define('user', {
-            storage: DataTypes.STRING,
+            storage: new DataTypes.STRING(),
             field1: {
-              type: DataTypes.VIRTUAL,
+              type: new DataTypes.VIRTUAL(),
               set(val) {
                 this.setDataValue('storage', val);
                 this.setDataValue('field1', val);
@@ -26,13 +26,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               }
             },
             field2: {
-              type: DataTypes.VIRTUAL,
+              type: new DataTypes.VIRTUAL(),
               get() {
                 return 42;
               }
             },
             virtualWithDefault: {
-              type: DataTypes.VIRTUAL,
+              type: new DataTypes.VIRTUAL(),
               defaultValue: 'cake'
             }
           }, { timestamps: false });
@@ -77,24 +77,22 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             }),
             this.Task.findAll({
               include: [
-                this.User
-              ],
+                this.User ],
               logging: this.sqlAssert
             }),
             this.Project.findAll({
               include: [
-                this.User
-              ],
+                this.User ],
               logging: this.sqlAssert
-            })
+            }),
           ]);
         });
 
         it('should allow me to store selected values', function() {
           const Post = this.sequelize.define('Post', {
-            text: DataTypes.TEXT,
+            text: new DataTypes.TEXT(),
             someBoolean: {
-              type: DataTypes.VIRTUAL
+              type: new DataTypes.VIRTUAL()
             }
           });
 

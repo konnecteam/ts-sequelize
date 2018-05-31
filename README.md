@@ -12,14 +12,19 @@
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 [![Greenkeeper badge](https://badges.greenkeeper.io/sequelize/sequelize.svg)](https://greenkeeper.io/)
 
+Improved version of Sequelize developed with typescript; based on Sequelize's V4 version.
+Independant version, no links with Sequelize anymore
+
+
 Sequelize is a promise-based Node.js ORM for Postgres, MySQL, SQLite and Microsoft SQL Server. It features solid transaction support, relations, read replication and more.
+
+[Changelog](https://github.com/konnecteam/ts-sequelize/releases)
 
 ## Table of Contents
 - [Installation](#installation)
 - [Features](#features)
 - [Responsible disclosure](#responsible-disclosure)
 - [Documentation](#documentation)
-- [Resources](#resources)
 
 ## Installation
 
@@ -52,19 +57,12 @@ Sequelize follows [SEMVER](http://semver.org). Supports Node v4 and above to use
 If you have any security issue to report, contact project maintainers privately. You can find contact information [here](https://github.com/sequelize/sequelize/blob/master/CONTACT.md)
 
 ## Documentation
-- [Contributing](https://github.com/sequelize/sequelize/blob/master/CONTRIBUTING.md)
-- [v4 Documentation](http://docs.sequelizejs.com)
-- [v3 Documentation](https://sequelize.readthedocs.io/en/v3/)
-- [v3 to v4 Upgrade Guide](http://docs.sequelizejs.com/manual/tutorial/upgrade-to-v4.html)
 
-## Resources
-- [Changelog](https://github.com/sequelize/sequelize/releases)
-- [Slack](http://sequelize-slack.herokuapp.com/)
-- [Google Groups](https://groups.google.com/forum/#!forum/sequelize)
+You can generate the documentation repository using "npm run docs" on the racine of the project
+We accept all contributions to this project
 
 ### Tools
 - [Add-ons & Plugins](https://github.com/sequelize/sequelize/wiki/Add-ons-&-Plugins)
-- [Sequelize & TypeScript](https://github.com/RobinBuschmann/sequelize-typescript)
 
 ### Learning
 - [Getting Started](http://docs.sequelizejs.com/manual/installation/getting-started)

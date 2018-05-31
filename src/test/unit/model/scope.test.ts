@@ -1,14 +1,14 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
-  const Project = current.define('project'),
-    User = current.define('user');
+  const Project = current.define('project');
+  const User = current.define('user');
 
   const scopes = {
     complexFunction(value) {
@@ -30,12 +30,12 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     },
     users: {
       include: [
-        { model: User }
+        { model: User },
       ]
     },
     alsoUsers: {
       include: [
-        { model: User, where: { something: 42}}
+        { model: User, where: { something: 42}},
       ]
     },
     projects: {
@@ -77,9 +77,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
   describe('.scope', () => {
     describe('attribute exclude / include', () => {
-      const User = current.define('user', {
-        password: DataTypes.STRING,
-        name: DataTypes.STRING
+      const _User = current.define('user', {
+        password: new DataTypes.STRING(),
+        name: new DataTypes.STRING()
       }, {
         defaultScope: {
           attributes: {
@@ -96,20 +96,20 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should be able to exclude in defaultScope #4735', () => {
-        expect(User._scope.attributes).to.deep.equal([
+        expect(_User._scope.attributes).to.deep.equal([
           'id',
           'name',
           'createdAt',
-          'updatedAt'
+          'updatedAt',
         ]);
       });
 
       it('should be able to exclude in a scope #4925', () => {
-        expect(User.scope('aScope')._scope.attributes).to.deep.equal([
+        expect(_User.scope('aScope')._scope.attributes).to.deep.equal([
           'id',
           'name',
           'createdAt',
-          'updatedAt'
+          'updatedAt',
         ]);
       });
     });
@@ -197,7 +197,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       expect(Company.scope('users', 'projects')._scope).to.deep.equal({
         include: [
           { model: User },
-          { model: Project }
+          { model: Project },
         ]
       });
     });
@@ -222,10 +222,14 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
     });
 
-    it('should override the default scope', () => {
+    it('should merge the default scope', () => {
       expect(Company.scope(['defaultScope', {method: ['complexFunction', 'qux']}])._scope).to.deep.equal({
         include: [{ model: Project }],
-        where: ['qux IN (SELECT foobar FROM some_sql_function(foo.bar))']
+        where: [
+          {
+            active: true
+          },
+          'qux IN (SELECT foobar FROM some_sql_function(foo.bar))']
       });
     });
 
@@ -313,7 +317,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       expect(Company.scope('newIncludeScope')._scope).to.deep.equal({
-        attributes: ['id', 'updatedAt', 'foobar']
+        attributes: [ 'foobar', 'id', 'updatedAt' ]
       });
     });
 
@@ -355,7 +359,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       const scope = {
         include: [
           { model: Project, where: { something: false }},
-          { model: Project, where: { something: true }}
+          { model: Project, where: { something: true }},
         ]
       };
 
@@ -409,13 +413,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     it('should be able to merge scoped include with include in find', () => {
       const scope = {
         include: [
-          { model: Project, where: { something: false }}
+          { model: Project, where: { something: false }},
         ]
       };
 
       const options = {
         include: [
-          { model: User, where: { something: true }}
+          { model: User, where: { something: true }},
         ]
       };
 
@@ -432,13 +436,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       it('scope with all', () => {
         const scope = {
           include: [
-            { all: true }
+            { all: true },
           ]
         };
 
         const options = {
           include: [
-            { model: User, where: { something: true }}
+            { model: User, where: { something: true }},
           ]
         };
 
@@ -455,13 +459,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       it('options with all', () => {
         const scope = {
           include: [
-            { model: User, where: { something: true }}
+            { model: User, where: { something: true }},
           ]
         };
 
         const options = {
           include: [
-            { all: true }
+            { all: true },
           ]
         };
 

@@ -2,10 +2,10 @@
 
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-const expect = chai.expect;
+import {Sequelize} from '../../index';
+import { DummyConnectionManager } from '../dummy/dummy-connection-manager';
 import Support from '../support';
-import {Sequelize}from '../../index';
-import {AbstractConnectionManager as ConnectionManager} from '../../lib/dialects/abstract/connection-manager';
+const expect = chai.expect;
 const Promise = Sequelize.Promise;
 
 describe('connection manager', () => {
@@ -31,7 +31,7 @@ describe('connection manager', () => {
       const connection = {};
       this.dialect.connectionManager.connect.returns(Promise.resolve(connection));
 
-      const connectionManager = new ConnectionManager(this.dialect, this.sequelize);
+      const connectionManager = new DummyConnectionManager(this.dialect, this.sequelize);
 
       const config = {};
 
@@ -41,8 +41,8 @@ describe('connection manager', () => {
     });
 
     it('should let beforeConnect hook modify config', function() {
-      const username = Math.random().toString(),
-        password = Math.random().toString();
+      const username = Math.random().toString();
+      const password = Math.random().toString();
 
       this.sequelize.beforeConnect(config => {
         config.username = username;
@@ -50,7 +50,7 @@ describe('connection manager', () => {
         return config;
       });
 
-      const connectionManager = new ConnectionManager(this.dialect, this.sequelize);
+      const connectionManager = new DummyConnectionManager(this.dialect, this.sequelize);
 
       return connectionManager._connect({}).then(() => {
         expect(this.dialect.connectionManager.connect).to.have.been.calledWith({
@@ -64,7 +64,7 @@ describe('connection manager', () => {
       const spy = sinon.spy();
       this.sequelize.afterConnect(spy);
 
-      const connectionManager = new ConnectionManager(this.dialect, this.sequelize);
+      const connectionManager = new DummyConnectionManager(this.dialect, this.sequelize);
 
       return connectionManager._connect({}).then(() => {
         expect(spy.callCount).to.equal(1);

@@ -1,12 +1,12 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
-const current = Support.sequelize;
 import * as sinon from 'sinon';
 import DataTypes from '../../../lib/data-types';
-import * as Promise from 'bluebird';
+import Support from '../../support';
+const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('method count', () => {
@@ -17,11 +17,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       current.Model.findAll = sinon.stub().returns(Promise.resolve());
 
       this.User = current.define('User', {
-        username: DataTypes.STRING,
-        age: DataTypes.INTEGER
+        username: new DataTypes.STRING(),
+        age: new DataTypes.INTEGER()
       });
       this.Project = current.define('Project', {
-        name: DataTypes.STRING
+        name: new DataTypes.STRING()
       });
 
       this.User.hasMany(this.Project);

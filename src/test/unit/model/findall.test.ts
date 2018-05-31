@@ -1,13 +1,13 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
-const current = Support.sequelize;
 import * as sinon from 'sinon';
 import DataTypes from '../../../lib/data-types';
-import * as Utils from '../../../lib/utils.js';
 import * as sequelizeErrors from '../../../lib/errors/index';
+import { Utils } from '../../../lib/utils';
+import Support from '../../support';
+const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('warnOnInvalidOptions', () => {
@@ -41,7 +41,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
   describe('method findAll', () => {
     const Model = current.define('model', {
-      name: DataTypes.STRING
+      name: new DataTypes.STRING()
     }, { timestamps: false });
 
     before(() => {
@@ -81,9 +81,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }
         }).then(() => {
           expect(this.stub.getCall(0).args[2].attributes).to.deep.equal([
+            'foobar',
             'id',
             'name',
-            'foobar'
           ]);
         });
       });
@@ -95,7 +95,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }
         }).then(() => {
           expect(this.stub.getCall(0).args[2].attributes).to.deep.equal([
-            'id'
+            'id',
           ]);
         });
       });
@@ -108,27 +108,27 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }
         }).then(() => {
           expect(this.stub.getCall(0).args[2].attributes).to.deep.equal([
+            'name',
             'id',
-            'name'
           ]);
         });
       });
 
       it('works for models without PK #4607', () => {
-        const Model = current.define('model', {}, { timestamps: false });
+        const _Model = current.define('model', {}, { timestamps: false });
         const Foo = current.define('foo');
-        Model.hasOne(Foo);
+        _Model.hasOne(Foo);
 
-        Model.removeAttribute('id');
+        _Model.removeAttribute('id');
 
-        return Model.findAll({
+        return _Model.findAll({
           attributes: {
             include: ['name']
           },
           include: [Foo]
         }).then(() => {
           expect(this.stub.getCall(0).args[2].attributes).to.deep.equal([
-            'name'
+            'name',
           ]);
         });
       });

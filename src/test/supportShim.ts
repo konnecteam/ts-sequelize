@@ -1,20 +1,20 @@
 'use strict';
 
-import {QueryInterface} from '../lib/query-interface';
 import * as hintsModule from 'hints';
 import * as _ from 'lodash';
 import * as util from 'util';
+import { AbstractQueryInterface } from '../lib/query-interface';
 
 /**
  * Shims all Sequelize methods to test for logging passing.
- * @param {Object} Sequelize - Sequelize constructor
+ * @param Sequelize - Sequelize constructor
  */
 export function supportShim(Sequelize) {
   // Shim all Sequelize methods
   shimAll(Sequelize.prototype, 'Sequelize#');
   shimAll(Sequelize.Model, 'Model.');
   shimAll(Sequelize.Model.prototype, 'Model#');
-  shimAll(QueryInterface.prototype, 'QueryInterface#');
+  shimAll(AbstractQueryInterface.prototype, 'QueryInterface#');
   shimAll(Sequelize.Association.prototype, 'Association#');
   _.forIn(Sequelize.Association, (Association, name) => {
     shimAll(Association.prototype, 'Association.' + name + '#');
@@ -24,8 +24,8 @@ export function supportShim(Sequelize) {
   ['hasOne', 'belongsTo', 'hasMany', 'belongsToMany'].forEach(type => {
     shimMethod(Sequelize.Model, type, original => {
       return function() {
-        const model = this,
-          association = original.apply(this, arguments);
+        const model = this;
+        const association = original.apply(this, arguments);
 
         _.forIn(association.accessors, (accessor, accessorName) => {
           shim(model.prototype, accessor, model.prototype[accessor].length, null, 'Model#' + accessorName);
@@ -40,13 +40,15 @@ export function supportShim(Sequelize) {
 
   /**
    * Shims all shimmable methods on obj.
-   * @param {Object} obj
-   * @param {string} objName - Name of object for error reporting
+   * @param obj
+   * @param objName - Name of object for error reporting
    */
   function shimAll(obj, objName) {
     forOwn(obj, (method, name) => {
       const result = examine(method, name);
-      if (result) shim(obj, name, result.index, result.conform, objName + name);
+      if (result) {
+        shim(obj, name, result.index, result.conform, objName + name);
+      }
     });
   }
 
@@ -73,22 +75,26 @@ export function supportShim(Sequelize) {
    *   `// testhint argsConform.start` & `// testhint argsConform.end`
    *     - this part of the function body deals with conforming flexible arguments
    *
-   * @param {Function} method - Function to examine
-   * @param {string} name - Attribute name of this method on parent object
+   * @param method - Function to examine
+   * @param name - Attribute name of this method on parent object
    * @returns {Object}
    */
   function examine(method, name) {
     // skip if not a function
-    if (typeof method !== 'function') return;
+    if (typeof method !== 'function') {
+      return;
+    }
 
     // skip classes, constructors and private methods
-    if (name === 'constructor' || !name.match(/^[a-z]/)) return;
+    if (name === 'constructor' || !name.match(/^[a-z]/)) {
+      return;
+    }
 
     // find test hints if provided
-    const fnStr = getFunctionCode(method),
-      obj = hintsModule.full(fnStr, 'testhint'),
-      hints = obj.hints,
-      tree = obj.tree;
+    const fnStr = getFunctionCode(method);
+    const obj = hintsModule.full(fnStr, 'testhint');
+    const hints = obj.hints;
+    const tree = obj.tree;
 
     const result = {
       conform: undefined,
@@ -103,7 +109,9 @@ export function supportShim(Sequelize) {
 
     // use hints to find index
     const hint = hints.options;
-    if (hint === 'none') return;
+    if (hint === 'none') {
+      return;
+    }
     if (hint && hint.match(/^\d+$/)) {
       result.index = hint * 1;
       return result;
@@ -111,7 +119,9 @@ export function supportShim(Sequelize) {
 
     // find 'options' argument - if none, then skip
     const index = args.indexOf('options');
-    if (index === -1) return;
+    if (index === -1) {
+      return;
+    }
 
     result.index = index + 1;
     return result;
@@ -123,11 +133,11 @@ export function supportShim(Sequelize) {
    *   Injects `options.logging` if called from within the tests.
    *   Throws if called from within Sequelize and not passed correct `options.logging`
    *
-   * @param {Object} obj - Object which is parent of this method
-   * @param {string} name - Name of method on object to shim
-   * @param {number} index - Index of argument which is `options` (1-based)
-   * @param {Function} conform - Function to conform function arguments
-   * @param {string} debugName - Full name of method for error reporting
+   * @param obj - Object which is parent of this method
+   * @param name - Name of method on object to shim
+   * @param index - Index of argument which is `options` (1-based)
+   * @param conform - Function to conform function arguments
+   * @param debugName - Full name of method for error reporting
    */
   function shim(obj, name, index, conform, debugName) {
     index--;
@@ -137,13 +147,19 @@ export function supportShim(Sequelize) {
 
       return function() {
         let sequelize = sequelizeProto ? this : this.sequelize;
-        if (this instanceof Sequelize.Association) sequelize = this.target.sequelize;
-        if (!sequelize) throw new Error('Object does not have a `sequelize` attribute');
+        if (this instanceof Sequelize.Association) {
+          sequelize = this.target.sequelize;
+        }
+        if (!sequelize) {
+          throw new Error('Object does not have a `sequelize` attribute');
+        }
 
         let args = Sequelize.Utils.sliceArgs(arguments);
         const fromTests = calledFromTests();
 
-        if (conform) args = conform.apply(this, arguments);
+        if (conform) {
+          args = conform.apply(this, arguments);
+        }
 
         let options = args[index];
 
@@ -171,13 +187,19 @@ export function supportShim(Sequelize) {
           }
 
           result = result.finally(() => {
-            if (err) throw err;
+            if (err) {
+              throw err;
+            }
             checkOptions(options, originalOptions, debugName);
-            if (fromTests) removeLogger(options);
+            if (fromTests) {
+              removeLogger(options);
+            }
           });
         } else {
           checkOptions(options, originalOptions, debugName);
-          if (fromTests) removeLogger(options);
+          if (fromTests) {
+            removeLogger(options);
+          }
         }
 
         return result;
@@ -188,13 +210,15 @@ export function supportShim(Sequelize) {
   /**
    * Shims a method with given wrapper function
    *
-   * @param {Object} obj - Object which is parent of this method
-   * @param {string} name - Name of method on object to shim
-   * @param {Function} wrapper - Wrapper function
+   * @param obj - Object which is parent of this method
+   * @param name - Name of method on object to shim
+   * @param wrapper - Wrapper function
    */
   function shimMethod(obj, name, wrapper) {
     const original = obj[name];
-    if (original.__testShim) return;
+    if (original.__testShim) {
+      return;
+    }
 
     if (original.__testShimmedTo) {
       obj[name] = original.__testShimmedTo;
@@ -209,14 +233,16 @@ export function supportShim(Sequelize) {
    * Adds `logging` function to `options`.
    * If existing `logging` attribute, shims it.
    *
-   * @param {Object} options
+   * @param options
    * @returns {Object} - Options with `logging` attribute added
    */
   function addLogger(options, sequelize) {
-    if (!options) options = {};
+    if (!options) {
+      options = {};
+    }
 
-    const hadLogging = options.hasOwnProperty('logging'),
-      originalLogging = options.logging;
+    const hadLogging = options.hasOwnProperty('logging');
+    const originalLogging = options.logging;
 
     options.logging = function() {
       const logger = originalLogging !== undefined ? originalLogging : sequelize.options.logging;
@@ -230,7 +256,9 @@ export function supportShim(Sequelize) {
     };
 
     options.logging.__testLoggingFn = true;
-    if (hadLogging) options.logging.__originalLogging = originalLogging;
+    if (hadLogging) {
+      options.logging.__originalLogging = originalLogging;
+    }
 
     return options;
   }
@@ -238,7 +266,7 @@ export function supportShim(Sequelize) {
   /**
    * Revert `options.logging` to original value
    *
-   * @param {Object} options
+   * @param options
    * @returns {Object} - Options with `logging` attribute reverted to original value
    */
   function removeLogger(options) {
@@ -252,11 +280,13 @@ export function supportShim(Sequelize) {
   /**
    * Checks if `options.logging` is an injected logging function
    *
-   * @param {Object} options
+   * @param options
    * @throws {Error} - Throws if `options.logging` is not a shimmed logging function
    */
   function testLogger(options, name) {
-    if (!options || !options.logging || !options.logging.__testLoggingFn) throw new Error('options.logging has been lost in method ' + name);
+    if (!options || !options.logging || !options.logging.__testLoggingFn) {
+      throw new Error('options.logging has been lost in method ' + name);
+    }
   }
 
   /**
@@ -265,13 +295,13 @@ export function supportShim(Sequelize) {
    *
    * @returns {boolean} - true if this method called from within the tests
    */
-  const pathRegStr = _.escapeRegExp(__dirname + '/'),
-    regExp = new RegExp('^\\s+at\\s+(' + pathRegStr + '|.+ \\(' + pathRegStr + ')');
+  const pathRegStr = _.escapeRegExp(__dirname + '/');
+  const regExp = new RegExp('^\\s+at\\s+(' + pathRegStr + '|.+ \\(' + pathRegStr + ')');
 
   function calledFromTests() {
     return !!(new Error()).stack.split(/[\r\n]+/)[3].match(regExp);
   }
-};
+}
 
 // Helper functions for examining code for hints
 
@@ -281,13 +311,15 @@ export function supportShim(Sequelize) {
  * Getters are skipped.
  * Like `_.forIn()` except also includes non-enumarable properties, and skips getters.
  *
- * @param {Object} obj - Object to iterate over
- * @param {Function} fn - Function to call for each property
+ * @param obj - Object to iterate over
+ * @param fn - Function to call for each property
  * @returns {Object} - `obj` input
  */
 function forOwn(obj, fn) {
   Object.getOwnPropertyNames(obj).forEach(key => {
-    if (Object.getOwnPropertyDescriptor(obj, key).hasOwnProperty('value')) fn(obj[key], key, obj);
+    if (Object.getOwnPropertyDescriptor(obj, key).hasOwnProperty('value')) {
+      fn(obj[key], key, obj);
+    }
   });
   return obj;
 }
@@ -297,24 +329,30 @@ function forOwn(obj, fn) {
  * Adds 'function ' to start of code where fn has been defined with object method shortcut,
  * and alters illegal function names ('import', 'delete'), so code can be parsed by `acorn`.
  *
- * @param {Function} fn - Function
+ * @param fn - Function
  * @returns {string} - Code of function
  */
 function getFunctionCode(fn) {
   let code = fn.toString();
-  if (code.match(/^function[\s\*\(]/) || code.match(/^class[\s\{]/)) return code;
-  if (code.match(/^(import|delete)[\s\*\(]/)) code = '_' + code.substr(1);
+  if (code.match(/^function[\s\*\(]/) || code.match(/^class[\s\{]/)) {
+    return code;
+  }
+  if (code.match(/^(import|delete)[\s\*\(]/)) {
+    code = '_' + code.substr(1);
+  }
   return 'function ' + code;
 }
 
 /**
  * Returns arguments of a function as an array, from its AST
  *
- * @param {Object} tree - Abstract syntax tree of function's code
+ * @param tree - Abstract syntax tree of function's code
  * @returns {Array} - Array of names of `method`'s arguments
  */
 function getFunctionArguments(tree) {
-  return tree.body[0].params.map(param => {return param.name;});
+  return tree.body[0].params.map(param => {
+    return param.name;
+  });
 }
 
 /**
@@ -324,22 +362,28 @@ function getFunctionArguments(tree) {
  *
  * Returns undefined if no conform arguments hints.
  *
- * @param {Function} method - Function to inspect
- * @param {Array} args - Array of names of `method`'s arguments
- * @param {Object} hints - Hints object containing code hints parsed from code
- * @param {Object} tree - Abstract syntax tree of function's code
+ * @param method - Function to inspect
+ * @param args - Array of names of `method`'s arguments
+ * @param hints - Hints object containing code hints parsed from code
+ * @param tree - Abstract syntax tree of function's code
  * @returns {Function} - Function which will conform method's arguments and return as an array
  */
 function getArgumentsConformFn(method, args, hints, tree) {
   // check if argsConform hints present
   hints = hints.argsConform;
-  if (!hints) return;
-  if (hints.start && !hints.end) throw new Error('Options conform section has no end');
-  if (!hints.end) return;
+  if (!hints) {
+    return;
+  }
+  if (hints.start && !hints.end) {
+    throw new Error('Options conform section has no end');
+  }
+  if (!hints.end) {
+    return;
+  }
 
   // extract
-  const start = hints.start ? hints.start.end : tree.body[0].body.start + 1,
-    body = getFunctionCode(method).slice(start, hints.end.start);
+  const start = hints.start ? hints.start.end : tree.body[0].body.start + 1;
+  const body = getFunctionCode(method).slice(start, hints.end.start);
 
   // create function that conforms arguments
   return new Function(args, body + ';return [' + args + '];');
@@ -347,24 +391,28 @@ function getArgumentsConformFn(method, args, hints, tree) {
 
 /**
  * Clone options object
- * @param {Object} options - Options object
+ * @param options - Options object
  * @returns {Object} - Clone of options
  */
 function cloneOptions(options) {
   return _.cloneDeepWith(options, value => {
-    if (typeof value === 'object' && !_.isPlainObject(value)) return value;
+    if (typeof value === 'object' && !_.isPlainObject(value)) {
+      return value;
+    }
   });
 }
 
 /**
  * Checks options object has not been altered and throw if altered
  *
- * @param {Object} options - Options object
- * @param {Object} original - Original options object
+ * @param options - Options object
+ * @param original - Original options object
  * @throws {Error} - Throws if options and original are not identical
  */
 function checkOptions(options, original, name) {
-  if (!optionsEqual(options, original)) throw new Error('options modified in ' + name + ', input: ' + util.inspect(original) + ' output: ' + util.inspect(options));
+  if (!optionsEqual(options, original)) {
+    throw new Error('options modified in ' + name + ', input: ' + util.inspect(original) + ' output: ' + util.inspect(options));
+  }
 }
 
 /**
@@ -372,12 +420,14 @@ function checkOptions(options, original, name) {
  * Objects which are not plain objects (e.g. Models) are compared by reference.
  * Everything else deep-compared by value.
  *
- * @param {Object} options - Options object
- * @param {Object} original - Original options object
+ * @param options - Options object
+ * @param original - Original options object
  * @returns {boolean} - true if options and original are same, false if not
  */
 function optionsEqual(options, original) {
   return _.isEqualWith(options, original, (value1, value2) => {
-    if (typeof value1 === 'object' && !_.isPlainObject(value1) || typeof value2 === 'object' && !_.isPlainObject(value2)) return value1 === value2;
+    if (typeof value1 === 'object' && !_.isPlainObject(value1) || typeof value2 === 'object' && !_.isPlainObject(value2)) {
+      return value1 === value2;
+    }
   });
 }

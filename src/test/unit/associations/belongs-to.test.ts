@@ -1,9 +1,9 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
 import * as _ from 'lodash';
 import Support from '../../support';
+const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('belongsTo'), () => {

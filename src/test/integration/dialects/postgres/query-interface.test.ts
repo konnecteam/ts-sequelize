@@ -1,11 +1,11 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
-const dialect = Support.getTestDialect();
-import DataTypes from '../../../../lib/data-types';
 import * as _ from 'lodash';
+import DataTypes from '../../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
+const dialect = Support.getTestDialect();
 
 
 if (dialect.match(/^postgres/)) {
@@ -155,7 +155,7 @@ if (dialect.match(/^postgres/)) {
           // requires body
           expect(() => {
             return this.queryInterface.createFunction('create_job', [{type: 'varchar', name: 'test'}], 'varchar', 'plpgsql', null, options);
-          }).to.throw(/createFunction missing some parameters. Did you pass functionName, returnType, language and body/)
+          }).to.throw(/createFunction missing some parameters. Did you pass functionName, returnType, language and body/),
         ]);
       });
     });
@@ -196,7 +196,7 @@ if (dialect.match(/^postgres/)) {
 
           expect(() => {
             return this.queryInterface.dropFunction('droptest', [{name: 'test'}]);
-          }).to.be.throw(/.*function or trigger used with a parameter without any type/)
+          }).to.be.throw(/.*function or trigger used with a parameter without any type/),
         ]);
       });
     });
@@ -205,9 +205,9 @@ if (dialect.match(/^postgres/)) {
       beforeEach(function() {
         return this.queryInterface.dropTable('Group')
           .then(() => this.queryInterface.createTable('Group', {
-            username: DataTypes.STRING,
-            isAdmin: DataTypes.BOOLEAN,
-            from: DataTypes.STRING
+            username: new DataTypes.STRING(),
+            isAdmin: new DataTypes.BOOLEAN(),
+            from: new DataTypes.STRING()
           }));
       });
 

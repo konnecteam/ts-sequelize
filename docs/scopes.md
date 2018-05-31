@@ -109,7 +109,7 @@ Project.scope(['deleted', 'activeUsers']).findAll();
 ```sql
 SELECT * FROM projects
 INNER JOIN users ON projects.userId = users.id
-AND users.active = true
+AND users.active = true AND deleted = true
 ```
 
 If you want to apply another scope alongside the default scope, pass the key `defaultScope` to `.scope`:
@@ -121,7 +121,7 @@ Project.scope('defaultScope', 'deleted').findAll();
 SELECT * FROM projects WHERE active = true AND deleted = true
 ```
 
-When invoking several scopes, keys from subsequent scopes will overwrite previous ones (similar to [_.assign](https://lodash.com/docs#assign)). Consider two scopes:
+When invoking several scopes, keys from subsequent scopes will merge previous ones. Consider two scopes:
 
 ```js
 {
@@ -139,8 +139,7 @@ When invoking several scopes, keys from subsequent scopes will overwrite previou
       age: {
         [Op.gt]: 30
       }
-    },
-    limit: 10
+    }
   }
 }
 ```
@@ -148,10 +147,9 @@ When invoking several scopes, keys from subsequent scopes will overwrite previou
 Calling `.scope('scope1', 'scope2')` will yield the following query
 
 ```sql
-WHERE firstName = 'bob' AND age > 30 LIMIT 10
+WHERE firstName = 'bob' AND age > 20 AND age > 30 LIMIT 2
 ```
 
-Note how `limit` and `age` are overwritten by `scope2`, while `firstName` is preserved. `limit`, `offset`, `order`, `paranoid`, `lock` and `raw` are overwritten, while `where` and `include` are shallowly merged. This means that identical keys in the where objects, and subsequent includes of the same model will both overwrite each other.
 
 The same merge logic applies when passing a find object directly to findAll on a scoped model:
 
@@ -166,7 +164,7 @@ Project.scope('deleted').findAll({
 WHERE deleted = true AND firstName = 'john'
 ```
 
-Here the `deleted` scope is merged with the finder. If we were to pass `where: { firstName: 'john', deleted: false }` to the finder, the `deleted` scope would be overwritten.
+Here the `deleted` scope is merged with the finder.
 
 ## Associations
 Sequelize has two different but related scope concepts in relation to associations. The difference is subtle but important:

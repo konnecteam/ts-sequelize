@@ -77,10 +77,10 @@ Models are defined with `sequelize.define('name', {attributes}, {options})`.
 ```js
 const User = sequelize.define('user', {
   firstName: {
-    type: Sequelize.STRING
+    type: new Sequelize.STRING()
   },
   lastName: {
-    type: Sequelize.STRING
+    type: new Sequelize.STRING()
   }
 });
 

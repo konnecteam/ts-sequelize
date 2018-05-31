@@ -1,10 +1,10 @@
 'use strict';
 
+import * as chai from 'chai';
 import Support from '../../support';
 const current   = Support.sequelize;
 const expectsql = Support.expectsql;
 const sql = current.dialect.QueryGenerator;
-import * as chai from 'chai';
 const expect = chai.expect;
 
 describe(Support.getTestDialectTeaser('SQL'), () => {

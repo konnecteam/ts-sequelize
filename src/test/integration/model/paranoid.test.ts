@@ -1,10 +1,10 @@
 'use strict';
 
-import Support from '../support';
-import DataTypes from '../../../lib/data-types';
 import * as chai from 'chai';
-const expect = chai.expect;
 import * as sinon from 'sinon';
+import DataTypes from '../../../lib/data-types';
+import Support from '../support';
+const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
@@ -20,12 +20,12 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     it('should be able to soft delete with timestamps', function() {
       const Account = this.sequelize.define('Account', {
         ownerId: {
-          type: DataTypes.INTEGER,
+          type: new DataTypes.INTEGER(),
           allowNull: false,
           field: 'owner_id'
         },
         name: {
-          type: DataTypes.STRING
+          type: new DataTypes.STRING()
         }
       }, {
         paranoid: true,
@@ -60,15 +60,15 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     it('should be able to soft delete without timestamps', function() {
       const Account = this.sequelize.define('Account', {
         ownerId: {
-          type: DataTypes.INTEGER,
+          type: new DataTypes.INTEGER(),
           allowNull: false,
           field: 'owner_id'
         },
         name: {
-          type: DataTypes.STRING
+          type: new DataTypes.STRING()
         },
         deletedAt: {
-          type: DataTypes.DATE,
+          type: new DataTypes.DATE(),
           allowNull: true,
           field: 'deleted_at'
         }
@@ -107,13 +107,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         before(function() {
           this.Model = this.sequelize.define('Model', {
             name: {
-              type: DataTypes.STRING
+              type: new DataTypes.STRING()
             },
             data: {
-              type: DataTypes.JSON
+              type: new DataTypes.JSON()
             },
             deletedAt: {
-              type: DataTypes.DATE,
+              type: new DataTypes.DATE(),
               allowNull: true,
               field: 'deleted_at'
             }

@@ -2,9 +2,9 @@
 
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-const expect = chai.expect;
 import * as errors from '../../lib/errors/index';
 import Support from './support';
+const expect = chai.expect;
 const Sequelize = Support.Sequelize;
 
 describe(Support.getTestDialectTeaser('Sequelize Errors'), () => {
@@ -25,7 +25,7 @@ describe(Support.getTestDialectTeaser('Sequelize Errors'), () => {
       const errorMessage = 'error message';
       const validationError = new Sequelize.ValidationError(errorMessage, [
         new errors.ValidationErrorItem('<field name> cannot be null', 'notNull Violation', '<field name>'),
-        new errors.ValidationErrorItem('<field name> cannot be an array or an object', 'string violation', '<field name>')
+        new errors.ValidationErrorItem('<field name> cannot be an array or an object', 'string violation', '<field name>'),
       ]);
       const optimisticLockError = new Sequelize.OptimisticLockError();
 
@@ -58,7 +58,7 @@ describe(Support.getTestDialectTeaser('Sequelize Errors'), () => {
     it('SequelizeValidationError should find errors by path', () => {
       const errorItems = [
         new Sequelize.ValidationErrorItem('invalid', 'type', 'first_name'),
-        new Sequelize.ValidationErrorItem('invalid', 'type', 'last_name')
+        new Sequelize.ValidationErrorItem('invalid', 'type', 'last_name'),
       ];
       const validationError = new Sequelize.ValidationError('Validation error', errorItems);
       expect(validationError).to.have.property('get');
@@ -72,11 +72,11 @@ describe(Support.getTestDialectTeaser('Sequelize Errors'), () => {
 
     it('SequelizeValidationError should override message property when message parameter is specified', () => {
       const errorItems = [
-          new Sequelize.ValidationErrorItem('invalid', 'type', 'first_name'),
-          new Sequelize.ValidationErrorItem('invalid', 'type', 'last_name')
-        ],
-        customErrorMessage = 'Custom validation error message',
-        validationError = new Sequelize.ValidationError(customErrorMessage, errorItems);
+        new Sequelize.ValidationErrorItem('invalid', 'type', 'first_name'),
+        new Sequelize.ValidationErrorItem('invalid', 'type', 'last_name'),
+      ];
+      const customErrorMessage = 'Custom validation error message';
+      const validationError = new Sequelize.ValidationError(customErrorMessage, errorItems);
 
       expect(validationError).to.have.property('name', 'SequelizeValidationError');
       expect(validationError.message).to.equal(customErrorMessage);
@@ -84,10 +84,10 @@ describe(Support.getTestDialectTeaser('Sequelize Errors'), () => {
 
     it('SequelizeValidationError should concatenate an error messages from given errors if no explicit message is defined', () => {
       const errorItems = [
-          new Sequelize.ValidationErrorItem('<field name> cannot be null', 'notNull Violation', '<field name>'),
-          new Sequelize.ValidationErrorItem('<field name> cannot be an array or an object', 'string violation', '<field name>')
-        ],
-        validationError = new Sequelize.ValidationError(null, errorItems);
+        new Sequelize.ValidationErrorItem('<field name> cannot be null', 'notNull Violation', '<field name>'),
+        new Sequelize.ValidationErrorItem('<field name> cannot be an array or an object', 'string violation', '<field name>'),
+      ];
+      const validationError = new Sequelize.ValidationError(null, errorItems);
 
       expect(validationError).to.have.property('name', 'SequelizeValidationError');
       expect(validationError.message).to.match(/notNull Violation: <field name> cannot be null,\nstring violation: <field name> cannot be an array or an object/);
@@ -269,21 +269,21 @@ describe(Support.getTestDialectTeaser('Sequelize Errors'), () => {
       {
         type: 'ValidationError',
         exception: Sequelize.ValidationError
-      }
+      },
     ].forEach(constraintTest => {
 
       it('Can be intercepted as ' + constraintTest.type + ' using .catch', function() {
-        const spy = sinon.spy(),
-          User = this.sequelize.define('user', {
-            first_name: {
-              type: Sequelize.STRING,
-              unique: 'unique_name'
-            },
-            last_name: {
-              type: Sequelize.STRING,
-              unique: 'unique_name'
-            }
-          });
+        const spy = sinon.spy();
+        const User = this.sequelize.define('user', {
+          first_name: {
+            type: new Sequelize.STRING(),
+            unique: 'unique_name'
+          },
+          last_name: {
+            type: new Sequelize.STRING(),
+            unique: 'unique_name'
+          }
+        });
 
         const record = { first_name: 'jan', last_name: 'meier' };
         return this.sequelize.sync({ force: true }).bind(this).then(() => {
@@ -298,13 +298,13 @@ describe(Support.getTestDialectTeaser('Sequelize Errors'), () => {
     });
 
     it('Supports newlines in keys', function() {
-      const spy = sinon.spy(),
-        User = this.sequelize.define('user', {
-          name: {
-            type: Sequelize.STRING,
-            unique: 'unique \n unique'
-          }
-        });
+      const spy = sinon.spy();
+      const User = this.sequelize.define('user', {
+        name: {
+          type: new Sequelize.STRING(),
+          unique: 'unique \n unique'
+        }
+      });
 
       return this.sequelize.sync({ force: true }).bind(this).then(() => {
         return User.create({ name: 'jan' });
@@ -319,7 +319,7 @@ describe(Support.getTestDialectTeaser('Sequelize Errors'), () => {
     it('Works when unique keys are not defined in sequelize', function() {
       let User = this.sequelize.define('user', {
         name: {
-          type: Sequelize.STRING,
+          type: new Sequelize.STRING(),
           unique: 'unique \n unique'
         }
       }, { timestamps: false });
@@ -327,7 +327,7 @@ describe(Support.getTestDialectTeaser('Sequelize Errors'), () => {
       return this.sequelize.sync({ force: true }).bind(this).then(function() {
         // Now let's pretend the index was created by someone else, and sequelize doesn't know about it
         User = this.sequelize.define('user', {
-          name: Sequelize.STRING
+          name: new Sequelize.STRING()
         }, { timestamps: false });
 
         return User.create({ name: 'jan' });
@@ -343,7 +343,7 @@ describe(Support.getTestDialectTeaser('Sequelize Errors'), () => {
     it('adds parent and sql properties', function() {
       const User = this.sequelize.define('user', {
         name: {
-          type: Sequelize.STRING,
+          type: new Sequelize.STRING(),
           unique: 'unique'
         }
       }, { timestamps: false });

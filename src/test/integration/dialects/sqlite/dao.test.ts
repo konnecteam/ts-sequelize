@@ -1,27 +1,27 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
+import DataTypes from '../../../../lib/data-types';
 import Support from '../../support';
+const expect = chai.expect;
 const Sequelize = Support.Sequelize;
 const dialect = Support.getTestDialect();
-import DataTypes from '../../../../lib/data-types';
 
 if (dialect === 'sqlite') {
   describe('[SQLITE Specific] DAO', () => {
     beforeEach(function() {
       this.User = this.sequelize.define('User', {
-        username: DataTypes.STRING,
-        emergency_contact: DataTypes.JSON,
-        emergencyContact: DataTypes.JSON,
+        username: new DataTypes.STRING(),
+        emergency_contact: new DataTypes.JSON(),
+        emergencyContact: new DataTypes.JSON(),
         dateField: {
-          type: DataTypes.DATE,
+          type: new DataTypes.DATE(),
           field: 'date_field'
         }
       });
       this.Project = this.sequelize.define('project', {
         dateField: {
-          type: DataTypes.DATE,
+          type: new DataTypes.DATE(),
           field: 'date_field'
         }
       });
@@ -61,7 +61,7 @@ if (dialect === 'sqlite') {
       it('handles dates in includes correctly #2644', function() {
         return this.User.create({
           projects: [
-            { dateField: new Date(1990, 5, 5) }
+            { dateField: new Date(1990, 5, 5) },
           ]
         }, { include: [this.Project] }).then(() => {
           return this.User.findAll({
@@ -78,7 +78,7 @@ if (dialect === 'sqlite') {
       it('should be able to retrieve a row with json_extract function', function() {
         return this.sequelize.Promise.all([
           this.User.create({ username: 'swen', emergency_contact: { name: 'kate' } }),
-          this.User.create({ username: 'anna', emergency_contact: { name: 'joe' } })
+          this.User.create({ username: 'anna', emergency_contact: { name: 'joe' } }),
         ]).then(() => {
           return this.User.find({
             where: Sequelize.json('json_extract(emergency_contact, \'$.name\')', 'kate'),
@@ -92,7 +92,7 @@ if (dialect === 'sqlite') {
       it('should be able to retrieve a row by json_type function', function() {
         return this.sequelize.Promise.all([
           this.User.create({ username: 'swen', emergency_contact: { name: 'kate' } }),
-          this.User.create({ username: 'anna', emergency_contact: ['kate', 'joe'] })
+          this.User.create({ username: 'anna', emergency_contact: ['kate', 'joe'] }),
         ]).then(() => {
           return this.User.find({
             where: Sequelize.json('json_type(emergency_contact)', 'array'),

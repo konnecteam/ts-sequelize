@@ -1,11 +1,11 @@
 'use strict';
 
-import Support from '../../support';
-import DataTypes from '../../../lib/data-types';
 import * as chai from 'chai';
+import DataTypes from '../../../lib/data-types';
+import {Sequelize} from '../../../lib/sequelize';
+import Support from '../../support';
 const expect = chai.expect;
 const expectsql = Support.expectsql;
-import {Sequelize}from '../../../lib/sequelize';
 const current = Support.sequelize;
 const sql = current.dialect.QueryGenerator;
 
@@ -57,8 +57,8 @@ if (current.dialect.supports.JSON) {
             expectsql(sql.escape([
               { some: 'nested', more: { nested: true }, answer: 42 },
               43,
-              'joe'
-            ], { type: DataTypes.ARRAY(DataTypes.JSON) }), {
+              'joe',
+            ], { type: new DataTypes.ARRAY(new DataTypes.JSON()) }), {
               postgres: 'ARRAY[\'{"some":"nested","more":{"nested":true},"answer":42}\',\'43\',\'"joe"\']::JSON[]'
             });
           });
@@ -68,8 +68,8 @@ if (current.dialect.supports.JSON) {
               expectsql(sql.escape([
                 { some: 'nested', more: { nested: true }, answer: 42 },
                 43,
-                'joe'
-              ], { type: DataTypes.ARRAY(DataTypes.JSONB) }), {
+                'joe',
+              ], { type: new DataTypes.ARRAY(new DataTypes.JSONB()) }), {
                 postgres: 'ARRAY[\'{"some":"nested","more":{"nested":true},"answer":42}\',\'43\',\'"joe"\']::JSONB[]'
               });
             });

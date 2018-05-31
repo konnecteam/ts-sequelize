@@ -1,15 +1,15 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
-import * as sinon from 'sinon';
-import Config from '../../../config/config';
-import {AbstractConnectionManager as ConnectionManager} from '../../../../lib/dialects/abstract/connection-manager';
 import * as Pooling from 'generic-pool';
 import * as _ from 'lodash';
+import * as sinon from 'sinon';
 import Promise from '../../../../lib/promise';
+import Config from '../../../config/config';
+import { DummyConnectionManager } from '../../../dummy/dummy-connection-manager';
+import Support from '../../support';
 
+const expect = chai.expect;
 const baseConf = Config[Support.getTestDialect()];
 const poolEntry = {
   host: baseConf.host,
@@ -33,7 +33,7 @@ describe('Connection Manager', () => {
       replication: null
     };
     const sequelize = Support.createSequelizeInstance(options);
-    const connectionManager = new ConnectionManager(Support.getTestDialect(), sequelize);
+    const connectionManager = new DummyConnectionManager(Support.getTestDialect(), sequelize);
 
     const poolSpy = sandbox.spy(Pooling, 'createPool');
     connectionManager.initPools();
@@ -48,7 +48,7 @@ describe('Connection Manager', () => {
       }
     };
     const sequelize = Support.createSequelizeInstance(options);
-    const connectionManager = new ConnectionManager(Support.getTestDialect(), sequelize);
+    const connectionManager = new DummyConnectionManager(Support.getTestDialect(), sequelize);
 
     const poolSpy = sandbox.spy(Pooling, 'createPool');
     connectionManager.initPools();
@@ -72,7 +72,7 @@ describe('Connection Manager', () => {
       }
     };
     const sequelize = Support.createSequelizeInstance(options);
-    const connectionManager = new ConnectionManager(Support.getTestDialect(), sequelize);
+    const connectionManager = new DummyConnectionManager(Support.getTestDialect(), sequelize);
 
     const resolvedPromise = new Promise(resolve => {
       resolve({
@@ -118,7 +118,7 @@ describe('Connection Manager', () => {
       }
     };
     const sequelize = Support.createSequelizeInstance(options);
-    const connectionManager = new ConnectionManager(Support.getTestDialect(), sequelize);
+    const connectionManager = new DummyConnectionManager(Support.getTestDialect(), sequelize);
 
     const resolvedPromise = new Promise(resolve => {
       resolve({
@@ -139,6 +139,7 @@ describe('Connection Manager', () => {
 
     return connectionManager.getConnection(queryOptions)
       .then(() => {
+        // tslint:disable-next-line:no-unused-expression-chai -- GG - calledTwice non défini dans le @types
         chai.expect(connectStub).to.have.been.calledTwice; // Once to get DB version, and once to actually get the connection.
         const calls = connectStub.getCalls();
         chai.expect(calls[1].args[0].host).to.eql('the-boss');
@@ -150,7 +151,7 @@ describe('Connection Manager', () => {
       replication: null
     };
     const sequelize = Support.createSequelizeInstance(options);
-    const connectionManager = new ConnectionManager(Support.getTestDialect(), sequelize);
+    const connectionManager = new DummyConnectionManager(Support.getTestDialect(), sequelize);
 
     connectionManager.initPools();
 

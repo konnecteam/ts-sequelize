@@ -2,8 +2,8 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../lib/data-types';
-const expect = chai.expect;
 import Support from '../support';
+const expect = chai.expect;
 const current = Support.sequelize;
 
 if (current.dialect.supports.tmpTableTrigger) {
@@ -25,7 +25,7 @@ if (current.dialect.supports.tmpTableTrigger) {
       beforeEach(function() {
         User = this.sequelize.define('user', {
           username: {
-            type: DataTypes.STRING,
+            type: new DataTypes.STRING(),
             field: 'user_name'
           }
         }, {

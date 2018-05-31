@@ -1,14 +1,15 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import {Sequelize}from '../../../../index';
+import {Sequelize} from '../../../../index';
 import Support from '../../../support';
+const expect = chai.expect;
 const dialect = Support.getTestDialect();
 
 describe('[ORACLE] Connection Manager', () => {
 
-  let instance, config;
+  let instance;
+  let config;
 
   if (dialect === 'oracle') {
     it('full database, should connect to Oracle', done => {

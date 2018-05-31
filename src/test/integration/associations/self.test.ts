@@ -1,12 +1,12 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../support';
-import DataTypes from '../../../lib/data-types';
-import {Sequelize}from '../../../index';
-const Promise = Sequelize.Promise;
 import * as _ from 'lodash';
+import {Sequelize} from '../../../index';
+import DataTypes from '../../../lib/data-types';
+import Support from '../support';
+const expect = chai.expect;
+const Promise = Sequelize.Promise;
 
 describe(Support.getTestDialectTeaser('Self'), () => {
   it('supports freezeTableName', function() {
@@ -29,7 +29,7 @@ describe(Support.getTestDialectTeaser('Self'), () => {
   });
 
   it('can handle 1:m associations', function() {
-    const Person = this.sequelize.define('Person', { name: DataTypes.STRING });
+    const Person = this.sequelize.define('Person', { name: new DataTypes.STRING() });
 
     Person.hasMany(Person, { as: 'Children', foreignKey: 'parent_id'});
 
@@ -39,7 +39,7 @@ describe(Support.getTestDialectTeaser('Self'), () => {
       return Promise.all([
         Person.create({ name: 'Mary' }),
         Person.create({ name: 'John' }),
-        Person.create({ name: 'Chris' })
+        Person.create({ name: 'Chris' }),
       ]);
     }).spread((mary, john, chris) => {
       return mary.setChildren([john, chris]);
@@ -49,7 +49,7 @@ describe(Support.getTestDialectTeaser('Self'), () => {
   it('can handle n:m associations', function() {
     const self = this;
 
-    const Person = this.sequelize.define('Person', { name: DataTypes.STRING });
+    const Person = this.sequelize.define('Person', { name: new DataTypes.STRING() });
 
     Person.belongsToMany(Person, { as: 'Parents', through: 'Family', foreignKey: 'ChildId', otherKey: 'PersonId' });
     Person.belongsToMany(Person, { as: 'Childs', through: 'Family', foreignKey: 'PersonId', otherKey: 'ChildId' });
@@ -67,7 +67,7 @@ describe(Support.getTestDialectTeaser('Self'), () => {
       return self.sequelize.Promise.all([
         Person.create({ name: 'Mary' }),
         Person.create({ name: 'John' }),
-        Person.create({ name: 'Chris' })
+        Person.create({ name: 'Chris' }),
       ]).spread((mary, john, chris) => {
         return mary.setParents([john]).then(() => {
           return chris.addParent(john);
@@ -81,14 +81,14 @@ describe(Support.getTestDialectTeaser('Self'), () => {
   });
 
   it('can handle n:m associations with pre-defined through table', function() {
-    const Person = this.sequelize.define('Person', { name: DataTypes.STRING });
+    const Person = this.sequelize.define('Person', { name: new DataTypes.STRING() });
     const Family = this.sequelize.define('Family', {
       preexisting_child: {
-        type: DataTypes.INTEGER,
+        type: new DataTypes.INTEGER(),
         primaryKey: true
       },
       preexisting_parent: {
-        type: DataTypes.INTEGER,
+        type: new DataTypes.INTEGER(),
         primaryKey: true
       }
     }, { timestamps: false });
@@ -110,7 +110,7 @@ describe(Support.getTestDialectTeaser('Self'), () => {
       return Promise.all([
         Person.create({ name: 'Mary' }),
         Person.create({ name: 'John' }),
-        Person.create({ name: 'Chris' })
+        Person.create({ name: 'Chris' }),
       ]);
     }).spread(function(mary, john, chris) {
       this.mary = mary;

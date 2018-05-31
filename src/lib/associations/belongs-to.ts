@@ -1,11 +1,12 @@
 'use strict';
 
-import * as Utils  from './../utils';
-import * as Helpers from './helpers';
 import * as _ from 'lodash';
-import {Transaction} from '../transaction';
-import {Association} from './base';
+import { Model } from '../model';
 import Op from '../operators';
+import { Transaction } from '../transaction';
+import { Utils } from '../utils';
+import { Association } from './base';
+import { Helpers } from './helpers';
 
 
 /**
@@ -17,21 +18,19 @@ import Op from '../operators';
  */
 export class BelongsTo extends Association {
 
-  isSingleAssociation;
-  foreignKeyAttribute;
-  isAliased;
-  foreignKey;
-  identifier;
-  identifierField;
-  targetKey;
-  targetKeyField;
-  targetKeyIsPrimary;
-  targetIdentifier;
-  associationAccessor;
-  accessors;
-  
+  public identifier : string;
+  public targetIdentifier : string;
+  public targetKey : string;
+  public targetKeyField : string;
+  public targetKeyIsPrimary : boolean;
 
-  constructor(source, target, options) {
+  constructor(source : typeof Model, target : typeof Model, options : {
+    /** : string | {}, assocation alias */
+    as? : any,
+    createByBTM? : boolean,
+    foreignKey? : string,
+    useHooks? : boolean
+  }) {
     super(source, target, options);
 
     this.associationType = 'BelongsTo';
@@ -59,7 +58,7 @@ export class BelongsTo extends Association {
       this.foreignKey = Utils.camelizeIf(
         [
           Utils.underscoredIf(this.as, this.source.options.underscored),
-          this.target.primaryKeyAttribute
+          this.target.primaryKeyAttribute,
         ].join('_'),
         !this.source.options.underscored
       );
@@ -89,8 +88,10 @@ export class BelongsTo extends Association {
     };
   }
 
-  // the id is in the source table
-  injectAttributes() {
+  /**
+   * add attributes to the source of this association
+   */
+  public injectAttributes() {
     const newAttributes = {};
 
     newAttributes[this.foreignKey] = _.defaults({}, this.foreignKeyAttribute, {
@@ -116,7 +117,10 @@ export class BelongsTo extends Association {
     return this;
   }
 
-  mixin(obj) {
+  /**
+   * Mixin (inject) association methods to model prototype
+   */
+  public mixin(obj) {
     const methods = ['get', 'set', 'create'];
 
     Helpers.mixinMethods(this, obj, methods);
@@ -124,18 +128,25 @@ export class BelongsTo extends Association {
 
   /**
    * Get the associated instance.
-   *
-   * @param {Object} [options]
-   * @param {String|Boolean} [options.scope] Apply a scope on the related model, or remove its default scope by passing false.
-   * @param {String} [options.schema] Apply a schema on the related model
    * @see {@link Model.findOne} for a full explanation of options
-   * @return {Promise<Model>}
    */
-  get(instances, options) {
+  public get(instances : Model[], options : {
+    /** The maximum count you want to get. */
+    limit? : number,
+    /** Apply a schema on the related model */
+    schema? : string,
+    schemaDelimiter? : string,
+    /** Apply a scope on the related model, or remove its default scope by passing false. */
+    scope? : string|boolean,
+    /** Transaction to run query under */
+    transaction? : Transaction,
+    /** A hash of search attributes. */
+    where? : {}
+  }) : Promise<Model> {
     const association = this;
     const where = {};
     let Target = association.target;
-    let instance;
+    let instanceNoArray;
 
     options = Utils.cloneDeep(options);
 
@@ -152,7 +163,7 @@ export class BelongsTo extends Association {
     }
 
     if (!Array.isArray(instances)) {
-      instance = instances;
+      instanceNoArray = instances;
       instances = undefined;
     }
 
@@ -162,9 +173,9 @@ export class BelongsTo extends Association {
       };
     } else {
       if (association.targetKeyIsPrimary && !options.where) {
-        return Target.findById(instance.get(association.foreignKey), options);
+        return Target.findById(instanceNoArray.get(association.foreignKey), options);
       } else {
-        where[association.targetKey] = instance.get(association.foreignKey);
+        where[association.targetKey] = instanceNoArray.get(association.foreignKey);
         options.limit = null;
       }
     }
@@ -194,12 +205,15 @@ export class BelongsTo extends Association {
   /**
    * Set the associated model.
    *
-   * @param {Model|String|Number} [newAssociation] An persisted instance or the primary key of an instance to associate with this. Pass `null` or `undefined` to remove the association.
-   * @param {Object} [options] Options passed to `this.save`
-   * @param {Boolean} [options.save=true] Skip saving this after setting the foreign key if false.
-   * @return {Promise}
+   * @param associatedInstance An persisted instance or the primary key of an instance to associate with this. Pass `null` or `undefined` to remove the association.
+   * @param options Options passed to `this.save`
    */
-  set(sourceInstance, associatedInstance, options) {
+  public set(sourceInstance : Model, associatedInstance : Model|string|number, options : {
+    /** A function that logs sql queries, or false for no logging */
+    logging? : boolean | any,
+    /** = true Skip saving this after setting the foreign key if false. */
+    save? : boolean
+  }) : Promise<any> {
     const association = this;
 
     options = options || {};
@@ -211,7 +225,9 @@ export class BelongsTo extends Association {
 
     sourceInstance.set(association.foreignKey, value);
 
-    if (options.save === false) return;
+    if (options.save === false) {
+      return;
+    }
 
     options = _.extend({
       fields: [association.foreignKey],
@@ -226,12 +242,15 @@ export class BelongsTo extends Association {
   /**
    * Create a new instance of the associated model and associate it with this.
    *
-   * @param {Object} [values]
-   * @param {Object} [options] Options passed to `target.create` and setAssociation.
+   * @param options Options passed to `target.create` and setAssociation.
    * @see {@link Model#create}  for a full explanation of options
-   * @return {Promise}
    */
-  create(sourceInstance, values, fieldsOrOptions) {
+  public create(sourceInstance : Model, values : {}, fieldsOrOptions : {
+    /** = false, A function that gets executed while running the query to log the sql. */
+    logging? : boolean | any,
+    /** Transaction to run query under */
+    transaction? : Transaction
+  }) : Promise<any> {
     const association = this;
 
     const options = {

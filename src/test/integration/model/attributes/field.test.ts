@@ -2,12 +2,12 @@
 
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import {Sequelize}from '../../../../index';
-const Promise = Sequelize.Promise;
-const expect = chai.expect;
-import Support from '../../support';
+import {Sequelize} from '../../../../index';
 import DataTypes from '../../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
 const dialect = Support.getTestDialect();
+const Promise = Sequelize.Promise;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
 
@@ -26,18 +26,18 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
         this.User = this.sequelize.define('user', {
           id: {
-            type: DataTypes.INTEGER,
+            type: new DataTypes.INTEGER(),
             allowNull: false,
             primaryKey: true,
             autoIncrement: true,
             field: 'userId'
           },
           name: {
-            type: DataTypes.STRING,
+            type: new DataTypes.STRING(),
             field: 'full_name'
           },
           taskCount: {
-            type: DataTypes.INTEGER,
+            type: new DataTypes.INTEGER(),
             field: 'task_count',
             defaultValue: 0,
             allowNull: false
@@ -49,14 +49,14 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
         this.Task = this.sequelize.define('task', {
           id: {
-            type: DataTypes.INTEGER,
+            type: new DataTypes.INTEGER(),
             allowNull: false,
             primaryKey: true,
             autoIncrement: true,
             field: 'taskId'
           },
           title: {
-            type: DataTypes.STRING,
+            type: new DataTypes.STRING(),
             field: 'name'
           }
         }, {
@@ -66,17 +66,17 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
         this.Comment = this.sequelize.define('comment', {
           id: {
-            type: DataTypes.INTEGER,
+            type: new DataTypes.INTEGER(),
             allowNull: false,
             primaryKey: true,
             autoIncrement: true,
             field: 'commentId'
           },
-          text: { type: DataTypes.STRING, field: 'comment_text' },
-          notes: { type: DataTypes.STRING, field: 'notes' },
-          likes: { type: DataTypes.INTEGER, field: 'like_count' },
-          createdAt: { type: DataTypes.DATE, field: 'created_at', allowNull: false },
-          updatedAt: { type: DataTypes.DATE, field: 'updated_at', allowNull: false }
+          text: { type: new DataTypes.STRING(), field: 'comment_text' },
+          notes: { type: new DataTypes.STRING(), field: 'notes' },
+          likes: { type: new DataTypes.INTEGER(), field: 'like_count' },
+          createdAt: { type: new DataTypes.DATE(), field: 'created_at', allowNull: false },
+          updatedAt: { type: new DataTypes.DATE(), field: 'updated_at', allowNull: false }
         }, {
           tableName: 'comments',
           timestamps: true
@@ -104,69 +104,69 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         return Promise.all([
           queryInterface.createTable('users', {
             userId: {
-              type: DataTypes.INTEGER,
+              type: new DataTypes.INTEGER(),
               allowNull: false,
               primaryKey: true,
               autoIncrement: true
             },
             full_name: {
-              type: DataTypes.STRING
+              type: new DataTypes.STRING()
             },
             task_count: {
-              type: DataTypes.INTEGER,
+              type: new DataTypes.INTEGER(),
               allowNull: false,
               defaultValue: 0
             }
           }),
           queryInterface.createTable('tasks', {
             taskId: {
-              type: DataTypes.INTEGER,
+              type: new DataTypes.INTEGER(),
               allowNull: false,
               primaryKey: true,
               autoIncrement: true
             },
             user_id: {
-              type: DataTypes.INTEGER
+              type: new DataTypes.INTEGER()
             },
             name: {
-              type: DataTypes.STRING
+              type: new DataTypes.STRING()
             }
           }),
           queryInterface.createTable('comments', {
             commentId: {
-              type: DataTypes.INTEGER,
+              type: new DataTypes.INTEGER(),
               allowNull: false,
               primaryKey: true,
               autoIncrement: true
             },
             task_id: {
-              type: DataTypes.INTEGER
+              type: new DataTypes.INTEGER()
             },
             comment_text: {
-              type: DataTypes.STRING
+              type: new DataTypes.STRING()
             },
             notes: {
-              type: DataTypes.STRING
+              type: new DataTypes.STRING()
             },
             like_count: {
-              type: DataTypes.INTEGER
+              type: new DataTypes.INTEGER()
             },
             created_at: {
-              type: DataTypes.DATE,
+              type: new DataTypes.DATE(),
               allowNull: false
             },
             updated_at: {
-              type: DataTypes.DATE
+              type: new DataTypes.DATE()
             }
           }),
           queryInterface.createTable('userComments', {
             commentId: {
-              type: DataTypes.INTEGER
+              type: new DataTypes.INTEGER()
             },
             userId: {
-              type: DataTypes.INTEGER
+              type: new DataTypes.INTEGER()
             }
-          })
+          }),
         ]);
       });
 
@@ -176,7 +176,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             this.ModelUnderTest = this.sequelize.define('ModelUnderTest', {
               identifier: {
                 primaryKey: true,
-                type: DataTypes.STRING,
+                type: new DataTypes.STRING(),
                 allowNull: false
               }
             });
@@ -215,7 +215,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         beforeEach(function() {
           return this.Comment.bulkCreate([
             { notes: 'Number one'},
-            { notes: 'Number two'}
+            { notes: 'Number two'},
           ]);
         });
 
@@ -305,7 +305,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       it('should bulk update', function() {
         const Entity = this.sequelize.define('Entity', {
-          strField: {type: DataTypes.STRING, field: 'str_field'}
+          strField: {type: new DataTypes.STRING(), field: 'str_field'}
         });
 
         return this.sequelize.sync({force: true}).then(() => {
@@ -330,7 +330,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       it('should not contain the field properties after create', function() {
         const Model = this.sequelize.define('test', {
           id: {
-            type: DataTypes.INTEGER,
+            type: new DataTypes.INTEGER(),
             field: 'test_id',
             autoIncrement: true,
             primaryKey: true,
@@ -340,7 +340,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           },
           title: {
             allowNull: false,
-            type: DataTypes.STRING(255),
+            type: new DataTypes.STRING(255),
             field: 'test_title'
           }
         }, {
@@ -382,7 +382,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           return self.Task.find({
             include: [
               {model: self.Comment},
-              {model: self.User}
+              {model: self.User},
             ],
             where: {title: 'DatDo'}
           });
@@ -410,8 +410,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           return self.User.findAll({
             include: [
               {model: self.Task, where: {title: 'DoDat'}, include: [
-                {model: self.Comment}
-              ]}
+                {model: self.Comment}]},
             ]
           });
         }).then(users => {
@@ -482,7 +481,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       it('should support renaming of sequelize method fields', function() {
         const Test = this.sequelize.define('test', {
-          someProperty: DataTypes.VIRTUAL // Since we specify the AS part as a part of the literal string, not with sequelize syntax, we have to tell sequelize about the field
+          someProperty: new DataTypes.VIRTUAL() // Since we specify the AS part as a part of the literal string, not with sequelize syntax, we have to tell sequelize about the field
         });
 
         return this.sequelize.sync({ force: true }).then(() => {
@@ -492,17 +491,17 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           if (dialect === 'mssql') {
             findAttributes = [
               Sequelize.literal('CAST(CASE WHEN EXISTS(SELECT 1) THEN 1 ELSE 0 END AS BIT) AS "someProperty"'),
-              [Sequelize.literal('CAST(CASE WHEN EXISTS(SELECT 1) THEN 1 ELSE 0 END AS BIT)'), 'someProperty2']
+              [Sequelize.literal('CAST(CASE WHEN EXISTS(SELECT 1) THEN 1 ELSE 0 END AS BIT)'), 'someProperty2'],
             ];
           } else if (dialect === 'oracle') {
             findAttributes = [
               Sequelize.literal('CAST(CASE WHEN EXISTS(SELECT 1 FROM DUAL) THEN 1 ELSE 0 END AS NUMBER) AS "someProperty"'),
-              [Sequelize.literal('CAST(CASE WHEN EXISTS(SELECT 1 FROM DUAL) THEN 1 ELSE 0 END AS NUMBER)'), 'someProperty2']
+              [Sequelize.literal('CAST(CASE WHEN EXISTS(SELECT 1 FROM DUAL) THEN 1 ELSE 0 END AS NUMBER)'), 'someProperty2'],
             ];
           } else {
             findAttributes = [
               Sequelize.literal('EXISTS(SELECT 1) AS "someProperty"'),
-              [Sequelize.literal('EXISTS(SELECT 1)'), 'someProperty2']
+              [Sequelize.literal('EXISTS(SELECT 1)'), 'someProperty2'],
             ];
           }
 
@@ -579,7 +578,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       it('should work with paranoid instance.destroy()', function() {
         const User = this.sequelize.define('User', {
           deletedAt: {
-            type: DataTypes.DATE,
+            type: new DataTypes.DATE(),
             field: 'deleted_at'
           }
         }, {
@@ -607,7 +606,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       it('should work with paranoid Model.destroy()', function() {
         const User = this.sequelize.define('User', {
           deletedAt: {
-            type: DataTypes.DATE,
+            type: new DataTypes.DATE(),
             field: 'deleted_at'
           }
         }, {

@@ -1,23 +1,23 @@
 'use strict';
 
-import Support from '../support';
-import DataTypes from '../../../lib/data-types';
 import * as chai from 'chai';
+import * as _ from 'lodash';
+import DataTypes from '../../../lib/data-types';
+import Support from '../support';
 const expect = chai.expect;
 const current = Support.sequelize;
-import * as _ from 'lodash';
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('update', () => {
     beforeEach(function() {
       this.Account = this.sequelize.define('Account', {
         ownerId: {
-          type: DataTypes.INTEGER,
+          type: new DataTypes.INTEGER(),
           allowNull: false,
           field: 'owner_id'
         },
         name: {
-          type: DataTypes.STRING
+          type: new DataTypes.STRING()
         }
       });
       return this.Account.sync({force: true});

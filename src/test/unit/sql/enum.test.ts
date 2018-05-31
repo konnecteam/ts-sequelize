@@ -1,11 +1,11 @@
 'use strict';
 
-import Support from '../../support';
+import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
 const expectsql = Support.expectsql;
 const current = Support.sequelize;
 const  sql = current.dialect.QueryGenerator;
-import * as chai from 'chai';
 const expect = chai.expect;
 
 
@@ -13,14 +13,14 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
   describe('enum', () => {
     if (Support.getTestDialect() === 'postgres') {
       const FooUser = current.define('user', {
-        mood: (DataTypes as any).ENUM('happy', 'sad')
+        mood: new (DataTypes as any).ENUM('happy', 'sad')
       }, {
         schema: 'foo'
       });
 
       const PublicUser = current.define('user', {
         mood: {
-          type: (DataTypes as any).ENUM('happy', 'sad'),
+          type: new (DataTypes as any).ENUM('happy', 'sad'),
           field: 'theirMood'
         }
       });
@@ -74,13 +74,15 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       describe('pgListEnums', () => {
         it('works with schema #3563', () => {
           expectsql(sql.pgListEnums(FooUser.getTableName(), 'mood'), {
-            postgres: 'SELECT t.typname enum_name, array_agg(e.enumlabel ORDER BY enumsortorder) enum_value FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = \'foo\' AND t.typname=\'enum_users_mood\' GROUP BY 1'
+            postgres: 'SELECT t.typname enum_name, array_agg(e.enumlabel ORDER BY enumsortorder) enum_value FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid'
+            + ' JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = \'foo\' AND t.typname=\'enum_users_mood\' GROUP BY 1'
           });
         });
 
         it('uses the default schema if no options given', () => {
           expectsql(sql.pgListEnums(), {
-            postgres: 'SELECT t.typname enum_name, array_agg(e.enumlabel ORDER BY enumsortorder) enum_value FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = \'public\' GROUP BY 1'
+            postgres: 'SELECT t.typname enum_name, array_agg(e.enumlabel ORDER BY enumsortorder) enum_value'
+            + ' FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace WHERE n.nspname = \'public\' GROUP BY 1'
           });
         });
       });

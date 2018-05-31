@@ -1,12 +1,12 @@
 'use strict';
 
-import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
-import {UniqueConstraintError} from '../../../lib/errors/index';
-const current = Support.sequelize;
-import * as sinon from 'sinon';
 import * as Promise from 'bluebird';
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+import { UniqueConstraintError } from '../../../lib/errors/index';
+import Support from '../../support';
+const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('findCreateFind', () => {
@@ -21,9 +21,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('should return the result of the first find call if not empty', function() {
-      const result = {},
-        where = {prop: Math.random().toString()},
-        findSpy = this.sinon.stub(Model, 'findOne').returns(Promise.resolve(result));
+      const result = {};
+      const where = {prop: Math.random().toString()};
+      const findSpy = this.sinon.stub(Model, 'findOne').returns(Promise.resolve(result));
 
       return expect(Model.findCreateFind({
         where
@@ -34,9 +34,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('should create if first find call is empty', function() {
-      const result = {},
-        where = {prop: Math.random().toString()},
-        createSpy = this.sinon.stub(Model, 'create').returns(Promise.resolve(result));
+      const result = {};
+      const where = {prop: Math.random().toString()};
+      const createSpy = this.sinon.stub(Model, 'create').returns(Promise.resolve(result));
 
       this.sinon.stub(Model, 'findOne').returns(Promise.resolve(null));
 
@@ -48,9 +48,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('should do a second find if create failed do to unique constraint', function() {
-      const result = {},
-        where = {prop: Math.random().toString()},
-        findSpy = this.sinon.stub(Model, 'findOne');
+      const result = {};
+      const where = {prop: Math.random().toString()};
+      const findSpy = this.sinon.stub(Model, 'findOne');
 
       this.sinon.stub(Model, 'create').callsFake(() => {
         return Promise.reject(new UniqueConstraintError());

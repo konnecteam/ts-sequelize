@@ -1,14 +1,14 @@
 'use strict';
 
 import * as chai from 'chai';
+import * as _ from 'lodash';
 import * as sinon from 'sinon';
-const expect = chai.expect;
-import Support from '../../support';
-const Sequelize = Support.Sequelize;
 import DataTypes from '../../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
+const Sequelize = Support.Sequelize;
 const current = Support.sequelize;
 const Promise = current.Promise;
-import * as _ from 'lodash';
 
 if (current.dialect.supports['UNION ALL']) {
   describe(Support.getTestDialectTeaser('Model'), () => {
@@ -28,10 +28,10 @@ if (current.dialect.supports['UNION ALL']) {
 
         beforeEach(function() {
           this.User = this.sequelize.define('user', {
-            age: DataTypes.INTEGER
+            age: new DataTypes.INTEGER()
           });
           this.Project = this.sequelize.define('project', {
-            title: DataTypes.STRING
+            title: new DataTypes.STRING()
           });
           this.Task = this.sequelize.define('task');
 
@@ -125,7 +125,7 @@ if (current.dialect.supports['UNION ALL']) {
                 values: this.projects.map(item => item.get('id'))
               },
               order: [
-                Sequelize.fn('ABS', Sequelize.col('age'))
+                Sequelize.fn('ABS', Sequelize.col('age')),
               ],
               include: [this.User.Tasks]
             }).then(users => {
@@ -148,7 +148,7 @@ if (current.dialect.supports['UNION ALL']) {
               },
               order: [
                 Sequelize.fn('ABS', Sequelize.col('age')),
-                ['id', 'DESC']
+                ['id', 'DESC'],
               ],
               include: [this.User.Tasks]
             }).then(users => {
@@ -171,7 +171,7 @@ if (current.dialect.supports['UNION ALL']) {
               },
               order: [
                 Sequelize.fn('ABS', Sequelize.col('age')),
-                ['id', 'DESC']
+                ['id', 'DESC'],
               ],
               include: [this.User.Tasks]
             }).then(users => {
@@ -196,7 +196,7 @@ if (current.dialect.supports['UNION ALL']) {
                 },
                 order: [
                   Sequelize.fn('ABS', Sequelize.col('age')),
-                  ['id', 'DESC']
+                  ['id', 'DESC'],
                 ],
                 include: [this.User.Tasks]
               });
@@ -237,7 +237,7 @@ if (current.dialect.supports['UNION ALL']) {
           it('Applies limit and order correctly', function() {
             return this.Task.findAll({
               order: [
-                ['id', 'DESC']
+                ['id', 'DESC'],
               ],
               groupedLimit: {
                 limit: 3,

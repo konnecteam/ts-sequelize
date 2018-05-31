@@ -1,22 +1,24 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import * as Utils from '../../lib/utils';
-import Support from './support';
+import {Sequelize} from '../../index';
 import DataTypes from '../../lib/data-types';
-import {Sequelize}from '../../index';
-import queryGenerator from '../../lib/dialects/postgres/query-generator';
+import * as AllUtils from '../../lib/utils';
+import Support from './support';
+const expect = chai.expect;
+const Utils = AllUtils.Utils;
+const queryGenerator = Support.sequelize.dialect.QueryGenerator;
 
 describe(Support.getTestDialectTeaser('Utils'), () => {
+  // Utils.removeCommentsFromFunctionString unused
   describe('removeCommentsFromFunctionString', () => {
     it('removes line comments at the start of a line', () => {
       const functionWithLineComments = function() {
         // noot noot
       };
 
-      const string = functionWithLineComments.toString(),
-        result = Utils.removeCommentsFromFunctionString(string);
+      const string = functionWithLineComments.toString();
+      const result = Utils.removeCommentsFromFunctionString(string);
 
       expect(result).not.to.match(/.*noot.*/);
     });
@@ -26,8 +28,8 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
         console.log(1); // noot noot
       };
 
-      const string = functionWithLineComments.toString(),
-        result = Utils.removeCommentsFromFunctionString(string);
+      const string = functionWithLineComments.toString();
+      const result = Utils.removeCommentsFromFunctionString(string);
 
       expect(result).not.to.match(/.*noot.*/);
     });
@@ -50,6 +52,7 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
     });
   });
 
+  // Utils.argsArePrimaryKeys unused
   describe('argsArePrimaryKeys', () => {
     it('doesn\'t detect primary keys if primareyKeys and values have different lengths', () => {
       expect(Utils.argsArePrimaryKeys([1, 2, 3], [1])).to.be.false;
@@ -112,15 +115,15 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
 
   describe('cloneDeep', () => {
     it('should clone objects', () => {
-      const obj = {foo: 1},
-        clone = Utils.cloneDeep(obj);
+      const obj = {foo: 1};
+      const clone = Utils.cloneDeep(obj);
 
       expect(obj).to.not.equal(clone);
     });
 
     it('should clone nested objects', () => {
-      const obj = {foo: {bar: 1}},
-        clone = Utils.cloneDeep(obj);
+      const obj = {foo: {bar: 1}};
+      const clone = Utils.cloneDeep(obj);
 
       expect(obj.foo).to.not.equal(clone.foo);
     });
@@ -148,6 +151,7 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
   });
 
   describe('validateParameter', () => {
+    // ParameterValidator.check() unused
     describe('method signature', () => {
       it('throws an error if the value is not defined', () => {
         expect(() => {
@@ -170,7 +174,7 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
 
     describe('expectation', () => {
       it('uses the instanceof method if the expectation is a class', () => {
-        expect(Utils.validateParameter.check(new Number(1), Number)).to.be.true;
+        expect(Utils.validateParameter.check(1, Number)).to.be.true;
       });
     });
 
@@ -190,28 +194,28 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
         const conditions = {
           metadata: {
             language: 'icelandic',
-            pg_rating: { 'dk': 'G' }
+            pg_rating: { dk: 'G' }
           },
           another_json_field: { x: 1 }
         };
         const expected = '("metadata"#>>\'{language}\') = \'icelandic\' AND ("metadata"#>>\'{pg_rating,dk}\') = \'G\' AND ("another_json_field"#>>\'{x}\') = \'1\'';
-        expect((queryGenerator as any).handleSequelizeMethod(new Utils.Json(conditions))).to.deep.equal(expected);
+        expect(queryGenerator.handleSequelizeMethod(new AllUtils.Json(conditions))).to.deep.equal(expected);
       });
 
       it('successfully parses a string using dot notation', () => {
         const path = 'metadata.pg_rating.dk';
-        expect((queryGenerator as any).handleSequelizeMethod(new Utils.Json(path))).to.equal('("metadata"#>>\'{pg_rating,dk}\')');
+        expect(queryGenerator.handleSequelizeMethod(new AllUtils.Json(path))).to.equal('("metadata"#>>\'{pg_rating,dk}\')');
       });
 
       it('allows postgres json syntax', () => {
         const path = 'metadata->pg_rating->>dk';
-        expect((queryGenerator as any).handleSequelizeMethod(new Utils.Json(path))).to.equal(path);
+        expect(queryGenerator.handleSequelizeMethod(new AllUtils.Json(path))).to.equal(path);
       });
 
       it('can take a value to compare against', () => {
         const path = 'metadata.pg_rating.is';
         const value = 'U';
-        expect((queryGenerator as any).handleSequelizeMethod(new Utils.Json(path, value))).to.equal('("metadata"#>>\'{pg_rating,is}\') = \'U\'');
+        expect(queryGenerator.handleSequelizeMethod(new AllUtils.Json(path, value))).to.equal('("metadata"#>>\'{pg_rating,is}\') = \'U\'');
       });
     });
   }
@@ -232,8 +236,8 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
 
     beforeEach(function() {
       Airplane = this.sequelize.define('Airplane', {
-        wings: DataTypes.INTEGER,
-        engines: DataTypes.INTEGER
+        wings: new DataTypes.INTEGER(),
+        engines: new DataTypes.INTEGER()
       });
 
       return Airplane.sync({ force: true }).then(() => {
@@ -247,14 +251,14 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
           }, {
             wings: 2,
             engines: 2
-          }
+          },
         ]);
       });
     });
 
     if (Support.getTestDialect() !== 'mssql' && Support.getTestDialect() !== 'oracle') {
       it('accepts condition object (with cast)', function() {
-        const type = Support.getTestDialect() === 'mysql' ? 'unsigned': 'int';
+        const type = Support.getTestDialect() === 'mysql' ? 'unsigned' : 'int';
 
         return Airplane.findAll({
           attributes: [
@@ -269,12 +273,12 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
                 },
                 wings: 4
               }
-            }, type)), 'count-engines-wings']
+            }, type)), 'count-engines-wings'],
           ]
         }).spread(airplane => {
-          expect(parseInt(airplane.get('count'))).to.equal(3);
-          expect(parseInt(airplane.get('count-engines'))).to.equal(1);
-          expect(parseInt(airplane.get('count-engines-wings'))).to.equal(2);
+          expect(parseInt(airplane.get('count'), 10)).to.equal(3);
+          expect(parseInt(airplane.get('count-engines'), 10)).to.equal(1);
+          expect(parseInt(airplane.get('count-engines-wings'), 10)).to.equal(2);
         });
       });
     }
@@ -294,12 +298,12 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
                 },
                 wings: 4
               }
-            }), 'count-engines-wings']
+            }), 'count-engines-wings'],
           ]
         }).spread(airplane => {
-          expect(parseInt(airplane.get('count'))).to.equal(3);
-          expect(parseInt(airplane.get('count-engines'))).to.equal(1);
-          expect(parseInt(airplane.get('count-engines-wings'))).to.equal(2);
+          expect(parseInt(airplane.get('count'), 10)).to.equal(3);
+          expect(parseInt(airplane.get('count-engines'), 10)).to.equal(1);
+          expect(parseInt(airplane.get('count-engines-wings'), 10)).to.equal(2);
         });
       });
     }

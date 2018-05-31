@@ -1,14 +1,16 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from './support';
-const dialect = Support.getTestDialect();
 import * as sinon from 'sinon';
+import Support from './support';
+const expect = chai.expect;
+const dialect = Support.getTestDialect();
 const Sequelize = Support.Sequelize;
 
 describe(Support.getTestDialectTeaser('Pooling'), function() {
-  if (dialect === 'sqlite') return;
+  if (dialect === 'sqlite') {
+    return;
+  }
 
   beforeEach(() => {
     (this as any).sinon = sinon.sandbox.create();

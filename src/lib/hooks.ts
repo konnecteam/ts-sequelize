@@ -1,8 +1,10 @@
 'use strict';
 
 import * as _ from 'lodash';
-import * as Utils from './utils';
 import Promise from './promise';
+import * as AllUtils from './utils';
+
+const Utils = AllUtils.Utils;
 const debug = Utils.getLogger().debugContext('hooks');
 
 export const hookTypes = {
@@ -66,29 +68,33 @@ const getProxiedHooks = hookType =>
 
 function getHooks(hookType) {
   return (this.options.hooks || {})[hookType] || [];
-};
+}
 
-const Hooks = {
+export const Hooks = {
   /**
    * Process user supplied hooks definition
    *
-   * @param {Object} hooks
+   * @param hooks
    *
    * @private
    * @memberOf Sequelize
    * @memberOf Sequelize.Model
    */
   hasHooks: undefined,
-  _setupHooks(hooks) {
+  _setupHooks(hooks : {}) {
     this.options.hooks = {};
     _.map(hooks || {}, (hooksArray, hookName) => {
-      if (!_.isArray(hooksArray)) hooksArray = [hooksArray];
+      if (!_.isArray(hooksArray)) {
+        hooksArray = [hooksArray];
+      }
       hooksArray.forEach(hookFn => this.addHook(hookName, hookFn));
     });
   },
 
-  runHooks(hooks) {
-    if (!hooks) throw new Error('runHooks requires at least 1 argument');
+  runHooks(hooks : any) {
+    if (!hooks) {
+      throw new Error('runHooks requires at least 1 argument');
+    }
 
     const hookArgs = Utils.sliceArgs(arguments, 1);
     let hookType;
@@ -137,14 +143,14 @@ const Hooks = {
   /**
    * Add a hook to the model
    *
-   * @param {String}    hookType
-   * @param {String}    [name]    Provide a name for the hook function. It can be used to remove the hook later or to order hooks based on some sort of priority system in the future.
-   * @param {Function}  fn        The hook function
+   * @param hookType
+   * @param name    Provide a name for the hook function. It can be used to remove the hook later or to order hooks based on some sort of priority system in the future.
+   * @param fn : Function        The hook function
    *
    * @memberOf Sequelize
    * @memberOf Sequelize.Model
    */
-  addHook(hookType, name, fn) {
+  addHook(hookType : string, name : string, fn : any) {
     if (typeof name === 'function') {
       fn = name;
       name = null;
@@ -156,7 +162,8 @@ const Hooks = {
     // check for proxies, add them too
     hookType = getProxiedHooks(hookType);
 
-    _.each(hookType, type => {
+    Object.keys(hookType).forEach(typeKey => {
+      const type = hookType[typeKey];
       this.options.hooks[type] = getHooks.call(this, type);
       this.options.hooks[type].push(name ? {name, fn} : fn);
     });
@@ -167,13 +174,13 @@ const Hooks = {
   /**
    * Remove hook from the model
    *
-   * @param {String} hookType
-   * @param {String|Function} name
+   * @param hookType
+   * @param name
    *
    * @memberOf Sequelize
    * @memberOf Sequelize.Model
    */
-  removeHook(hookType, name) {
+  removeHook(hookType : string, name : string | any) {
     hookType = hookAliases[hookType] || hookType;
     const isReference = typeof name === 'function' ? true : false;
 
@@ -203,20 +210,20 @@ const Hooks = {
   /**
    * Check whether the mode has any hooks of this type
    *
-   * @param {String}  hookType
+   * @param hookType
    *
    * @alias hasHooks
    * @memberOf Sequelize
    * @memberOf Sequelize.Model
    */
-  hasHook(hookType) {
+  hasHook(hookType : string) {
     return this.options.hooks[hookType] && !!this.options.hooks[hookType].length;
   }
 };
 Hooks.hasHooks = Hooks.hasHook;
 
 
-export function applyTo(target) {
+export function applyTo(target : any) {
   _.mixin(target, Hooks);
 
   const allHooks = Object.keys(hookTypes).concat(Object.keys(hookAliases));
@@ -229,24 +236,24 @@ export function applyTo(target) {
 
 /**
  * A hook that is run before validation
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with instance, options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with instance, options
  * @name beforeValidate
  * @memberOf Sequelize.Model
  */
 
 /**
  * A hook that is run after validation
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with instance, options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with instance, options
  * @name afterValidate
  * @memberOf Sequelize.Model
  */
 
 /**
  * A hook that is run when validation fails
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with instance, options, error. Error is the
+ * @param name : String
+ * @param fn : Function   A callback function that is called with instance, options, error. Error is the
  * SequelizeValidationError. If the callback throws an error, it will replace the original validation error.
  * @name validationFailed
  * @memberOf Sequelize.Model
@@ -254,56 +261,56 @@ export function applyTo(target) {
 
 /**
  * A hook that is run before creating a single instance
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with attributes, options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with attributes, options
  * @name beforeCreate
  * @memberOf Sequelize.Model
  */
 
 /**
  * A hook that is run after creating a single instance
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with attributes, options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with attributes, options
  * @name afterCreate
  * @memberOf Sequelize.Model
  */
 
 /**
  * A hook that is run before creating or updating a single instance, It proxies `beforeCreate` and `beforeUpdate`
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with attributes, options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with attributes, options
  * @name beforeSave
  * @memberOf Sequelize.Model
  */
 
 /**
  * A hook that is run before upserting
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with attributes, options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with attributes, options
  * @name beforeUpsert
  * @memberOf Sequelize.Model
  */
 
 /**
  * A hook that is run after upserting
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with attributes, options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with attributes, options
  * @name afterUpsert
  * @memberOf Sequelize.Model
  */
 
 /**
-  * A hook that is run after creating or updating a single instance, It proxies `afterCreate` and `afterUpdate`
-  * @param {String}   name
-  * @param {Function} fn   A callback function that is called with attributes, options
-  * @name afterSave
-  * @memberOf Sequelize.Model
-  */
+ * A hook that is run after creating or updating a single instance, It proxies `afterCreate` and `afterUpdate`
+ * @param name : String
+ * @param fn : Function   A callback function that is called with attributes, options
+ * @name afterSave
+ * @memberOf Sequelize.Model
+ */
 
 /**
  * A hook that is run before destroying a single instance
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with instance, options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with instance, options
  *
  * @name beforeDestroy
  * @alias beforeDelete
@@ -312,8 +319,8 @@ export function applyTo(target) {
 
 /**
  * A hook that is run after destroying a single instance
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with instance, options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with instance, options
  *
  * @name afterDestroy
  * @alias afterDelete
@@ -322,8 +329,8 @@ export function applyTo(target) {
 
 /**
  * A hook that is run before restoring a single instance
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with instance, options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with instance, options
  *
  * @name beforeRestore
  * @memberOf Sequelize.Model
@@ -331,8 +338,8 @@ export function applyTo(target) {
 
 /**
  * A hook that is run after restoring a single instance
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with instance, options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with instance, options
  *
  * @name afterRestore
  * @memberOf Sequelize.Model
@@ -340,40 +347,40 @@ export function applyTo(target) {
 
 /**
  * A hook that is run before updating a single instance
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with instance, options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with instance, options
  * @name beforeUpdate
  * @memberOf Sequelize.Model
  */
 
 /**
  * A hook that is run after updating a single instance
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with instance, options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with instance, options
  * @name afterUpdate
  * @memberOf Sequelize.Model
  */
 
 /**
  * A hook that is run before creating instances in bulk
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with instances, options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with instances, options
  * @name beforeBulkCreate
  * @memberOf Sequelize.Model
  */
 
 /**
  * A hook that is run after creating instances in bulk
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with instances, options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with instances, options
  * @name afterBulkCreate
  * @memberOf Sequelize.Model
  */
 
 /**
  * A hook that is run before destroying instances in bulk
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with options
  *
  * @name beforeBulkDestroy
  * @alias beforeBulkDelete
@@ -382,8 +389,8 @@ export function applyTo(target) {
 
 /**
  * A hook that is run after destroying instances in bulk
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with options
  *
  * @name afterBulkDestroy
  * @alias afterBulkDelete
@@ -392,8 +399,8 @@ export function applyTo(target) {
 
 /**
  * A hook that is run before restoring instances in bulk
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with options
  *
  * @name beforeBulkRestore
  * @memberOf Sequelize.Model
@@ -401,8 +408,8 @@ export function applyTo(target) {
 
 /**
  * A hook that is run after restoring instances in bulk
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with options
  *
  * @name afterBulkRestore
  * @memberOf Sequelize.Model
@@ -410,136 +417,136 @@ export function applyTo(target) {
 
 /**
  * A hook that is run before updating instances in bulk
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with options
  * @name beforeBulkUpdate
  * @memberOf Sequelize.Model
  */
 
 /**
  * A hook that is run after updating instances in bulk
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with options
  * @name afterBulkUpdate
  * @memberOf Sequelize.Model
  */
 
 /**
  * A hook that is run before a find (select) query
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with options
  * @name beforeFind
  * @memberOf Sequelize.Model
  */
 
 /**
  * A hook that is run before a find (select) query, after any { include: {all: ...} } options are expanded
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with options
  * @name beforeFindAfterExpandIncludeAll
  * @memberOf Sequelize.Model
  */
 
 /**
  * A hook that is run before a find (select) query, after all option parsing is complete
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with options
  * @name beforeFindAfterOptions
  * @memberOf Sequelize.Model
  */
 
 /**
  * A hook that is run after a find (select) query
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with instance(s), options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with instance(s), options
  * @name afterFind
  * @memberOf Sequelize.Model
  */
 
 /**
  * A hook that is run before a count query
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with options
  * @name beforeCount
  * @memberOf Sequelize.Model
  */
 
 /**
  * A hook that is run before a define call
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with attributes, options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with attributes, options
  * @name beforeDefine
  * @memberOf Sequelize
  */
 
 /**
  * A hook that is run after a define call
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with factory
+ * @param name : String
+ * @param fn : Function   A callback function that is called with factory
  * @name afterDefine
  * @memberOf Sequelize
  */
 
 /**
  * A hook that is run before Sequelize() call
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with config, options
+ * @param name : String
+ * @param fn : Function   A callback function that is called with config, options
  * @name beforeInit
  * @memberOf Sequelize
  */
 
 /**
  * A hook that is run after Sequelize() call
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with sequelize
+ * @param name : String
+ * @param fn : Function   A callback function that is called with sequelize
  * @name afterInit
  * @memberOf Sequelize
  */
 
 /**
  * A hook that is run before a connection is created
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with config passed to connection
+ * @param name : String
+ * @param fn : Function   A callback function that is called with config passed to connection
  * @name beforeConnect
  * @memberOf Sequelize
  */
 
 /**
  * A hook that is run after a connection is created
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with the connection object and thye config passed to connection
+ * @param name : String
+ * @param fn : Function   A callback function that is called with the connection object and thye config passed to connection
  * @name afterConnect
  * @memberOf Sequelize
  */
 
 /**
  * A hook that is run before Model.sync call
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with options passed to Model.sync
+ * @param name : String
+ * @param fn : Function   A callback function that is called with options passed to Model.sync
  * @name beforeSync
  * @memberOf Sequelize
  */
 
 /**
  * A hook that is run after Model.sync call
- * @param {String}   name
- * @param {Function} fn   A callback function that is called with options passed to Model.sync
+ * @param name : String
+ * @param fn : Function   A callback function that is called with options passed to Model.sync
  * @name afterSync
  * @memberOf Sequelize
  */
 
 /**
-  * A hook that is run before sequelize.sync call
-  * @param {String}   name
-  * @param {Function} fn   A callback function that is called with options passed to sequelize.sync
-  * @name beforeBulkSync
-  * @memberOf Sequelize
-  */
+ * A hook that is run before sequelize.sync call
+ * @param name : String
+ * @param fn : Function   A callback function that is called with options passed to sequelize.sync
+ * @name beforeBulkSync
+ * @memberOf Sequelize
+ */
 
 /**
-  * A hook that is run after sequelize.sync call
-  * @param {String}   name
-  * @param {Function} fn   A callback function that is called with options passed to sequelize.sync
-  * @name afterBulkSync
-  * @memberOf Sequelize
-  */
+ * A hook that is run after sequelize.sync call
+ * @param name : String
+ * @param fn : Function   A callback function that is called with options passed to sequelize.sync
+ * @name afterBulkSync
+ * @memberOf Sequelize
+ */

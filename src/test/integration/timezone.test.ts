@@ -1,10 +1,10 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
+import {Sequelize} from '../../index';
 import Support from './support';
+const expect = chai.expect;
 const dialect = Support.getTestDialect();
-import {Sequelize}from '../../index';
 const Promise = Sequelize.Promise;
 
 if (dialect !== 'sqlite') {
@@ -35,7 +35,7 @@ if (dialect !== 'sqlite') {
 
       return Promise.all([
         this.sequelize.query(query, { type: this.sequelize.QueryTypes.SELECT }),
-        this.sequelizeWithTimezone.query(query, { type: this.sequelize.QueryTypes.SELECT })
+        this.sequelizeWithTimezone.query(query, { type: this.sequelize.QueryTypes.SELECT }),
       ]).spread((now1, now2) => {
         const elapsedQueryTime = Date.now() - startQueryTime + 1001;
         expect(now1[0].now.getTime()).to.be.closeTo(now2[0].now.getTime(), elapsedQueryTime);
@@ -44,8 +44,8 @@ if (dialect !== 'sqlite') {
 
     if (dialect === 'mysql') {
       it('handles existing timestamps', function() {
-        const NormalUser = this.sequelize.define('user', {}),
-          TimezonedUser = this.sequelizeWithTimezone.define('user', {});
+        const NormalUser = this.sequelize.define('user', {});
+        const TimezonedUser = this.sequelizeWithTimezone.define('user', {});
 
         return this.sequelize.sync({ force: true }).bind(this).then(() => {
           return NormalUser.create({});
@@ -61,15 +61,15 @@ if (dialect !== 'sqlite') {
       });
 
       it('handles named timezones', function() {
-        const NormalUser = this.sequelize.define('user', {}),
-          TimezonedUser = this.sequelizeWithNamedTimezone.define('user', {});
+        const NormalUser = this.sequelize.define('user', {});
+        const TimezonedUser = this.sequelizeWithNamedTimezone.define('user', {});
 
         return this.sequelize.sync({ force: true }).bind(this).then(() => {
           return TimezonedUser.create({});
         }).then(timezonedUser => {
           return Promise.all([
             NormalUser.findById(timezonedUser.id),
-            TimezonedUser.findById(timezonedUser.id)
+            TimezonedUser.findById(timezonedUser.id),
           ]);
         }).spread((normalUser, timezonedUser) => {
           // Expect 5 hours difference, in milliseconds, +/- 1 hour for DST

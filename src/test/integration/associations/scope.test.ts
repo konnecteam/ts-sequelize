@@ -1,10 +1,10 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../support';
+import {Sequelize} from '../../../index';
 import DataTypes from '../../../lib/data-types';
-import {Sequelize}from '../../../index';
+import Support from '../support';
+const expect = chai.expect;
 const Promise = Sequelize.Promise;
 
 describe(Support.getTestDialectTeaser('associations'), () => {
@@ -14,11 +14,11 @@ describe(Support.getTestDialectTeaser('associations'), () => {
       this.Image = this.sequelize.define('image', {});
       this.Question = this.sequelize.define('question', {});
       this.Comment = this.sequelize.define('comment', {
-        title: DataTypes.STRING,
-        commentable: DataTypes.STRING,
-        commentable_id: DataTypes.INTEGER,
+        title: new DataTypes.STRING(),
+        commentable: new DataTypes.STRING(),
+        commentable_id: new DataTypes.INTEGER(),
         isMain: {
-          type: DataTypes.BOOLEAN,
+          type: new DataTypes.BOOLEAN(),
           defaultValue: false
         }
       });
@@ -253,7 +253,7 @@ describe(Support.getTestDialectTeaser('associations'), () => {
           beforeEach(function() {
             this.Post = this.sequelize.define('post', {});
             this.Tag = this.sequelize.define('tag', {
-              type: DataTypes.STRING
+              type: new DataTypes.STRING()
             });
             this.PostTag = this.sequelize.define('post_tag');
 
@@ -323,7 +323,7 @@ describe(Support.getTestDialectTeaser('associations'), () => {
                   },
                   include: [
                     {model: self.Tag, as: 'tags'},
-                    {model: self.Tag, as: 'categories'}
+                    {model: self.Tag, as: 'categories'},
                   ]
                 }),
                 self.Post.findOne({
@@ -332,7 +332,7 @@ describe(Support.getTestDialectTeaser('associations'), () => {
                   },
                   include: [
                     {model: self.Tag, as: 'tags'},
-                    {model: self.Tag, as: 'categories'}
+                    {model: self.Tag, as: 'categories'},
                   ]
                 }),
                 self.Post.findOne({
@@ -341,7 +341,7 @@ describe(Support.getTestDialectTeaser('associations'), () => {
                   },
                   include: [
                     {model: self.Tag, as: 'tags'},
-                    {model: self.Tag, as: 'categories'}
+                    {model: self.Tag, as: 'categories'},
                   ]
                 })
               );
@@ -371,26 +371,26 @@ describe(Support.getTestDialectTeaser('associations'), () => {
 
             this.ItemTag = this.sequelize.define('item_tag', {
               id: {
-                type: DataTypes.INTEGER,
+                type: new DataTypes.INTEGER(),
                 primaryKey: true,
                 autoIncrement: true
               },
               tag_id: {
-                type: DataTypes.INTEGER,
+                type: new DataTypes.INTEGER(),
                 unique: 'item_tag_taggable'
               },
               taggable: {
-                type: DataTypes.STRING,
+                type: new DataTypes.STRING(),
                 unique: 'item_tag_taggable'
               },
               taggable_id: {
-                type: DataTypes.INTEGER,
+                type: new DataTypes.INTEGER(),
                 unique: 'item_tag_taggable',
                 references: null
               }
             });
             this.Tag = this.sequelize.define('tag', {
-              name: DataTypes.STRING
+              name: new DataTypes.STRING()
             });
 
             this.Post.belongsToMany(this.Tag, {

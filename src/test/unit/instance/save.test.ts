@@ -1,20 +1,18 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
-const current = Support.sequelize;
-const Sequelize = Support.Sequelize;
 import * as sinon from 'sinon';
 import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
+const current = Support.sequelize;
+const Sequelize = Support.Sequelize;
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
   describe('save', () => {
     it('should disallow saves if no primary key values is present', () => {
-      const Model = current.define('User', {
-
-        }),
-        instance = Model.build({}, {isNewRecord: false});
+      const Model = current.define('User', {});
+      const instance = Model.build({}, {isNewRecord: false});
 
       expect(() => {
         instance.save();
@@ -22,10 +20,11 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     describe('options tests', () => {
-      let stub, instance;
+      let stub;
+      let instance;
       const Model = current.define('User', {
         id: {
-          type: DataTypes.BIGINT,
+          type: new DataTypes.BIGINT(),
           primaryKey: true,
           autoIncrement: true
         }

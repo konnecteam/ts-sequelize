@@ -1,7 +1,7 @@
 'use strict';
 
-import Support from '../../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
 const expectsql = Support.expectsql;
 const current = Support.sequelize;
 const sql  = current.dialect.QueryGenerator;
@@ -13,7 +13,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
     it('with temp table for trigger', () => {
       const User = Support.sequelize.define('user', {
         username: {
-          type: DataTypes.STRING,
+          type: new DataTypes.STRING(),
           field: 'user_name'
         }
       }, {
@@ -38,10 +38,10 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
     it('Works with limit', () => {
       const User = Support.sequelize.define('User', {
         username: {
-          type: DataTypes.STRING
+          type: new DataTypes.STRING()
         },
         userId: {
-          type: DataTypes.INTEGER
+          type: new DataTypes.INTEGER()
         }
       }, {
         timestamps: false

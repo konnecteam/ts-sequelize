@@ -15,7 +15,7 @@ sequelize.define('user', {
 ```js
 sequelize.define('modelName', {
   userId: {
-    type: Sequelize.INTEGER,
+    type: new Sequelize.INTEGER(),
     field: 'user_id'
   }
 });
@@ -29,7 +29,7 @@ To define your own primary key:
 ```js
 sequelize.define('collection', {
   uid: {
-    type: Sequelize.INTEGER,
+    type: new Sequelize.INTEGER(),
     primaryKey: true,
     autoIncrement: true // Automatically gets converted to SERIAL for postgres
   }
@@ -37,7 +37,7 @@ sequelize.define('collection', {
 
 sequelize.define('collection', {
   uuid: {
-    type: Sequelize.UUID,
+    type: new Sequelize.UUID(),
     primaryKey: true
   }
 });

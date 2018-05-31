@@ -49,9 +49,9 @@ There are currently three ways to programmatically add hooks:
 ```js
 // Method 1 via the .define() method
 const User = sequelize.define('user', {
-  username: DataTypes.STRING,
+  username: new DataTypes.STRING(),
   mood: {
-    type: DataTypes.ENUM,
+    type: new DataTypes.ENUM(),
     values: ['happy', 'sad', 'neutral']
   }
 }, {
@@ -92,7 +92,7 @@ Only a hook with name param can be removed.
 
 ```js
 const Book = sequelize.define('book', {
-  title: DataTypes.STRING
+  title: new DataTypes.STRING()
 });
 
 Book.addHook('afterCreate', 'notifyUsers', (book, options) => {
@@ -285,11 +285,11 @@ For the most part hooks will work the same for instances when being associated e
 
 ```js
 const Projects = sequelize.define('projects', {
-  title: DataTypes.STRING
+  title: new DataTypes.STRING()
 });
 
 const Tasks = sequelize.define('tasks', {
-  title: DataTypes.STRING
+  title: new DataTypes.STRING()
 });
 
 Projects.hasMany(Tasks, { onDelete: 'cascade', hooks: true });

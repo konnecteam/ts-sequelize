@@ -1,30 +1,30 @@
 'use strict';
 
-import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../support';
-import DataTypes from '../../../lib/data-types';
-import * as sinon from 'sinon';
-const dialect = Support.getTestDialect();
 import * as Promise from 'bluebird';
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+import DataTypes from '../../../lib/data-types';
+import Support from '../support';
+const expect = chai.expect;
+const dialect = Support.getTestDialect();
 
 describe(Support.getTestDialectTeaser('Hooks'), () => {
   beforeEach(function() {
     this.User = this.sequelize.define('User', {
       username: {
-        type: DataTypes.STRING,
+        type: new DataTypes.STRING(),
         allowNull: false
       },
       mood: {
-        type: DataTypes.ENUM,
+        type: new DataTypes.ENUM(),
         values: ['happy', 'sad', 'neutral']
       }
     });
 
     this.ParanoidUser = this.sequelize.define('ParanoidUser', {
-      username: DataTypes.STRING,
+      username: new DataTypes.STRING(),
       mood: {
-        type: DataTypes.ENUM,
+        type: new DataTypes.ENUM(),
         values: ['happy', 'sad', 'neutral']
       }
     }, {
@@ -42,11 +42,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
           const self = this;
 
           this.Projects = this.sequelize.define('Project', {
-            title: DataTypes.STRING
+            title: new DataTypes.STRING()
           });
 
           this.Tasks = this.sequelize.define('Task', {
-            title: DataTypes.STRING
+            title: new DataTypes.STRING()
           });
 
           this.Projects.hasOne(this.Tasks, {onUpdate: 'cascade', hooks: true});
@@ -59,8 +59,8 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
         it('on success', function() {
           const self = this;
-          let beforeHook = false,
-            afterHook = false;
+          let beforeHook = false;
+          let afterHook = false;
 
           this.Tasks.beforeUpdate(() => {
             beforeHook = true;
@@ -104,11 +104,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       describe('cascade onDelete', () => {
         beforeEach(function() {
           this.Projects = this.sequelize.define('Project', {
-            title: DataTypes.STRING
+            title: new DataTypes.STRING()
           });
 
           this.Tasks = this.sequelize.define('Task', {
-            title: DataTypes.STRING
+            title: new DataTypes.STRING()
           });
 
           this.Projects.hasOne(this.Tasks, {onDelete: 'CASCADE', hooks: true});
@@ -119,11 +119,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
         describe('#remove', () => {
           it('with no errors', function() {
-            const self = this,
-              beforeProject = sinon.spy(),
-              afterProject = sinon.spy(),
-              beforeTask = sinon.spy(),
-              afterTask = sinon.spy();
+            const self = this;
+            const beforeProject = sinon.spy();
+            const afterProject = sinon.spy();
+            const beforeTask = sinon.spy();
+            const afterTask = sinon.spy();
 
             this.Projects.beforeCreate(beforeProject);
             this.Projects.afterCreate(afterProject);
@@ -145,12 +145,12 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
           });
 
           it('with errors', function() {
-            const self = this,
-              CustomErrorText = 'Whoops!';
-            let beforeProject = false,
-              afterProject = false,
-              beforeTask = false,
-              afterTask = false;
+            const self = this;
+            const CustomErrorText = 'Whoops!';
+            let beforeProject = false;
+            let afterProject = false;
+            let beforeTask = false;
+            let afterTask = false;
 
             this.Projects.beforeCreate(() => {
               beforeProject = true;
@@ -193,11 +193,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
           const self = this;
 
           this.Projects = this.sequelize.define('Project', {
-            title: DataTypes.STRING
+            title: new DataTypes.STRING()
           });
 
           this.Tasks = this.sequelize.define('Task', {
-            title: DataTypes.STRING
+            title: new DataTypes.STRING()
           });
 
           this.Projects.hasOne(this.Tasks);
@@ -209,9 +209,9 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         });
 
         it('on success', function() {
-          const self = this,
-            beforeHook = sinon.spy(),
-            afterHook = sinon.spy();
+          const self = this;
+          const beforeHook = sinon.spy();
+          const afterHook = sinon.spy();
 
           this.Tasks.beforeUpdate(beforeHook);
           this.Tasks.afterUpdate(afterHook);
@@ -248,11 +248,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
           const self = this;
 
           this.Projects = this.sequelize.define('Project', {
-            title: DataTypes.STRING
+            title: new DataTypes.STRING()
           });
 
           this.Tasks = this.sequelize.define('Task', {
-            title: DataTypes.STRING
+            title: new DataTypes.STRING()
           });
 
           this.Projects.hasMany(this.Tasks);
@@ -265,11 +265,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
         describe('#remove', () => {
           it('with no errors', function() {
-            const self = this,
-              beforeProject = sinon.spy(),
-              afterProject = sinon.spy(),
-              beforeTask = sinon.spy(),
-              afterTask = sinon.spy();
+            const self = this;
+            const beforeProject = sinon.spy();
+            const afterProject = sinon.spy();
+            const beforeTask = sinon.spy();
+            const afterTask = sinon.spy();
 
             this.Projects.beforeCreate(beforeProject);
             this.Projects.afterCreate(afterProject);
@@ -291,11 +291,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
           });
 
           it('with errors', function() {
-            const self = this,
-              beforeProject = sinon.spy(),
-              afterProject = sinon.spy(),
-              beforeTask = sinon.spy(),
-              afterTask = sinon.spy();
+            const self = this;
+            const beforeProject = sinon.spy();
+            const afterProject = sinon.spy();
+            const beforeTask = sinon.spy();
+            const afterTask = sinon.spy();
 
             this.Projects.beforeCreate(beforeProject);
             this.Projects.afterCreate(afterProject);
@@ -326,11 +326,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         beforeEach(function() {
           const self = this;
           this.Projects = this.sequelize.define('Project', {
-            title: DataTypes.STRING
+            title: new DataTypes.STRING()
           });
 
           this.Tasks = this.sequelize.define('Task', {
-            title: DataTypes.STRING
+            title: new DataTypes.STRING()
           });
 
           this.Projects.hasMany(this.Tasks, {onDelete: 'cascade', hooks: true});
@@ -343,11 +343,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
         describe('#remove', () => {
           it('with no errors', function() {
-            const self = this,
-              beforeProject = sinon.spy(),
-              afterProject = sinon.spy(),
-              beforeTask = sinon.spy(),
-              afterTask = sinon.spy();
+            const self = this;
+            const beforeProject = sinon.spy();
+            const afterProject = sinon.spy();
+            const beforeTask = sinon.spy();
+            const afterTask = sinon.spy();
 
             this.Projects.beforeCreate(beforeProject);
             this.Projects.afterCreate(afterProject);
@@ -370,10 +370,10 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
           it('with errors', function() {
             const self = this;
-            let beforeProject = false,
-              afterProject = false,
-              beforeTask = false,
-              afterTask = false;
+            let beforeProject = false;
+            let afterProject = false;
+            let beforeTask = false;
+            let afterTask = false;
 
             this.Projects.beforeCreate(() => {
               beforeProject = true;
@@ -415,11 +415,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       describe('no cascade', () => {
         beforeEach(function() {
           this.Projects = this.sequelize.define('Project', {
-            title: DataTypes.STRING
+            title: new DataTypes.STRING()
           });
 
           this.Tasks = this.sequelize.define('Task', {
-            title: DataTypes.STRING
+            title: new DataTypes.STRING()
           });
 
           this.Projects.hasMany(this.Tasks);
@@ -430,11 +430,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
         describe('#remove', () => {
           it('with no errors', function() {
-            const self = this,
-              beforeProject = sinon.spy(),
-              afterProject = sinon.spy(),
-              beforeTask = sinon.spy(),
-              afterTask = sinon.spy();
+            const self = this;
+            const beforeProject = sinon.spy();
+            const afterProject = sinon.spy();
+            const beforeTask = sinon.spy();
+            const afterTask = sinon.spy();
 
             this.Projects.beforeCreate(beforeProject);
             this.Projects.afterCreate(afterProject);
@@ -457,10 +457,10 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
           it('with errors', function() {
             const self = this;
-            let beforeProject = false,
-              afterProject = false,
-              beforeTask = false,
-              afterTask = false;
+            let beforeProject = false;
+            let afterProject = false;
+            let beforeTask = false;
+            let afterTask = false;
 
             this.Projects.beforeCreate(() => {
               beforeProject = true;
@@ -502,11 +502,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       describe('cascade', () => {
         beforeEach(function() {
           this.Projects = this.sequelize.define('Project', {
-            title: DataTypes.STRING
+            title: new DataTypes.STRING()
           });
 
           this.Tasks = this.sequelize.define('Task', {
-            title: DataTypes.STRING
+            title: new DataTypes.STRING()
           });
 
           this.Projects.belongsToMany(this.Tasks, {cascade: 'onDelete', through: 'projects_and_tasks', hooks: true});
@@ -517,11 +517,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
         describe('#remove', () => {
           it('with no errors', function() {
-            const self = this,
-              beforeProject = sinon.spy(),
-              afterProject = sinon.spy(),
-              beforeTask = sinon.spy(),
-              afterTask = sinon.spy();
+            const self = this;
+            const beforeProject = sinon.spy();
+            const afterProject = sinon.spy();
+            const beforeTask = sinon.spy();
+            const afterTask = sinon.spy();
 
             this.Projects.beforeCreate(beforeProject);
             this.Projects.afterCreate(afterProject);
@@ -545,10 +545,10 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
           it('with errors', function() {
             const self = this;
-            let beforeProject = false,
-              afterProject = false,
-              beforeTask = false,
-              afterTask = false;
+            let beforeProject = false;
+            let afterProject = false;
+            let beforeTask = false;
+            let afterTask = false;
 
             this.Projects.beforeCreate(() => {
               beforeProject = true;
@@ -589,11 +589,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       describe('no cascade', () => {
         beforeEach(function() {
           this.Projects = this.sequelize.define('Project', {
-            title: DataTypes.STRING
+            title: new DataTypes.STRING()
           });
 
           this.Tasks = this.sequelize.define('Task', {
-            title: DataTypes.STRING
+            title: new DataTypes.STRING()
           });
 
           this.Projects.belongsToMany(this.Tasks, {hooks: true, through: 'project_tasks'});
@@ -604,11 +604,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
         describe('#remove', () => {
           it('with no errors', function() {
-            const self = this,
-              beforeProject = sinon.spy(),
-              afterProject = sinon.spy(),
-              beforeTask = sinon.spy(),
-              afterTask = sinon.spy();
+            const self = this;
+            const beforeProject = sinon.spy();
+            const afterProject = sinon.spy();
+            const beforeTask = sinon.spy();
+            const afterTask = sinon.spy();
 
             this.Projects.beforeCreate(beforeProject);
             this.Projects.afterCreate(afterProject);
@@ -631,10 +631,10 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
           it('with errors', function() {
             const self = this;
-            let beforeProject = false,
-              afterProject = false,
-              beforeTask = false,
-              afterTask = false;
+            let beforeProject = false;
+            let afterProject = false;
+            let beforeTask = false;
+            let afterTask = false;
 
             this.Projects.beforeCreate(() => {
               beforeProject = true;
@@ -678,15 +678,15 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         describe('cascade', () => {
           beforeEach(function() {
             this.Projects = this.sequelize.define('Project', {
-              title: DataTypes.STRING
+              title: new DataTypes.STRING()
             });
 
             this.Tasks = this.sequelize.define('Task', {
-              title: DataTypes.STRING
+              title: new DataTypes.STRING()
             });
 
             this.MiniTasks = this.sequelize.define('MiniTask', {
-              mini_title: DataTypes.STRING
+              mini_title: new DataTypes.STRING()
             });
 
             this.Projects.hasMany(this.Tasks, {onDelete: 'cascade', hooks: true});
@@ -703,12 +703,12 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
           describe('#remove', () => {
             it('with no errors', function() {
-              let beforeProject = false,
-                afterProject = false,
-                beforeTask = false,
-                afterTask = false,
-                beforeMiniTask = false,
-                afterMiniTask = false;
+              let beforeProject = false;
+              let afterProject = false;
+              let beforeTask = false;
+              let afterTask = false;
+              let beforeMiniTask = false;
+              let afterMiniTask = false;
 
               this.Projects.beforeCreate(() => {
                 beforeProject = true;
@@ -742,7 +742,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
               return this.sequelize.Promise.all([
                 this.Projects.create({title: 'New Project'}),
-                this.MiniTasks.create({mini_title: 'New MiniTask'})
+                this.MiniTasks.create({mini_title: 'New MiniTask'}),
               ]).bind(this).spread((project, minitask) => {
                 return project.addMiniTask(minitask);
               }).then(project => {
@@ -759,12 +759,12 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
             });
 
             it('with errors', function() {
-              let beforeProject = false,
-                afterProject = false,
-                beforeTask = false,
-                afterTask = false,
-                beforeMiniTask = false,
-                afterMiniTask = false;
+              let beforeProject = false;
+              let afterProject = false;
+              let beforeTask = false;
+              let afterTask = false;
+              let beforeMiniTask = false;
+              let afterMiniTask = false;
 
               this.Projects.beforeCreate(() => {
                 beforeProject = true;
@@ -798,7 +798,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
               return this.sequelize.Promise.all([
                 this.Projects.create({title: 'New Project'}),
-                this.MiniTasks.create({mini_title: 'New MiniTask'})
+                this.MiniTasks.create({mini_title: 'New MiniTask'}),
               ]).bind(this).spread((project, minitask) => {
                 return project.addMiniTask(minitask);
               }).then(project => {
@@ -820,15 +820,15 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         describe('cascade', () => {
           beforeEach(function() {
             this.Projects = this.sequelize.define('Project', {
-              title: DataTypes.STRING
+              title: new DataTypes.STRING()
             });
 
             this.Tasks = this.sequelize.define('Task', {
-              title: DataTypes.STRING
+              title: new DataTypes.STRING()
             });
 
             this.MiniTasks = this.sequelize.define('MiniTask', {
-              mini_title: DataTypes.STRING
+              mini_title: new DataTypes.STRING()
             });
 
             this.Projects.hasMany(this.Tasks, {onDelete: 'cascade', hooks: true});
@@ -845,12 +845,12 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
           describe('#remove', () => {
             it('with no errors', function() {
-              let beforeProject = false,
-                afterProject = false,
-                beforeTask = false,
-                afterTask = false,
-                beforeMiniTask = false,
-                afterMiniTask = false;
+              let beforeProject = false;
+              let afterProject = false;
+              let beforeTask = false;
+              let afterTask = false;
+              let beforeMiniTask = false;
+              let afterMiniTask = false;
 
               this.Projects.beforeCreate(() => {
                 beforeProject = true;
@@ -885,11 +885,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
               return this.sequelize.Promise.all([
                 this.Projects.create({title: 'New Project'}),
                 this.Tasks.create({title: 'New Task'}),
-                this.MiniTasks.create({mini_title: 'New MiniTask'})
+                this.MiniTasks.create({mini_title: 'New MiniTask'}),
               ]).bind(this).spread(function(project, task, minitask) {
                 return this.sequelize.Promise.all([
                   task.addMiniTask(minitask),
-                  project.addTask(task)
+                  project.addTask(task),
                 ]).return(project);
               }).then(project => {
                 return project.destroy();
@@ -904,12 +904,12 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
             });
 
             it('with errors', function() {
-              let beforeProject = false,
-                afterProject = false,
-                beforeTask = false,
-                afterTask = false,
-                beforeMiniTask = false,
-                afterMiniTask = false;
+              let beforeProject = false;
+              let afterProject = false;
+              let beforeTask = false;
+              let afterTask = false;
+              let beforeMiniTask = false;
+              let afterMiniTask = false;
               const CustomErrorText = 'Whoops!';
 
               this.Projects.beforeCreate(() => {
@@ -940,11 +940,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
               return this.sequelize.Promise.all([
                 this.Projects.create({title: 'New Project'}),
                 this.Tasks.create({title: 'New Task'}),
-                this.MiniTasks.create({mini_title: 'New MiniTask'})
+                this.MiniTasks.create({mini_title: 'New MiniTask'}),
               ]).bind(this).spread(function(project, task, minitask) {
                 return this.sequelize.Promise.all([
                   task.addMiniTask(minitask),
-                  project.addTask(task)
+                  project.addTask(task),
                 ]).return(project);
               }).then(project => {
                 return expect(project.destroy()).to.eventually.be.rejectedWith(CustomErrorText).then(() => {

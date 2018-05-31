@@ -1,9 +1,9 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
@@ -29,14 +29,14 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     it('should throw when id is added but not marked as PK', () => {
       expect(() => {
         current.define('foo', {
-          id: DataTypes.INTEGER
+          id: new DataTypes.INTEGER()
         });
       }).to.throw("A column called 'id' was added to the attributes of 'foos' but not marked with 'primaryKey: true'");
 
       expect(() => {
         current.define('bar', {
           id: {
-            type: DataTypes.INTEGER
+            type: new DataTypes.INTEGER()
           }
         });
       }).to.throw("A column called 'id' was added to the attributes of 'bars' but not marked with 'primaryKey: true'");
@@ -45,15 +45,15 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       expect(() => {
         current.define('baz', {
           foo: {
-            type: DataTypes.STRING,
+            type: new DataTypes.STRING(),
             unique: null
           },
           bar: {
-            type: DataTypes.STRING,
+            type: new DataTypes.STRING(),
             unique: undefined
           },
           bop: {
-            type: DataTypes.DATE
+            type: new DataTypes.DATE()
           }
         });
       }).not.to.throw();

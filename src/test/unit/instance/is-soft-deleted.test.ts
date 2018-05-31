@@ -1,30 +1,30 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
-const current = Support.sequelize;
-import DataTypes from '../../../lib/data-types';
 import * as moment from 'moment';
+import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
   describe('isSoftDeleted', () => {
     beforeEach(function() {
       const User = current.define('User', {
-        name: DataTypes.STRING,
-        birthdate: DataTypes.DATE,
-        meta: DataTypes.JSON,
+        name: new DataTypes.STRING(),
+        birthdate: new DataTypes.DATE(),
+        meta: new DataTypes.JSON(),
         deletedAt: {
-          type: DataTypes.DATE
+          type: new DataTypes.DATE()
         }
       });
 
       const ParanoidUser = current.define('User', {
-        name: DataTypes.STRING,
-        birthdate: DataTypes.DATE,
-        meta: DataTypes.JSON,
+        name: new DataTypes.STRING(),
+        birthdate: new DataTypes.DATE(),
+        meta: new DataTypes.JSON(),
         deletedAt: {
-          type: DataTypes.DATE
+          type: new DataTypes.DATE()
         }
       }, {
         paranoid: true

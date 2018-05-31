@@ -2,18 +2,18 @@
 
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-const expect = chai.expect;
-import Support from '../support';
+import {Sequelize} from '../../../index';
 import DataTypes from '../../../lib/data-types';
-import {Sequelize}from '../../../index';
+import Support from '../support';
+const expect = chai.expect;
 const Promise = Sequelize.Promise;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('BelongsTo'), () => {
   describe('Model.associations', () => {
     it('should store all assocations when associting to the same table multiple times', function() {
-      const User = this.sequelize.define('User', {}),
-        Group = this.sequelize.define('Group', {});
+      const User = this.sequelize.define('User', {});
+      const Group = this.sequelize.define('Group', {});
 
       Group.belongsTo(User);
       Group.belongsTo(User, { foreignKey: 'primaryGroupId', as: 'primaryUsers' });
@@ -26,8 +26,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
   describe('get', () => {
     describe('multiple', () => {
       it('should fetch associations for multiple instances', function() {
-        const User = this.sequelize.define('User', {}),
-          Task = this.sequelize.define('Task', {});
+        const User = this.sequelize.define('User', {});
+        const Task = this.sequelize.define('Task', {});
 
         Task.User = Task.belongsTo(User, {as: 'user'});
 
@@ -65,8 +65,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
         return Support.prepareTransactionTest(this.sequelize).then(sequelize => {
-          const User = sequelize.define('User', { username: DataTypes.STRING }),
-            Group = sequelize.define('Group', { name: DataTypes.STRING });
+          const User = sequelize.define('User', { username: new DataTypes.STRING() });
+          const Group = sequelize.define('Group', { name: new DataTypes.STRING() });
 
           Group.belongsTo(User);
 
@@ -78,9 +78,9 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
                     return Group.all().then(groups => {
                       return groups[0].getUser().then(associatedUser => {
                         expect(associatedUser).to.be.null;
-                        return Group.all({ transaction: t }).then(groups => {
-                          return groups[0].getUser({ transaction: t }).then(associatedUser => {
-                            expect(associatedUser).to.be.not.null;
+                        return Group.all({ transaction: t }).then(_groups => {
+                          return _groups[0].getUser({ transaction: t }).then(_associatedUser => {
+                            expect(_associatedUser).to.be.not.null;
                             return t.rollback();
                           });
                         });
@@ -98,8 +98,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     if (current.dialect.name !== 'oracle') {
     //Oracle doesn't support column names non quoted by "
       it('should be able to handle a where object that\'s a first class citizen.', function() {
-        const User = this.sequelize.define('UserXYZ', { username: DataTypes.STRING, gender: DataTypes.STRING }),
-          Task = this.sequelize.define('TaskXYZ', { title: DataTypes.STRING, status: DataTypes.STRING });
+        const User = this.sequelize.define('UserXYZ', { username: new DataTypes.STRING(), gender: new DataTypes.STRING() });
+        const Task = this.sequelize.define('TaskXYZ', { title: new DataTypes.STRING(), status: new DataTypes.STRING() });
 
         Task.belongsTo(User);
 
@@ -110,7 +110,7 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
           return Promise.all([
             User.create({ username: 'foo', gender: 'male' }),
             User.create({ username: 'bar', gender: 'female' }),
-            Task.create({ title: 'task', status: 'inactive' })
+            Task.create({ title: 'task', status: 'inactive' }),
           ]);
         }).spread((userA, userB, task) => {
           return task.setUserXYZ(userA).then(() => {
@@ -123,9 +123,9 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     }
 
     it('supports schemas', function() {
-      const User = this.sequelize.define('UserXYZ', { username: DataTypes.STRING, gender: DataTypes.STRING }).schema('archive'),
-        Task = this.sequelize.define('TaskXYZ', { title: DataTypes.STRING, status: DataTypes.STRING }).schema('archive'),
-        self = this;
+      const User = this.sequelize.define('UserXYZ', { username: new DataTypes.STRING(), gender: new DataTypes.STRING() }).schema('archive');
+      const Task = this.sequelize.define('TaskXYZ', { title: new DataTypes.STRING(), status: new DataTypes.STRING() }).schema('archive');
+      const self = this;
 
       Task.belongsTo(User);
 
@@ -138,7 +138,7 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
       }).then(() => {
         return Promise.all([
           User.create({ username: 'foo', gender: 'male' }),
-          Task.create({ title: 'task', status: 'inactive' })
+          Task.create({ title: 'task', status: 'inactive' }),
         ]);
       }).spread((user, task) => {
         return task.setUserXYZ(user).then(() => {
@@ -155,8 +155,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
         return Support.prepareTransactionTest(this.sequelize).then(sequelize => {
-          const User = sequelize.define('User', { username: DataTypes.STRING }),
-            Group = sequelize.define('Group', { name: DataTypes.STRING });
+          const User = sequelize.define('User', { username: new DataTypes.STRING() });
+          const Group = sequelize.define('Group', { name: new DataTypes.STRING() });
 
           Group.belongsTo(User);
 
@@ -181,8 +181,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     }
 
     it('can set the association with declared primary keys...', function() {
-      const User = this.sequelize.define('UserXYZ', { user_id: {type: DataTypes.INTEGER, primaryKey: true }, username: DataTypes.STRING }),
-        Task = this.sequelize.define('TaskXYZ', { task_id: {type: DataTypes.INTEGER, primaryKey: true }, title: DataTypes.STRING });
+      const User = this.sequelize.define('UserXYZ', { user_id: {type: new DataTypes.INTEGER(), primaryKey: true }, username: new DataTypes.STRING() });
+      const Task = this.sequelize.define('TaskXYZ', { task_id: {type: new DataTypes.INTEGER(), primaryKey: true }, title: new DataTypes.STRING() });
 
       Task.belongsTo(User, { foreignKey: 'user_id' });
 
@@ -190,12 +190,12 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
         return User.create({ user_id: 1, username: 'foo' }).then(user => {
           return Task.create({ task_id: 1, title: 'task' }).then(task => {
             return task.setUserXYZ(user).then(() => {
-              return task.getUserXYZ().then(user => {
-                expect(user).not.to.be.null;
+              return task.getUserXYZ().then(_user => {
+                expect(_user).not.to.be.null;
 
                 return task.setUserXYZ(null).then(() => {
-                  return task.getUserXYZ().then(user => {
-                    expect(user).to.be.null;
+                  return task.getUserXYZ().then(user_ => {
+                    expect(user_).to.be.null;
                   });
                 });
               });
@@ -206,8 +206,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     });
 
     it('clears the association if null is passed', function() {
-      const User = this.sequelize.define('UserXYZ', { username: DataTypes.STRING }),
-        Task = this.sequelize.define('TaskXYZ', { title: DataTypes.STRING });
+      const User = this.sequelize.define('UserXYZ', { username: new DataTypes.STRING() });
+      const Task = this.sequelize.define('TaskXYZ', { title: new DataTypes.STRING() });
 
       Task.belongsTo(User);
 
@@ -215,12 +215,12 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
         return User.create({ username: 'foo' }).then(user => {
           return Task.create({ title: 'task' }).then(task => {
             return task.setUserXYZ(user).then(() => {
-              return task.getUserXYZ().then(user => {
-                expect(user).not.to.be.null;
+              return task.getUserXYZ().then(_user => {
+                expect(_user).not.to.be.null;
 
                 return task.setUserXYZ(null).then(() => {
-                  return task.getUserXYZ().then(user => {
-                    expect(user).to.be.null;
+                  return task.getUserXYZ().then(user_ => {
+                    expect(user_).to.be.null;
                   });
                 });
               });
@@ -231,8 +231,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     });
 
     it('should throw a ForeignKeyConstraintError if the associated record does not exist', function() {
-      const User = this.sequelize.define('UserXYZ', { username: DataTypes.STRING }),
-        Task = this.sequelize.define('TaskXYZ', { title: DataTypes.STRING });
+      const User = this.sequelize.define('UserXYZ', { username: new DataTypes.STRING() });
+      const Task = this.sequelize.define('TaskXYZ', { title: new DataTypes.STRING() });
 
       Task.belongsTo(User);
 
@@ -246,8 +246,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     });
 
     it('supports passing the primary key instead of an object', function() {
-      const User = this.sequelize.define('UserXYZ', { username: DataTypes.STRING }),
-        Task = this.sequelize.define('TaskXYZ', { title: DataTypes.STRING });
+      const User = this.sequelize.define('UserXYZ', { username: new DataTypes.STRING() });
+      const Task = this.sequelize.define('TaskXYZ', { title: new DataTypes.STRING() });
 
       Task.belongsTo(User);
 
@@ -255,8 +255,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
         return User.create({ id: 15, username: 'jansemand' }).then(user => {
           return Task.create({}).then(task => {
             return task.setUserXYZ(user.id).then(() => {
-              return task.getUserXYZ().then(user => {
-                expect(user.username).to.equal('jansemand');
+              return task.getUserXYZ().then(_user => {
+                expect(_user.username).to.equal('jansemand');
               });
             });
           });
@@ -265,9 +265,9 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     });
 
     it('should support logging', function() {
-      const User = this.sequelize.define('UserXYZ', { username: DataTypes.STRING }),
-        Task = this.sequelize.define('TaskXYZ', { title: DataTypes.STRING }),
-        spy = sinon.spy();
+      const User = this.sequelize.define('UserXYZ', { username: new DataTypes.STRING() });
+      const Task = this.sequelize.define('TaskXYZ', { title: new DataTypes.STRING() });
+      const spy = sinon.spy();
 
       Task.belongsTo(User);
 
@@ -284,11 +284,11 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
 
     it('should not clobber atributes', function() {
       const Comment = this.sequelize.define('comment', {
-        text: DataTypes.STRING
+        text: new DataTypes.STRING()
       });
 
       const Post = this.sequelize.define('post', {
-        title: DataTypes.STRING
+        title: new DataTypes.STRING()
       });
 
       Post.hasOne(Comment);
@@ -312,11 +312,11 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
 
     it('should set the foreign key value without saving when using save: false', function() {
       const Comment = this.sequelize.define('comment', {
-        text: DataTypes.STRING
+        text: new DataTypes.STRING()
       });
 
       const Post = this.sequelize.define('post', {
-        title: DataTypes.STRING
+        title: new DataTypes.STRING()
       });
 
       Post.hasMany(Comment, {foreignKey: 'post_id'});
@@ -339,15 +339,15 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     });
 
     it('supports setting same association twice', function() {
-      const Home = this.sequelize.define('home', {}),
-        User = this.sequelize.define('user');
+      const Home = this.sequelize.define('home', {});
+      const User = this.sequelize.define('user');
 
       Home.belongsTo(User);
 
       return this.sequelize.sync({ force: true }).bind({}).then(() => {
         return Promise.all([
           Home.create(),
-          User.create()
+          User.create(),
         ]);
       }).spread(function(home, user) {
         this.home = home;
@@ -363,8 +363,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
 
   describe('createAssociation', () => {
     it('creates an associated model instance', function() {
-      const User = this.sequelize.define('User', { username: DataTypes.STRING }),
-        Task = this.sequelize.define('Task', { title: DataTypes.STRING });
+      const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
+      const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
 
       Task.belongsTo(User);
 
@@ -383,8 +383,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
         return Support.prepareTransactionTest(this.sequelize).then(sequelize => {
-          const User = sequelize.define('User', { username: DataTypes.STRING }),
-            Group = sequelize.define('Group', { name: DataTypes.STRING });
+          const User = sequelize.define('User', { username: new DataTypes.STRING() });
+          const Group = sequelize.define('Group', { name: new DataTypes.STRING() });
 
           Group.belongsTo(User);
 
@@ -395,8 +395,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
                   return group.getUser().then(user => {
                     expect(user).to.be.null;
 
-                    return group.getUser({ transaction: t }).then(user => {
-                      expect(user).not.to.be.null;
+                    return group.getUser({ transaction: t }).then(_user => {
+                      expect(_user).not.to.be.null;
 
                       return t.rollback();
                     });
@@ -412,8 +412,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
 
   describe('foreign key', () => {
     it('should lowercase foreign keys when using underscored', function() {
-      const User = this.sequelize.define('User', { username: DataTypes.STRING }, { underscored: true }),
-        Account = this.sequelize.define('Account', { name: DataTypes.STRING }, { underscored: true });
+      const User = this.sequelize.define('User', { username: new DataTypes.STRING() }, { underscored: true });
+      const Account = this.sequelize.define('Account', { name: new DataTypes.STRING() }, { underscored: true });
 
       User.belongsTo(Account);
 
@@ -421,8 +421,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     });
 
     it('should use model name when using camelcase', function() {
-      const User = this.sequelize.define('User', { username: DataTypes.STRING }, { underscored: false }),
-        Account = this.sequelize.define('Account', { name: DataTypes.STRING }, { underscored: false });
+      const User = this.sequelize.define('User', { username: new DataTypes.STRING() }, { underscored: false });
+      const Account = this.sequelize.define('Account', { name: new DataTypes.STRING() }, { underscored: false });
 
       User.belongsTo(Account);
 
@@ -430,8 +430,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     });
 
     it('should support specifying the field of a foreign key', function() {
-      const User = this.sequelize.define('User', { username: DataTypes.STRING }, { underscored: false }),
-        Account = this.sequelize.define('Account', { title: DataTypes.STRING }, { underscored: false });
+      const User = this.sequelize.define('User', { username: new DataTypes.STRING() }, { underscored: false });
+      const Account = this.sequelize.define('Account', { title: new DataTypes.STRING() }, { underscored: false });
 
       User.belongsTo(Account, {
         foreignKey: {
@@ -449,7 +449,7 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
       }).then(() => {
         return Promise.all([
           User.create({ username: 'foo' }),
-          Account.create({ title: 'pepsico' })
+          Account.create({ title: 'pepsico' }),
         ]);
       }).spread((user, account) => {
         return user.setAccount(account).then(() => {
@@ -470,8 +470,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
 
   describe('foreign key constraints', () => {
     it('are enabled by default', function() {
-      const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
-        User = this.sequelize.define('User', { username: DataTypes.STRING });
+      const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
+      const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
 
       Task.belongsTo(User); // defaults to SET NULL
 
@@ -491,8 +491,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     });
 
     it('sets to NO ACTION if allowNull: false', function() {
-      const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
-        User = this.sequelize.define('User', { username: DataTypes.STRING });
+      const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
+      const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
 
       Task.belongsTo(User, { foreignKey: { allowNull: false }}); // defaults to NO ACTION
 
@@ -510,8 +510,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     });
 
     it('should be possible to disable them', function() {
-      const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
-        User = this.sequelize.define('User', { username: DataTypes.STRING });
+      const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
+      const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
 
       Task.belongsTo(User, { constraints: false });
 
@@ -531,8 +531,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     });
 
     it('can cascade deletes', function() {
-      const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
-        User = this.sequelize.define('User', { username: DataTypes.STRING });
+      const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
+      const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
 
       Task.belongsTo(User, {onDelete: 'cascade'});
 
@@ -553,8 +553,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
 
     if (current.dialect.supports.constraints.restrict) {
       it('can restrict deletes', function() {
-        const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
-          User = this.sequelize.define('User', { username: DataTypes.STRING });
+        const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
+        const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
 
         Task.belongsTo(User, {onDelete: 'restrict'});
 
@@ -574,8 +574,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
       });
 
       it('can restrict updates', function() {
-        const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
-          User = this.sequelize.define('User', { username: DataTypes.STRING });
+        const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
+        const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
 
         Task.belongsTo(User, {onUpdate: 'restrict'});
 
@@ -608,8 +608,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     // NOTE: mssql does not support changing an autoincrement primary key / oracle does not support cascade update
     if (Support.getTestDialect() !== 'mssql' && Support.getTestDialect() !== 'oracle') {
       it('can cascade updates', function() {
-        const Task = this.sequelize.define('Task', { title: DataTypes.STRING }),
-          User = this.sequelize.define('User', { username: DataTypes.STRING });
+        const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
+        const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
 
         Task.belongsTo(User, {onUpdate: 'cascade'});
 
@@ -642,15 +642,15 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
   describe('Association column', () => {
     it('has correct type and name for non-id primary keys with non-integer type', function() {
       const User = this.sequelize.define('UserPKBT', {
-          username: {
-            type: DataTypes.STRING
-          }
-        }),
-        self = this;
+        username: {
+          type: new DataTypes.STRING()
+        }
+      });
+      const self = this;
 
       const Group = this.sequelize.define('GroupPKBT', {
         name: {
-          type: DataTypes.STRING,
+          type: new DataTypes.STRING(),
           primaryKey: true
         }
       });
@@ -663,8 +663,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     });
 
     it('should support a non-primary key as the association column on a target without a primary key', function() {
-      const User = this.sequelize.define('User', { username: DataTypes.STRING }),
-        Task = this.sequelize.define('Task', { title: DataTypes.STRING });
+      const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
+      const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
 
       User.removeAttribute('id');
       Task.belongsTo(User, { foreignKey: 'user_name', targetKey: 'username'});
@@ -686,15 +686,15 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
 
     it('should support a non-primary unique key as the association column', function() {
       const User = this.sequelize.define('User', {
-          username: {
-            type: DataTypes.STRING,
-            field: 'user_name',
-            unique: true
-          }
-        }),
-        Task = this.sequelize.define('Task', {
-          title: DataTypes.STRING
-        });
+        username: {
+          type: new DataTypes.STRING(),
+          field: 'user_name',
+          unique: true
+        }
+      });
+      const Task = this.sequelize.define('Task', {
+        title: new DataTypes.STRING()
+      });
 
       Task.belongsTo(User, { foreignKey: 'user_name', targetKey: 'username'});
 
@@ -715,12 +715,12 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
 
     it('should support a non-primary key as the association column with a field option', function() {
       const User = this.sequelize.define('User', {
-          username: {
-            type: DataTypes.STRING,
-            field: 'the_user_name_field'
-          }
-        }),
-        Task = this.sequelize.define('Task', { title: DataTypes.STRING });
+        username: {
+          type: new DataTypes.STRING(),
+          field: 'the_user_name_field'
+        }
+      });
+      const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
 
       User.removeAttribute('id');
       Task.belongsTo(User, { foreignKey: 'user_name', targetKey: 'username'});
@@ -743,14 +743,14 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
 
   describe('Association options', () => {
     it('can specify data type for autogenerated relational keys', function() {
-      const User = this.sequelize.define('UserXYZ', { username: DataTypes.STRING }),
-        dataTypes = [DataTypes.INTEGER, DataTypes.BIGINT, DataTypes.STRING],
-        self = this,
-        Tasks = {};
+      const User = this.sequelize.define('UserXYZ', { username: new DataTypes.STRING() });
+      const dataTypes = [DataTypes.INTEGER, DataTypes.BIGINT, DataTypes.STRING];
+      const self = this;
+      const Tasks = {};
 
       dataTypes.forEach(dataType => {
         const tableName = 'TaskXYZ_' + (dataType as any).key;
-        Tasks[(dataType as any)] = self.sequelize.define(tableName, { title: DataTypes.STRING });
+        Tasks[(dataType as any)] = self.sequelize.define(tableName, { title: new DataTypes.STRING() });
 
         Tasks[(dataType as any)].belongsTo(User, { foreignKey: 'userId', keyType: dataType, constraints: false });
       });
@@ -764,8 +764,8 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
 
     describe('allows the user to provide an attribute definition object as foreignKey', () => {
       it('works with a column that hasnt been defined before', function() {
-        const Task = this.sequelize.define('task', {}),
-          User = this.sequelize.define('user', {});
+        const Task = this.sequelize.define('task', {});
+        const User = this.sequelize.define('user', {});
 
         Task.belongsTo(User, {
           foreignKey: {
@@ -782,17 +782,17 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
 
       it('works when taking a column directly from the object', function() {
         const User = this.sequelize.define('user', {
-            uid: {
-              type: DataTypes.INTEGER,
-              primaryKey: true
-            }
-          }),
-          Profile = this.sequelize.define('project', {
-            user_id: {
-              type: DataTypes.INTEGER,
-              allowNull: false
-            }
-          });
+          uid: {
+            type: new DataTypes.INTEGER(),
+            primaryKey: true
+          }
+        });
+        const Profile = this.sequelize.define('project', {
+          user_id: {
+            type: new DataTypes.INTEGER(),
+            allowNull: false
+          }
+        });
 
         Profile.belongsTo(User, { foreignKey: Profile.rawAttributes.user_id});
 
@@ -804,12 +804,12 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
 
       it('works when merging with an existing definition', function() {
         const Task = this.sequelize.define('task', {
-            projectId: {
-              defaultValue: 42,
-              type: DataTypes.INTEGER
-            }
-          }),
-          Project = this.sequelize.define('project', {});
+          projectId: {
+            defaultValue: 42,
+            type: new DataTypes.INTEGER()
+          }
+        });
+        const Project = this.sequelize.define('project', {});
 
         Task.belongsTo(Project, { foreignKey: { allowNull: true }});
 
@@ -820,18 +820,18 @@ describe(Support.getTestDialectTeaser('BelongsTo'), () => {
     });
 
     it('should throw an error if foreignKey and as result in a name clash', function() {
-      const Person = this.sequelize.define('person', {}),
-        Car = this.sequelize.define('car', {});
+      const Person = this.sequelize.define('person', {});
+      const Car = this.sequelize.define('car', {});
 
       expect(Car.belongsTo.bind(Car, Person, {foreignKey: 'person'})).to
         .throw ('Naming collision between attribute \'person\' and association \'person\' on model car. To remedy this, change either foreignKey or as in your association definition');
     });
 
     it('should throw an error if an association clashes with the name of an already define attribute', function() {
-      const Person = this.sequelize.define('person', {}),
-        Car = this.sequelize.define('car', {
-          person: DataTypes.INTEGER
-        });
+      const Person = this.sequelize.define('person', {});
+      const Car = this.sequelize.define('car', {
+        person: new DataTypes.INTEGER()
+      });
 
       expect(Car.belongsTo.bind(Car, Person, {as: 'person'})).to
         .throw ('Naming collision between attribute \'person\' and association \'person\' on model car. To remedy this, change either foreignKey or as in your association definition');

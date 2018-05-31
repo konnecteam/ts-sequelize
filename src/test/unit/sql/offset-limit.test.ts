@@ -33,7 +33,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       const options = {
         limit: 10,
         order: [
-          ['email', 'DESC'] // for MSSQL
+          ['email', 'DESC'], // for MSSQL
         ],
         model: undefined
       };
@@ -56,7 +56,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         limit: 10,
         offset: 20,
         order: [
-          ['email', 'DESC'] // for MSSQL
+          ['email', 'DESC'], // for MSSQL
         ],
         model: undefined
       };
@@ -79,7 +79,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       const options = {
         limit: "';DELETE FROM user",
         order: [
-          ['email', 'DESC'] // for MSSQL
+          ['email', 'DESC'], // for MSSQL
         ],
         model: undefined
       };
@@ -103,7 +103,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         limit: 10,
         offset: "';DELETE FROM user",
         order: [
-          ['email', 'DESC'] // for MSSQL
+          ['email', 'DESC'], // for MSSQL
         ],
         model: undefined
       };

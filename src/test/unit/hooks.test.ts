@@ -1,12 +1,12 @@
 'use strict';
 
 import * as chai from 'chai';
-import * as sinon from 'sinon';
-const expect = chai.expect;
-import Support from '../support';
 import * as _ from 'lodash';
+import * as sinon from 'sinon';
 import DataTypes from '../../lib/data-types';
+import Support from '../support';
 const current = Support.sequelize;
+const expect = chai.expect;
 const Promise = current.Promise;
 
 describe(Support.getTestDialectTeaser('Hooks'), () => {
@@ -16,8 +16,8 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
   describe('arguments', () => {
     it('hooks can modify passed arguments', function() {
-      this.Model.addHook('beforeCreate', options => {
-        options.answer = 41;
+      this.Model.addHook('beforeCreate', _options => {
+        _options.answer = 41;
       });
 
       const options = {
@@ -48,7 +48,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         this.afterCreateHook = sinon.spy();
 
         this.Model = current.define('m', {
-          name: DataTypes.STRING
+          name: new DataTypes.STRING()
         }, {
           hooks: {
             beforeSave: this.beforeSaveHook,
@@ -73,7 +73,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         this.afterSaveHook = sinon.spy();
 
         this.Model = current.define('m', {
-          name: DataTypes.STRING
+          name: new DataTypes.STRING()
         });
 
         this.Model.addHook('beforeSave', this.beforeSaveHook);
@@ -94,7 +94,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         this.afterSaveHook = sinon.spy();
 
         this.Model = current.define('m', {
-          name: DataTypes.STRING
+          name: new DataTypes.STRING()
         });
 
         this.Model.hook('beforeSave', this.beforeSaveHook);
@@ -204,9 +204,9 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       });
 
       it('invokes the global hook, when the model also has a hook', () => {
-        const globalHookBefore = sinon.spy(),
-          globalHookAfter = sinon.spy(),
-          localHook = sinon.spy();
+        const globalHookBefore = sinon.spy();
+        const globalHookAfter = sinon.spy();
+        const localHook = sinon.spy();
 
         current.addHook('beforeUpdate', globalHookBefore);
 
@@ -254,12 +254,12 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       });
 
       it('does not run the global hook when the model specifies its own hook', function() {
-        const localHook = sinon.spy(),
-          Model = this.sequelize.define('M', {}, {
-            hooks: {
-              beforeCreate: localHook
-            }
-          });
+        const localHook = sinon.spy();
+        const Model = this.sequelize.define('M', {}, {
+          hooks: {
+            beforeCreate: localHook
+          }
+        });
 
         return Model.runHooks('beforeCreate').bind(this).then(function() {
           expect(this.beforeCreate).not.to.have.been.called;
@@ -271,8 +271,8 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
   describe('#removeHook', () => {
     it('should remove hook', function() {
-      const hook1 = sinon.spy(),
-        hook2 = sinon.spy();
+      const hook1 = sinon.spy();
+      const hook2 = sinon.spy();
 
       this.Model.addHook('beforeCreate', 'myHook', hook1);
       this.Model.beforeCreate('myHook2', hook2);
@@ -295,10 +295,10 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
     });
 
     it('should not remove other hooks', function() {
-      const hook1 = sinon.spy(),
-        hook2 = sinon.spy(),
-        hook3 = sinon.spy(),
-        hook4 = sinon.spy();
+      const hook1 = sinon.spy();
+      const hook2 = sinon.spy();
+      const hook3 = sinon.spy();
+      const hook4 = sinon.spy();
 
       this.Model.addHook('beforeCreate', hook1);
       this.Model.addHook('beforeCreate', 'myHook', hook2);
@@ -330,8 +330,8 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
   describe('#addHook', () => {
     it('should add additional hook when previous exists', function() {
-      const hook1 = sinon.spy(),
-        hook2 = sinon.spy();
+      const hook1 = sinon.spy();
+      const hook2 = sinon.spy();
 
       const Model = this.sequelize.define('Model', {}, {
         hooks: { beforeCreate: hook1 }

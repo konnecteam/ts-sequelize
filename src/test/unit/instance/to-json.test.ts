@@ -1,16 +1,16 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
   describe('toJSON', () => {
     it('returns copy of json', () => {
       const User = current.define('User', {
-        name: DataTypes.STRING
+        name: new DataTypes.STRING()
       });
       const user = User.build({ name: 'my-name' });
       const json1 = user.toJSON();

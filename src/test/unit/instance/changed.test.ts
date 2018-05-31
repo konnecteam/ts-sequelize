@@ -1,19 +1,19 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
   describe('changed', () => {
     beforeEach(function() {
       this.User = current.define('User', {
-        name: DataTypes.STRING,
-        birthday: DataTypes.DATE,
-        yoj: DataTypes.DATEONLY,
-        meta: DataTypes.JSON
+        name: new DataTypes.STRING(),
+        birthday: new DataTypes.DATE(),
+        yoj: new DataTypes.DATEONLY(),
+        meta: new DataTypes.JSON()
       });
     });
 
@@ -153,7 +153,9 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     it('should return false when changed from null to null', function() {
       const attributes = {};
       for (const attr in this.User.rawAttributes) {
-        attributes[attr] = null;
+        if (this.User.rawAttributes[attr]) {
+          attributes[attr] = null;
+        }
       }
 
       const user = this.User.build(attributes, {
@@ -162,11 +164,15 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       for (const attr in this.User.rawAttributes) {
-        user.set(attr, null);
+        if (this.User.rawAttributes[attr]) {
+          user.set(attr, null);
+        }
       }
 
       for (const attr in this.User.rawAttributes) {
-        expect(user.changed(attr), `${attr} is not changed`).to.equal(false);
+        if (this.User.rawAttributes[attr]) {
+          expect(user.changed(attr), `${attr} is not changed`).to.equal(false);
+        }
       }
     });
   });

@@ -1,11 +1,11 @@
 'use strict';
 
+import * as Bluebird from 'bluebird';
 import * as chai from 'chai';
-const expect = chai.expect;
 import Support from '../support';
+const expect = chai.expect;
 const Sequelize = Support.Sequelize;
 const Promise = Sequelize.Promise;
-import * as Bluebird from 'bluebird';
 
 describe('Promise', () => {
   it('should be an independent copy of bluebird library', () => {

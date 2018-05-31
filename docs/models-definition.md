@@ -4,14 +4,14 @@ To define mappings between a model and a table, use the `define` method.
 
 ```js
 const Project = sequelize.define('project', {
-  title: Sequelize.STRING,
-  description: Sequelize.TEXT
+  title: new Sequelize.STRING(),
+  description: new Sequelize.TEXT()
 })
 
 const Task = sequelize.define('task', {
-  title: Sequelize.STRING,
-  description: Sequelize.TEXT,
-  deadline: Sequelize.DATE
+  title: new Sequelize.STRING(),
+  description: new Sequelize.TEXT(),
+  deadline: new Sequelize.DATE()
 })
 ```
 
@@ -20,41 +20,41 @@ You can also set some options on each column:
 ```js
 const Foo = sequelize.define('foo', {
  // instantiating will automatically set the flag to true if not set
- flag: { type: Sequelize.BOOLEAN, allowNull: false, defaultValue: true },
+ flag: { type: new Sequelize.BOOLEAN(), allowNull: false, defaultValue: true },
 
  // default values for dates => current time
- myDate: { type: Sequelize.DATE, defaultValue: Sequelize.NOW },
+ myDate: { type: new Sequelize.DATE(), defaultValue: new Sequelize.NOW() },
 
  // setting allowNull to false will add NOT NULL to the column, which means an error will be
  // thrown from the DB when the query is executed if the column is null. If you want to check that a value
  // is not null before querying the DB, look at the validations section below.
- title: { type: Sequelize.STRING, allowNull: false },
+ title: { type: new Sequelize.STRING(), allowNull: false },
 
  // Creating two objects with the same value will throw an error. The unique property can be either a
  // boolean, or a string. If you provide the same string for multiple columns, they will form a
  // composite unique key.
- uniqueOne: { type: Sequelize.STRING,  unique: 'compositeIndex' },
- uniqueTwo: { type: Sequelize.INTEGER, unique: 'compositeIndex' },
+ uniqueOne: { type: new Sequelize.STRING(),  unique: 'compositeIndex' },
+ uniqueTwo: { type: new Sequelize.INTEGER(), unique: 'compositeIndex' },
 
  // The unique property is simply a shorthand to create a unique constraint.
- someUnique: { type: Sequelize.STRING, unique: true },
+ someUnique: { type: new Sequelize.STRING(), unique: true },
 
  // It's exactly the same as creating the index in the model's options.
- { someUnique: { type: Sequelize.STRING } },
+ { someUnique: { type: new Sequelize.STRING() } },
  { indexes: [ { unique: true, fields: [ 'someUnique' ] } ] },
 
  // Go on reading for further information about primary keys
- identifier: { type: Sequelize.STRING, primaryKey: true },
+ identifier: { type: new Sequelize.STRING(), primaryKey: true },
 
  // autoIncrement can be used to create auto_incrementing integer columns
- incrementMe: { type: Sequelize.INTEGER, autoIncrement: true },
+ incrementMe: { type: new Sequelize.INTEGER(), autoIncrement: true },
 
  // You can specify a custom field name via the 'field' attribute:
- fieldWithUnderscores: { type: Sequelize.STRING, field: 'field_with_underscores' },
+ fieldWithUnderscores: { type: new Sequelize.STRING(), field: 'field_with_underscores' },
 
  // It is possible to create foreign keys:
  bar_id: {
-   type: Sequelize.INTEGER,
+   type: new Sequelize.INTEGER(),
 
    references: {
      // This is a reference to another model
@@ -83,14 +83,14 @@ module.exports = {
   up(queryInterface, Sequelize) {
     return queryInterface.createTable('my-table', {
       id: {
-        type: Sequelize.INTEGER,
+        type: new Sequelize.INTEGER(),
         primaryKey: true,
         autoIncrement: true,
       },
 
       // Timestamps
-      createdAt: Sequelize.DATE,
-      updatedAt: Sequelize.DATE,
+      createdAt: new Sequelize.DATE(),
+      updatedAt: new Sequelize.DATE(),
     })
   },
   down(queryInterface, Sequelize) {
@@ -103,65 +103,118 @@ module.exports = {
 If you do not want timestamps on your models, only want some timestamps, or you are working with an existing database where the columns are named something else, jump straight on to [configuration ][0]to see how to do that.
 
 
-## Data types
-
-Below are some of the datatypes supported by sequelize. For a full and updated list, see [DataTypes](/variable/index.html#static-variable-DataTypes).
+## Data Types
 
 ```js
-Sequelize.STRING                      // VARCHAR(255)
-Sequelize.STRING(1234)                // VARCHAR(1234)
-Sequelize.STRING.BINARY               // VARCHAR BINARY
-Sequelize.TEXT                        // TEXT
-Sequelize.TEXT('tiny')                // TINYTEXT
-
-Sequelize.INTEGER                     // INTEGER
-Sequelize.BIGINT                      // BIGINT
-Sequelize.BIGINT(11)                  // BIGINT(11)
-
-Sequelize.FLOAT                       // FLOAT
-Sequelize.FLOAT(11)                   // FLOAT(11)
-Sequelize.FLOAT(11, 12)               // FLOAT(11,12)
-
-Sequelize.REAL                        // REAL        PostgreSQL only.
-Sequelize.REAL(11)                    // REAL(11)    PostgreSQL only.
-Sequelize.REAL(11, 12)                // REAL(11,12) PostgreSQL only.
-
-Sequelize.DOUBLE                      // DOUBLE
-Sequelize.DOUBLE(11)                  // DOUBLE(11)
-Sequelize.DOUBLE(11, 12)              // DOUBLE(11,12)
-
-Sequelize.DECIMAL                     // DECIMAL
-Sequelize.DECIMAL(10, 2)              // DECIMAL(10,2)
-
-Sequelize.DATE                        // DATETIME for mysql / sqlite, TIMESTAMP WITH TIME ZONE for postgres
-Sequelize.DATE(6)                     // DATETIME(6) for mysql 5.6.4+. Fractional seconds support with up to 6 digits of precision
-Sequelize.DATEONLY                    // DATE without time.
-Sequelize.BOOLEAN                     // TINYINT(1)
-
-Sequelize.ENUM('value 1', 'value 2')  // An ENUM with allowed values 'value 1' and 'value 2'
-Sequelize.ARRAY(Sequelize.TEXT)       // Defines an array. PostgreSQL only.
-Sequelize.ARRAY(Sequelize.ENUM)       // Defines an array of ENUM. PostgreSQL only.
-
-Sequelize.JSON                        // JSON column. PostgreSQL, SQLite and MySQL only.
-Sequelize.JSONB                       // JSONB column. PostgreSQL only.
-
-Sequelize.BLOB                        // BLOB (bytea for PostgreSQL)
-Sequelize.BLOB('tiny')                // TINYBLOB (bytea for PostgreSQL. Other options are medium and long)
-
-Sequelize.UUID                        // UUID datatype for PostgreSQL and SQLite, CHAR(36) BINARY for MySQL (use defaultValue: Sequelize.UUIDV1 or Sequelize.UUIDV4 to make sequelize generate the ids automatically)
-
-Sequelize.RANGE(Sequelize.INTEGER)    // Defines int4range range. PostgreSQL only.
-Sequelize.RANGE(Sequelize.BIGINT)     // Defined int8range range. PostgreSQL only.
-Sequelize.RANGE(Sequelize.DATE)       // Defines tstzrange range. PostgreSQL only.
-Sequelize.RANGE(Sequelize.DATEONLY)   // Defines daterange range. PostgreSQL only.
-Sequelize.RANGE(Sequelize.DECIMAL)    // Defines numrange range. PostgreSQL only.
-
-Sequelize.ARRAY(Sequelize.RANGE(Sequelize.DATE)) // Defines array of tstzrange ranges. PostgreSQL only.
-
-Sequelize.GEOMETRY                    // Spatial column.  PostgreSQL (with PostGIS) or MySQL only.
-Sequelize.GEOMETRY('POINT')           // Spatial column with geometry type. PostgreSQL (with PostGIS) or MySQL only.
-Sequelize.GEOMETRY('POINT', 4326)     // Spatial column with geometry type and SRID.  PostgreSQL (with PostGIS) or MySQL only.
+new Sequelize.TYPE()
 ```
+
+### STRING / CHAR
+
+| Sequelize | MSSQL | Mysql | Oracle | Postgres | Sqlite |
+| --------- | ----- | ----- | ------ | -------- | ------ |
+| STRING() | NVARCHAR(255) | VARCHAR(255) | VARCHAR(255) | NVARCHAR2(255) | VARCHAR(255) |
+| STRING(1234) | NVARCHAR(1234) | VARCHAR(1234) | NVARCHAR2(1234) | VARCHAR(1234)	 | VARCHAR(1234)|
+| STRING({ length: 1234 })| NVARCHAR(1234)| VARCHAR(1234)| NVARCHAR2(1234)| VARCHAR(1234)| VARCHAR(1234)|
+| STRING(1234).BINARY | BINARY(1234) | VARCHAR(1234) BINARY | RAW(1234) | BYTEA | VARCHAR BINARY(1234) |
+| CHAR() | CHAR(255) | CHAR(255) | CHAR(255) | CHAR(255) | CHAR(255) |
+| CHAR(12) | CHAR(12) | CHAR(12) | CHAR(12) | CHAR(12) | CHAR(12) |
+| CHAR({ length: 12 }) | CHAR(12) | CHAR(12) | CHAR(12) | CHAR(12) | CHAR(12) |
+| CHAR().BINARY | CHAR(255) BINARY | CHAR(255) BINARY | RAW(255) | BYTEA | CHAR BINARY(255) |
+
+----
+
+### TEXT / BLOB
+
+| Sequelize | MSSQL | Mysql | Oracle | Postgres | Sqlite |
+| --------- | ----- | ----- | ------ | -------- | ------ |
+| TEXT() | NVARCHAR(MAX*) | TEXT | CLOB | TEXT | TEXT |
+| TEXT('tiny') | NVARCHAR(256) | TINYTEXT | NVARCHAR2(256) | TEXT | TEXT |
+| TEXT('medium') | NVARCHAR(MAX) | MEDIUMTEXT | NVARCHAR2(2000) | TEXT | TEXT |
+| TEXT('long') | NVARCHAR(MAX) | LONGTEXT | NVARCHAR2(4000) | TEXT | TEXT |
+| BLOB() | VARBINARY(MAX) | BLOB | BLOB | BYTEA | BLOB |
+| BLOB('tiny') | VARBINARY(256) | TINYBLOB | RAW(256) | BYTEA | TINYBLOB |
+| BLOB('medium') | VARBINARY(MAX) | MEDIUMBLOB | RAW(2000) | BYTEA | MEDIUMBLOB |
+| BLOB('long') | VARBINARY(MAX) | MEDIUMBLOB | RAW(2000) | BYTEA | MEDIUMBLOB |
+
+*MAX : 2 GO
+
+----
+
+### NUMBER
+
+#### INTEGER / TINYINT / SMALLINT / MEDIUMINT / BIGINT
+
+| Sequelize | MSSQL | Mysql | Oracle | Postgres | Sqlite |
+| --------- | ----- | ----- | ------ | -------- | ------ |
+| INTEGER() | INTEGER | INTEGER | INTEGER | INTEGER | INTEGER |
+| INTEGER().ZEROFILL | INTEGER | INTEGER ZEROFILL | INTEGER | INTEGER | INTEGER ZEROFILL |
+| INTEGER(11) | INTEGER | INTEGER(11) | INTEGER | INTEGER | INTEGER(11) |
+| INTEGER({ length: 11 }) | INTEGER | INTEGER(11) | INTEGER | INTEGER | INTEGER(11) |
+| TINYINT() | TINYINT | TINYINT | TINYINT | TINYINT | TINYINT |
+| SMALLINT() | SMALLINT | SMALLINT | SMALLINT | SMALLINT | SMALLINT |
+| SMALLINT(4) | SMALLINT | SMALLINT(4) | SMALLINT(4) | SMALLINT | SMALLINT(4) |
+| MEDIUMINT() | MEDIUMINT | MEDIUMINT | MEDIUMINT | MEDIUMINT | MEDIUMINT |
+| MEDIUMINT(6) | MEDIUMINT(6) | MEDIUMINT(6) | MEDIUMINT(6) | MEDIUMINT(6) | MEDIUMINT(6) | MEDIUMINT(6)
+| BIGINT() | BIGINT | BIGINT | NUMBER(19) | BIGINT | BIGINT |
+| BIGINT(11) | BIGINT | BIGINT(11) | NUMBER(19) | BIGINT | BIGINT(11) |
+
+#### REAL / DOUBLE / FLOAT / DECIMAL / NUMERIC
+
+| Sequelize | MSSQL | Mysql | Oracle | Postgres | Sqlite |
+| --------- | ----- | ----- | ------ | -------- | ------ |
+| REAL() | REAL | REAL | REAL | REAL | REAL |
+| REAL(11) | REAL | REAL(11) | REAL | REAL | REAL(11) |
+| REAL(11, 12) | REAL | REAL(11,12) | REAL | REAL | REAL(11,12) |
+| REAL({ length: 11, decimals: 12 }) | REAL | REAL(11,12) | REAL | REAL | REAL(11,12) |
+| DOUBLE() | DOUBLE PRECISION | DOUBLE PRECISION | NUMBER(15,5) | DOUBLE PRECISION | DOUBLE PRECISION |
+| DOUBLE(11, 12) | DOUBLE PRECISION(11, 12) | DOUBLE PRECISION(11, 12) | NUMBER(15,5) | DOUBLE PRECISION | DOUBLE PRECISION(11, 12) |
+| FLOAT() | FLOAT | FLOAT | FLOAT | FLOAT | FLOAT |
+| FLOAT(11) | FLOAT(11) | FLOAT(11) | FLOAT(11) | FLOAT(11) | FLOAT(11) |
+| FLOAT(11, 12) | FLOAT | FLOAT(11,12) | FLOAT(11) | FLOAT | FLOAT(11,12) |
+| DECIMAL() | DECIMAL | DECIMAL | NUMBER | DECIMAL | DECIMAL |
+| DECIMAL({ precision: 10, scale: 2 }) | DECIMAL(10,2) | DECIMAL(10,2) | NUMBER(10,2) | DECIMAL(10,2) | DECIMAL(10,2) |
+| NUMERIC() | DECIMAL | DECIMAL | NUMBER | DECIMAL | --- |
+| NUMERIC(15, 5) | DECIMAL(15,5) | DECIMAL(15,5) | NUMBER(15,5) | DECIMAL(15,5) | --- |
+
+#### UNSIGNED / ZEROFILL
+
+| DATATYPES | MSSQL | Mysql | Oracle | Postgres | Sqlite |
+|:---------:|:-----:|:-----:|:------:|:--------:|:------:|
+| TYPE().UNSIGNED | TYPE UNSIGNED | TYPE UNSIGNED | TYPE UNSIGNED | TYPE UNSIGNED | TYPE UNSIGNED |
+| TYPE().ZEROFILL | TYPE ZEROFILL | TYPE ZEROFILL | TYPE ZEROFILL | TYPE ZEROFILL | TYPE ZEROFILL |
+| TYPE().UNSIGNED.ZEROFILL | TYPE UNSIGNED ZEROFILL | TYPE UNSIGNED ZEROFILL | TYPE UNSIGNED ZEROFILL | TYPE UNSIGNED ZEROFILL | TYPE UNSIGNED ZEROFILL |
+| INTEGER | --- | ok | --- | --- | ok |
+| TINYINT | --- | ok | ok | ok | ok |
+| SMALLINT | --- | ok | ok | --- | ok |
+| MEDIUMINT | ok | ok | ok | ok | ok |
+| BIGINT | --- | ok | --- | --- | ok |
+| REAL | --- | ok | --- | --- | ok |
+| DOUBLE | ok | ok | --- | --- | ok |
+| FLOAT | --- | ok | --- | --- | ok |
+| DECIMAL | --- | ok | --- | --- | --- |
+
+----
+
+### OTHER
+
+| Sequelize | MSSQL | Mysql | Oracle | Postgres | Sqlite |
+| --------- | ----- | ----- | ------ | -------- | ------ |
+| BOOLEAN() | BIT | TINYINT(1) | NUMBER(1) | BOOLEAN | TINYINT(1) |
+| GEOMETRY() | --- | GEOMETRY | --- | GEOMETRY | --- |
+| GEOMETRY('POINT') | --- | POINT | --- | GEOMETRY(POINT) | --- |
+| GEOMETRY('POINT', 4326) | --- | POINT | --- | GEOMETRY(POINT,4326) | --- |
+| JSON() | --- | JSON | --- | JSON | JSON |
+| JSONB() | --- | --- | --- | JSONB | --- |
+| HSTORE() | --- | --- | --- | HSTORE | --- |
+| ARRAY(TYPE) | --- | --- | --- | TYPE[] | --- |
+| DATE() | DATETIMEOFFSET | DATETIME | TIMESTAMP WITH LOCAL TIME ZONE | TIMESTAMP WITH TIME ZONE | DATETIME |
+| DATE(6) | DATETIMEOFFSET | DATETIME(6) | TIMESTAMP WITH LOCAL TIME ZONE | TIMESTAMP WITH TIME ZONE | DATETIME |
+| NOW() | GETDATE() | NOW | CURRENT_TIMESTAMP | CURRENT_DATE | NOW |
+| UUID() | CHAR(36) | CHAR(36) BINARY | NVARCHAR2(36) | UUID | UUID |
+| UUIDV1() | UUIDV1 | UUIDV1 | UUIDV1 | UUIDV1 | UUIDV1 |
+| UUIDV4() | UUIDV4 | UUIDV4 | UUIDV4 | UUIDV4 | UUIDV4 |
+
 
 The BLOB data type allows you to insert data both as strings and as buffers. When you do a find or findAll on a model which has a BLOB column, that data will always be returned as a buffer.
 
@@ -174,26 +227,13 @@ require('pg').types.setTypeParser(1114, stringValue => {
 });
 ```
 
-In addition to the type mentioned above, integer, bigint, float and double also support unsigned and zerofill properties, which can be combined in any order:
-Be aware that this does not apply for PostgreSQL!
-
-```js
-Sequelize.INTEGER.UNSIGNED              // INTEGER UNSIGNED
-Sequelize.INTEGER(11).UNSIGNED          // INTEGER(11) UNSIGNED
-Sequelize.INTEGER(11).ZEROFILL          // INTEGER(11) ZEROFILL
-Sequelize.INTEGER(11).ZEROFILL.UNSIGNED // INTEGER(11) UNSIGNED ZEROFILL
-Sequelize.INTEGER(11).UNSIGNED.ZEROFILL // INTEGER(11) UNSIGNED ZEROFILL
-```
-
-_The examples above only show integer, but the same can be done with bigint and float_
-
 Usage in object notation:
 
 ```js
 // for enums:
 sequelize.define('model', {
   states: {
-    type:   Sequelize.ENUM,
+    type:   new Sequelize.ENUM(),
     values: ['active', 'pending', 'deleted']
   }
 })
@@ -307,7 +347,7 @@ Getters and Setters can be defined in 2 ways (you can mix and match these 2 appr
 ```js
 const Employee = sequelize.define('employee', {
   name: {
-    type: Sequelize.STRING,
+    type: new Sequelize.STRING(),
     allowNull: false,
     get() {
       const title = this.getDataValue('title');
@@ -316,7 +356,7 @@ const Employee = sequelize.define('employee', {
     },
   },
   title: {
-    type: Sequelize.STRING,
+    type: new Sequelize.STRING(),
     allowNull: false,
     set(val) {
       this.setDataValue('title', val.toUpperCase());
@@ -340,8 +380,8 @@ Note that the `this.firstname` and `this.lastname` references in the `fullName` 
 
 ```js
 const Foo = sequelize.define('foo', {
-  firstname: Sequelize.STRING,
-  lastname: Sequelize.STRING
+  firstname: new Sequelize.STRING(),
+  lastname: new Sequelize.STRING()
 }, {
   getterMethods: {
     fullName() {
@@ -393,7 +433,7 @@ The validations are implemented by [validator.js][3].
 ```js
 const ValidateMe = sequelize.define('foo', {
   foo: {
-    type: Sequelize.STRING,
+    type: new Sequelize.STRING(),
     validate: {
       is: ["^[a-z]+$",'i'],     // will only allow letters
       is: /^[a-z]+$/i,          // same as the previous example using real RegExp
@@ -482,16 +522,16 @@ An example:
 
 ```js
 const Pub = Sequelize.define('pub', {
-  name: { type: Sequelize.STRING },
-  address: { type: Sequelize.STRING },
+  name: { type: new Sequelize.STRING() },
+  address: { type: new Sequelize.STRING() },
   latitude: {
-    type: Sequelize.INTEGER,
+    type: new Sequelize.INTEGER(),
     allowNull: true,
     defaultValue: null,
     validate: { min: -90, max: 90 }
   },
   longitude: {
-    type: Sequelize.INTEGER,
+    type: new Sequelize.INTEGER(),
     allowNull: true,
     defaultValue: null,
     validate: { min: -180, max: 180 }
@@ -601,8 +641,8 @@ const Project = sequelize.import(__dirname + "/path/to/models/project")
 // As you might notice, the DataTypes are the very same as explained above
 module.exports = (sequelize, DataTypes) => {
   return sequelize.define("project", {
-    name: DataTypes.STRING,
-    description: DataTypes.TEXT
+    name: new DataTypes.STRING(),
+    description: new DataTypes.TEXT()
   })
 }
 ```
@@ -612,8 +652,8 @@ The `import` method can also accept a callback as an argument.
 ```js
 sequelize.import('project', (sequelize, DataTypes) => {
   return sequelize.define("project", {
-    name: DataTypes.STRING,
-    description: DataTypes.TEXT
+    name: new DataTypes.STRING(),
+    description: new DataTypes.TEXT()
   })
 })
 ```
@@ -702,7 +742,7 @@ sequelize.sync({ force: true, match: /_test$/ });
 Sequelize Models are ES6 classes. You can very easily add custom instance or class level methods.
 
 ```js
-const User = sequelize.define('user', { firstname: Sequelize.STRING });
+const User = sequelize.define('user', { firstname: new Sequelize.STRING() });
 
 // Adding a class level method
 User.classLevelMethod = function() {
@@ -718,7 +758,7 @@ User.prototype.instanceLevelMethod = function() {
 Of course you can also access the instance's data and generate virtual getters:
 
 ```js
-const User = sequelize.define('user', { firstname: Sequelize.STRING, lastname: Sequelize.STRING });
+const User = sequelize.define('user', { firstname: new Sequelize.STRING(), lastname: new Sequelize.STRING() });
 
 User.prototype.getFullname = function() {
   return [this.firstname, this.lastname].join(' ');

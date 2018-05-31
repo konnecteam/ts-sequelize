@@ -117,3 +117,16 @@ a[href^="file/lib/"] {
 pre {
   white-space: pre-wrap;
 }
+
+.wy-nav-content {
+  margin: 0;
+  max-width: 100%;
+}
+
+footer {
+  visibility: hidden;
+}
+
+footer div {
+  visibility: visible;
+}

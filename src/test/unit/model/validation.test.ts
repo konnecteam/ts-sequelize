@@ -2,12 +2,12 @@
 
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-const expect = chai.expect;
 import DataTypes from '../../../lib/data-types';
+import config from '../../config/config';
 import Support from '../../support';
+const expect = chai.expect;
 const current = Support.sequelize;
 const Promise = current.Promise;
-import config from '../../config/config';
 
 
 describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
@@ -179,57 +179,58 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
       }
     };
 
-    const applyFailTest = function applyFailTest(validatorDetails, i, validator) {
-        const failingValue = validatorDetails.fail[i];
-        it('correctly specifies an instance as invalid using a value of "' + failingValue + '" for the validation "' + validator + '"', function() {
-          const validations = {},
-            message = validator + '(' + failingValue + ')';
+    function applyFailTest(validatorDetails, i, validator) {
+      const failingValue = validatorDetails.fail[i];
+      it('correctly specifies an instance as invalid using a value of "' + failingValue + '" for the validation "' + validator + '"', function() {
+        const validations = {};
+        const message = validator + '(' + failingValue + ')';
 
-          validations[validator] = validatorDetails.spec || {};
-          validations[validator].msg = message;
+        validations[validator] = validatorDetails.spec || {};
+        validations[validator].msg = message;
 
-          const UserFail = this.sequelize.define('User' + config.rand(), {
-            name: {
-              type: DataTypes.STRING,
-              validate: validations
-            }
-          });
-
-          const failingUser = UserFail.build({ name: failingValue });
-
-          return expect(failingUser.validate()).to.be.rejected.then(_errors => {
-            expect(_errors.get('name')[0].message).to.equal(message);
-            expect(_errors.get('name')[0].value).to.equal(failingValue);
-          });
-        });
-      },
-      applyPassTest = function applyPassTest(validatorDetails, j, validator, type = null) {
-        const succeedingValue = validatorDetails.pass[j];
-        it('correctly specifies an instance as valid using a value of "' + succeedingValue + '" for the validation "' + validator + '"', function() {
-          const validations = {},
-            message = validator + '(' + succeedingValue + ')';
-
-          validations[validator] = validatorDetails.spec || {};
-
-          if (type === 'msg') {
-            validations[validator].msg = message;
-          } else if (type === 'args') {
-            validations[validator].args = validations[validator].args || true;
-            validations[validator].msg = message;
-          } else if (type === 'true') {
-            validations[validator] = true;
+        const UserFail = this.sequelize.define('User' + config.rand(), {
+          name: {
+            type: new DataTypes.STRING(),
+            validate: validations
           }
-
-          const UserSuccess = this.sequelize.define('User' + config.rand(), {
-            name: {
-              type: DataTypes.STRING,
-              validate: validations
-            }
-          });
-          const successfulUser = UserSuccess.build({ name: succeedingValue });
-          return expect(successfulUser.validate()).not.to.be.rejected;
         });
-      };
+
+        const failingUser = UserFail.build({ name: failingValue });
+
+        return expect(failingUser.validate()).to.be.rejected.then(_errors => {
+          expect(_errors.get('name')[0].message).to.equal(message);
+          expect(_errors.get('name')[0].value).to.equal(failingValue);
+        });
+      });
+    }
+
+    function applyPassTest(validatorDetails, j, validator, type = null) {
+      const succeedingValue = validatorDetails.pass[j];
+      it('correctly specifies an instance as valid using a value of "' + succeedingValue + '" for the validation "' + validator + '"', function() {
+        const validations = {};
+        const message = validator + '(' + succeedingValue + ')';
+
+        validations[validator] = validatorDetails.spec || {};
+
+        if (type === 'msg') {
+          validations[validator].msg = message;
+        } else if (type === 'args') {
+          validations[validator].args = validations[validator].args || true;
+          validations[validator].msg = message;
+        } else if (type === 'true') {
+          validations[validator] = true;
+        }
+
+        const UserSuccess = this.sequelize.define('User' + config.rand(), {
+          name: {
+            type: new DataTypes.STRING(),
+            validate: validations
+          }
+        });
+        const successfulUser = UserSuccess.build({ name: succeedingValue });
+        return expect(successfulUser.validate()).not.to.be.rejected;
+      });
+    }
 
     for (let validator in checks) {
       if (checks.hasOwnProperty(validator)) {
@@ -258,21 +259,21 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   });
 
   describe('datatype validations', () => {
-    const current = Support.createSequelizeInstance({
+    const _current = Support.createSequelizeInstance({
       typeValidation: true
     });
 
-    const User = current.define('user', {
-      age: DataTypes.INTEGER,
-      name: DataTypes.STRING,
-      awesome: DataTypes.BOOLEAN,
-      number: DataTypes.DECIMAL,
-      uid: DataTypes.UUID,
-      date: DataTypes.DATE
+    const User = _current.define('user', {
+      age: new DataTypes.INTEGER(),
+      name: new DataTypes.STRING(),
+      awesome: new DataTypes.BOOLEAN(),
+      number: new DataTypes.DECIMAL(),
+      uid: new DataTypes.UUID(),
+      date: new DataTypes.DATE()
     });
 
     before(function() {
-      this.stub = sinon.stub(current, 'query').callsFake(() => {
+      this.stub = sinon.stub(_current, 'query').callsFake(() => {
         return new Promise(resolve => {
           resolve([User.build({}), 1]);
         });
@@ -381,13 +382,13 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
         it('should throw when passing string', () => {
           return expect(User.create({
             age: 'jan'
-          })).to.be.rejectedWith(current.ValidationError);
+          })).to.be.rejectedWith(_current.ValidationError);
         });
 
         it('should throw when passing decimal', () => {
           return expect(User.create({
             age: 4.5
-          })).to.be.rejectedWith(current.ValidationError);
+          })).to.be.rejectedWith(_current.ValidationError);
         });
       });
 
@@ -395,13 +396,13 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
         it('should throw when passing string', () => {
           return expect(User.update({
             age: 'jan'
-          }, { where: {}})).to.be.rejectedWith(current.ValidationError);
+          }, { where: {}})).to.be.rejectedWith(_current.ValidationError);
         });
 
         it('should throw when passing decimal', () => {
           return expect(User.update({
             age: 4.5
-          }, { where: {}})).to.be.rejectedWith(current.ValidationError);
+          }, { where: {}})).to.be.rejectedWith(_current.ValidationError);
         });
       });
 
@@ -412,7 +413,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
 
     const User = current.define('user', {
       age: {
-        type: DataTypes.STRING,
+        type: new DataTypes.STRING(),
         validate: {
           customFn(val, next) {
             if (val < 0) {
@@ -423,7 +424,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
           }
         }
       },
-      name: DataTypes.STRING
+      name: new DataTypes.STRING()
     }, {
       validate: {
         customFn() {
@@ -498,7 +499,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   describe('custom validation functions returning promises', () => {
 
     const User = current.define('user', {
-      name: DataTypes.STRING
+      name: new DataTypes.STRING()
     }, {
       validate: {
         customFn() {

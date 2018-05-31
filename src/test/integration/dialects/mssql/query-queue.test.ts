@@ -1,17 +1,17 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Promise from '../../../../lib/promise';
 import DataTypes from '../../../../lib/data-types';
+import Promise from '../../../../lib/promise';
 import Support from '../../support';
+const expect = chai.expect;
 const dialect = Support.getTestDialect();
 
 if (dialect.match(/^mssql/)) {
   describe('[MSSQL Specific] Query Queue', () => {
     beforeEach(function() {
       const User = this.User = this.sequelize.define('User', {
-        username: DataTypes.STRING
+        username: new DataTypes.STRING()
       });
 
       return this.sequelize.sync({ force: true }).then(() => {
@@ -29,7 +29,7 @@ if (dialect.match(/^mssql/)) {
           }),
           User.findOne({
             transaction: t
-          })
+          }),
         ]);
       })).not.to.be.rejected;
     });

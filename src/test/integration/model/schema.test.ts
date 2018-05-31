@@ -1,9 +1,9 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../support';
+const expect = chai.expect;
 const current = Support.sequelize;
 const Promise = current.Promise;
 const SCHEMA_ONE = 'schema_one';
@@ -18,11 +18,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       before(function() {
         current.options.schema = null;
         this.RestaurantOne = current.define('restaurant', {
-          foo: DataTypes.STRING,
-          bar: DataTypes.STRING
+          foo: new DataTypes.STRING(),
+          bar: new DataTypes.STRING()
         });
         this.LocationOne = current.define('location', {
-          name: DataTypes.STRING
+          name: new DataTypes.STRING()
         });
         this.RestaurantOne.belongsTo(this.LocationOne,
           {
@@ -31,11 +31,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           });
         current.options.schema = SCHEMA_TWO;
         this.RestaurantTwo = current.define('restaurant', {
-          foo: DataTypes.STRING,
-          bar: DataTypes.STRING
+          foo: new DataTypes.STRING(),
+          bar: new DataTypes.STRING()
         });
         this.LocationTwo = current.define('location', {
-          name: DataTypes.STRING
+          name: new DataTypes.STRING()
         });
         this.RestaurantTwo.belongsTo(this.LocationTwo,
           {
@@ -50,7 +50,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           .then(() => {
             return Promise.all([
               this.RestaurantOne.sync({force: true}),
-              this.RestaurantTwo.sync({force: true})
+              this.RestaurantTwo.sync({force: true}),
             ]);
           });
       });
@@ -101,12 +101,12 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           });
         });
       });
-      
+
       describe('Get associated data in public schema via include', () => {
         beforeEach(function() {
           return Promise.all([
             this.LocationOne.sync({force: true}),
-            this.LocationTwo.sync({force: true})
+            this.LocationTwo.sync({force: true}),
           ]).then(() => {
             return this.LocationTwo.create({name: 'HQ'});
           }).then(() => {
@@ -147,17 +147,17 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     describe('schemas', () => {
       before(function() {
         this.Restaurant = current.define('restaurant', {
-          foo: DataTypes.STRING,
-          bar: DataTypes.STRING
+          foo: new DataTypes.STRING(),
+          bar: new DataTypes.STRING()
         },
         {tableName: 'restaurants'});
         this.Location = current.define('location', {
-          name: DataTypes.STRING
+          name: new DataTypes.STRING()
         },
         {tableName: 'locations'});
         this.Employee = current.define('employee', {
-          first_name: DataTypes.STRING,
-          last_name: DataTypes.STRING
+          first_name: new DataTypes.STRING(),
+          last_name: new DataTypes.STRING()
         },
         {tableName: 'employees'});
         this.EmployeeOne = this.Employee.schema(SCHEMA_ONE);
@@ -184,11 +184,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         const self = this;
         return Promise.all([
           current.createSchema('schema_one'),
-          current.createSchema('schema_two')
+          current.createSchema('schema_two'),
         ]).then(() => {
           return Promise.all([
             self.RestaurantOne.sync({force: true}),
-            self.RestaurantTwo.sync({force: true})
+            self.RestaurantTwo.sync({force: true}),
           ]);
         });
       });
@@ -196,7 +196,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       afterEach('drop schemas', () => {
         return Promise.all([
           current.dropSchema('schema_one'),
-          current.dropSchema('schema_two')
+          current.dropSchema('schema_two'),
         ]);
       });
 
@@ -380,7 +380,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           const Employee = this.Employee;
           return Promise.all([
             Employee.schema(SCHEMA_ONE).sync({force: true}),
-            Employee.schema(SCHEMA_TWO).sync({force: true})
+            Employee.schema(SCHEMA_TWO).sync({force: true}),
           ]);
         });
 

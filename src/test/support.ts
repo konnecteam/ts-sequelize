@@ -1,20 +1,19 @@
 'use strict';
 
+import * as chai from 'chai';
+import * as chaiaspromised from 'chai-as-promised';
+const chaidatetime = require('chai-datetime');
+import * as chaispies from 'chai-spies';
 import * as fs from 'fs';
-import * as path from 'path';
 import * as _ from 'lodash';
-import {Sequelize}from '../index';
+import * as path from 'path';
+import * as sinonchai from 'sinon-chai';
+import {Sequelize} from '../index';
 import DataTypes from '../lib/data-types';
 import Config from './config/config';
+import { DummyQueryGenerator } from './dummy/dummy-query-generator';
 import * as SupportShim from './supportShim';
-import * as chai from 'chai';
 const expect = chai.expect;
-import AbstractQueryGenerator from '../lib/dialects/abstract/query-generator';
-import * as chaispies from 'chai-spies';
-import * as Literal from '../lib/utils';
-import * as chaidatetime from 'chai-datetime';
-import * as chaiaspromised from 'chai-as-promised';
-import * as sinonchai from 'sinon-chai';
 
 chai.use(chaispies);
 chai.use(chaidatetime);
@@ -36,7 +35,9 @@ Sequelize.Promise.longStackTraces();
 
 // shim all Sequelize methods for testing for correct `options.logging` passing
 // and no modification of `options` objects
-if (!process.env.COVERAGE && process.env.SHIM) SupportShim.supportShim(Sequelize);
+if (!process.env.COVERAGE && process.env.SHIM) {
+  SupportShim.supportShim(Sequelize);
+}
 
 const Support = {
   sequelize: null,
@@ -74,13 +75,13 @@ const Support = {
           resolve();
         }
       }).then(() => {
-        const options = _.extend({}, sequelize.options, { storage: p }),
-          _sequelize = new Sequelize(sequelize.config.database, null, null, options);
+        const options = _.extend({}, sequelize.options, { storage: p });
+        const _sequelize = new Sequelize(sequelize.config.database, null, null, options);
 
         if (callback) {
           _sequelize.sync({ force: true }).then(() => { callback(_sequelize); });
         } else {
-          return _sequelize.sync({ force: true }).return (_sequelize);
+          return _sequelize.sync({ force: true }).then(() => _sequelize);
         }
       });
     } else {
@@ -161,11 +162,14 @@ const Support = {
   },
 
   getAbstractQueryGenerator(sequelize) {
-    return Object.assign(
-      {},
-      AbstractQueryGenerator,
-      {options: sequelize.options, _dialect: sequelize.dialect, sequelize, quoteIdentifier(identifier) { return identifier; }}
+    const QG = new DummyQueryGenerator({
+      options: sequelize.options,
+      _dialect: sequelize.dialect,
+      sequelize
+    }
     );
+    (QG as any).quoteIdentifier = function quoteIdentifier(identifier) { return identifier; };
+    return QG;
   },
 
   getTestDialect() {

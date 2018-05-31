@@ -1,6 +1,6 @@
 'use strict';
 
-const fs = require('fs');
+import * as fs from 'fs';
 let mssqlConfig;
 try {
   mssqlConfig = JSON.parse(fs.readFileSync(__dirname + '/mssql.json', 'utf8'));
@@ -8,7 +8,7 @@ try {
   // ignore
 }
 
-module.exports = {
+export default  {
   username: process.env.SEQ_USER || 'root',
   password: process.env.SEQ_PW   || null,
   database: process.env.SEQ_DB   || 'sequelize_test',
@@ -19,14 +19,14 @@ module.exports = {
   },
 
   rand() {
-    return parseInt(Math.random() * 999, 10);
+    return parseInt('' + Math.random() * 999, 10);
   },
 
   mssql: mssqlConfig || {
-    database: process.env.SEQ_MSSQL_DB   || process.env.SEQ_DB   || 'sequelize_test',
-    username: process.env.SEQ_MSSQL_USER || process.env.SEQ_USER || 'sequelize',
-    password: process.env.SEQ_MSSQL_PW   || process.env.SEQ_PW   || 'nEGkLma26gXVHFUAHJxcmsrK',
-    host: process.env.SEQ_MSSQL_HOST || process.env.SEQ_HOST || '127.0.0.1',
+    database: process.env.SEQ_MSSQL_DB   || process.env.SEQ_DB   || 'sequelize',
+    username: process.env.SEQ_MSSQL_USER || process.env.SEQ_USER || 'sa',
+    password: process.env.SEQ_MSSQL_PW   || process.env.SEQ_PW   || 'Passadmin01',
+    host: process.env.SEQ_MSSQL_HOST || process.env.SEQ_HOST || 'localhost',
     port: process.env.SEQ_MSSQL_PORT || process.env.SEQ_PORT || 1433,
     dialectOptions: {
       // big insert queries need a while
@@ -42,7 +42,7 @@ module.exports = {
   mysql: {
     database: process.env.SEQ_MYSQL_DB   || process.env.SEQ_DB   || 'sequelize_test',
     username: process.env.SEQ_MYSQL_USER || process.env.SEQ_USER || 'root',
-    password: process.env.SEQ_MYSQL_PW   || process.env.SEQ_PW   || null,
+    password: process.env.SEQ_MYSQL_PW   || process.env.SEQ_PW   || 'Kimoce68',
     host: process.env.MYSQL_PORT_3306_TCP_ADDR || process.env.SEQ_MYSQL_HOST || process.env.SEQ_HOST || '127.0.0.1',
     port: process.env.MYSQL_PORT_3306_TCP_PORT || process.env.SEQ_MYSQL_PORT || process.env.SEQ_PORT || 3306,
     pool: {
@@ -55,19 +55,19 @@ module.exports = {
   },
 
   oracle: {
-    username : process.env.NODE_ORACLEDB_USER || 'sequelize',
-    password : process.env.NODE_ORACLEDB_PASSWORD || 'sequelize',
+    username: process.env.NODE_ORACLEDB_USER || 'SEQUELIZE',
+    password: process.env.NODE_ORACLEDB_PASSWORD || 'SEQUELIZE',
     // https://github.com/oracle/node-oracledb/blob/master/doc/api.md#connectionstrings
-    database : process.env.NODE_ORACLEDB_CONNECTIONSTRING || 'xe.oracle.docker',
-    host : process.env.NODE_ORACLEDB_HOST || 'localhost',
-    dialectOptions : {stmtCacheSize:0, logAliasesQry:false},
-    port : process.env.NODE_ORACLEDB_PORT || 1521,
+    database: process.env.NODE_ORACLEDB_CONNECTIONSTRING || 'SEQUELIZE',
+    host: process.env.NODE_ORACLEDB_HOST || 'localhost',
+    dialectOptions: {stmtCacheSize: 0, logAliasesQry: false},
+    port: process.env.NODE_ORACLEDB_PORT || 1521,
     // https://github.com/oracle/node-oracledb/blob/master/doc/api.md#extauth
-    externalAuth : process.env.NODE_ORACLEDB_EXTERNALAUTH ? process.env.NODE_ORACLEDB_EXTERNALAUTH : false
+    externalAuth: process.env.NODE_ORACLEDB_EXTERNALAUTH ? process.env.NODE_ORACLEDB_EXTERNALAUTH : false
   },
 
   postgres: {
-    database: process.env.SEQ_PG_DB   || process.env.SEQ_DB    || 'sequelize_test',
+    database: process.env.SEQ_PG_DB   || process.env.SEQ_DB    || 'sequelize',
     username: process.env.SEQ_PG_USER || process.env.SEQ_USER  || 'postgres',
     password: process.env.SEQ_PG_PW   || process.env.SEQ_PW    || 'postgres',
     host: process.env.POSTGRES_PORT_5432_TCP_ADDR || process.env.SEQ_PG_HOST || process.env.SEQ_HOST  || '127.0.0.1',

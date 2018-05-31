@@ -1,12 +1,12 @@
 'use strict';
 
+import * as bluebird from 'bluebird';
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
-const current = Support.sequelize;
 import * as sinon from 'sinon';
 import DataTypes from '../../../lib/data-types';
-import * as bluebird from 'bluebird';
+import Support from '../../support';
+const expect = chai.expect;
+const current = Support.sequelize;
 const Promise = bluebird.getNewLibraryCopy();
 
 describe(Support.getTestDialectTeaser('Model'), () => {
@@ -20,8 +20,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         this.User = current.define('User', {
-          username: DataTypes.STRING,
-          age: DataTypes.INTEGER
+          username: new DataTypes.STRING(),
+          age: new DataTypes.INTEGER()
         });
 
         this.findAll = sinon.stub(this.User, 'findAll').callsFake(() => {

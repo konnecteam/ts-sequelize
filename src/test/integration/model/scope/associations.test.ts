@@ -1,11 +1,11 @@
 'use strict';
 
 import * as chai from 'chai';
-import {Sequelize}from '../../../../index';
+import {Sequelize} from '../../../../index';
 import DataTypes from '../../../../lib/data-types';
+import Support from '../../support';
 const expect = chai.expect;
 const Promise = Sequelize.Promise;
-import Support from '../../support';
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('scope', () => {
@@ -14,11 +14,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         const sequelize = this.sequelize;
 
         this.ScopeMe = this.sequelize.define('ScopeMe', {
-          username: DataTypes.STRING,
-          email: DataTypes.STRING,
-          access_level: DataTypes.INTEGER,
-          other_value: DataTypes.INTEGER,
-          parent_id: DataTypes.INTEGER
+          username: new DataTypes.STRING(),
+          email: new DataTypes.STRING(),
+          access_level: new DataTypes.INTEGER(),
+          other_value: new DataTypes.INTEGER(),
+          parent_id: new DataTypes.INTEGER()
         }, {
           defaultScope: {
             where: {
@@ -30,7 +30,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           scopes: {
             isTony: {
               where: {
-                username: 'tony'
+                username: {
+                  $eq : 'tony'
+                }
               }
             },
             includeActiveProjects() {
@@ -45,7 +47,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         this.Project = this.sequelize.define('project', {
-          active: DataTypes.BOOLEAN
+          active: new DataTypes.BOOLEAN()
         }, {
           scopes: {
             active: {
@@ -57,7 +59,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         this.Company = this.sequelize.define('company', {
-          active: DataTypes.BOOLEAN
+          active: new DataTypes.BOOLEAN()
         }, {
           defaultScope: {
             where: { active: true }
@@ -75,7 +77,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         this.Profile = this.sequelize.define('profile', {
-          active: DataTypes.BOOLEAN
+          active: new DataTypes.BOOLEAN()
         }, {
           defaultScope: {
             where: { active: true }
@@ -105,12 +107,12 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             this.ScopeMe.create({ id: 4, username: 'fred', email: 'fred@foobar.com', access_level: 3, other_value: 7, parent_id: 1}),
             this.ScopeMe.create({ id: 5, username: 'bob', email: 'bob@foobar.com', access_level: 1, other_value: 9, parent_id: 5}),
             this.Company.create({ id: 1, active: true}),
-            this.Company.create({ id: 2, active: false})
+            this.Company.create({ id: 2, active: false}),
           ]);
         }).spread((u1, u2, u3, u4, u5, c1, c2) => {
           return Promise.all([
             c1.setUsers([u1, u2, u3, u4]),
-            c2.setUsers([u5])
+            c2.setUsers([u5]),
           ]);
         });
       });
@@ -154,7 +156,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         beforeEach(function() {
           return Promise.all([
             this.Project.create(),
-            this.Company.unscoped().findAll()
+            this.Company.unscoped().findAll(),
           ]).spread((p, companies) => {
             return p.setCompanies(companies);
           });
@@ -287,13 +289,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           return Promise.all([
             this.Company.findById(1),
             this.Project.create({ id: 1, active: true}),
-            this.Project.create({ id: 2, active: false})
+            this.Project.create({ id: 2, active: false}),
           ]).spread((c, p1, p2) => {
             return c.setProjects([p1, p2]);
           });
         });
 
-        it('should scope columns properly', function () {
+        it('should scope columns properly', function() {
           return expect(this.ScopeMe.scope('includeActiveProjects').findAll()).not.to.be.rejected;
         });
 

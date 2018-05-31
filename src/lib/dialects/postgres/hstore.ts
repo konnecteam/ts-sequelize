@@ -3,12 +3,18 @@
 import * as pghstore from 'pg-hstore';
 const hstore = pghstore({sanitize: true});
 
-export function stringify(data) {
-  if (data === null) return null;
-  return hstore.stringify(data);
-}
+export class Hstore {
+  public static stringify(data : {}) : string {
+    if (data === null) {
+      return null;
+    }
+    return hstore.stringify(data);
+  }
 
-export function parse(value) {
-  if (value === null) return null;
-  return hstore.parse(value);
+  public static parse(value : string) : {} {
+    if (value === null) {
+      return null;
+    }
+    return hstore.parse(value);
+  }
 }

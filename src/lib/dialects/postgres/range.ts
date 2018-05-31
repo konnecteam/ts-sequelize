@@ -2,73 +2,102 @@
 
 import * as _ from 'lodash';
 
-function stringifyRangeBound(bound) {
-  if (bound === null) {
-    return '' ;
-  } else if (bound === Infinity || bound === -Infinity) {
-    return bound.toString().toLowerCase();
-  } else {
-    return JSON.stringify(bound);
-  }
-}
-
-function parseRangeBound(bound, parseType) {
-  if (!bound) {
-    return null;
-  } else if (bound === 'infinity') {
-    return Infinity;
-  } else if (bound === '-infinity') {
-    return -Infinity;
-  } else {
-    return parseType(bound);
-  }
-}
-
-export function stringify(data?) {
-  if (data === null) return null;
-
-  if (!_.isArray(data)) throw new Error('range must be an array');
-  if (!data.length) return 'empty';
-  if (data.length !== 2) throw new Error('range array length must be 0 (empty) or 2 (lower and upper bounds)');
-
-  if (data.hasOwnProperty('inclusive')) {
-    if (data.inclusive === false) data.inclusive = [false, false];
-    else if (!data.inclusive) data.inclusive = [true, false];
-    else if (data.inclusive === true) data.inclusive = [true, true];
-  } else {
-    data.inclusive = [true, false];
-  }
-
-  _.each(data, (value, index) => {
-    if (_.isObject(value)) {
-      if (value.hasOwnProperty('inclusive')) data.inclusive[index] = !!value.inclusive;
-      if (value.hasOwnProperty('value')) data[index] = value.value;
+export class Range {
+  /**
+   * @hidden
+   */
+  private static stringifyRangeBound(bound : any) : string {
+    if (bound === null) {
+      return '' ;
+    } else if (bound === Infinity || bound === -Infinity) {
+      return bound.toString().toLowerCase();
+    } else {
+      return JSON.stringify(bound);
     }
-  });
-
-  const lowerBound = stringifyRangeBound(data[0]);
-  const upperBound = stringifyRangeBound(data[1]);
-
-  return (data.inclusive[0] ? '[' : '(') + lowerBound + ',' + upperBound + (data.inclusive[1] ? ']' : ')');
-}
-
-export function parse(value?, parser?) {
-  if (value === null) return null;
-  if (value === 'empty') {
-    const empty = [];
-    (empty as any).inclusive = [];
-    return empty;
   }
 
-  let result = value
-    .substring(1, value.length - 1)
-    .split(',', 2);
+  /**
+   * @hidden
+   */
+  private static parseRangeBound(bound : string, parseType : any) : any {
+    if (!bound) {
+      return null;
+    } else if (bound === 'infinity') {
+      return Infinity;
+    } else if (bound === '-infinity') {
+      return -Infinity;
+    } else {
+      return parseType(bound);
+    }
+  }
 
-  if (result.length !== 2) return value;
+  public static stringify(data? : any) : string {
+    if (data === null) {
+      return null;
+    }
 
-  result = result.map(value => parseRangeBound(value, parser));
+    if (!_.isArray(data)) {
+      throw new Error('range must be an array');
+    }
+    if (!data.length) {
+      return 'empty';
+    }
+    if (data.length !== 2) {
+      throw new Error('range array length must be 0 (empty) or 2 (lower and upper bounds)');
+    }
+    if (data.hasOwnProperty('inclusive')) {
+      if ((data as any).inclusive === false) {
+        (data as any).inclusive = [false, false];
+      } else if (!(data as any).inclusive) {
+        (data as any).inclusive = [true, false];
+      } else if ((data as any).inclusive === true) {
+        (data as any).inclusive = [true, true];
+      }
+    } else {
+      (data as any).inclusive = [true, false];
+    }
 
-  result.inclusive = [value[0] === '[', value[value.length - 1] === ']'];
+    Object.keys(data).forEach(index => {
+      const value = data[index];
+      if (_.isObject(value)) {
+        if (value.hasOwnProperty('inclusive')) {
+          (data as any).inclusive[index] = !!value.inclusive;
+        }
+        if (value.hasOwnProperty('value')) {
+          data[index] = value.value;
+        }
+      }
+    });
 
-  return result;
+    const lowerBound = Range.stringifyRangeBound(data[0]);
+    const upperBound = Range.stringifyRangeBound(data[1]);
+
+    return ((data as any).inclusive[0] ? '[' : '(') + lowerBound + ',' + upperBound + ((data as any).inclusive[1] ? ']' : ')');
+  }
+
+  public static parse(value? : string, parser? : any) : any {
+    if (value === null) {
+      return null;
+    }
+    if (value === 'empty') {
+      const empty = [];
+      (empty as any).inclusive = [];
+      return empty;
+    }
+
+    let result = value
+      .substring(1, value.length - 1)
+      .split(',', 2);
+
+    if (result.length !== 2) {
+      return value;
+    }
+
+    result = result.map(mapValue => Range.parseRangeBound(mapValue, parser));
+
+    (result as any).inclusive = [value[0] === '[', value[value.length - 1] === ']'];
+
+    return result;
+  }
+
 }

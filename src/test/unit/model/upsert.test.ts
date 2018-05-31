@@ -1,12 +1,12 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
-const current = Support.sequelize;
 import * as sinon from 'sinon';
-const Promise = current.Promise;
 import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
+const current = Support.sequelize;
+const Promise = current.Promise;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
 
@@ -14,9 +14,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     describe('method upsert', () => {
       const self = this;
       const User = current.define('User', {
-        name: DataTypes.STRING,
+        name: new DataTypes.STRING(),
         virtualValue: {
-          type: DataTypes.VIRTUAL,
+          type: new DataTypes.VIRTUAL(),
           set(val) {
             return this.value = val;
           },
@@ -24,19 +24,19 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             return this.value;
           }
         },
-        value: DataTypes.STRING,
+        value: new DataTypes.STRING(),
         secretValue: {
-          type: DataTypes.INTEGER,
+          type: new DataTypes.INTEGER(),
           allowNull: false
         },
         createdAt: {
-          type: DataTypes.DATE,
+          type: new DataTypes.DATE(),
           field: 'created_at'
         }
       });
 
       const UserNoTime = current.define('UserNoTime', {
-        name: DataTypes.STRING
+        name: new DataTypes.STRING()
       }, {
         timestamps: false
       });
@@ -74,7 +74,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           })
           .then(() => {
             expect(Object.keys(self.stub.getCall(0).args[1])).to.deep.equal([
-              'name', 'value', 'created_at', 'updatedAt'
+              'name', 'value', 'created_at', 'updatedAt',
             ]);
           });
       });
@@ -86,7 +86,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           })
           .then(() => {
             expect(Object.keys(self.stub.getCall(0).args[1])).to.deep.equal([
-              'name'
+              'name',
             ]);
           });
       });
@@ -99,7 +99,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           })
           .then(() => {
             expect(Object.keys(self.stub.getCall(0).args[2])).to.deep.equal([
-              'name', 'value', 'updatedAt'
+              'name', 'value', 'updatedAt',
             ]);
           });
       });

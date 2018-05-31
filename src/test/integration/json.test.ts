@@ -12,9 +12,9 @@ describe('model', () => {
     describe('json', () => {
       beforeEach(function() {
         this.User = this.sequelize.define('User', {
-          username: DataTypes.STRING,
-          emergency_contact: DataTypes.JSON,
-          emergencyContact: DataTypes.JSON
+          username: new DataTypes.STRING(),
+          emergency_contact: new DataTypes.JSON(),
+          emergencyContact: new DataTypes.JSON()
         });
         return this.sequelize.sync({ force: true });
       });
@@ -46,7 +46,7 @@ describe('model', () => {
 
       it('should insert json using a custom field name', function() {
         this.UserFields = this.sequelize.define('UserFields', {
-          emergencyContact: { type: DataTypes.JSON, field: 'emergy_contact' }
+          emergencyContact: { type: new DataTypes.JSON(), field: 'emergy_contact' }
         });
         return this.UserFields.sync({ force: true }).then(() => {
           return this.UserFields.create({
@@ -59,7 +59,7 @@ describe('model', () => {
 
       it('should update json using a custom field name', function() {
         this.UserFields = this.sequelize.define('UserFields', {
-          emergencyContact: { type: DataTypes.JSON, field: 'emergy_contact' }
+          emergencyContact: { type: new DataTypes.JSON(), field: 'emergy_contact' }
         });
         return this.UserFields.sync({ force: true }).then(() => {
           return this.UserFields.create({
@@ -98,7 +98,7 @@ describe('model', () => {
             });
           })
           .then(user => {
-            expect(parseInt(user.getDataValue('firstEmergencyNumber'))).to.equal(42);
+            expect(parseInt(user.getDataValue('firstEmergencyNumber'), 10)).to.equal(42);
           });
       });
 
@@ -114,7 +114,7 @@ describe('model', () => {
             });
           })
           .then(user => {
-            expect(parseInt(user.getDataValue('katesNumber'))).to.equal(1337);
+            expect(parseInt(user.getDataValue('katesNumber'), 10)).to.equal(1337);
           });
       });
 
@@ -136,14 +136,14 @@ describe('model', () => {
               attributes: [[Sequelize.json('emergency_contact.kate.phones[1]'), 'katesFirstPhone']]
             });
           }).then(user => {
-            expect(parseInt(user.getDataValue('katesFirstPhone'))).to.equal(42);
+            expect(parseInt(user.getDataValue('katesFirstPhone'), 10)).to.equal(42);
           });
       });
 
       it('should be able to retrieve a row based on the values of the json document', function() {
         return this.sequelize.Promise.all([
           this.User.create({ username: 'swen', emergency_contact: { name: 'kate' } }),
-          this.User.create({ username: 'anna', emergency_contact: { name: 'joe' } })
+          this.User.create({ username: 'anna', emergency_contact: { name: 'joe' } }),
         ]).then(() => {
           return this.User.find({
             where: Sequelize.json('emergency_contact.name', 'kate'),
@@ -157,7 +157,7 @@ describe('model', () => {
       it('should be able to query using the nested query language', function() {
         return this.sequelize.Promise.all([
           this.User.create({ username: 'swen', emergency_contact: { name: 'kate' } }),
-          this.User.create({ username: 'anna', emergency_contact: { name: 'joe' } })
+          this.User.create({ username: 'anna', emergency_contact: { name: 'joe' } }),
         ]).then(() => {
           return this.User.find({
             where: Sequelize.json({ emergency_contact: { name: 'kate' } })
@@ -170,7 +170,7 @@ describe('model', () => {
       it('should be able to query using dot notation', function() {
         return this.sequelize.Promise.all([
           this.User.create({ username: 'swen', emergency_contact: { name: 'kate' } }),
-          this.User.create({ username: 'anna', emergency_contact: { name: 'joe' } })
+          this.User.create({ username: 'anna', emergency_contact: { name: 'joe' } }),
         ]).then(() => {
           return this.User.find({ where: Sequelize.json('emergency_contact.name', 'joe') });
         }).then(user => {
@@ -181,7 +181,7 @@ describe('model', () => {
       it('should be able to query using dot notation with uppercase name', function() {
         return this.sequelize.Promise.all([
           this.User.create({ username: 'swen', emergencyContact: { name: 'kate' } }),
-          this.User.create({ username: 'anna', emergencyContact: { name: 'joe' } })
+          this.User.create({ username: 'anna', emergencyContact: { name: 'joe' } }),
         ]).then(() => {
           return this.User.find({
             attributes: [[Sequelize.json('emergencyContact.name'), 'contactName']],
@@ -195,7 +195,7 @@ describe('model', () => {
       it('should be able to query array using property accessor', function() {
         return this.sequelize.Promise.all([
           this.User.create({ username: 'swen', emergency_contact: ['kate', 'joe'] }),
-          this.User.create({ username: 'anna', emergency_contact: [{ name: 'joe' }] })
+          this.User.create({ username: 'anna', emergency_contact: [{ name: 'joe' }] }),
         ]).then(() => {
           return this.User.find({ where: Sequelize.json('emergency_contact.0', 'kate') });
         }).then(user => {

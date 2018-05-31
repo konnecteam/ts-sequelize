@@ -1,10 +1,10 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
 import * as sinon from 'sinon';
-import Support from '../../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
 const current = Support.sequelize;
 const Promise = current.Promise;
 
@@ -13,7 +13,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     before(function() {
       this.Model = current.define('model', {
         accountId: {
-          type: DataTypes.INTEGER(11).UNSIGNED,
+          type: new DataTypes.INTEGER(11).UNSIGNED,
           allowNull: false,
           field: 'account_id'
         }
@@ -33,10 +33,10 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     describe('validations', () => {
       it('should not fail for renamed fields', function() {
         return this.Model.bulkCreate([
-          { accountId: 42 }
+          { accountId: 42 },
         ], { validate: true }).then(() => {
           expect(this.stub.getCall(0).args[1]).to.deep.equal([
-            { account_id: 42, id: null }
+            { account_id: 42, id: null },
           ]);
         });
       });

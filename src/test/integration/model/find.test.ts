@@ -1,26 +1,26 @@
 'use strict';
 
 import * as chai from 'chai';
-import * as sinon from 'sinon';
-import {Sequelize}from '../../../index';
-const Promise = Sequelize.Promise;
-const expect = chai.expect;
 import * as moment from 'moment';
-import Support from '../support';
-const dialect = Support.getTestDialect();
+import * as sinon from 'sinon';
+import {Sequelize} from '../../../index';
 import DataTypes from '../../../lib/data-types';
 import config from '../../config/config';
+import Support from '../support';
+const Promise = Sequelize.Promise;
+const expect = chai.expect;
+const dialect = Support.getTestDialect();
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   beforeEach(function() {
     this.User = this.sequelize.define('User', {
-      username: DataTypes.STRING,
-      secretValue: DataTypes.STRING,
-      data: DataTypes.STRING,
-      intVal: DataTypes.INTEGER,
-      theDate: DataTypes.DATE,
-      aBool: DataTypes.BOOLEAN
+      username: new DataTypes.STRING(),
+      secretValue: new DataTypes.STRING(),
+      data: new DataTypes.STRING(),
+      intVal: new DataTypes.INTEGER(),
+      theDate: new DataTypes.DATE(),
+      aBool: new DataTypes.BOOLEAN()
     });
 
     return this.User.sync({ force: true });
@@ -30,7 +30,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
         return Support.prepareTransactionTest(this.sequelize).bind({}).then(sequelize => {
-          const User = sequelize.define('User', { username: DataTypes.STRING });
+          const User = sequelize.define('User', { username: new DataTypes.STRING() });
 
           return User.sync({ force: true }).then(() => {
             return sequelize.transaction().then(t => {
@@ -60,7 +60,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         return this.User.create({username: 'barfooz'}).then(user => {
           self.UserPrimary = self.sequelize.define('UserPrimary', {
             specialkey: {
-              type: DataTypes.STRING,
+              type: new DataTypes.STRING(),
               primaryKey: true
             }
           });
@@ -89,14 +89,14 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           return bitUser.sync({ force: true }).then(() => {
             // Then change the definition to BOOLEAN
             bitUser = self.sequelize.define('bituser', {
-              bool: DataTypes.BOOLEAN
+              bool: new DataTypes.BOOLEAN()
             }, {
               timestamps: false
             });
 
             return bitUser.bulkCreate([
               { bool: 0 },
-              { bool: 1 }
+              { bool: 1 },
             ]);
           }).then(() => {
             return bitUser.findAll();
@@ -110,7 +110,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       it('treats questionmarks in an array', function() {
         let test = false;
         return this.UserPrimary.findOne({
-          where: {'specialkey': 'awesome'},
+          where: {specialkey: 'awesome'},
           logging(sql) {
             test = true;
             if (dialect === 'oracle') {
@@ -166,13 +166,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       it('should not try to convert boolean values if they are not selected', function() {
         const UserWithBoolean = this.sequelize.define('UserBoolean', {
-          active: DataTypes.BOOLEAN
+          active: new DataTypes.BOOLEAN()
         });
 
         return UserWithBoolean.sync({force: true}).then(() => {
           return UserWithBoolean.create({ active: true }).then(user => {
-            return UserWithBoolean.findOne({ where: { id: user.id }, attributes: ['id'] }).then(user => {
-              expect(user.active).not.to.exist;
+            return UserWithBoolean.findOne({ where: { id: user.id }, attributes: ['id'] }).then(_user => {
+              expect(_user.active).not.to.exist;
             });
           });
         });
@@ -213,11 +213,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('finds entries via primary keys', function() {
-        const self = this,
-          UserPrimary = self.sequelize.define('UserWithPrimaryKey', {
-            identifier: {type: DataTypes.STRING, primaryKey: true},
-            name: DataTypes.STRING
-          });
+        const self = this;
+        const UserPrimary = self.sequelize.define('UserWithPrimaryKey', {
+          identifier: {type: new DataTypes.STRING(), primaryKey: true},
+          name: new DataTypes.STRING()
+        });
 
         return UserPrimary.sync({ force: true }).then(() => {
           return UserPrimary.create({
@@ -234,11 +234,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('finds entries via a string primary key called id', function() {
-        const self = this,
-          UserPrimary = self.sequelize.define('UserWithPrimaryKey', {
-            id: {type: DataTypes.STRING, primaryKey: true},
-            name: DataTypes.STRING
-          });
+        const self = this;
+        const UserPrimary = self.sequelize.define('UserWithPrimaryKey', {
+          id: {type: new DataTypes.STRING(), primaryKey: true},
+          name: new DataTypes.STRING()
+        });
 
         return UserPrimary.sync({ force: true }).then(() => {
           return UserPrimary.create({
@@ -254,11 +254,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('always honors ZERO as primary key', function() {
-        const self = this,
-          permutations = [
-            0,
-            '0'
-          ];
+        const self = this;
+        const permutations = [
+          0,
+          '0',
+        ];
         let count = 0;
 
         return this.User.bulkCreate([{username: 'jack'}, {username: 'jack'}]).then(() => {
@@ -279,8 +279,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       it('should allow us to find IDs using capital letters', function() {
         const User = this.sequelize.define('User' + config.rand(), {
-          ID: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-          Login: { type: DataTypes.STRING }
+          ID: { type: new DataTypes.INTEGER(), primaryKey: true, autoIncrement: true },
+          Login: { type: new DataTypes.STRING() }
         });
 
         return User.sync({ force: true }).then(() => {
@@ -297,8 +297,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     describe('eager loading', () => {
       beforeEach(function() {
         const self = this;
-        self.Task = self.sequelize.define('Task', { title: DataTypes.STRING });
-        self.Worker = self.sequelize.define('Worker', { name: DataTypes.STRING });
+        self.Task = self.sequelize.define('Task', { title: new DataTypes.STRING() });
+        self.Worker = self.sequelize.define('Worker', { name: new DataTypes.STRING() });
 
         this.init = function(callback) {
           return self.sequelize.sync({ force: true }).then(() => {
@@ -349,8 +349,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
         it('returns the private and public ip', function() {
           const self = Object.create(this);
-          self.Domain = self.sequelize.define('Domain', { ip: DataTypes.STRING });
-          self.Environment = self.sequelize.define('Environment', { name: DataTypes.STRING });
+          self.Domain = self.sequelize.define('Domain', { ip: new DataTypes.STRING() });
+          self.Environment = self.sequelize.define('Environment', { name: new DataTypes.STRING() });
           self.Environment.belongsTo(self.Domain, { as: 'PrivateDomain', foreignKey: 'privateDomainId' });
           self.Environment.belongsTo(self.Domain, { as: 'PublicDomain', foreignKey: 'publicDomainId' });
 
@@ -365,7 +365,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                           where: { name: 'environment' },
                           include: [
                             { model: self.Domain, as: 'PrivateDomain' },
-                            { model: self.Domain, as: 'PublicDomain' }
+                            { model: self.Domain, as: 'PublicDomain' },
                           ]
                         }).then(environment => {
                           expect(environment).to.exist;
@@ -387,13 +387,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           const self = this;
           self.User = self.sequelize.define('UserPKeagerbelong', {
             username: {
-              type: DataTypes.STRING,
+              type: new DataTypes.STRING(),
               primaryKey: true
             }
           });
           self.Group = self.sequelize.define('GroupPKeagerbelong', {
             name: {
-              type: DataTypes.STRING,
+              type: new DataTypes.STRING(),
               primaryKey: true
             }
           });
@@ -419,14 +419,14 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
         it('getting parent data in many to one relationship', function() {
           const User = this.sequelize.define('User', {
-            id: {type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true},
-            username: {type: DataTypes.STRING}
+            id: {type: new DataTypes.INTEGER(), autoIncrement: true, primaryKey: true},
+            username: {type: new DataTypes.STRING()}
           });
 
           const Message = this.sequelize.define('Message', {
-            id: {type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true},
-            user_id: {type: DataTypes.INTEGER},
-            message: {type: DataTypes.STRING}
+            id: {type: new DataTypes.INTEGER(), autoIncrement: true, primaryKey: true},
+            user_id: {type: new DataTypes.INTEGER()},
+            message: {type: new DataTypes.STRING()}
           });
 
           User.hasMany(Message);
@@ -440,7 +440,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                     where: {user_id: user.id},
                     attributes: [
                       'user_id',
-                      'message'
+                      'message',
                     ],
                     include: [{ model: User, attributes: ['username'] }],
                     order : ['id'] //Order is mandatory, on Oracle may return results in any order
@@ -468,7 +468,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             return self.Worker.findOne({
               include: [
                 { model: self.Task, as: 'ToDo' },
-                { model: self.Task, as: 'DoTo' }
+                { model: self.Task, as: 'DoTo' },
               ]
             });
           });
@@ -506,13 +506,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           const self = this;
           self.User = self.sequelize.define('UserPKeagerone', {
             username: {
-              type: DataTypes.STRING,
+              type: new DataTypes.STRING(),
               primaryKey: true
             }
           });
           self.Group = self.sequelize.define('GroupPKeagerone', {
             name: {
-              type: DataTypes.STRING,
+              type: new DataTypes.STRING(),
               primaryKey: true
             }
           });
@@ -589,7 +589,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               return self.Worker.findOne({
                 include: [
                   { model: self.Task, as: 'ToDo' },
-                  { model: self.Task, as: 'DoTo' }
+                  { model: self.Task, as: 'DoTo' },
                 ]
               });
             });
@@ -627,9 +627,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         it('including two has many relations should not result in duplicate values', function() {
           const self = this;
 
-          self.Contact = self.sequelize.define('Contact', { name: DataTypes.STRING });
-          self.Photo = self.sequelize.define('Photo', { img: DataTypes.TEXT });
-          self.PhoneNumber = self.sequelize.define('PhoneNumber', { phone: DataTypes.TEXT });
+          self.Contact = self.sequelize.define('Contact', { name: new DataTypes.STRING() });
+          self.Photo = self.sequelize.define('Photo', { img: new DataTypes.TEXT() });
+          self.PhoneNumber = self.sequelize.define('PhoneNumber', { phone: new DataTypes.TEXT() });
 
           self.Contact.hasMany(self.Photo, { as: 'Photos' });
           self.Contact.hasMany(self.PhoneNumber);
@@ -664,13 +664,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           const self = this;
           self.User = self.sequelize.define('UserPKeagerone', {
             username: {
-              type: DataTypes.STRING,
+              type: new DataTypes.STRING(),
               primaryKey: true
             }
           });
           self.Group = self.sequelize.define('GroupPKeagerone', {
             name: {
-              type: DataTypes.STRING,
+              type: new DataTypes.STRING(),
               primaryKey: true
             }
           });
@@ -686,10 +686,10 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                       username: 'someone'
                     },
                     include: [self.Group]
-                  }).then(someUser => {
-                    expect(someUser).to.exist;
-                    expect(someUser.username).to.equal('someone');
-                    expect(someUser.GroupPKeagerones[0].name).to.equal('people');
+                  }).then(_someUser => {
+                    expect(_someUser).to.exist;
+                    expect(_someUser.username).to.equal('someone');
+                    expect(_someUser.GroupPKeagerones[0].name).to.equal('people');
                   });
                 });
               });
@@ -750,7 +750,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               return self.Worker.findOne({
                 include: [
                   { model: self.Task, as: 'ToDos' },
-                  { model: self.Task, as: 'DoTos' }
+                  { model: self.Task, as: 'DoTos' },
                 ]
               });
             });
@@ -760,8 +760,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       describe('hasMany (N:M) with alias', () => {
         beforeEach(function() {
-          this.Product = this.sequelize.define('Product', { title: DataTypes.STRING });
-          this.Tag = this.sequelize.define('Tag', { name: DataTypes.STRING });
+          this.Product = this.sequelize.define('Product', { title: new DataTypes.STRING() });
+          this.Tag = this.sequelize.define('Tag', { name: new DataTypes.STRING() });
         });
 
         it('returns the associated models when using through as string and alias', function() {
@@ -777,17 +777,17 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 {title: 'Desk'},
                 {title: 'Handbag'},
                 {title: 'Dress'},
-                {title: 'Jan'}
+                {title: 'Jan'},
               ]),
               self.Tag.bulkCreate([
                 {name: 'Furniture'},
                 {name: 'Clothing'},
-                {name: 'People'}
-              ])
+                {name: 'People'},
+              ]),
             ]).then(() => {
               return Promise.all([
                 self.Product.findAll(),
-                self.Tag.findAll()
+                self.Tag.findAll(),
               ]);
             }).spread((products, tags) => {
               self.products = products;
@@ -797,7 +797,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 products[1].addTag(tags[0]),
                 products[2].addTag(tags[1]),
                 products[3].setTags([tags[1]]),
-                products[4].setTags([tags[2]])
+                products[4].setTags([tags[2]]),
               ]).then(() => {
                 return Promise.all([
                   self.Tag.findOne({
@@ -805,29 +805,29 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                       id: tags[0].id
                     },
                     include: [
-                      {model: self.Product, as: 'products'}
+                      {model: self.Product, as: 'products'},
                     ]
                   }).then(tag => {
                     expect(tag).to.exist;
                     expect(tag.products.length).to.equal(2);
                   }),
-                  tags[1].getProducts().then(products => {
-                    expect(products.length).to.equal(3);
+                  tags[1].getProducts().then(_products => {
+                    expect(_products.length).to.equal(3);
                   }),
                   self.Product.findOne({
                     where: {
                       id: products[0].id
                     },
                     include: [
-                      {model: self.Tag, as: 'tags'}
+                      {model: self.Tag, as: 'tags'},
                     ]
                   }).then(product => {
                     expect(product).to.exist;
                     expect(product.tags.length).to.equal(2);
                   }),
-                  products[1].getTags().then(tags => {
-                    expect(tags.length).to.equal(1);
-                  })
+                  products[1].getTags().then(_tags => {
+                    expect(_tags.length).to.equal(1);
+                  }),
                 ]);
               });
             });
@@ -848,18 +848,18 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 {title: 'Desk'},
                 {title: 'Handbag'},
                 {title: 'Dress'},
-                {title: 'Jan'}
+                {title: 'Jan'},
               ]),
               this.Tag.bulkCreate([
                 {name: 'Furniture'},
                 {name: 'Clothing'},
-                {name: 'People'}
-              ])
+                {name: 'People'},
+              ]),
             ]);
           }).then(function() {
             return Promise.all([
               this.Product.findAll(),
-              this.Tag.findAll()
+              this.Tag.findAll(),
             ]);
           }).spread(function(products, tags) {
             this.products = products;
@@ -870,7 +870,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               products[1].addTag(tags[0]),
               products[2].addTag(tags[1]),
               products[3].setTags([tags[1]]),
-              products[4].setTags([tags[2]])
+              products[4].setTags([tags[2]]),
             ]);
           }).then(function() {
             return Promise.all([
@@ -879,7 +879,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                   id: this.tags[0].id
                 },
                 include: [
-                  {model: this.Product, as: 'products'}
+                  {model: this.Product, as: 'products'},
                 ]
               })).to.eventually.have.property('products').to.have.length(2),
               expect(this.Product.findOne({
@@ -887,11 +887,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                   id: this.products[0].id
                 },
                 include: [
-                  {model: this.Tag, as: 'tags'}
+                  {model: this.Tag, as: 'tags'},
                 ]
               })).to.eventually.have.property('tags').to.have.length(2),
               expect(this.tags[1].getProducts()).to.eventually.have.length(3),
-              expect(this.products[1].getTags()).to.eventually.have.length(1)
+              expect(this.products[1].getTags()).to.eventually.have.length(1),
             ]);
           });
         });
@@ -967,7 +967,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       it('works from model options', () => {
         const Model = current.define('Test', {
-          username: DataTypes.STRING(100)
+          username: new DataTypes.STRING(100)
         }, {
           rejectOnEmpty: true
         });
@@ -984,7 +984,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       it('resolve null when disabled', () => {
         const Model = current.define('Test', {
-          username: DataTypes.STRING(100)
+          username: new DataTypes.STRING(100)
         });
 
         return Model.sync({ force: true })
@@ -1001,7 +1001,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('should find records where deletedAt set to future', function() {
       const User = this.sequelize.define('paranoiduser', {
-        username: DataTypes.STRING
+        username: new DataTypes.STRING()
       }, { paranoid: true });
 
       return User.sync({ force: true }).then(() => {
@@ -1009,7 +1009,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           {username: 'Bob'},
           {username: 'Tobi', deletedAt: moment().add(30, 'minutes').format()},
           {username: 'Max', deletedAt: moment().add(30, 'days').format()},
-          {username: 'Tony', deletedAt: moment().subtract(30, 'days').format()}
+          {username: 'Tony', deletedAt: moment().subtract(30, 'days').format()},
         ]);
       }).then(() => {
         return User.find({ where: {username: 'Tobi'} });

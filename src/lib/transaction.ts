@@ -1,7 +1,8 @@
 'use strict';
 
 import * as _ from 'lodash';
-import * as Utils from './utils';
+import { Sequelize } from '../index';
+import { Utils } from './utils';
 
 /**
  * The transaction object is used to identify a running transaction. It is created by calling `Sequelize.transaction()`.
@@ -11,23 +12,37 @@ import * as Utils from './utils';
  * @see {@link Sequelize.transaction}
  */
 export class Transaction {
-  sequelize;
-  savepoints;
-  options;
-  parent;
-  id;
-  name;
-  finished;
-  connection;
+  public sequelize : Sequelize;
+  public savepoints : any[];
+  public options : {
+    autocommit? : boolean,
+    deferrable? : any,
+    /** Set the default transaction isolation level */
+    isolationLevel? : string,
+    readOnly? : boolean,
+    /** Transaction to run query under */
+    transaction? : Transaction,
+    type? : any
+  };
+  public parent : Transaction;
+  public id;
+  public name : string;
+  public finished : string;
+  public connection;
   /**
-   * @param {Sequelize} sequelize A configured sequelize Instance
-   * @param {Object} options An object with options
-   * @param {Boolean} options.autocommit Sets the autocommit property of the transaction.
-   * @param {String} options.type=true Sets the type of the transaction.
-   * @param {String} options.isolationLevel=true Sets the isolation level of the transaction.
-   * @param {String} options.deferrable Sets the constraints to be deferred or immediately checked.
+   * @param sequelize A configured sequelize Instance
+   * @param options An object with options
    */
-  constructor(sequelize, options?) {
+  constructor(sequelize : Sequelize, options? : {
+    /** Sets the autocommit property of the transaction. */
+    autocommit? : boolean,
+    /** Sets the constraints to be deferred or immediately checked. */
+    deferrable? : any,
+    /** = true Sets the isolation level of the transaction. */
+    isolationLevel? : string,
+    /** = true Sets the type of the transaction. */
+    type? : any,
+  }) {
     this.sequelize = sequelize;
     this.savepoints = [];
 
@@ -58,10 +73,8 @@ export class Transaction {
 
   /**
    * Commit the transaction
-   *
-   * @return {Promise}
    */
-  commit() {
+  public commit() : Promise<any> {
 
     if (this.finished) {
       return Utils.Promise.reject(new Error('Transaction cannot be committed because it has been finished with state: ' + this.finished));
@@ -76,7 +89,7 @@ export class Transaction {
       .finally(() => {
         this.finished = 'commit';
         if (!this.parent) {
-          return this.cleanup();
+          return this._cleanup();
         }
         return null;
       });
@@ -85,9 +98,9 @@ export class Transaction {
   /**
    * Rollback (abort) the transaction
    *
-   * @return {Promise}
+   * @returns Promise,
    */
-  rollback() {
+  public rollback() : any {
 
     if (this.finished) {
       return Utils.Promise.reject(new Error('Transaction cannot be rolled back because it has been finished with state: ' + this.finished));
@@ -101,13 +114,16 @@ export class Transaction {
       .rollbackTransaction(this, this.options)
       .finally(() => {
         if (!this.parent) {
-          return this.cleanup();
+          return this._cleanup();
         }
         return this;
       });
   }
 
-  prepareEnvironment(useCLS) {
+  /**
+   * prepare environment
+   */
+  public prepareEnvironment(useCLS : boolean) : any {
     let connectionPromise;
 
     if (useCLS == null) {
@@ -117,7 +133,7 @@ export class Transaction {
     if (this.parent) {
       connectionPromise = Utils.Promise.resolve(this.parent.connection);
     } else {
-      const acquireOptions = { 
+      const acquireOptions : { uuid?, type? : string } = {
         uuid: this.id
       };
       if (this.options.readOnly) {
@@ -131,29 +147,35 @@ export class Transaction {
         this.connection = connection;
         this.connection.uuid = this.id;
       })
-      .then(() => this.begin())
-      .then(() => this.setDeferrable())
-      .then(() => this.setIsolationLevel())
-      .then(() => this.setAutocommit())
+      .then(() => this._begin())
+      .then(() => this._setDeferrable())
+      .then(() => this._setIsolationLevel())
+      .then(() => this._setAutocommit())
       .catch(setupErr => this.rollback().finally(() => {
         throw setupErr;
       }))
       .tap(() => {
-        if (useCLS && this.sequelize.constructor._cls) {
-          this.sequelize.constructor._cls.set('transaction', this);
+        if (useCLS && (this.sequelize.constructor as any)._cls) {
+          (this.sequelize.constructor as any)._cls.set('transaction', this);
         }
         return null;
       });
   }
 
-  begin() {
+  /**
+   * @hidden
+   */
+  private _begin() {
     return this
       .sequelize
       .getQueryInterface()
       .startTransaction(this, this.options);
   }
 
-  setDeferrable() {
+  /**
+   * @hidden
+   */
+  private _setDeferrable() {
     if (this.options.deferrable) {
       return this
         .sequelize
@@ -162,28 +184,40 @@ export class Transaction {
     }
   }
 
-  setAutocommit() {
+  /**
+   * @hidden
+   */
+  private _setAutocommit() {
     return this
       .sequelize
       .getQueryInterface()
       .setAutocommit(this, this.options.autocommit, this.options);
   }
 
-  setIsolationLevel() {
+  /**
+   * @hidden
+   */
+  private _setIsolationLevel() {
     return this
       .sequelize
       .getQueryInterface()
       .setIsolationLevel(this, this.options.isolationLevel, this.options);
   }
 
-  cleanup() {
+  /**
+   * @hidden
+   */
+  private _cleanup() {
     const res = this.sequelize.connectionManager.releaseConnection(this.connection);
     this.connection.uuid = undefined;
     return res;
   }
 
-  _clearCls() {
-    const cls = this.sequelize.constructor._cls;
+  /**
+   * @hidden
+   */
+  private _clearCls() {
+    const cls = (this.sequelize.constructor as any)._cls;
 
     if (cls) {
       if (cls.get('transaction') === this) {
@@ -214,7 +248,7 @@ export class Transaction {
    * @property IMMEDIATE
    * @property EXCLUSIVE
    */
-  static get TYPES() {
+  static get TYPES() : { DEFERRED : string, IMMEDIATE : string, EXCLUSIVE : string } {
     return {
       DEFERRED: 'DEFERRED',
       IMMEDIATE: 'IMMEDIATE',
@@ -230,21 +264,21 @@ export class Transaction {
    *
    * ```js
    * return sequelize.transaction({isolationLevel: Sequelize.Transaction.ISOLATION_LEVELS.SERIALIZABLE}, transaction => {
- *
- *  // your transactions
- *
- * }).then(result => {
- *   // transaction has been committed. Do something after the commit if required.
- * }).catch(err => {
- *   // do something with the err.
- * });
+   *
+   *  // your transactions
+   *
+   * }).then(result => {
+   *   // transaction has been committed. Do something after the commit if required.
+   * }).catch(err => {
+   *   // do something with the err.
+   * });
    * ```
    * @property READ_UNCOMMITTED
    * @property READ_COMMITTED
    * @property REPEATABLE_READ
    * @property SERIALIZABLE
    */
-  static get ISOLATION_LEVELS() {
+  static get ISOLATION_LEVELS() : {READ_UNCOMMITTED : string, READ_COMMITTED : string, REPEATABLE_READ : string, SERIALIZABLE : string } {
     return {
       READ_UNCOMMITTED: 'READ UNCOMMITTED',
       READ_COMMITTED: 'READ COMMITTED',
@@ -279,14 +313,12 @@ export class Transaction {
    * });
    * ```
    * UserModel will be locked but TaskModel won't!
-   *
-   * @return {Object}
    * @property UPDATE
    * @property SHARE
    * @property KEY_SHARE Postgres 9.3+ only
    * @property NO_KEY_UPDATE Postgres 9.3+ only
    */
-  static get LOCK() {
+  static get LOCK() : {} {
     return {
       UPDATE: 'UPDATE',
       SHARE: 'SHARE',
@@ -298,7 +330,7 @@ export class Transaction {
   /**
    * @see {@link Transaction.LOCK}
    */
-  get LOCK() {
+  get LOCK() : {} {
     return Transaction.LOCK;
   }
 }

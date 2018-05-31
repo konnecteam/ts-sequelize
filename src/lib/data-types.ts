@@ -1,66 +1,92 @@
 'use strict';
 
-import * as util from 'util';
-import inherits from './utils/inherits';
 import * as _ from 'lodash';
-import * as Wkt from 'terraformer-wkt-parser';
-import * as sequelizeErrors from './errors/index';
-import * as valid from './utils/validator-extras'; 
-import * as momentTz from 'moment-timezone';
 import * as moment from 'moment';
-import * as Utils from './utils';
+import * as momentTz from 'moment-timezone';
+import * as Wkt from 'terraformer-wkt-parser';
+import * as util from 'util';
+import * as sequelizeErrors from './errors/index';
+import { Utils } from './utils';
+import * as valid from './utils/validator-extras';
 
 const Validator = valid.validator;
 const warnings = {};
 
-function ABSTRACT() {}
 
-ABSTRACT.prototype.dialectTypes = '';
+export class ABSTRACT {
+  public dialectTypes : string = '';
+  public key : string;
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
 
-ABSTRACT.prototype.toString = function toString(options) {
-  return this.toSql(options);
-};
-ABSTRACT.prototype.toSql = function toSql() {
-  return this.key;
-};
-(ABSTRACT as any).warn = function warn(link, text) {
-  if (!warnings[text]) {
-    warnings[text] = true;
-    Utils.warn(`${text}, '\n>> Check:', ${link}`);
+  public toString(options : {}) {
+    return this.toSql(options);
   }
-};
-ABSTRACT.prototype.stringify = function stringify(value, options) {
-  if (this._stringify) {
-    return this._stringify(value, options);
+
+  public toSql(options? : {}) {
+    return this.key;
   }
-  return value;
-};
 
-function STRING(length?, binary?) {
-  const options = typeof length === 'object' && length || {length, binary};
-
-  if (!(this instanceof STRING)) return new (STRING as any)(options);
-
-  this.options = options;
-  this._binary = options.binary;
-  this._length = options.length || 255;
-}
-inherits(STRING, ABSTRACT);
-
-STRING.prototype.key = (STRING as any).key = 'STRING';
-STRING.prototype.toSql = function toSql() {
-  return 'VARCHAR(' + this._length + ')' + (this._binary ? ' BINARY' : '');
-};
-STRING.prototype.validate = function validate(value) {
-  if (Object.prototype.toString.call(value) !== '[object String]') {
-    if (this.options.binary && Buffer.isBuffer(value) || _.isNumber(value)) {
-      return true;
+  public static warn(link : string, text : string) {
+    if (!warnings[text]) {
+      warnings[text] = true;
+      Utils.warn(`${text}, '\n>> Check:', ${link}`);
     }
-    throw new sequelizeErrors.ValidationError(util.format('%j is not a valid string', value));
   }
 
-  return true;
-};
+  public stringify(value : any, options? : {}) {
+    if ((this as any)._stringify) {
+      return (this as any)._stringify(value, options);
+    }
+    return value;
+  }
+}
+
+export class STRING extends ABSTRACT {
+  public options : { binary? : boolean };
+  protected _binary : boolean;
+  protected _length : number;
+  public static key : string = 'STRING';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+
+  constructor(length? : number, binary? : boolean) {
+    super();
+    const options = typeof length === 'object' && length || {length, binary};
+    this.options = options;
+    this._binary = options.binary;
+    this._length = options.length || 255;
+    this.key = 'STRING';
+  }
+
+  public toSql() : string {
+    return 'VARCHAR(' + this._length + ')' + (this._binary ? ' BINARY' : '');
+  }
+
+  public validate(value : any) : boolean {
+    if (Object.prototype.toString.call(value) !== '[object String]') {
+      if (this.options.binary && Buffer.isBuffer(value) || _.isNumber(value)) {
+        return true;
+      }
+      throw new sequelizeErrors.ValidationError(util.format('%j is not a valid string', value));
+    }
+
+    return true;
+  }
+
+}
+
+
 Object.defineProperty(STRING.prototype, 'BINARY', {
   get() {
     this._binary = true;
@@ -69,85 +95,123 @@ Object.defineProperty(STRING.prototype, 'BINARY', {
   }
 });
 
-function CHAR(length?, binary?) {
-  const options = typeof length === 'object' && length || {length, binary};
+export class CHAR extends STRING {
+  public static key : string = 'CHAR';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
 
-  if (!(this instanceof CHAR)) return new (CHAR as any)(options);
-  STRING.apply(this, arguments);
-}
-inherits(CHAR, STRING);
-
-CHAR.prototype.key = (CHAR as any).key = 'CHAR';
-CHAR.prototype.toSql = function toSql() {
-  return 'CHAR(' + this._length + ')' + (this._binary ? ' BINARY' : '');
-};
-
-function TEXT(length?) {
-  const options = typeof length === 'object' && length || {length};
-  if (!(this instanceof TEXT)) return new (TEXT as any)(options);
-  this.options = options;
-  this._length = options.length || '';
-}
-inherits(TEXT, ABSTRACT);
-
-TEXT.prototype.key = (TEXT as any).key = 'TEXT';
-TEXT.prototype.toSql = function toSql() {
-  switch (this._length.toLowerCase()) {
-    case 'tiny':
-      return 'TINYTEXT';
-    case 'medium':
-      return 'MEDIUMTEXT';
-    case 'long':
-      return 'LONGTEXT';
-    default:
-      return this.key;
-  }
-};
-TEXT.prototype.validate = function validate(value) {
-  if (!_.isString(value)) {
-    throw new sequelizeErrors.ValidationError(util.format('%j is not a valid string', value));
+  constructor(length?, binary?) {
+    super(length, binary);
+    this.key = 'CHAR';
   }
 
-  return true;
-};
-
-function NUMBER(options) {
-  this.options = options;
-  this._length = options.length;
-  this._zerofill = options.zerofill;
-  this._decimals = options.decimals;
-  this._precision = options.precision;
-  this._scale = options.scale;
-  this._unsigned = options.unsigned;
+  public toSql() : string {
+    return 'CHAR(' + this._length + ')' + (this._binary ? ' BINARY' : '');
+  }
 }
-inherits(NUMBER, ABSTRACT);
 
-NUMBER.prototype.key = (NUMBER as any).key = 'NUMBER';
-NUMBER.prototype.toSql = function toSql() {
-  let result = this.key;
-  if (this._length) {
-    result += '(' + this._length;
-    if (typeof this._decimals === 'number') {
-      result += ',' + this._decimals;
+export class TEXT extends ABSTRACT {
+  public options;
+  public _length : string;
+  public static key : string = 'TEXT';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+
+  constructor(length?) {
+    super();
+    const options = typeof length === 'object' && length || {length};
+    this.options = options;
+    this._length = options.length || '';
+    this.key = 'TEXT';
+  }
+
+  public toSql() : string {
+    switch (this._length.toLowerCase()) {
+      case 'tiny':
+        return 'TINYTEXT';
+      case 'medium':
+        return 'MEDIUMTEXT';
+      case 'long':
+        return 'LONGTEXT';
+      default:
+        return this.key;
     }
-    result += ')';
-  }
-  if (this._unsigned) {
-    result += ' UNSIGNED';
-  }
-  if (this._zerofill) {
-    result += ' ZEROFILL';
-  }
-  return result;
-};
-
-NUMBER.prototype.validate = function(value) {
-  if (!Validator.isFloat(String(value))) {
-    throw new sequelizeErrors.ValidationError(util.format('%j is not a valid ' + _.toLower(this.key), value));
   }
 
-  return true;
-};
+  public validate(value : any) : boolean {
+    if (!_.isString(value)) {
+      throw new sequelizeErrors.ValidationError(util.format('%j is not a valid string', value));
+    }
+
+    return true;
+  }
+}
+
+export class NUMBER extends ABSTRACT {
+  public options;
+  public _length;
+  public _zerofill : boolean;
+  public _decimals : number;
+  public _precision : number;
+  public _scale : number;
+  public _unsigned : boolean;
+  public static key : string = 'NUMBER';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+
+  constructor(options : { length? : number | { length : number }, zerofill? : boolean, decimals? : number, precision? : number, scale? : number, unsigned? : boolean }) {
+    super();
+    this.options = options;
+    this._length = options.length;
+    this._zerofill = options.zerofill;
+    this._decimals = options.decimals;
+    this._precision = options.precision;
+    this._scale = options.scale;
+    this._unsigned = options.unsigned;
+    this.key = 'NUMBER';
+  }
+
+  public toSql() : string {
+    let result = this.key;
+    if (this._length) {
+      result += '(' + this._length;
+      if (typeof this._decimals === 'number') {
+        result += ',' + this._decimals;
+      }
+      result += ')';
+    }
+    if (this._unsigned) {
+      result += ' UNSIGNED';
+    }
+    if (this._zerofill) {
+      result += ' ZEROFILL';
+    }
+    return result;
+  }
+
+  public validate(value : any) : boolean {
+    if (!Validator.isFloat(String(value))) {
+      throw new sequelizeErrors.ValidationError(util.format('%j is not a valid ' + _.toLower(this.key), value));
+    }
+
+    return true;
+  }
+}
 
 Object.defineProperty(NUMBER.prototype, 'UNSIGNED', {
   get() {
@@ -164,119 +228,117 @@ Object.defineProperty(NUMBER.prototype, 'ZEROFILL', {
   }
 });
 
-function INTEGER(length?) {
-  const options = typeof length === 'object' && length || {length};
-  if (!(this instanceof INTEGER)) return new (INTEGER as any)(options);
-  NUMBER.call(this, options);
-}
-inherits(INTEGER, NUMBER);
-
-INTEGER.prototype.key = (INTEGER as any).key = 'INTEGER';
-INTEGER.prototype.validate = function validate(value) {
-  if (!Validator.isInt(String(value))) {
-    throw new sequelizeErrors.ValidationError(util.format('%j is not a valid ' + _.toLower(this.key), value));
+export class INTEGER extends NUMBER {
+  public static key : string = 'INTEGER';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+  constructor(length? : number | { length : number }) {
+    const options = typeof length === 'object' && length || {length};
+    super(options);
+    this.key = 'INTEGER';
   }
 
-  return true;
-};
+  public validate(value : any) : boolean {
+    if (!Validator.isInt(String(value))) {
+      throw new sequelizeErrors.ValidationError(util.format('%j is not a valid ' + _.toLower(this.key), value));
+    }
 
-function TINYINT(length?) {
-  const options = typeof length === 'object' && length || {length};
-  if (!(this instanceof TINYINT)) return new (TINYINT as any)(options);
-  NUMBER.call(this, options);
+    return true;
+  }
 }
-inherits(TINYINT, INTEGER);
 
-TINYINT.prototype.key = (TINYINT as any).key = 'TINYINT';
-
-function SMALLINT(length?) {
-  const options = typeof length === 'object' && length || {length};
-  if (!(this instanceof SMALLINT)) return new (SMALLINT as any)(options);
-  NUMBER.call(this, options);
+export class TINYINT extends INTEGER {
+  public static key : string = 'TINYINT';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+  constructor(length? : number | { length : number }) {
+    super(length);
+    this.key = 'TINYINT';
+  }
 }
-inherits(SMALLINT, INTEGER);
 
-SMALLINT.prototype.key = (SMALLINT as any).key = 'SMALLINT';
-
-function MEDIUMINT(length?) {
-  const options = typeof length === 'object' && length || {length};
-  if (!(this instanceof MEDIUMINT)) return new (MEDIUMINT as any)(options);
-  NUMBER.call(this, options);
+export class SMALLINT extends INTEGER {
+  public static key : string = 'SMALLINT';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+  constructor(length? : number | { length : number }) {
+    super(length);
+    this.key = 'SMALLINT';
+  }
 }
-inherits(MEDIUMINT, INTEGER);
 
-MEDIUMINT.prototype.key = (MEDIUMINT as any).key = 'MEDIUMINT';
-
-function BIGINT(length?) {
-  const options = typeof length === 'object' && length || {length};
-  if (!(this instanceof BIGINT)) return new (BIGINT as any)(options);
-  NUMBER.call(this, options);
+export class MEDIUMINT extends INTEGER {
+  public static key : string = 'MEDIUMINT';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+  constructor(length? : number | { length : number }) {
+    super(length);
+    this.key = 'MEDIUMINT';
+  }
 }
-inherits(BIGINT, INTEGER);
 
-BIGINT.prototype.key = (BIGINT as any).key = 'BIGINT';
-
-function FLOAT(length?, decimals?) {
-  const options = typeof length === 'object' && length || {length, decimals};
-  if (!(this instanceof FLOAT)) return new (FLOAT as any)(options);
-  NUMBER.call(this, options);
+export class BIGINT extends INTEGER {
+  public static key : string = 'BIGINT';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+  constructor(length? : number | { length : number }) {
+    super(length);
+    this.key = 'BIGINT';
+  }
 }
-inherits(FLOAT, NUMBER);
 
-FLOAT.prototype.key = (FLOAT as any).key = 'FLOAT';
-FLOAT.prototype.validate = function validate(value) {
-  if (!Validator.isFloat(String(value))) {
-    throw new sequelizeErrors.ValidationError(util.format('%j is not a valid float', value));
+export class FLOAT extends NUMBER {
+  public escape : boolean;
+  public static key : string = 'FLOAT';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+
+  constructor(length? : number, decimals? : number) {
+    const options = typeof length === 'object' && length || {length, decimals};
+    super(options);
+    this.escape = false;
+    this.key = 'FLOAT';
   }
 
-  return true;
-};
+  public validate(value : any) : boolean {
+    if (!Validator.isFloat(String(value))) {
+      throw new sequelizeErrors.ValidationError(util.format('%j is not a valid float', value));
+    }
 
-function REAL(length?, decimals?) {
-  const options = typeof length === 'object' && length || {length, decimals};
-  if (!(this instanceof REAL)) return new (REAL as any)(options);
-  NUMBER.call(this, options);
-}
-inherits(REAL, NUMBER);
-
-REAL.prototype.key = (REAL as any).key = 'REAL';
-
-function DOUBLE(length?, decimals?) {
-  const options = typeof length === 'object' && length || {length, decimals};
-  if (!(this instanceof DOUBLE)) return new (DOUBLE as any)(options);
-  NUMBER.call(this, options);
-}
-inherits(DOUBLE, NUMBER);
-
-DOUBLE.prototype.key = (DOUBLE as any).key = 'DOUBLE PRECISION';
-
-function DECIMAL(precision?, scale?) {
-  const options = typeof precision === 'object' && precision || {precision, scale};
-  if (!(this instanceof DECIMAL)) return new (DECIMAL as any)(options);
-  NUMBER.call(this, options);
-}
-inherits(DECIMAL, NUMBER);
-
-DECIMAL.prototype.key = (DECIMAL as any).key = 'DECIMAL';
-DECIMAL.prototype.toSql = function toSql() {
-
-  if (this._precision || this._scale) {
-    return 'DECIMAL(' + [this._precision, this._scale].filter(_.identity).join(',') + ')';
+    return true;
   }
 
-  return 'DECIMAL';
-};
-DECIMAL.prototype.validate = function validate(value) {
-  if (!Validator.isDecimal(String(value))) {
-    throw new sequelizeErrors.ValidationError(util.format('%j is not a valid decimal', value));
-  }
-
-  return true;
-};
-
-for (const floating of [FLOAT, DOUBLE, REAL]) {
-  floating.prototype.escape = false;
-  floating.prototype._stringify = function _stringify(value) {
+  public _stringify(value : any) : string {
     if (isNaN(value)) {
       return "'NaN'";
     } else if (!isFinite(value)) {
@@ -285,267 +347,429 @@ for (const floating of [FLOAT, DOUBLE, REAL]) {
     }
 
     return value;
-  };
+  }
 }
 
-function BOOLEAN() {
-  if (!(this instanceof BOOLEAN)) return new (BOOLEAN as any)();
-}
-inherits(BOOLEAN, ABSTRACT);
+export class REAL extends NUMBER {
+  public escape : boolean;
+  public static key : string = 'REAL';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
 
-BOOLEAN.prototype.key = (BOOLEAN as any).key = 'BOOLEAN';
-BOOLEAN.prototype.toSql = function toSql() {
-  return 'TINYINT(1)';
-};
-BOOLEAN.prototype.validate = function validate(value) {
-  if (!Validator.isBoolean(String(value))) {
-    throw new sequelizeErrors.ValidationError(util.format('%j is not a valid boolean', value));
+  constructor(length? : number, decimals? : number) {
+    const options = typeof length === 'object' && length || {length, decimals};
+    super(options);
+    this.escape = false;
+    this.key = 'REAL';
   }
 
-  return true;
-};
-
-BOOLEAN.prototype._sanitize = function _sanitize(value) {
-  if (value !== null && value !== undefined) {
-    if (Buffer.isBuffer(value) && value.length === 1) {
-      // Bit fields are returned as buffers
-      value = value[0];
+  public _stringify(value : any) : string {
+    if (isNaN(value)) {
+      return "'NaN'";
+    } else if (!isFinite(value)) {
+      const sign = value < 0 ? '-' : '';
+      return "'" + sign + "Infinity'";
     }
 
-    if (_.isString(value)) {
-      // Only take action on valid boolean strings.
-      value = value === 'true' ? true : value === 'false' ? false : value;
+    return value;
+  }
+}
 
-    } else if (_.isNumber(value)) {
-      // Only take action on valid boolean integers.
-      value = value === 1 ? true : value === 0 ? false : value;
+export class DOUBLE extends NUMBER {
+  public escape : boolean;
+  public static key : string = 'DOUBLE PRECISION';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+
+  constructor(length? : number, decimals? : number) {
+    const options = typeof length === 'object' && length || {length, decimals};
+    super(options);
+    this.escape = false;
+    this.key = 'DOUBLE PRECISION';
+  }
+
+  public _stringify(value : any) : string {
+    if (isNaN(value)) {
+      return "'NaN'";
+    } else if (!isFinite(value)) {
+      const sign = value < 0 ? '-' : '';
+      return "'" + sign + "Infinity'";
     }
+
+    return value;
   }
-
-  return value;
-};
-(BOOLEAN as any).parse = BOOLEAN.prototype._sanitize;
-
-function TIME() {
-  if (!(this instanceof TIME)) return new (TIME as any)();
 }
-inherits(TIME, ABSTRACT);
 
-TIME.prototype.key = (TIME as any).key = 'TIME';
-TIME.prototype.toSql = function toSql() {
-  return 'TIME';
-};
+export class DECIMAL extends NUMBER {
+  public static key : string = 'DECIMAL';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+  constructor(precision? : number, scale? : number) {
+    const options = typeof precision === 'object' && precision || {precision, scale};
+    super(options);
+    this.key = 'DECIMAL';
+  }
 
-function DATE(length?) {
-  const options = typeof length === 'object' && length || {length};
+  public toSql() : string {
+    if (this._precision || this._scale) {
+      return 'DECIMAL(' + [this._precision, this._scale].filter(_.identity).join(',') + ')';
+    }
 
-  if (!(this instanceof DATE)) return new (DATE as any)(options);
+    return 'DECIMAL';
+  }
 
-  this.options = options;
-  this._length = options.length || '';
+  public validate(value : any) : boolean {
+    if (!Validator.isDecimal(String(value))) {
+      throw new sequelizeErrors.ValidationError(util.format('%j is not a valid decimal', value));
+    }
+
+    return true;
+  }
 }
-inherits(DATE, ABSTRACT);
 
-DATE.prototype.key = (DATE as any).key = 'DATE';
-DATE.prototype.toSql = function toSql() {
-  return 'DATETIME';
-};
-DATE.prototype.validate = function validate(value) {
-  if (!Validator.isDate(String(value))) {
-    throw new sequelizeErrors.ValidationError(util.format('%j is not a valid date', value));
+export class BOOLEAN extends ABSTRACT {
+  public static key : string = 'BOOLEAN';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+
+  constructor() {
+    super();
+    this.key = 'BOOLEAN';
   }
 
-  return true;
-};
-
-DATE.prototype._sanitize = function _sanitize(value, options) {
-  if ((!options || options && !options.raw) && !(value instanceof Date) && !!value) {
-    return new Date(value);
+  public toSql() : string {
+    return 'TINYINT(1)';
   }
 
-  return value;
-};
+  public validate(value : any) : boolean {
+    if (!Validator.isBoolean(String(value))) {
+      throw new sequelizeErrors.ValidationError(util.format('%j is not a valid boolean', value));
+    }
 
-DATE.prototype._isChanged = function _isChanged(value, originalValue) {
-  if (
-    originalValue && !!value &&
-    (
-      value === originalValue ||
-      value instanceof Date && originalValue instanceof Date && value.getTime() === originalValue.getTime()
-    )
-  ) {
-    return false;
+    return true;
   }
 
-  // not changed when set to same empty value
-  if (!originalValue && !value && originalValue === value) {
-    return false;
+  public _sanitize(value : any) : boolean {
+    if (value !== null && value !== undefined) {
+      if (Buffer.isBuffer(value) && value.length === 1) {
+        // Bit fields are returned as buffers
+        value = value[0];
+      }
+
+      if (_.isString(value)) {
+        // Only take action on valid boolean strings.
+        value = value === 'true' ? true : value === 'false' ? false : value;
+
+      } else if (_.isNumber(value)) {
+        // Only take action on valid boolean integers.
+        value = value === 1 ? true : value === 0 ? false : value;
+      }
+    }
+
+    return value;
   }
 
-  return true;
-};
+  public parse = this._sanitize;
+}
 
-DATE.prototype._applyTimezone = function _applyTimezone(date, options) {
-  if (options.timezone) {
-    if (momentTz.tz.zone(options.timezone)) {
-      date = momentTz(date).tz(options.timezone);
+export class TIME extends ABSTRACT {
+  public static key : string = 'TIME';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+  constructor() {
+    super();
+    this.key = 'TIME';
+  }
+
+  public toSql() : string {
+    return 'TIME';
+  }
+}
+
+export class DATE extends ABSTRACT {
+  public options : {};
+  public _length : number | string;
+  public static key : string = 'DATE';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+  constructor(length? : number) {
+    super();
+    const options = typeof length === 'object' && length || {length};
+    this.options = options;
+    this._length = options.length || '';
+    this.key = 'DATE';
+  }
+
+  public toSql() : string {
+    return 'DATETIME';
+  }
+
+  public validate(value : any) : boolean {
+    if (!Validator.isDate(String(value))) {
+      throw new sequelizeErrors.ValidationError(util.format('%j is not a valid date', value));
+    }
+
+    return true;
+  }
+
+  public _sanitize(value : any, options : { raw? }) : Date {
+    if ((!options || options && !options.raw) && !(value instanceof Date) && !!value) {
+      return new Date(value);
+    }
+
+    return value;
+  }
+
+  public _isChanged(value : Date, originalValue : Date) : boolean {
+    if (
+      originalValue && !!value &&
+      (
+        value === originalValue ||
+        value instanceof Date && originalValue instanceof Date && value.getTime() === originalValue.getTime()
+      )
+    ) {
+      return false;
+    }
+
+    // not changed when set to same empty value
+    if (!originalValue && !value && originalValue === value) {
+      return false;
+    }
+
+    return true;
+  }
+
+  public _applyTimezone(date : moment.Moment, options : { timezone? : string }) : moment.Moment {
+    if (options.timezone) {
+      if (momentTz.tz.zone(options.timezone)) {
+        date = momentTz(date).tz(options.timezone);
+      } else {
+        date = moment(date).utcOffset(options.timezone);
+      }
     } else {
-      date = moment(date).utcOffset(options.timezone);
+      date = momentTz(date);
     }
-  } else {
-    date = momentTz(date);
+
+    return date;
   }
 
-  return date;
-};
+  public _stringify(date : moment.Moment, options : {}) : string {
+    date = this._applyTimezone(date, options);
 
-DATE.prototype._stringify = function _stringify(date, options) {
-  date = this._applyTimezone(date, options);
-
-  // Z here means current timezone, _not_ UTC
-  return date.format('YYYY-MM-DD HH:mm:ss.SSS Z');
-};
-
-function DATEONLY() {
-  if (!(this instanceof DATEONLY)) return new (DATEONLY as any)();
+    // Z here means current timezone, _not_ UTC
+    return date.format('YYYY-MM-DD HH:mm:ss.SSS Z');
+  }
 }
-util.inherits(DATEONLY, ABSTRACT);
 
-DATEONLY.prototype.key = (DATEONLY as any).key = 'DATEONLY';
-DATEONLY.prototype.toSql = function() {
-  return 'DATE';
-};
-
-DATEONLY.prototype._stringify = function _stringify(date) {
-  return moment(date).format('YYYY-MM-DD');
-};
-
-DATEONLY.prototype._sanitize = function _sanitize(value, options) {
-  if ((!options || options && !options.raw) && !!value) {
-    return moment(value).format('YYYY-MM-DD');
+export class DATEONLY extends ABSTRACT {
+  public static key : string = 'DATEONLY';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+  constructor() {
+    super();
+    this.key = 'DATEONLY';
   }
 
-  return value;
-};
-
-DATEONLY.prototype._isChanged = function _isChanged(value, originalValue) {
-  if (originalValue && !!value && originalValue === value) {
-    return false;
+  public toSql() : string {
+    return 'DATE';
   }
 
-  // not changed when set to same empty value
-  if (!originalValue && !value && originalValue === value) {
-    return false;
+  public _stringify(date : Date, options? : {}) : string {
+    return moment(date).format('YYYY-MM-DD');
   }
 
-  return true;
-};
+  public _sanitize(value : Date, options? : { raw? }) {
+    if ((!options || options && !options.raw) && !!value) {
+      return moment(value).format('YYYY-MM-DD');
+    }
 
-function HSTORE() {
-  if (!(this instanceof HSTORE)) return new (HSTORE as any)();
+    return value;
+  }
+
+  public _isChanged(value : Date, originalValue : Date) {
+    if (originalValue && !!value && originalValue === value) {
+      return false;
+    }
+
+    // not changed when set to same empty value
+    if (!originalValue && !value && originalValue === value) {
+      return false;
+    }
+
+    return true;
+  }
 }
-inherits(HSTORE, ABSTRACT);
 
-HSTORE.prototype.key = (HSTORE as any).key = 'HSTORE';
-HSTORE.prototype.validate = function validate(value) {
-  if (!_.isPlainObject(value)) {
-    throw new sequelizeErrors.ValidationError(util.format('%j is not a valid hstore', value));
+export class HSTORE extends ABSTRACT {
+  public static key : string = 'HSTORE';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+  constructor() {
+    super();
+    this.key = 'HSTORE';
   }
 
-  return true;
-};
+  public validate(value : any) : boolean {
+    if (!_.isPlainObject(value)) {
+      throw new sequelizeErrors.ValidationError(util.format('%j is not a valid hstore', value));
+    }
 
-function JSONTYPE() {
-  if (!(this instanceof JSONTYPE)) return new (JSONTYPE as any)();
-}
-inherits(JSONTYPE, ABSTRACT);
-
-JSONTYPE.prototype.key = (JSONTYPE as any).key = 'JSON';
-JSONTYPE.prototype.validate = function validate() {
-  return true;
-};
-
-JSONTYPE.prototype._stringify = function _stringify(value) {
-  return JSON.stringify(value);
-};
-
-function JSONB() {
-  if (!(this instanceof JSONB)) return new (JSONB as any)();
-  JSONTYPE.call(this);
-}
-inherits(JSONB, JSONTYPE);
-
-JSONB.prototype.key = (JSONB as any).key = 'JSONB';
-
-function NOW() {
-  if (!(this instanceof NOW)) return new (NOW as any)();
-}
-inherits(NOW, ABSTRACT);
-
-NOW.prototype.key = (NOW as any).key = 'NOW';
-
-function BLOB(length?) {
-  const options = typeof length === 'object' && length || {length};
-  if (!(this instanceof BLOB)) return new (BLOB as any)(options);
-  this.options = options;
-  this._length = options.length || '';
-}
-inherits(BLOB, ABSTRACT);
-
-BLOB.prototype.key = (BLOB as any).key = 'BLOB';
-BLOB.prototype.toSql = function toSql() {
-  switch (this._length.toLowerCase()) {
-    case 'tiny':
-      return 'TINYBLOB';
-    case 'medium':
-      return 'MEDIUMBLOB';
-    case 'long':
-      return 'LONGBLOB';
-    default:
-      return this.key;
+    return true;
   }
-};
-BLOB.prototype.validate = function validate(value) {
-  if (!_.isString(value) && !Buffer.isBuffer(value)) {
-    throw new sequelizeErrors.ValidationError(util.format('%j is not a valid blob', value));
+}
+
+export class JSONTYPE extends ABSTRACT {
+  public static key : string = 'JSON';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+  constructor() {
+    super();
+    this.key = 'JSON';
   }
 
-  return true;
-};
+  public validate() : boolean {
+    return true;
+  }
 
-BLOB.prototype.escape = false;
-BLOB.prototype._stringify = function _stringify(value) {
-  if (!Buffer.isBuffer(value)) {
-    if (Array.isArray(value)) {
-      value = new Buffer(value);
-    } else {
-      value = new Buffer(value.toString());
+  public _stringify(value : any) : string {
+    return JSON.stringify(value);
+  }
+}
+
+export class JSONB extends JSONTYPE {
+  public static key : string = 'JSONB';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+  constructor() {
+    super();
+    this.key = 'JSONB';
+  }
+}
+
+export class NOW extends ABSTRACT {
+  public static key : string = 'NOW';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+  constructor() {
+    super();
+    this.key = 'NOW';
+  }
+}
+
+export class BLOB extends ABSTRACT {
+  public options : {};
+  public _length : any;
+  public escape : boolean = false;
+  public static key : string = 'BLOB';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+
+  constructor(length? : any) {
+    super();
+    const options = typeof length === 'object' && length || {length};
+    this.options = options;
+    this._length = options.length || '';
+    this.key = 'BLOB';
+  }
+
+  public toSql() : string {
+    switch (this._length.toLowerCase()) {
+      case 'tiny':
+        return 'TINYBLOB';
+      case 'medium':
+        return 'MEDIUMBLOB';
+      case 'long':
+        return 'LONGBLOB';
+      default:
+        return this.key;
     }
   }
-  const hex = value.toString('hex');
 
-  return this._hexify(hex);
-};
+  public validate(value : any) : boolean {
+    if (!_.isString(value) && !Buffer.isBuffer(value)) {
+      throw new sequelizeErrors.ValidationError(util.format('%j is not a valid blob', value));
+    }
 
-BLOB.prototype._hexify = function _hexify(hex) {
-  return "X'" + hex + "'";
-};
-
-function RANGE(subtype?) {
-  const options = _.isPlainObject(subtype) ? subtype : {subtype};
-
-  if (!options.subtype) options.subtype = INTEGER();
-
-  if (_.isFunction(options.subtype)) {
-    options.subtype = new options.subtype();
+    return true;
   }
 
-  if (!(this instanceof RANGE)) return new (RANGE as any)(options);
+  public _stringify(value : any) : string {
+    if (!Buffer.isBuffer(value)) {
+      if (Array.isArray(value)) {
+        value = new Buffer(value);
+      } else {
+        value = new Buffer(value.toString());
+      }
+    }
+    const hex = value.toString('hex');
 
-  this._subtype = options.subtype.key;
-  this.options = options;
+    return this._hexify(hex);
+  }
+
+  public _hexify(hex : string) : string {
+    return "X'" + hex + "'";
+  }
 }
-inherits(RANGE, ABSTRACT);
 
 const pgRangeSubtypes = {
   integer: 'int4range',
@@ -565,168 +789,285 @@ const pgRangeCastTypes = {
   datenotz: 'timestamp'
 };
 
-RANGE.prototype.key = (RANGE as any).key = 'RANGE';
-RANGE.prototype.toSql = function toSql() {
-  return pgRangeSubtypes[this._subtype.toLowerCase()];
-};
-RANGE.prototype.toCastType = function toCastType() {
-  return pgRangeCastTypes[this._subtype.toLowerCase()];
-};
-RANGE.prototype.validate = function validate(value) {
-  if (_.isPlainObject(value) && value.inclusive) {
-    value = value.inclusive;
+export class RANGE extends ABSTRACT {
+  public _subtype : any;
+  public options : { subtype? };
+  public static key : string = 'RANGE';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+
+  constructor(subtype? : any) {
+    super();
+    const options = _.isPlainObject(subtype) ? subtype : {subtype};
+
+    if (!options.subtype) {
+      options.subtype = new INTEGER();
+    }
+
+    if (_.isFunction(options.subtype)) {
+      options.subtype = new options.subtype();
+    }
+
+    this._subtype = options.subtype.key;
+    this.options = options;
+    this.key = 'RANGE';
   }
 
-  if (!_.isArray(value)) {
-    throw new sequelizeErrors.ValidationError(util.format('%j is not a valid range', value));
+  public toSql() : string {
+    return pgRangeSubtypes[this._subtype.toLowerCase()];
   }
 
-  if (value.length !== 2) {
-    throw new sequelizeErrors.ValidationError('A range must be an array with two elements');
+  public toCastType() {
+    return pgRangeCastTypes[this._subtype.toLowerCase()];
   }
 
-  return true;
-};
+  public validate(value : any) : boolean {
+    if (_.isPlainObject(value) && value.inclusive) {
+      value = value.inclusive;
+    }
 
-function UUID() {
-  if (!(this instanceof UUID)) return new (UUID as any)();
+    if (!_.isArray(value)) {
+      throw new sequelizeErrors.ValidationError(util.format('%j is not a valid range', value));
+    }
+
+    if (value.length !== 2) {
+      throw new sequelizeErrors.ValidationError('A range must be an array with two elements');
+    }
+
+    return true;
+  }
 }
-inherits(UUID, ABSTRACT);
 
-UUID.prototype.key = (UUID as any).key = 'UUID';
-UUID.prototype.validate = function validate(value, options) {
-  if (!_.isString(value) || !Validator.isUUID(value) && (!options || !options.acceptStrings)) {
-    throw new sequelizeErrors.ValidationError(util.format('%j is not a valid uuid', value));
+export class UUID extends ABSTRACT {
+  public static key : string = 'UUID';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+  constructor() {
+    super();
+    this.key = 'UUID';
   }
 
-  return true;
-};
+  public validate(value : any, options? : { acceptStrings? : boolean}) : boolean {
+    if (!_.isString(value) || !Validator.isUUID(value) && (!options || !options.acceptStrings)) {
+      throw new sequelizeErrors.ValidationError(util.format('%j is not a valid uuid', value));
+    }
 
-function UUIDV1() {
-  if (!(this instanceof UUIDV1)) return new (UUIDV1 as any)();
+    return true;
+  }
 }
-inherits(UUIDV1, ABSTRACT);
 
-UUIDV1.prototype.key = (UUIDV1 as any).key = 'UUIDV1';
-UUIDV1.prototype.validate = function validate(value, options) {
-  if (!_.isString(value) || !Validator.isUUID(value) && (!options || !options.acceptStrings)) {
-    throw new sequelizeErrors.ValidationError(util.format('%j is not a valid uuid', value));
+export class UUIDV1 extends ABSTRACT {
+  public static key : string = 'UUIDV1';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+  constructor() {
+    super();
+    this.key = 'UUIDV1';
   }
 
-  return true;
-};
+  public validate(value : any, options? : { acceptStrings? : boolean}) : boolean {
+    if (!_.isString(value) || !Validator.isUUID(value) && (!options || !options.acceptStrings)) {
+      throw new sequelizeErrors.ValidationError(util.format('%j is not a valid uuid', value));
+    }
 
-function UUIDV4() {
-  if (!(this instanceof UUIDV4)) return new (UUIDV4 as any)();
+    return true;
+  }
 }
-inherits(UUIDV4, ABSTRACT);
 
-UUIDV4.prototype.key = (UUIDV4 as any).key = 'UUIDV4';
-UUIDV4.prototype.validate = function validate(value, options) {
-  if (!_.isString(value) || !Validator.isUUID(value, 4) && (!options || !options.acceptStrings)) {
-    throw new sequelizeErrors.ValidationError(util.format('%j is not a valid uuidv4', value));
+export class UUIDV4 extends ABSTRACT {
+  public static key : string = 'UUIDV4';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+  constructor() {
+    super();
+    this.key = 'UUIDV4';
   }
 
-  return true;
-};
+  public validate(value : any, options? : { acceptStrings? : boolean}) : boolean {
+    if (!_.isString(value) || !Validator.isUUID(value, 4) && (!options || !options.acceptStrings)) {
+      throw new sequelizeErrors.ValidationError(util.format('%j is not a valid uuidv4', value));
+    }
 
-function VIRTUAL(ReturnType, fields) {
-  if (!(this instanceof VIRTUAL)) return new (VIRTUAL as any)(ReturnType, fields);
-  if (typeof ReturnType === 'function') ReturnType = new ReturnType();
-
-  this.returnType = ReturnType;
-  this.fields = fields;
+    return true;
+  }
 }
-inherits(VIRTUAL, ABSTRACT);
 
-VIRTUAL.prototype.key = (VIRTUAL as any).key = 'VIRTUAL';
+export class VIRTUAL extends ABSTRACT {
+  public returnType : any;
+  public fields : any;
+  public static key : string = 'VIRTUAL';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
 
-function ENUM(value) {
-  const options = typeof value === 'object' && !Array.isArray(value) && value || {
-    values: Array.prototype.slice.call(arguments).reduce((result, element) => {
-      return result.concat(Array.isArray(element) ? element : [element]);
-    }, [])
-  };
-  if (!(this instanceof ENUM)) return new (ENUM as any)(options);
-  this.values = options.values;
-  this.options = options;
+  constructor(ReturnType? : any, fields? : any) {
+    super();
+    if (typeof ReturnType === 'function') {
+      ReturnType = new ReturnType();
+    }
+
+    this.returnType = ReturnType;
+    this.fields = fields;
+    this.key = 'VIRTUAL';
+  }
 }
-inherits(ENUM, ABSTRACT);
 
-ENUM.prototype.key = (ENUM as any).key = 'ENUM';
-ENUM.prototype.validate = function validate(value) {
-  if (!_.includes(this.values, value)) {
-    throw new sequelizeErrors.ValidationError(util.format('%j is not a valid choice in %j', value, this.values));
+export class ENUM extends ABSTRACT {
+  public values : any;
+  public options : {};
+  public static key : string = 'ENUM';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+
+  constructor(value? : any) {
+    super();
+    const options = typeof value === 'object' && !Array.isArray(value) && value || {
+      values: Array.prototype.slice.call(arguments).reduce((result, element) => {
+        return result.concat(Array.isArray(element) ? element : [element]);
+      }, [])
+    };
+    this.values = options.values;
+    this.options = options;
+    this.key = 'ENUM';
   }
 
-  return true;
-};
+  public validate(value : any) : boolean {
+    if (!_.includes(this.values, value)) {
+      throw new sequelizeErrors.ValidationError(util.format('%j is not a valid choice in %j', value, this.values));
+    }
 
-function ARRAY(type?) {
-  const options = _.isPlainObject(type) ? type : {type};
-  if (!(this instanceof ARRAY)) return new (ARRAY as any)(options);
-  this.type = typeof options.type === 'function' ? new options.type() : options.type;
+    return true;
+  }
 }
-inherits(ARRAY, ABSTRACT);
 
-ARRAY.prototype.key = (ARRAY as any).key = 'ARRAY';
-ARRAY.prototype.toSql = function toSql() {
-  return this.type.toSql() + '[]';
-};
-ARRAY.prototype.validate = function validate(value) {
-  if (!_.isArray(value)) {
-    throw new sequelizeErrors.ValidationError(util.format('%j is not a valid array', value));
+export class ARRAY extends ABSTRACT {
+  public type : any;
+  public static key : string = 'ARRAY';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+
+  constructor(type? : any) {
+    super();
+    const options = _.isPlainObject(type) ? type : {type};
+    this.type = typeof options.type === 'function' ? new options.type() : options.type;
+    this.key = 'ARRAY';
   }
 
-  return true;
-};
-(ARRAY as any).is = function is(obj, type) {
-  return obj instanceof ARRAY && obj.type instanceof type;
-};
+  public toSql() : string {
+    return this.type.toSql() + '[]';
+  }
+
+  public validate(value : any) : boolean {
+    if (!_.isArray(value)) {
+      throw new sequelizeErrors.ValidationError(util.format('%j is not a valid array', value));
+    }
+
+    return true;
+  }
+
+  public static is(obj : any, type : any) : boolean {
+    return obj instanceof ARRAY && obj.type instanceof type;
+  }
+}
+
+export class GEOMETRY extends ABSTRACT {
+  public options : {};
+  public type : string;
+  public srid : number;
+  public escape : boolean = false;
+  public static key : string = 'GEOMETRY';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+
+  constructor(type? : any, srid? : number) {
+    super();
+    const options = _.isPlainObject(type) ? type : {type, srid};
+    this.options = options;
+    this.type = options.type;
+    this.srid = options.srid;
+    this.key = 'GEOMETRY';
+  }
+
+  public _stringify(value : any, options : { escape }) {
+    return 'GeomFromText(' + options.escape(Wkt.convert(value)) + ')';
+  }
+}
+
+export class GEOGRAPHY extends ABSTRACT {
+  public options : {};
+  public type : string;
+  public srid : number;
+  public escape : boolean = false;
+  public static key : string = 'GEOGRAPHY';
+  public static types : {
+    mssql?,
+    mysql?,
+    oracle?,
+    postgres?,
+    sqlite?
+  } = {};
+
+  constructor(type? : any, srid? : number) {
+    super();
+    const options = _.isPlainObject(type) ? type : {type, srid};
+    this.options = options;
+    this.type = options.type;
+    this.srid = options.srid;
+    this.key = 'GEOGRAPHY';
+  }
+
+  public _stringify(value : any, options : { escape? }) {
+    return 'GeomFromText(' + options.escape(Wkt.convert(value)) + ')';
+  }
+}
 
 const helpers = {
   BINARY: [STRING, CHAR],
-  UNSIGNED: [NUMBER, TINYINT, SMALLINT, MEDIUMINT, INTEGER, BIGINT, FLOAT, DOUBLE, REAL, DECIMAL],
-  ZEROFILL: [NUMBER, TINYINT, SMALLINT, MEDIUMINT, INTEGER, BIGINT, FLOAT, DOUBLE, REAL, DECIMAL],
+  UNSIGNED: [TINYINT, SMALLINT, MEDIUMINT, INTEGER, BIGINT, FLOAT, DOUBLE, REAL, DECIMAL],
+  ZEROFILL: [TINYINT, SMALLINT, MEDIUMINT, INTEGER, BIGINT, FLOAT, DOUBLE, REAL, DECIMAL],
   PRECISION: [DECIMAL],
   SCALE: [DECIMAL]
 };
 
-function GEOMETRY(type?, srid?) {
-  const options = _.isPlainObject(type) ? type : {type, srid};
-
-  if (!(this instanceof GEOMETRY)) return new (GEOMETRY as any)(options);
-
-  this.options = options;
-  this.type = options.type;
-  this.srid = options.srid;
-}
-inherits(GEOMETRY, ABSTRACT);
-
-GEOMETRY.prototype.key = (GEOMETRY as any).key = 'GEOMETRY';
-
-GEOMETRY.prototype.escape = false;
-GEOMETRY.prototype._stringify = function _stringify(value, options) {
-  return 'GeomFromText(' + options.escape(Wkt.convert(value)) + ')';
-};
-
-function GEOGRAPHY(type?, srid?) {
-  const options = _.isPlainObject(type) ? type : {type, srid};
-
-  if (!(this instanceof GEOGRAPHY)) return new (GEOGRAPHY as any)(options);
-
-  this.options = options;
-  this.type = options.type;
-  this.srid = options.srid;
-}
-inherits(GEOGRAPHY, ABSTRACT);
-
-GEOGRAPHY.prototype.key = (GEOGRAPHY as any).key = 'GEOGRAPHY';
-
-GEOGRAPHY.prototype.escape = false;
-GEOGRAPHY.prototype._stringify = function _stringify(value, options) {
-  return 'GeomFromText(' + options.escape(Wkt.convert(value)) + ')';
-};
 
 for (const helper of Object.keys(helpers)) {
   for (const DataType of helpers[helper]) {
@@ -797,7 +1138,8 @@ for (const helper of Object.keys(helpers)) {
  * @property {function(length: integer)} SMALLINT A 16 bit integer.
  * @property {function(length: integer)} MEDIUMINT A 24 bit integer.
  * @property {function(length=255: integer)} INTEGER A 32 bit integer.
- * @property {function(length: integer)} BIGINT A 64 bit integer. Note: an attribute defined as `BIGINT` will be treated like a `string` due this [feature from node-postgres](https://github.com/brianc/node-postgres/pull/353) to prevent precision loss. To have this attribute as a `number`, this is a possible [workaround](https://github.com/sequelize/sequelize/issues/2383#issuecomment-58006083).
+ * @property {function(length: integer)} BIGINT A 64 bit integer. Note: an attribute defined as `BIGINT` will be treated like a `string` due this [feature from node-postgres](https://github.com/brianc/node-postgres/pull/353)
+ * to prevent precision loss.To have this attribute as a `number`, this is a possible [workaround](https://github.com/sequelize/sequelize/issues/2383#issuecomment-58006083).
  * @property {function(length: integer, decimals: integer)} FLOAT Floating point number (4-byte precision).
  * @property {function(length: integer, decimals: integer)} DOUBLE Floating point number (8-byte precision).
  * @property {function(precision: integer, scale: integer)} DECIMAL Decimal number.
@@ -844,7 +1186,6 @@ for (const helper of Object.keys(helpers)) {
  *                 ]};
  *
  * User.create({username: 'username', geometry: polygon });
-
  * // Create a new point with a custom SRID:
  * const point = {
  *   type: 'Point',
@@ -855,7 +1196,8 @@ for (const helper of Object.keys(helpers)) {
  * User.create({username: 'username', geometry: point })
  * ```
  * @property {function(type: string, srid: string)} GEOGRAPHY A geography datatype represents two dimensional spacial objects in an elliptic coord system.
- * @property {function(returnType: DataTypes, fields: string[])} VIRTUAL A virtual value that is not stored in the DB. This could for example be useful if you want to provide a default value in your model that is returned to the user but not stored in the DB.
+ * @property {function(returnType: DataTypes, fields: string[])} VIRTUAL A virtual value that is not stored in the DB.
+ * This could for example be useful if you want to provide a default value in your model that is returned to the user but not stored in the DB.
  *
  * You could also use it to validate a value before permuting and storing it. Checking password length before hashing it for example:
  * ```js
@@ -894,7 +1236,15 @@ for (const helper of Object.keys(helpers)) {
  * }
  * ```
  */
-const DataTypes = {
+
+export interface IDataTypes {
+  ABSTRACT; STRING; CHAR; TEXT; NUMBER; TINYINT; SMALLINT; MEDIUMINT; INTEGER; BIGINT;
+  FLOAT; TIME; DATE; DATEONLY; BOOLEAN; NOW; BLOB; DECIMAL; NUMERIC; UUID; UUIDV1; UUIDV4; HSTORE;
+  JSON; JSONB; VIRTUAL; ARRAY; NONE; ENUM; RANGE; REAL; DOUBLE; 'DOUBLE PRECISION'; GEOMETRY;
+  GEOGRAPHY; mysql; mssql; oracle; postgres; sqlite;
+}
+
+const DataTypes : IDataTypes = {
   ABSTRACT,
   STRING,
   CHAR,
@@ -913,16 +1263,16 @@ const DataTypes = {
   NOW,
   BLOB,
   DECIMAL,
-  NUMERIC: DECIMAL,
+  'NUMERIC': DECIMAL,
   UUID,
   UUIDV1,
   UUIDV4,
   HSTORE,
-  JSON: JSONTYPE,
+  'JSON' : JSONTYPE,
   JSONB,
   VIRTUAL,
   ARRAY,
-  NONE: VIRTUAL,
+  'NONE': VIRTUAL,
   ENUM,
   RANGE,
   REAL,
@@ -930,32 +1280,22 @@ const DataTypes = {
   'DOUBLE PRECISION': DOUBLE,
   GEOMETRY,
   GEOGRAPHY,
-  postgres : {},
-  mysql : {},
-  sqlite : {},
-  mssql : {},
-  oracle : {}
+  'mssql': {},
+  'mysql': {},
+  'oracle': {},
+  'postgres': {},
+  'sqlite': {}
 };
 
-// _.each(DataTypes, dataType => {
-//   dataType.types = {};
-// });
-
-const keys = Object.keys(DataTypes);
-keys.forEach(key => {
-  const dataType = DataTypes[key];
-  (dataType as any).types = {};
-});
-
-import * as postgres from './dialects/postgres/data-types';
-(DataTypes as any).postgres = postgres.DataTypes(DataTypes);
-import * as mysql from './dialects/mysql/data-types';
-(DataTypes as any).mysql = mysql.DataTypes(DataTypes);
-import * as sqlite from './dialects/sqlite/data-types';
-(DataTypes as any).sqlite = sqlite.DataTypes(DataTypes);
-import * as mssql from './dialects/mssql/data-types';
-(DataTypes as any).mssql = mssql.DataTypes(DataTypes);
-import * as oracle from './dialects/oracle/data-types';
-(DataTypes as any).oracle = oracle.DataTypes(DataTypes);
+import mssql from './dialects/mssql/mssql-data-types';
+DataTypes.mssql = mssql;
+import mysql from './dialects/mysql/mysql-data-types';
+DataTypes.mysql = mysql;
+import oracle from './dialects/oracle/oracle-data-types';
+DataTypes.oracle = oracle;
+import postgres from './dialects/postgres/postgres-data-types';
+DataTypes.postgres = postgres;
+import sqlite from './dialects/sqlite/sqlite-data-types';
+DataTypes.sqlite = sqlite;
 
 export default DataTypes;

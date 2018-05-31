@@ -1,18 +1,18 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../support';
+const expect = chai.expect;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   beforeEach(function() {
     this.User = this.sequelize.define('User', {
-      username: DataTypes.STRING,
-      age: DataTypes.INTEGER
+      username: new DataTypes.STRING(),
+      age: new DataTypes.INTEGER()
     });
     this.Project = this.sequelize.define('Project', {
-      name: DataTypes.STRING
+      name: new DataTypes.STRING()
     });
 
     this.User.hasMany(this.Project);
@@ -26,7 +26,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       const self = this;
       return this.User.bulkCreate([
         {username: 'boo'},
-        {username: 'boo2'}
+        {username: 'boo2'},
       ]).then(() => {
         return self.User.findOne();
       }).then(user => {
@@ -82,7 +82,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           this.User.bulkCreate([
             { username: 'valak', age: 10},
             { username: 'conjuring', age: 20},
-            { username: 'scary', age: 10}
+            { username: 'scary', age: 10},
           ])
         )
         .then(() =>
@@ -93,7 +93,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           })
         )
         .then(result => {
-          expect(parseInt(result[0].count)).to.be.eql(2);
+          expect(parseInt(result[0].count, 10)).to.be.eql(2);
           return this.User.count({
             where: { username: 'fire' }
           });
@@ -116,7 +116,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           this.User.bulkCreate([
             { username: 'ember', age: 10},
             { username: 'angular', age: 20},
-            { username: 'mithril', age: 10}
+            { username: 'mithril', age: 10},
           ])
         )
         .then(() =>
@@ -125,14 +125,14 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           })
         )
         .then(count => {
-          expect(parseInt(count)).to.be.eql(3);
+          expect(parseInt(count, 10)).to.be.eql(3);
           return this.User.count({
             col: 'age',
             distinct: true
           });
         })
         .then(count => {
-          expect(parseInt(count)).to.be.eql(2);
+          expect(parseInt(count, 10)).to.be.eql(2);
         });
     });
 
@@ -145,11 +145,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         }
       };
       return this.User.count(queryObject).then(count => {
-        expect(parseInt(count)).to.be.eql(1);
+        expect(parseInt(count, 10)).to.be.eql(1);
         queryObject.where['$Projects.name$'] = 'project2';
         return this.User.count(queryObject);
       }).then(count => {
-        expect(parseInt(count)).to.be.eql(0);
+        expect(parseInt(count, 10)).to.be.eql(0);
       });
     });
 
@@ -158,7 +158,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         this.User.bulkCreate([
           { username: 'ember', age: 10},
           { username: 'angular', age: 20},
-          { username: 'mithril', age: 10}
+          { username: 'mithril', age: 10},
         ])
       ).then(() =>
         this.User.count({
@@ -167,13 +167,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           include: [this.Project]
         })
       ).then(count => {
-        expect(parseInt(count)).to.be.eql(3);
+        expect(parseInt(count, 10)).to.be.eql(3);
         return this.User.count({
           col: 'age',
           distinct: true,
           include: [this.Project]
         });
-      }).then(count => expect(parseInt(count)).to.be.eql(2));
+      }).then(count => expect(parseInt(count, 10)).to.be.eql(2));
     });
 
   });

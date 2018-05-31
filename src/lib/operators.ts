@@ -1,5 +1,5 @@
-
 'use strict';
+
 /**
  * Operator symbols to be used when querying data
  *

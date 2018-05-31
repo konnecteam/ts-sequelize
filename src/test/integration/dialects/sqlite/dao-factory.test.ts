@@ -1,9 +1,9 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
 import DataTypes from '../../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
 const dialect = Support.getTestDialect();
 const dbFile = __dirname + '/test.sqlite';
 const storages = [dbFile];
@@ -17,9 +17,9 @@ if (dialect === 'sqlite') {
     beforeEach(function() {
       this.sequelize.options.storage = dbFile;
       this.User = this.sequelize.define('User', {
-        age: DataTypes.INTEGER,
-        name: DataTypes.STRING,
-        bio: DataTypes.TEXT
+        age: new DataTypes.INTEGER(),
+        name: new DataTypes.STRING(),
+        bio: new DataTypes.TEXT()
       });
       return this.User.sync({ force: true });
     });
@@ -41,8 +41,8 @@ if (dialect === 'sqlite') {
               expect(user.bio).to.equal('noot noot');
 
               return self.User.findAll().then(users => {
-                const usernames = users.map(user => {
-                  return user.name;
+                const usernames = users.map(_user => {
+                  return _user.name;
                 });
                 expect(usernames).to.contain('John Wayne');
               });
@@ -51,8 +51,8 @@ if (dialect === 'sqlite') {
 
           it('should allow the creation of an object with options as attribute', function() {
             const Person = this.sequelize.define('Person', {
-              name: DataTypes.STRING,
-              options: DataTypes.TEXT
+              name: new DataTypes.STRING(),
+              options: new DataTypes.TEXT()
             });
 
             return Person.sync({ force: true }).then(() => {
@@ -69,8 +69,8 @@ if (dialect === 'sqlite') {
 
           it('should allow the creation of an object with a boolean (true) as attribute', function() {
             const Person = this.sequelize.define('Person', {
-              name: DataTypes.STRING,
-              has_swag: DataTypes.BOOLEAN
+              name: new DataTypes.STRING(),
+              has_swag: new DataTypes.BOOLEAN()
             });
 
             return Person.sync({ force: true }).then(() => {
@@ -85,8 +85,8 @@ if (dialect === 'sqlite') {
 
           it('should allow the creation of an object with a boolean (false) as attribute', function() {
             const Person = this.sequelize.define('Person', {
-              name: DataTypes.STRING,
-              has_swag: DataTypes.BOOLEAN
+              name: new DataTypes.STRING(),
+              has_swag: new DataTypes.BOOLEAN()
             });
 
             return Person.sync({ force: true }).then(() => {
@@ -122,7 +122,7 @@ if (dialect === 'sqlite') {
           beforeEach(function() {
             return this.User.bulkCreate([
               {name: 'user', bio: 'foobar'},
-              {name: 'user', bio: 'foobar'}
+              {name: 'user', bio: 'foobar'},
             ]);
           });
 
@@ -135,8 +135,8 @@ if (dialect === 'sqlite') {
 
         describe('.min', () => {
           it('should return the min value', function() {
-            const self = this,
-              users = [];
+            const self = this;
+            const users = [];
 
             for (let i = 2; i < 5; i++) {
               users[users.length] = {age: i};
@@ -152,8 +152,8 @@ if (dialect === 'sqlite') {
 
         describe('.max', () => {
           it('should return the max value', function() {
-            const self = this,
-              users = [];
+            const self = this;
+            const users = [];
 
             for (let i = 2; i <= 5; i++) {
               users[users.length] = {age: i};

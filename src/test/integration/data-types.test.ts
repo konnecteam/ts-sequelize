@@ -1,18 +1,18 @@
 'use strict';
 
 import * as chai from 'chai';
-import {Sequelize}from '../../index';
-const expect = chai.expect;
-import Support from './support';
-import * as sinon from 'sinon';
 import * as _ from 'lodash';
 import * as moment from 'moment';
-const current = Support.sequelize;
-import * as uuid from 'uuid';
-import DataTypes from '../../lib/data-types';
-const dialect = Support.getTestDialect();
-import * as semver from 'semver';
 import * as types from 'pg-types';
+import * as semver from 'semver';
+import * as sinon from 'sinon';
+import * as uuid from 'uuid';
+import {Sequelize} from '../../index';
+import DataTypes from '../../lib/data-types';
+import Support from './support';
+const expect = chai.expect;
+const current = Support.sequelize;
+const dialect = Support.getTestDialect();
 
 describe(Support.getTestDialectTeaser('DataTypes'), () => {
   afterEach(function() {
@@ -20,7 +20,8 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
     switch (dialect) {
       case 'postgres':
 
-        _.each(DataTypes, dataType => {
+        Object.keys(DataTypes).forEach(key => {
+          const dataType = DataTypes[key];
           if (dataType.types && dataType.types.postgres) {
             dataType.types.postgres.oids.forEach(oid => {
               types.setTypeParser(oid, _.identity);
@@ -43,6 +44,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
   });
 
   it('allows me to return values from a custom parse function', () => {
+
     const parse = (DataTypes.DATE as any).parse = sinon.spy(value => {
       return moment(value, 'YYYY-MM-DD HH:mm:ss');
     });
@@ -53,7 +55,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
       }
 
       if (dialect === 'oracle') {
-        return `TO_TIMESTAMP('${value.format('YYYY-MM-DD HH:mm:ss')}','YYYY-MM-DD HH24:MI:SS.FFTZH')`; 
+        return `TO_TIMESTAMP('${value.format('YYYY-MM-DD HH:mm:ss')}','YYYY-MM-DD HH24:MI:SS.FFTZH')`;
       }
       return value.format('YYYY-MM-DD HH:mm:ss');
     });
@@ -61,7 +63,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
     current.refreshTypes();
 
     const User = current.define('user', {
-      dateField: DataTypes.DATE
+      dateField: new DataTypes.DATE()
     }, {
       timestamps: false
     });
@@ -81,11 +83,11 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
       delete (DataTypes.DATE as any).parse;
     });
   });
-  
+
 
   const testSuccess = function(Type, value, shouldPass = true) {
-    const parse = Type.constructor.parse = sinon.spy(value => {
-      return value;
+    const parse = Type.constructor.parse = sinon.spy(_value => {
+      return _value;
     });
 
     const stringify = Type.constructor.prototype.stringify = sinon.spy(function() {
@@ -131,7 +133,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
 
   if (current.dialect.supports.JSON) {
     it('calls parse and stringify for JSON', () => {
-      const Type = DataTypes.JSON();
+      const Type = new DataTypes.JSON();
 
       return testSuccess(Type, { test: 42, nested: { foo: 'bar' }});
     });
@@ -139,7 +141,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
 
   if (current.dialect.supports.JSONB) {
     it('calls parse and stringify for JSONB', () => {
-      const Type = DataTypes.JSONB();
+      const Type = new DataTypes.JSONB();
 
       return testSuccess(Type, { test: 42, nested: { foo: 'bar' }});
     });
@@ -147,7 +149,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
 
   if (current.dialect.supports.HSTORE) {
     it('calls parse and stringify for HSTORE', () => {
-      const Type = DataTypes.HSTORE();
+      const Type = new DataTypes.HSTORE();
 
       return testSuccess(Type, { test: 42, nested: false });
     });
@@ -155,56 +157,56 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
 
   if (current.dialect.supports.RANGE) {
     it('calls parse and stringify for RANGE', () => {
-      const Type = DataTypes.RANGE(DataTypes.INTEGER());
+      const Type = new DataTypes.RANGE(new DataTypes.INTEGER());
 
       return testSuccess(Type, [1, 2]);
     });
   }
 
   it('calls parse and stringify for DATE', () => {
-    const Type = DataTypes.DATE();
+    const Type = new DataTypes.DATE();
 
     return testSuccess(Type, new Date());
   });
 
   it('calls parse and stringify for DATEONLY', () => {
-    const Type = DataTypes.DATEONLY();
+    const Type = new DataTypes.DATEONLY();
 
     return testSuccess(Type, moment(new Date()).format('YYYY-MM-DD'));
   });
 
   it('calls parse and stringify for TIME', () => {
-    const Type = DataTypes.TIME();
+    const Type = new DataTypes.TIME();
 
     return testSuccess(Type, new Date());
   });
 
   it('calls parse and stringify for BLOB', () => {
-    const Type = DataTypes.BLOB();
+    const Type = new DataTypes.BLOB();
 
     return testSuccess(Type, 'foobar', false);
   });
 
   it('calls parse and stringify for CHAR', () => {
-    const Type = DataTypes.CHAR();
+    const Type = new DataTypes.CHAR();
 
     return testSuccess(Type, 'foobar');
   });
 
   it('calls parse and stringify for BLOB', () => {
-    const Type = DataTypes.BLOB();
+    const Type = new DataTypes.BLOB();
 
     return testSuccess(Type, 'foobar', false);
   });
- 
+
   it('calls parse and stringify for STRING', () => {
-    const Type = DataTypes.STRING();
+    const Type = new DataTypes.STRING();
 
     return testSuccess(Type, 'foobar');
   });
 
   it('calls parse and stringify for TEXT', () => {
-    const Type = DataTypes.TEXT();
+    const Type = new DataTypes.TEXT();
 
     if (dialect === 'mssql' || dialect === 'oracle') {
       // Text uses nvarchar, same type as string
@@ -215,19 +217,19 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
   });
 
   it('calls parse and stringify for BOOLEAN', () => {
-    const Type = DataTypes.BOOLEAN();
+    const Type = new DataTypes.BOOLEAN();
 
     return testSuccess(Type, true);
   });
 
   it('calls parse and stringify for INTEGER', () => {
-    const Type = DataTypes.STRING();
+    const Type = new DataTypes.STRING();
 
     return testSuccess(Type, 1);
   });
 
   it('calls parse and stringify for DECIMAL', () => {
-    const Type = DataTypes.DECIMAL();
+    const Type = new DataTypes.DECIMAL();
 
     if (dialect === 'oracle') {
       //Oracle does not support decimal, mapping to number
@@ -238,7 +240,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
   });
 
   it('calls parse and stringify for BIGINT', () => {
-    const Type = DataTypes.BIGINT();
+    const Type = new DataTypes.BIGINT();
 
     if (dialect === 'mssql' || dialect === 'oracle') {
       // Same type as integer
@@ -249,7 +251,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
   });
 
   it('calls parse and stringify for DOUBLE', () => {
-    const Type = DataTypes.DOUBLE();
+    const Type = new DataTypes.DOUBLE();
 
     if (dialect === 'oracle') {
       // Oracle doesn't have float, maps to either number
@@ -260,7 +262,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
   });
 
   it('calls parse and stringify for FLOAT', () => {
-    const Type = DataTypes.FLOAT();
+    const Type = new DataTypes.FLOAT();
 
     if (dialect === 'postgres' || dialect === 'oracle') {
       // Postgres doesn't have float, maps to either decimal or double
@@ -271,7 +273,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
   });
 
   it('calls parse and stringify for REAL', () => {
-    const Type = DataTypes.REAL();
+    const Type = new DataTypes.REAL();
 
     if (dialect === 'oracle') {
       // Oracle doesn't have float, maps to either decimal or double
@@ -282,7 +284,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
   });
 
   it('calls parse and stringify for UUID', () => {
-    const Type = DataTypes.UUID();
+    const Type = new DataTypes.UUID();
 
     // there is no dialect.supports.UUID yet
     if (['postgres', 'sqlite'].indexOf(dialect) !== -1) {
@@ -294,7 +296,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
   });
 
   it('calls parse and stringify for ENUM', () => {
-    const Type = (DataTypes as any).ENUM('hat', 'cat');
+    const Type = new (DataTypes as any).ENUM('hat', 'cat');
 
     if (['postgres'].indexOf(dialect) !== -1) {
       return testSuccess(Type, 'hat');
@@ -305,13 +307,13 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
 
   if (current.dialect.supports.GEOMETRY) {
     it('calls parse and stringify for GEOMETRY', () => {
-      const Type = DataTypes.GEOMETRY();
+      const Type = new DataTypes.GEOMETRY();
 
       return testSuccess(Type, { type: 'Point', coordinates: [125.6, 10.1] });
     });
 
     it('should parse an empty GEOMETRY field', () => {
-      const Type = DataTypes.GEOMETRY();
+      const Type = new DataTypes.GEOMETRY();
 
       // MySQL 5.7 or above doesn't support POINT EMPTY
       if (dialect === 'mysql' && semver.gte(current.options.databaseVersion, '5.7.0')) {
@@ -346,15 +348,15 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
           }).then(() => {
             //This case throw unhandled exception
             return User.findAll();
-          }).then(users =>{
+          }).then(users => {
             if (dialect === 'mysql') {
               // MySQL will return NULL, becuase they lack EMPTY geometry data support.
               expect(users[0].field).to.be.eql(null);
             } else if (dialect === 'postgres' || dialect === 'postgres-native') {
               //Empty Geometry data [0,0] as per https://trac.osgeo.org/postgis/ticket/1996
-              expect(users[0].field).to.be.deep.eql({ type: 'Point', coordinates: [0, 0] });
+              expect(users[0].field).to.be.deep.equal({ type: 'Point', coordinates: [0, 0] });
             } else {
-              expect(users[0].field).to.be.deep.eql(point);
+              expect(users[0].field).to.be.deep.equal(point);
             }
           });
         }
@@ -362,7 +364,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
     });
 
     it('should parse null GEOMETRY field', () => {
-      const Type = DataTypes.GEOMETRY();
+      const Type = new DataTypes.GEOMETRY();
 
       current.refreshTypes();
 
@@ -377,7 +379,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
       }).then(() => {
         //This case throw unhandled exception
         return User.findAll();
-      }).then(users =>{
+      }).then(users => {
         expect(users[0].field).to.be.eql(null);
       });
     });
@@ -387,9 +389,9 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
     // postgres actively supports IEEE floating point literals, and sqlite doesn't care what we throw at it
     it('should store and parse IEEE floating point literals (NaN and Infinity)', function() {
       const Model = this.sequelize.define('model', {
-        float: DataTypes.FLOAT,
-        double: DataTypes.DOUBLE,
-        real: DataTypes.REAL
+        float: new DataTypes.FLOAT(),
+        double: new DataTypes.DOUBLE(),
+        real: new DataTypes.REAL()
       });
 
       return Model.sync({ force: true }).then(() => {
@@ -412,11 +414,11 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
   if (dialect === 'postgres' || dialect === 'mysql') {
     it('should parse DECIMAL as string', function() {
       const Model = this.sequelize.define('model', {
-        decimal: DataTypes.DECIMAL,
-        decimalPre: DataTypes.DECIMAL(10, 4),
-        decimalWithParser: DataTypes.DECIMAL(32, 15),
-        decimalWithIntParser: DataTypes.DECIMAL(10, 4),
-        decimalWithFloatParser: DataTypes.DECIMAL(10, 8)
+        decimal: new DataTypes.DECIMAL(),
+        decimalPre: new DataTypes.DECIMAL(10, 4),
+        decimalWithParser: new DataTypes.DECIMAL(32, 15),
+        decimalWithIntParser: new DataTypes.DECIMAL(10, 4),
+        decimalWithFloatParser: new DataTypes.DECIMAL(10, 8)
       });
 
       const sampleData = {
@@ -436,7 +438,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
         /**
          * MYSQL default precision is 10 and scale is 0
          * Thus test case below will return number without any fraction values
-        */
+         */
         if (dialect === 'mysql') {
           expect(user.get('decimal')).to.be.eql('12345678');
         } else {
@@ -452,7 +454,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
 
     it('should parse BIGINT as string', function() {
       const Model = this.sequelize.define('model', {
-        jewelPurity: DataTypes.BIGINT
+        jewelPurity: new DataTypes.BIGINT()
       });
 
       const sampleData = {
@@ -475,7 +477,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
     it('should return Int4 range properly #5747', function() {
       const Model = this.sequelize.define('M', {
         interval: {
-          type: DataTypes.RANGE(DataTypes.INTEGER),
+          type: new DataTypes.RANGE(new DataTypes.INTEGER()),
           allowNull: false,
           unique: true
         }
@@ -493,8 +495,8 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
 
   it('should allow spaces in ENUM', function() {
     const Model = this.sequelize.define('user', {
-      name: DataTypes.STRING,
-      type: DataTypes.ENUM(['action', 'mecha', 'canon', 'class s'])
+      name: new DataTypes.STRING(),
+      type: new DataTypes.ENUM(['action', 'mecha', 'canon', 'class s'])
     });
 
     return Model.sync({ force: true }).then(() => {
@@ -506,7 +508,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
 
   it('should return YYYY-MM-DD format string for DATEONLY', function() {
     const Model = this.sequelize.define('user', {
-      stamp: DataTypes.DATEONLY
+      stamp: new DataTypes.DATEONLY()
     });
     const testDate = moment().format('YYYY-MM-DD');
     const newDate = new Date();
@@ -544,7 +546,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
 
   it('should return set DATEONLY field to NULL correctly', function() {
     const Model = this.sequelize.define('user', {
-      stamp: DataTypes.DATEONLY
+      stamp: new DataTypes.DATEONLY()
     });
     const testDate = moment().format('YYYY-MM-DD');
 

@@ -1,12 +1,12 @@
 'use strict';
 
 import * as chai from 'chai';
-import {Sequelize}from '../../../index';
-const Promise = Sequelize.Promise;
 import * as moment from 'moment';
-const expect = chai.expect;
-import Support from '../support';
+import {Sequelize} from '../../../index';
 import DataTypes from '../../../lib/data-types';
+import Support from '../support';
+const expect = chai.expect;
+const Promise = Sequelize.Promise;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
@@ -15,11 +15,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       beforeEach(function() {
         this.Event = this.sequelize.define('Event', {
           data: {
-            type: DataTypes.JSON,
+            type: new DataTypes.JSON(),
             field: 'event_data',
             index: true
           },
-          json: DataTypes.JSON
+          json: new DataTypes.JSON()
         });
 
         return this.Event.sync({ force: true });
@@ -47,8 +47,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               return this.Event.count().then(count => {
                 expect(count).to.equal(0);
                 return transaction.commit().then(() => {
-                  return this.Event.count().then(count => {
-                    expect(count).to.equal(1);
+                  return this.Event.count().then(_count => {
+                    expect(_count).to.equal(1);
                   });
                 });
               });
@@ -104,7 +104,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               employment: 'Multiverse Scientist'
             }
           }]).then(() => this.Event.update({
-            'data': {
+            data: {
               name: {
                 first: 'Rick',
                 last: 'Sanchez'
@@ -146,7 +146,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               employment: 'Multiverse Scientist'
             }
           }]).then(() => this.Event.update({
-            'data': {
+            data: {
               name: {
                 first: 'Rick',
                 last: 'Sanchez'
@@ -433,7 +433,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 },
                 status_report: {
                   'red-indicator': {
-                    'level$$level': true
+                    level$$level: true
                   }
                 },
                 employment: 'Nuclear Safety Inspector'
@@ -454,7 +454,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 data: {
                   status_report: {
                     'red-indicator': {
-                      'level$$level': true
+                      level$$level: true
                     }
                   }
                 }
@@ -468,7 +468,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 },
                 status_report: {
                   'red-indicator': {
-                    'level$$level': true
+                    level$$level: true
                   }
                 },
                 employment: 'Nuclear Safety Inspector'
@@ -520,7 +520,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 }
               },
               order: [
-                ['id', 'ASC']
+                ['id', 'ASC'],
               ]
             }).then(events => {
               expect(events.length).to.equal(2);
@@ -584,7 +584,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 }
               },
               order: [
-                ['data.name.first']
+                ['data.name.first'],
               ]
             }).then(events => {
               expect(events.length).to.equal(3);
@@ -668,7 +668,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       describe('sql injection attacks', () => {
         beforeEach(function() {
           this.Model = this.sequelize.define('Model', {
-            data: DataTypes.JSON
+            data: new DataTypes.JSON()
           });
           return this.sequelize.sync({ force: true });
         });
@@ -763,7 +763,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                   }
                 },
                 order: [
-                  ["data.name.first}'); INSERT INJECTION HERE! SELECT ('"]
+                  ["data.name.first}'); INSERT INJECTION HERE! SELECT ('"],
                 ]
               }).then(events => {
                 expect(events).to.be.ok;
@@ -785,7 +785,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                   }
                 },
                 order: [
-                  ["data.name.first}'); INSERT INJECTION HERE! SELECT ('"]
+                  ["data.name.first}'); INSERT INJECTION HERE! SELECT ('"],
                 ]
               })).to.eventually.be.rejectedWith(Error);
             }

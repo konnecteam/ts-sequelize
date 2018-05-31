@@ -1,18 +1,18 @@
 'use strict';
 
 import * as Base from './base';
-import {BelongsTo} from './belongs-to';
-import {HasOne} from './has-one';
-import {HasMany} from './has-many';
-import {BelongsToMany} from './belongs-to-many';
+import { BelongsTo } from './belongs-to';
+import { BelongsToMany } from './belongs-to-many';
+import { HasMany } from './has-many';
+import { HasOne } from './has-one';
 
 
 const Association = {
-    Base : Base,
-    BelongsTo : BelongsTo,
-    HasOne : HasOne,
-    HasMany : HasMany,
-    BelongsToMany : BelongsToMany
+  Base,
+  BelongsTo,
+  HasOne,
+  HasMany,
+  BelongsToMany
 };
 
 export default Association;

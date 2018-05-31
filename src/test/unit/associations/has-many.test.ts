@@ -1,33 +1,33 @@
 'use strict';
 
 import * as chai from 'chai';
+import * as _ from 'lodash';
 import * as sinon from 'sinon';
+import { HasMany } from '../../../lib/associations/has-many';
+import DataTypes from '../../../lib/data-types';
+import Op from '../../../lib/operators';
+import Support from '../../support';
 const expect = chai.expect;
 const stub = sinon.stub;
-import * as _ from 'lodash';
-import Support from '../../support';
-import DataTypes from '../../../lib/data-types';
-import {HasMany} from '../../../lib/associations/has-many';
-import Op from '../../../lib/operators';
 const current = Support.sequelize;
 const Promise = current.Promise;
 
 describe(Support.getTestDialectTeaser('hasMany'), () => {
   describe('optimizations using bulk create, destroy and update', () => {
-    const User =current.define('User', { username: DataTypes.STRING }),
-      Task = current.define('Task', { title: DataTypes.STRING });
+    const User = current.define('User', { username: new DataTypes.STRING() });
+    const Task = current.define('Task', { title: new DataTypes.STRING() });
 
     User.hasMany(Task);
 
     const user = User.build({
-        id: 42
-      }),
-      task1 = Task.build({
-        id: 15
-      }),
-      task2 = Task.build({
-        id: 16
-      });
+      id: 42
+    });
+    const task1 = Task.build({
+      id: 15
+    });
+    const task2 = Task.build({
+      id: 16
+    });
 
     beforeEach(function() {
       this.findAll = stub(Task, 'findAll').returns(Promise.resolve([]));
@@ -51,8 +51,7 @@ describe(Support.getTestDialectTeaser('hasMany'), () => {
         .onFirstCall().returns(Promise.resolve([]))
         .onSecondCall().returns(Promise.resolve([
           { userId: 42, taskId: 15 },
-          { userId: 42, taskId: 16 }
-        ]));
+          { userId: 42, taskId: 16 }        ]));
 
       return user.setTasks([task1, task2]).bind(this).then(function() {
         this.update.reset();
@@ -65,13 +64,13 @@ describe(Support.getTestDialectTeaser('hasMany'), () => {
   });
 
   describe('mixin', () => {
-    const User =current.define('User'),
-      Task = current.define('Task');
+    const User = current.define('User');
+    const Task = current.define('Task');
 
     it('should mixin association methods', () => {
-      const as = Math.random().toString(),
-        association = new HasMany(User, Task, {as}),
-        obj = {};
+      const as = Math.random().toString();
+      const association = new HasMany(User, Task, { as });
+      const obj = {};
 
       association.mixin(obj);
 
@@ -119,19 +118,19 @@ describe(Support.getTestDialectTeaser('hasMany'), () => {
   });
 
   describe('get', () => {
-    const User =current.define('User', {}),
-      Task = current.define('Task', {}),
-      idA = Math.random().toString(),
-      idB = Math.random().toString(),
-      idC = Math.random().toString(),
-      foreignKey = 'user_id';
+    const User = current.define('User', {});
+    const Task = current.define('Task', {});
+    const idA = Math.random().toString();
+    const idB = Math.random().toString();
+    const idC = Math.random().toString();
+    const foreignKey = 'user_id';
 
     it('should fetch associations for a single instance', () => {
       const findAll = stub(Task, 'findAll').returns(Promise.resolve([
-          Task.build({}),
-          Task.build({})
-        ])),
-        where = {};
+        Task.build({}),
+        Task.build({}),
+      ]));
+      const where = {};
 
       User.Tasks = User.hasMany(Task, {foreignKey});
       const actual = User.Tasks.get(User.build({id: idA}));
@@ -153,29 +152,29 @@ describe(Support.getTestDialectTeaser('hasMany'), () => {
       const findAll = stub(Task, 'findAll').returns(
         Promise.resolve([
           Task.build({
-            'user_id': idA
+            user_id: idA
           }),
           Task.build({
-            'user_id': idA
+            user_id: idA
           }),
           Task.build({
-            'user_id': idA
+            user_id: idA
           }),
           Task.build({
-            'user_id': idB
-          })
+            user_id: idB
+          }),
         ]));
 
       User.Tasks = User.hasMany(Task, {foreignKey});
       const actual = User.Tasks.get([
         User.build({id: idA}),
         User.build({id: idB}),
-        User.build({id: idC})
+        User.build({id: idC}),
       ]);
 
       expect(findAll).to.have.been.calledOnce;
       expect(findAll.firstCall.args[0].where).to.have.property(foreignKey);
-      expect(findAll.firstCall.args[0].where[foreignKey]).to.have.property(Op.in);
+      expect(findAll.firstCall.args[0].where[foreignKey]).to.have.property(Op.in as any);
       expect(findAll.firstCall.args[0].where[foreignKey][Op.in]).to.deep.equal([idA, idB, idC]);
 
       return actual.then(result => {

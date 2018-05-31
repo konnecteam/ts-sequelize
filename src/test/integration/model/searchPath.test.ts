@@ -1,10 +1,10 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../support';
 
+const expect = chai.expect;
 const SEARCH_PATH_ONE = 'schema_one,public';
 const SEARCH_PATH_TWO = 'schema_two,public';
 
@@ -22,17 +22,17 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     describe('SEARCH PATH', () => {
       before(function() {
         this.Restaurant = current.define('restaurant', {
-          foo: DataTypes.STRING,
-          bar: DataTypes.STRING
+          foo: new DataTypes.STRING(),
+          bar: new DataTypes.STRING()
         },
         {tableName: 'restaurants'});
         this.Location = current.define('location', {
-          name: DataTypes.STRING
+          name: new DataTypes.STRING()
         },
         {tableName: 'locations'});
         this.Employee = current.define('employee', {
-          first_name: DataTypes.STRING,
-          last_name: DataTypes.STRING
+          first_name: new DataTypes.STRING(),
+          last_name: new DataTypes.STRING()
         },
         {tableName: 'employees'});
         this.Restaurant.belongsTo(this.Location,

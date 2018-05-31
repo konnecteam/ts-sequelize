@@ -1,11 +1,10 @@
 'use strict';
 
-import Support from '../../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
 const expectsql = Support.expectsql;
 const current = Support.sequelize;
 const sql  = current.dialect.QueryGenerator;
-
 
 if (current.dialect.name === 'mysql') {
   describe(Support.getTestDialectTeaser('SQL'), () => {
@@ -13,7 +12,7 @@ if (current.dialect.name === 'mysql') {
 
       const Model = current.define('users', {
         id: {
-          type: DataTypes.INTEGER,
+          type: new DataTypes.INTEGER(),
           primaryKey: true,
           autoIncrement: true
         }
@@ -21,7 +20,7 @@ if (current.dialect.name === 'mysql') {
 
       it('properly generate alter queries', () => {
         return expectsql(sql.addColumnQuery(Model.getTableName(), 'level_id', current.normalizeAttribute({
-          type: DataTypes.FLOAT,
+          type: new DataTypes.FLOAT(),
           allowNull: false
         })), {
           mysql: 'ALTER TABLE `users` ADD `level_id` FLOAT NOT NULL;'
@@ -30,7 +29,7 @@ if (current.dialect.name === 'mysql') {
 
       it('properly generate alter queries for foreign keys', () => {
         return expectsql(sql.addColumnQuery(Model.getTableName(), 'level_id', current.normalizeAttribute({
-          type: DataTypes.INTEGER,
+          type: new DataTypes.INTEGER(),
           references: {
             model: 'level',
             key: 'id'
@@ -44,7 +43,7 @@ if (current.dialect.name === 'mysql') {
 
       it('properly generate alter queries with FIRST', () => {
         return expectsql(sql.addColumnQuery(Model.getTableName(), 'test_added_col_first', current.normalizeAttribute({
-          type: DataTypes.STRING,
+          type: new DataTypes.STRING(),
           first: true
         })), {
           mysql: 'ALTER TABLE `users` ADD `test_added_col_first` VARCHAR(255) FIRST;'

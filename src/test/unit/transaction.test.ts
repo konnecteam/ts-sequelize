@@ -18,7 +18,7 @@ describe('Transaction', function() {
         close() {}
       }));
 
-      (this as any).stubRelease = sinon.stub(current.connectionManager, 'releaseConnection')
+    (this as any).stubRelease = sinon.stub(current.connectionManager, 'releaseConnection')
       .returns(Sequelize.Promise.resolve());
   });
 
@@ -36,16 +36,16 @@ describe('Transaction', function() {
   it('should run auto commit query only when needed', () => {
     const expectations = {
       all: [
-        'START TRANSACTION;'
+        'START TRANSACTION;',
       ],
       sqlite: [
-        'BEGIN DEFERRED TRANSACTION;'
+        'BEGIN DEFERRED TRANSACTION;',
       ],
       mssql: [
-        'BEGIN TRANSACTION;'
+        'BEGIN TRANSACTION;',
       ],
       oracle: [
-        'BEGIN TRANSACTION'
+        'BEGIN TRANSACTION',
       ]
     };
     return current.transaction(() => {

@@ -1,8 +1,8 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
 import Support from '../../support';
+const expect = chai.expect;
 const current = Support.sequelize;
 const AssociationError = require(__dirname + '/../../../lib/errors').AssociationError;
 

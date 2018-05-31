@@ -1,0 +1,28 @@
+module.exports = {
+  out: './docs/api',
+  includes: './',
+  exclude: [
+      '**/build/**/*',
+      '**/node_modules/**/*',
+      '**/test/**/*',
+       '**/mssql-data-types.ts',
+       '**/mysql-data-types.ts',
+       '**/oracle-data-types.ts',
+       '**/postgres-data-types.ts',
+       '**/sqlite-data-types.ts',
+       '**/hstore.ts',
+       '**/base.ts',
+       '**/parserStore.ts',
+       '**/index.ts',
+       '**/resource-lock.ts',
+       '**/table-hints.ts',
+       '**/range.ts',
+       '**/logger.ts',
+       '**/deferrable.ts',
+       '**/sql-string.ts',
+       '**/sscce_template.ts',
+       '**/promise.ts',
+  ],
+
+  excludeExternals: true,
+};

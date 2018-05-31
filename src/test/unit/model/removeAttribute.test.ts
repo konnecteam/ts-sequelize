@@ -1,17 +1,17 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
-const current = Support.sequelize;
 import * as _ from 'lodash';
 import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('removeAttribute', () => {
     it('should support removing the primary key', () => {
       const Model = current.define('m', {
-        name: DataTypes.STRING
+        name: new DataTypes.STRING()
       });
 
       expect(Model.primaryKeyAttribute).not.to.be.undefined;
@@ -25,7 +25,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('should not add undefined attribute after removing primary key', () => {
       const Model = current.define('m', {
-        name: DataTypes.STRING
+        name: new DataTypes.STRING()
       });
 
       Model.removeAttribute('id');

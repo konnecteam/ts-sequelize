@@ -1,22 +1,22 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../support';
-import DataTypes from '../../../lib/data-types';
 import * as sinon from 'sinon';
+import DataTypes from '../../../lib/data-types';
+import Support from '../support';
+const expect = chai.expect;
 
 if (Support.sequelize.dialect.supports.upserts) {
   describe(Support.getTestDialectTeaser('Hooks'), () => {
     beforeEach(function() {
       this.User = this.sequelize.define('User', {
         username: {
-          type: DataTypes.STRING,
+          type: new DataTypes.STRING(),
           allowNull: false,
           unique: true //Either Primary Key/Unique Keys should be passed to upsert
         },
         mood: {
-          type: DataTypes.ENUM,
+          type: new DataTypes.ENUM(),
           values: ['happy', 'sad', 'neutral']
         }
       });
@@ -26,8 +26,8 @@ if (Support.sequelize.dialect.supports.upserts) {
     describe('#upsert', () => {
       describe('on success', () => {
         it('should run hooks', function() {
-          const beforeHook = sinon.spy(),
-            afterHook = sinon.spy();
+          const beforeHook = sinon.spy();
+          const afterHook = sinon.spy();
 
           this.User.beforeUpsert(beforeHook);
           this.User.afterUpsert(afterHook);
@@ -41,8 +41,8 @@ if (Support.sequelize.dialect.supports.upserts) {
 
       describe('on error', () => {
         it('should return an error from before', function() {
-          const beforeHook = sinon.spy(),
-            afterHook = sinon.spy();
+          const beforeHook = sinon.spy();
+          const afterHook = sinon.spy();
 
           this.User.beforeUpsert(() => {
             beforeHook();
@@ -57,8 +57,8 @@ if (Support.sequelize.dialect.supports.upserts) {
         });
 
         it('should return an error from after', function() {
-          const beforeHook = sinon.spy(),
-            afterHook = sinon.spy();
+          const beforeHook = sinon.spy();
+          const afterHook = sinon.spy();
 
           this.User.beforeUpsert(beforeHook);
           this.User.afterUpsert(() => {

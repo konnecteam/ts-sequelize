@@ -2,8 +2,8 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../../lib/data-types';
-const expect = chai.expect;
 import Support from '../../support';
+const expect = chai.expect;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('scope', () => {
@@ -12,10 +12,10 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       beforeEach(function() {
         this.ScopeMe = this.sequelize.define('ScopeMe', {
-          username: DataTypes.STRING,
-          email: DataTypes.STRING,
-          access_level: DataTypes.INTEGER,
-          other_value: DataTypes.INTEGER
+          username: new DataTypes.STRING(),
+          email: new DataTypes.STRING(),
+          access_level: new DataTypes.INTEGER(),
+          other_value: new DataTypes.INTEGER()
         }, {
           defaultScope: {
             where: {
@@ -44,7 +44,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             {username: 'tony', email: 'tony@sequelizejs.com', access_level: 3, other_value: 7},
             {username: 'tobi', email: 'tobi@fakeemail.com', access_level: 10, other_value: 11},
             {username: 'dan', email: 'dan@sequelizejs.com', access_level: 5, other_value: 10},
-            {username: 'fred', email: 'fred@foobar.com', access_level: 3, other_value: 7}
+            {username: 'fred', email: 'fred@foobar.com', access_level: 3, other_value: 7},
           ];
           return this.ScopeMe.bulkCreate(records);
         });

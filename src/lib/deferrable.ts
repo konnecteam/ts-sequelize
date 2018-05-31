@@ -1,7 +1,4 @@
-'use strict';
-
-import * as util from 'util';
-
+import { PostgresQueryGenerator } from './dialects/postgres/postgres-query-generator';
 
 /**
  * A collection of properties related to deferrable constraints. It can be used to
@@ -18,7 +15,7 @@ import * as util from 'util';
  *     references: {
  *       model: OtherModel,
  *       key: 'id',
- *       deferrable: Sequelize.Deferrable.INITIALLY_IMMEDIATE
+ *       deferrable: Sequelize.Deferrable.InitiallyImmediate
  *     }
  *   }
  * });
@@ -30,96 +27,61 @@ import * as util from 'util';
  *
  * ```js
  * sequelize.transaction({
- *   deferrable: Sequelize.Deferrable.SET_DEFERRED
+ *   deferrable: Sequelize.Deferrable.SetDeferred
  * });
  * ```
  *
- * @property INITIALLY_DEFERRED Defer constraints checks to the end of transactions.
- * @property INITIALLY_IMMEDIATE Trigger the constraint checks immediately
+ * @property InitiallyDeferred Defer constraints checks to the end of transactions.
+ * @property InitiallyImmediate Trigger the constraint checks immediately
  * @property NOT Set the constraints to not deferred. This is the default in PostgreSQL and it make it impossible to dynamically defer the constraints within a transaction.
- * @property SET_DEFERRED
- * @property SET_IMMEDIATE
+ * @property SetDeferred
+ * @property SetImmediate
  */
-const Deferrable ={
-  INITIALLY_DEFERRED,
-  INITIALLY_IMMEDIATE,
-  NOT,
-  SET_DEFERRED,
-  SET_IMMEDIATE
-};
 
-function ABSTRACT() {}
-
-ABSTRACT.prototype.toString = function() {
-  return this.toSql.apply(this, arguments);
-};
-
-function INITIALLY_DEFERRED() {
-  if (!(this instanceof INITIALLY_DEFERRED)) {
-    return new (INITIALLY_DEFERRED as any)();
-  }
-}
-util.inherits(INITIALLY_DEFERRED, ABSTRACT);
-
-INITIALLY_DEFERRED.prototype.toSql = function() {
-  return 'DEFERRABLE INITIALLY DEFERRED';
-};
-
-function INITIALLY_IMMEDIATE() {
-  if (!(this instanceof INITIALLY_IMMEDIATE)) {
-    return new (INITIALLY_IMMEDIATE as any)();
-  }
-}
-util.inherits(INITIALLY_IMMEDIATE, ABSTRACT);
-
-INITIALLY_IMMEDIATE.prototype.toSql = function() {
-  return 'DEFERRABLE INITIALLY IMMEDIATE';
-};
-
-function NOT() {
-  if (!(this instanceof NOT)) {
-    return new (NOT as any)();
-  }
-}
-util.inherits(NOT, ABSTRACT);
-
-NOT.prototype.toSql = function() {
-  return 'NOT DEFERRABLE';
-};
-
-function SET_DEFERRED(constraints) {
-  if (!(this instanceof SET_DEFERRED)) {
-    return new (SET_DEFERRED as any)(constraints);
+export abstract class ABSTRACT {
+  public toString() : string {
+    return this.toSql.apply(this, arguments);
   }
 
-  this.constraints = constraints;
+  public abstract toSql(queryGenerator? : PostgresQueryGenerator) : string;
 }
-util.inherits(SET_DEFERRED, ABSTRACT);
 
-SET_DEFERRED.prototype.toSql = function(queryGenerator) {
-  return queryGenerator.setDeferredQuery(this.constraints);
-};
-
-function SET_IMMEDIATE(constraints) {
-  if (!(this instanceof SET_IMMEDIATE)) {
-    return new (SET_IMMEDIATE as any)(constraints);
+export class InitiallyDeferred extends ABSTRACT {
+  public toSql() : string {
+    return 'DEFERRABLE INITIALLY DEFERRED';
   }
-
-  this.constraints = constraints;
 }
-util.inherits(SET_IMMEDIATE, ABSTRACT);
 
-SET_IMMEDIATE.prototype.toSql = function(queryGenerator) {
-  return queryGenerator.setImmediateQuery(this.constraints);
-};
+export class InitiallyImmediate extends ABSTRACT {
+  public toSql() : string {
+    return 'DEFERRABLE INITIALLY IMMEDIATE';
+  }
+}
 
-Object.keys(Deferrable).forEach(key => {
-  const DeferrableType = Deferrable[key];
+export class NOT extends ABSTRACT {
+  public toSql() : string {
+    return 'NOT DEFERRABLE';
+  }
+}
 
-  DeferrableType.toString = function() {
-    const instance = new DeferrableType();
-    return instance.toString.apply(instance, arguments);
-  };
-});
+export class SetDeferred extends ABSTRACT {
+  private constraints : any;
+  constructor(constraints : any) {
+    super();
+    this.constraints = constraints;
+  }
+  public toSql(queryGenerator : PostgresQueryGenerator) : string {
+    return queryGenerator.setDeferredQuery(this.constraints);
+  }
+}
 
-export default Deferrable;
+export class SetImmediate extends ABSTRACT {
+  private constraints : any;
+  constructor(constraints : any) {
+    super();
+    this.constraints = constraints;
+  }
+  public toSql(queryGenerator : PostgresQueryGenerator) : string {
+    return queryGenerator.setImmediateQuery(this.constraints);
+  }
+}

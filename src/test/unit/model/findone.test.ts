@@ -1,12 +1,12 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
-const current = Support.sequelize;
 import * as sinon from 'sinon';
 import DataTypes from '../../../lib/data-types';
-import * as Promise from 'bluebird';
+import Support from '../../support';
+const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('method findOne', () => {
@@ -33,7 +33,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       it('with custom primary key', function() {
         const Model = current.define('model', {
           uid: {
-            type: DataTypes.INTEGER,
+            type: new DataTypes.INTEGER(),
             primaryKey: true,
             autoIncrement: true
           }
@@ -47,7 +47,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       it('with blob primary key', function() {
         const Model = current.define('model', {
           id: {
-            type: DataTypes.BLOB,
+            type: new DataTypes.BLOB(),
             primaryKey: true,
             autoIncrement: true
           }

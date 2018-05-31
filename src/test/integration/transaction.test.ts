@@ -1,20 +1,20 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from './support';
-const dialect = Support.getTestDialect();
-import Promise from '../../lib/promise';
-import {Transaction} from '../../lib/transaction';
 import * as sinon from 'sinon';
 import DataTypes from '../../lib/data-types';
+import Promise from '../../lib/promise';
+import { Transaction } from '../../lib/transaction';
+import Support from './support';
+const expect = chai.expect;
+const dialect = Support.getTestDialect();
 const current = Support.sequelize;
 
 //Function adding the from dual clause for Oracle requests
 const formatQuery = (qry, force = null) => {
   if (dialect === 'oracle' && ((qry.indexOf('FROM') === -1) || force !== undefined && force)) {
     if (qry.charAt(qry.length - 1) === ';') {
-      qry = qry.substr(0, qry.length -1);
+      qry = qry.substr(0, qry.length - 1);
     }
     return qry + ' FROM DUAL';
   }
@@ -95,19 +95,19 @@ if (current.dialect.supports.transactions) {
       if (dialect === 'postgres') {
         it('do not rollback if already committed', function() {
           const SumSumSum = this.sequelize.define('transaction', {
-              value: {
-                type: DataTypes.DECIMAL(10, 3),
-                field: 'value'
-              }
-            }),
-            self = this,
-            transTest = function(val) {
-              return self.sequelize.transaction({isolationLevel: 'SERIALIZABLE'}, t => {
-                return SumSumSum.sum('value', {transaction: t}).then(() => {
-                  return SumSumSum.create({value: -val}, {transaction: t});
-                });
+            value: {
+              type: new DataTypes.DECIMAL(10, 3),
+              field: 'value'
+            }
+          });
+          const self = this;
+          const transTest = function(val) {
+            return self.sequelize.transaction({isolationLevel: 'SERIALIZABLE'}, t => {
+              return SumSumSum.sum('value', {transaction: t}).then(() => {
+                return SumSumSum.create({value: -val}, {transaction: t});
               });
-            };
+            });
+          };
           // Attention: this test is a bit racy. If you find a nicer way to test this: go ahead
           return SumSumSum.sync({force: true}).then(() => {
             return expect(Promise.join(transTest(80), transTest(80), transTest(80))).to.eventually.be.rejectedWith('could not serialize access due to read/write dependencies among transactions');
@@ -257,11 +257,11 @@ if (current.dialect.supports.transactions) {
 
     if (dialect === 'sqlite') {
       it('provides persistent transactions', () => {
-        const sequelize = new Support.Sequelize('database', 'username', 'password', {dialect: 'sqlite'}),
-          User = sequelize.define('user', {
-            username: DataTypes.STRING,
-            awesome: DataTypes.BOOLEAN
-          });
+        const sequelize = new Support.Sequelize('database', 'username', 'password', {dialect: 'sqlite'});
+        const User = sequelize.define('user', {
+          username: new DataTypes.STRING(),
+          awesome: new DataTypes.BOOLEAN()
+        });
         let persistentTransaction;
 
         return sequelize.transaction().then(t => {
@@ -315,7 +315,7 @@ if (current.dialect.supports.transactions) {
     if (dialect === 'sqlite') {
       it('automatically retries on SQLITE_BUSY failure', function() {
         return Support.prepareTransactionTest(this.sequelize).bind({}).then(sequelize => {
-          const User = sequelize.define('User', { username: DataTypes.STRING });
+          const User = sequelize.define('User', { username: new DataTypes.STRING() });
           return User.sync({ force: true }).then(() => {
             const newTransactionFunc = function() {
               return sequelize.transaction({type: Support.Sequelize.Transaction.TYPES.EXCLUSIVE}).then(t => {
@@ -335,7 +335,7 @@ if (current.dialect.supports.transactions) {
 
       it('fails with SQLITE_BUSY when retry.match is changed', function() {
         return Support.prepareTransactionTest(this.sequelize).bind({}).then(sequelize => {
-          const User = sequelize.define('User', { id: {type: DataTypes.INTEGER, primaryKey: true}, username: DataTypes.STRING });
+          const User = sequelize.define('User', { id: {type: new DataTypes.INTEGER(), primaryKey: true}, username: new DataTypes.STRING() });
           return User.sync({ force: true }).then(() => {
             const newTransactionFunc = function() {
               return sequelize.transaction({type: Support.sequelize.Transaction.TYPES.EXCLUSIVE, retry: {match: ['NO_MATCH']}}).then(t => {
@@ -358,12 +358,12 @@ if (current.dialect.supports.transactions) {
       describe('row locking', () => {
         it('supports for update', function() {
           const User = this.sequelize.define('user', {
-              username: DataTypes.STRING,
-              awesome: DataTypes.BOOLEAN
-            }),
-            self = this,
-            t1Spy = sinon.spy(),
-            t2Spy = sinon.spy();
+            username: new DataTypes.STRING(),
+            awesome: new DataTypes.BOOLEAN()
+          });
+          const self = this;
+          const t1Spy = sinon.spy();
+          const t2Spy = sinon.spy();
 
           return this.sequelize.sync({ force: true }).then(() => {
             return User.create({ username: 'jan'});
@@ -411,9 +411,9 @@ if (current.dialect.supports.transactions) {
         });
 
         it('fail locking with outer joins', function() {
-          const User = this.sequelize.define('User', { username: DataTypes.STRING }),
-            Task = this.sequelize.define('Task', { title: DataTypes.STRING, active: DataTypes.BOOLEAN }),
-            self = this;
+          const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
+          const Task = this.sequelize.define('Task', { title: new DataTypes.STRING(), active: new DataTypes.BOOLEAN() });
+          const self = this;
 
           User.belongsToMany(Task, { through: 'UserTasks' });
           Task.belongsToMany(User, { through: 'UserTasks' });
@@ -457,9 +457,9 @@ if (current.dialect.supports.transactions) {
 
         if (current.dialect.supports.lockOf) {
           it('supports for update of table', function() {
-            const User = this.sequelize.define('User', { username: DataTypes.STRING }, { tableName: 'Person' }),
-              Task = this.sequelize.define('Task', { title: DataTypes.STRING, active: DataTypes.BOOLEAN }),
-              self = this;
+            const User = this.sequelize.define('User', { username: new DataTypes.STRING() }, { tableName: 'Person' });
+            const Task = this.sequelize.define('Task', { title: new DataTypes.STRING(), active: new DataTypes.BOOLEAN() });
+            const self = this;
 
             User.belongsToMany(Task, { through: 'UserTasks' });
             Task.belongsToMany(User, { through: 'UserTasks' });
@@ -510,12 +510,12 @@ if (current.dialect.supports.transactions) {
         if (current.dialect.supports.lockKey) {
           it('supports for key share', function() {
             const User = this.sequelize.define('user', {
-                username: DataTypes.STRING,
-                awesome: DataTypes.BOOLEAN
-              }),
-              self = this,
-              t1Spy = sinon.spy(),
-              t2Spy = sinon.spy();
+              username: new DataTypes.STRING(),
+              awesome: new DataTypes.BOOLEAN()
+            });
+            const self = this;
+            const t1Spy = sinon.spy();
+            const t2Spy = sinon.spy();
 
             return this.sequelize.sync({ force: true }).then(() => {
               return User.create({ username: 'jan'});
@@ -561,13 +561,13 @@ if (current.dialect.supports.transactions) {
 
         it('supports for share', function() {
           const User = this.sequelize.define('user', {
-              username: DataTypes.STRING,
-              awesome: DataTypes.BOOLEAN
-            }),
-            self = this,
-            t1Spy = sinon.spy(),
-            t2FindSpy = sinon.spy(),
-            t2UpdateSpy = sinon.spy();
+            username: new DataTypes.STRING(),
+            awesome: new DataTypes.BOOLEAN()
+          });
+          const self = this;
+          const t1Spy = sinon.spy();
+          const t2FindSpy = sinon.spy();
+          const t2UpdateSpy = sinon.spy();
 
           return this.sequelize.sync({ force: true }).then(() => {
             return User.create({ username: 'jan'});

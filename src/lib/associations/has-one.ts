@@ -1,10 +1,12 @@
 'use strict';
 
-import * as Utils  from './../utils';
-import * as Helpers from './helpers';
 import * as _ from 'lodash';
-import {Association} from './base';
+import { Model } from '../model';
 import Op from '../operators';
+import { Transaction } from '../transaction';
+import { Utils } from '../utils';
+import { Association } from './base';
+import { Helpers } from './helpers';
 
 /**
  * One-to-one association
@@ -16,18 +18,17 @@ import Op from '../operators';
  */
 export class HasOne extends Association {
 
-  isSingleAssociation;
-  foreignKeyAttribute;
-  isAliased;
-  foreignKey;
-  sourceIdentifier;
-  sourceKey;
-  sourceKeyIsPrimary;
-  identifierField;
-  associationAccessor;
-  accessors;
+  public sourceIdentifier : string;
+  public sourceKey : string;
+  public sourceKeyIsPrimary : boolean;
 
-  constructor(source, target, options) {
+  constructor(source : typeof Model, target : typeof Model, options : {
+    /** : string | {}, assocation alias */
+    as? : any,
+    createByBTM? : boolean,
+    foreignKey? : string,
+    useHooks? : boolean,
+  }) {
     super(source, target, options);
 
     this.associationType = 'HasOne';
@@ -54,16 +55,16 @@ export class HasOne extends Association {
     if (!this.foreignKey) {
       this.foreignKey = Utils.camelizeIf(
         [
-          Utils.underscoredIf(Utils.singularize(this.options.as || this.source.name), this.target.options.underscored),
-          this.source.primaryKeyAttribute
+          Utils.underscoredIf(Utils.singularize(this.options.as || this.source .name), this.target.options.underscored),
+          this.source .primaryKeyAttribute,
         ].join('_'),
         !this.source.options.underscored
       );
     }
 
-    this.sourceIdentifier = this.source.primaryKeyAttribute;
-    this.sourceKey = this.source.primaryKeyAttribute;
-    this.sourceKeyIsPrimary = this.sourceKey === this.source.primaryKeyAttribute;
+    this.sourceIdentifier = this.source .primaryKeyAttribute;
+    this.sourceKey = this.source .primaryKeyAttribute;
+    this.sourceKeyIsPrimary = this.sourceKey === this.source .primaryKeyAttribute;
 
     this.associationAccessor = this.as;
     this.options.useHooks = options.useHooks;
@@ -82,10 +83,12 @@ export class HasOne extends Association {
     };
   }
 
-  // the id is in the target table
-  injectAttributes() {
+  /**
+   * add attributes to the target of this association
+   */
+  public injectAttributes() {
     const newAttributes = {};
-    const keyType = this.source.rawAttributes[this.source.primaryKeyAttribute].type;
+    const keyType = this.source.rawAttributes[this.source .primaryKeyAttribute].type;
 
     newAttributes[this.foreignKey] = _.defaults({}, this.foreignKeyAttribute, {
       type: this.options.keyType || keyType,
@@ -104,14 +107,17 @@ export class HasOne extends Association {
     Helpers.addForeignKeyConstraints(this.target.rawAttributes[this.foreignKey], this.source, this.target, this.options);
 
     // Sync attributes and setters/getters to Model prototype
-    this.target.refreshAttributes();
+    this.target .refreshAttributes();
 
     Helpers.checkNamingCollision(this);
 
     return this;
   }
 
-  mixin(obj) {
+  /**
+   * Mixin (inject) association methods to model prototype
+   */
+  public mixin(obj) : void {
     const methods = ['get', 'set', 'create'];
 
     Helpers.mixinMethods(this, obj, methods);
@@ -119,18 +125,21 @@ export class HasOne extends Association {
 
   /**
    * Get the associated instance.
-   *
-   * @param {Object} [options]
-   * @param {String|Boolean} [options.scope] Apply a scope on the related model, or remove its default scope by passing false
-   * @param {String} [options.schema] Apply a schema on the related model
    * @see {@link Model.findOne} for a full explanation of options
-   * @return {Promise<Model>}
    */
-  get(instances, options) {
+  public get(instances : Model, options : {
+    /** Apply a schema on the related model */
+    schema? : string,
+    schemaDelimiter? : string,
+    /** Apply a scope on the related model, or remove its default scope by passing false */
+    scope? : string|boolean,
+    /** A hash of search attributes. */
+    where? : {}
+  }) : Promise<Model> {
     const association = this;
     const where = {};
     let Target = association.target;
-    let instance;
+    let instanceNoArray;
 
     options = Utils.cloneDeep(options);
 
@@ -147,16 +156,16 @@ export class HasOne extends Association {
     }
 
     if (!Array.isArray(instances)) {
-      instance = instances;
+      instanceNoArray = instances;
       instances = undefined;
     }
 
     if (instances) {
       where[association.foreignKey] = {
-        [Op.in]: instances.map(instance => instance.get(association.sourceKey))
+        [Op.in]: (instances as any).map(instance => instance.get(association.sourceKey))
       };
     } else {
-      where[association.foreignKey] = instance.get(association.sourceKey);
+      where[association.foreignKey] = instanceNoArray.get(association.sourceKey);
     }
 
     if (association.scope) {
@@ -170,7 +179,7 @@ export class HasOne extends Association {
     if (instances) {
       return Target.findAll(options).then(results => {
         const result = {};
-        for (const instance of instances) {
+        for (const instance of (instances as any)) {
           result[instance.get(association.sourceKey, {raw: true})] = null;
         }
 
@@ -186,12 +195,10 @@ export class HasOne extends Association {
 
   /**
    * Set the associated model.
-   *
-   * @param {Model|String|Number} [newAssociation] An persisted instance or the primary key of a persisted instance to associate with this. Pass `null` or `undefined` to remove the association.
-   * @param {Object} [options] Options passed to getAssociation and `target.save`
-   * @return {Promise}
+   * @param newAssociation An persisted instance or the primary key of a persisted instance to associate with this. Pass `null` or `undefined` to remove the association.
+   * @param options Options passed to getAssociation and `target.save`
    */
-  set(sourceInstance, associatedInstance, options) {
+  public set(sourceInstance : Model, associatedInstance : Model, options : { transaction? : Transaction }) : Promise<any> {
     const association = this;
 
     let alreadyAssociated;
@@ -203,7 +210,7 @@ export class HasOne extends Association {
     return sourceInstance[association.accessors.get](options).then(oldInstance => {
       // TODO Use equals method once #5605 is resolved
       alreadyAssociated = oldInstance && associatedInstance && _.every(association.target.primaryKeyAttributes, attribute =>
-        oldInstance.get(attribute, {raw: true}) === (associatedInstance.get ? associatedInstance.get(attribute, {raw: true}) : associatedInstance)
+        oldInstance.get(attribute, {raw: true}) === ((associatedInstance as any).get ? (associatedInstance as any).get(attribute, {raw: true}) : associatedInstance)
       );
 
       if (oldInstance && !alreadyAssociated) {
@@ -225,9 +232,9 @@ export class HasOne extends Association {
         }
 
         _.assign(associatedInstance, association.scope);
-        associatedInstance.set(association.foreignKey, sourceInstance.get(association.sourceIdentifier));
+        (associatedInstance as any).set(association.foreignKey, (sourceInstance as any).get(association.sourceIdentifier));
 
-        return associatedInstance.save(options);
+        return (associatedInstance as any).save(options);
       }
 
       return null;
@@ -237,12 +244,17 @@ export class HasOne extends Association {
   /**
    * Create a new instance of the associated model and associate it with this.
    *
-   * @param {Object} [values]
-   * @param {Object} [options] Options passed to `target.create` and setAssociation.
+   * @param options Options passed to `target.create` and setAssociation.
    * @see {@link Model#create} for a full explanation of options
-   * @return {Promise}
    */
-  create(sourceInstance, values, options) {
+  public create(sourceInstance : Model, values, options : {
+    /**
+     * If set, only columns matching those in fields will be saved
+     * An optional array of strings, representing database columns. If fields is provided, only those columns will be validated and saved.
+     */
+    fields? : string[],
+    values? : {}
+  }) : Promise<any> {
     const association = this;
 
     values = values || {};
@@ -257,7 +269,7 @@ export class HasOne extends Association {
       }
     }
 
-    values[association.foreignKey] = sourceInstance.get(association.sourceIdentifier);
+    values[association.foreignKey] = (sourceInstance as any).get(association.sourceIdentifier);
     if (options.fields) {
       options.fields.push(association.foreignKey);
     }

@@ -1,7 +1,7 @@
 'use strict';
 
-import Support from '../../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
 const expectsql = Support.expectsql;
 const current = Support.sequelize;
 const sql  = current.dialect.QueryGenerator;
@@ -13,7 +13,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
     it('with temp table for trigger', () => {
       const User = Support.sequelize.define('user', {
         username: {
-          type: DataTypes.STRING,
+          type: new DataTypes.STRING(),
           field: 'user_name'
         }
       }, {
@@ -44,7 +44,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
 
       const User = timezoneSequelize.define('user', {
         date: {
-          type: DataTypes.DATE
+          type: new DataTypes.DATE()
         }
       }, {
         timestamps: false
@@ -67,7 +67,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
 
       const User = timezoneSequelize.define('user', {
         date: {
-          type: DataTypes.DATE(3)
+          type: new DataTypes.DATE(3)
         }
       }, {
         timestamps: false
@@ -93,19 +93,19 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
 
       const User = Support.sequelize.define('user', {
         username: {
-          type: DataTypes.STRING,
+          type: new DataTypes.STRING(),
           field: 'user_name'
         },
         password: {
-          type: DataTypes.STRING,
+          type: new DataTypes.STRING(),
           field: 'pass_word'
         },
         createdAt: {
-          type: DataTypes.DATE,
+          type: new DataTypes.DATE(),
           field: 'created_at'
         },
         updatedAt: {
-          type: DataTypes.DATE,
+          type: new DataTypes.DATE(),
           field: 'updated_at'
         }
       }, {

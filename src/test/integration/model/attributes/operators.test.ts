@@ -1,11 +1,11 @@
 'use strict';
 
 import * as chai from 'chai';
-import {Sequelize}from '../../../../index';
-const Promise = Sequelize.Promise;
-const expect = chai.expect;
-import Support from '../../support';
+import {Sequelize} from '../../../../index';
 import DataTypes from '../../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
+const Promise = Sequelize.Promise;
 const dialect = Support.getTestDialect();
 
 describe(Support.getTestDialectTeaser('Model'), () => {
@@ -17,14 +17,14 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
           this.User = this.sequelize.define('user', {
             id: {
-              type: DataTypes.INTEGER,
+              type: new DataTypes.INTEGER(),
               allowNull: false,
               primaryKey: true,
               autoIncrement: true,
               field: 'userId'
             },
             name: {
-              type: DataTypes.STRING,
+              type: new DataTypes.STRING(),
               field: 'full_name'
             }
           }, {
@@ -35,15 +35,15 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           return Promise.all([
             queryInterface.createTable('users', {
               userId: {
-                type: DataTypes.INTEGER,
+                type: new DataTypes.INTEGER(),
                 allowNull: false,
                 primaryKey: true,
                 autoIncrement: true
               },
               full_name: {
-                type: DataTypes.STRING
+                type: new DataTypes.STRING()
               }
-            })
+            }),
           ]);
         });
 

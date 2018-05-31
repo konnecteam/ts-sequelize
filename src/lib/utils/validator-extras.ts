@@ -1,78 +1,79 @@
 'use strict';
 
 import * as _ from 'lodash';
-import * as valid from 'validator';
-export const validator = _.cloneDeep(valid);
 import * as moment from 'moment';
+import * as valid from 'validator';
 
-export const extensions = {
-  extend(name, fn) {
+export const validator = _.cloneDeep(valid);
+
+const extensions = {
+  extend(name : string, fn) {
     this[name] = fn;
 
     return this;
   },
-  notEmpty(str) {
+  notEmpty(str : string) {
     return !str.match(/^[\s\t\r\n]*$/);
   },
-  len(str, min, max) {
+  len(str : string, min : number, max : number) {
     return this.isLength(str, min, max);
   },
-  isUrl(str) {
+  isUrl(str : string) {
     return this.isURL(str);
   },
-  isIPv6(str) {
+  isIPv6(str : string) {
     return this.isIP(str, 6);
   },
-  isIPv4(str) {
+  isIPv4(str : string) {
     return this.isIP(str, 4);
   },
-  notIn(str, values) {
+  notIn(str : string, values : any) {
     return !this.isIn(str, values);
   },
-  regex(str, pattern, modifiers) {
+  regex(str : string, pattern, modifiers) {
     str += '';
     if (Object.prototype.toString.call(pattern).slice(8, -1) !== 'RegExp') {
       pattern = new RegExp(pattern, modifiers);
     }
     return str.match(pattern);
   },
-  notRegex(str, pattern, modifiers) {
+  notRegex(str : string, pattern, modifiers) {
     return !this.regex(str, pattern, modifiers);
   },
-  isDecimal(str) {
+  isDecimal(str : string) {
     return str !== '' && !!str.match(/^(?:-?(?:[0-9]+))?(?:\.[0-9]*)?(?:[eE][\+\-]?(?:[0-9]+))?$/);
   },
-  min(str, val) {
+  min(str : string, val : any) {
     const number = parseFloat(str);
     return isNaN(number) || number >= val;
   },
-  max(str, val) {
+  max(str : string, val : any) {
     const number = parseFloat(str);
     return isNaN(number) || number <= val;
   },
-  not(str, pattern, modifiers) {
+  not(str : string, pattern, modifiers) {
     return this.notRegex(str, pattern, modifiers);
   },
-  contains(str, elem) {
+  contains(str : string, elem) {
     return str.indexOf(elem) >= 0 && !!elem;
   },
-  notContains(str, elem) {
+  notContains(str : string, elem) {
     return !this.contains(str, elem);
   },
-  is(str, pattern, modifiers) {
+  is(str : string, pattern, modifiers) {
     return this.regex(str, pattern, modifiers);
   }
 };
 
 
 export function extendModelValidations(modelInstance) {
-  const extensions = {
+  const modelValidationsExtensions = {
     isImmutable(str, param, field) {
       return modelInstance.isNewRecord || modelInstance.dataValues[field] === modelInstance._previousDataValues[field];
     }
   };
 
-  _.forEach(extensions, (extend, key) => {
+  _.forEach(modelValidationsExtensions, (extend, key) => {
     validator[key] = extend;
   });
 }

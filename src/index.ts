@@ -1,8 +1,8 @@
-'use strict';
+// 'use strict';
 
 /**
-  * The entry point.
-  *
-  * @module Sequelize
-  */
-export * from './lib/sequelize';
+ * The entry point.
+ *
+ * @module Sequelize
+ */
+export {Sequelize} from './lib/sequelize';

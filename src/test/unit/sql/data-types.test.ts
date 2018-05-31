@@ -1,10 +1,11 @@
 'use strict';
 
-import Support from '../../support';
-import DataTypes from '../../../lib/data-types';
-import {Sequelize}from '../../../lib/sequelize';
 import * as chai from 'chai';
 import * as uuid from 'uuid';
+import DataTypes from '../../../lib/data-types';
+import { GlobalOptions } from '../../../lib/global-options';
+import {Sequelize} from '../../../lib/sequelize';
+import Support from '../../support';
 const expectsql = Support.expectsql;
 const current   = Support.sequelize;
 const expect = chai.expect;
@@ -14,7 +15,7 @@ describe('Data types', () => {
   describe('String', () => {
 
     it('String standard', () => {
-      const result = current.normalizeDataType(DataTypes.STRING).toSql();
+      const result = current.normalizeDataType(new DataTypes.STRING()).toSql();
 
       expectsql(result, {
         default: 'VARCHAR(255)',
@@ -24,7 +25,7 @@ describe('Data types', () => {
     });
 
     it('String length 1234', () => {
-      const result = current.normalizeDataType(DataTypes.STRING(1234)).toSql();
+      const result = current.normalizeDataType(new DataTypes.STRING(1234)).toSql();
 
       expectsql(result, {
         default: 'VARCHAR(1234)',
@@ -34,7 +35,7 @@ describe('Data types', () => {
     });
 
     it('String { length: 1234 }', () => {
-      const result = current.normalizeDataType(DataTypes.STRING({ length: 1234 })).toSql();
+      const result = current.normalizeDataType(new DataTypes.STRING({ length: 1234 })).toSql();
 
       expectsql(result, {
         default: 'VARCHAR(1234)',
@@ -44,7 +45,7 @@ describe('Data types', () => {
     });
 
     it('String length 1234 bynary', () => {
-      const result = current.normalizeDataType(DataTypes.STRING(1234).BINARY).toSql();
+      const result = current.normalizeDataType(new DataTypes.STRING(1234).BINARY).toSql();
 
       expectsql(result, {
         default: 'VARCHAR(1234) BINARY',
@@ -56,7 +57,7 @@ describe('Data types', () => {
     });
 
     it('String binary', () => {
-      const result = current.normalizeDataType((DataTypes.STRING as any).BINARY).toSql();
+      const result = current.normalizeDataType(new DataTypes.STRING().BINARY).toSql();
 
       expectsql(result, {
         default: 'VARCHAR(255) BINARY',
@@ -69,10 +70,9 @@ describe('Data types', () => {
 
     describe('validate String', () => {
       it('should return `true` if `value` is a string', () => {
-        const type = DataTypes.STRING();
+        const type = new DataTypes.STRING();
 
         expect(type.validate('foobar')).to.equal(true);
-        expect(type.validate(new String('foobar'))).to.equal(true);
         expect(type.validate(12)).to.equal(true);
       });
     });
@@ -83,7 +83,7 @@ describe('Data types', () => {
   describe('Text', () => {
 
     it('Text standard', () => {
-      const result = current.normalizeDataType(DataTypes.TEXT).toSql();
+      const result = current.normalizeDataType(new DataTypes.TEXT()).toSql();
 
       expectsql(result, {
         default: 'TEXT',
@@ -93,7 +93,7 @@ describe('Data types', () => {
     });
 
     it('Text length tiny', () => {
-      const result = current.normalizeDataType(DataTypes.TEXT('tiny')).toSql();
+      const result = current.normalizeDataType(new DataTypes.TEXT('tiny')).toSql();
 
       expectsql(result, {
         default: 'TEXT',
@@ -104,7 +104,7 @@ describe('Data types', () => {
     });
 
     it('Text { length: "tiny" }', () => {
-      const result = current.normalizeDataType(DataTypes.TEXT({ length: 'tiny' })).toSql();
+      const result = current.normalizeDataType(new DataTypes.TEXT({ length: 'tiny' })).toSql();
 
       expectsql(result, {
         default: 'TEXT',
@@ -115,7 +115,7 @@ describe('Data types', () => {
     });
 
     it('Text medium', () => {
-      const result = current.normalizeDataType(DataTypes.TEXT('medium')).toSql();
+      const result = current.normalizeDataType(new DataTypes.TEXT('medium')).toSql();
 
       expectsql(result, {
         default: 'TEXT',
@@ -126,7 +126,7 @@ describe('Data types', () => {
     });
 
     it('Text long', () => {
-      const result = current.normalizeDataType(DataTypes.TEXT('long')).toSql();
+      const result = current.normalizeDataType(new DataTypes.TEXT('long')).toSql();
 
       expectsql(result, {
         default: 'TEXT',
@@ -138,14 +138,14 @@ describe('Data types', () => {
 
     describe('validate Text', () => {
       it('should throw an error if `value` is invalid', () => {
-        const type = DataTypes.TEXT();
+        const type = new DataTypes.TEXT();
 
         expect(() => {
           type.validate(12345);
         }).to.throw(Sequelize.ValidationError, '12345 is not a valid string');
       });
       it('should return `true` if `value` is a string', () => {
-        const type = DataTypes.TEXT();
+        const type = new DataTypes.TEXT();
 
         expect(type.validate('foobar')).to.equal(true);
       });
@@ -156,7 +156,7 @@ describe('Data types', () => {
   describe('Char', () => {
 
     it('Char standard', () => {
-      const result = current.normalizeDataType(DataTypes.CHAR).toSql();
+      const result = current.normalizeDataType(new DataTypes.CHAR()).toSql();
 
       expectsql(result, {
         default: 'CHAR(255)'
@@ -164,7 +164,7 @@ describe('Data types', () => {
     });
 
     it('Char length 12', () => {
-      const result = current.normalizeDataType(DataTypes.CHAR(12)).toSql();
+      const result = current.normalizeDataType(new DataTypes.CHAR(12)).toSql();
 
       expectsql(result, {
         default: 'CHAR(12)'
@@ -172,7 +172,7 @@ describe('Data types', () => {
     });
 
     it('Char { length: 12 }', () => {
-      const result = current.normalizeDataType(DataTypes.CHAR({ length: 12 })).toSql();
+      const result = current.normalizeDataType(new DataTypes.CHAR({ length: 12 })).toSql();
 
       expectsql(result, {
         default: 'CHAR(12)'
@@ -180,7 +180,7 @@ describe('Data types', () => {
     });
 
     it('String length 12 bynary', () => {
-      const result = current.normalizeDataType(DataTypes.CHAR(12).BINARY).toSql();
+      const result = current.normalizeDataType(new DataTypes.CHAR(12).BINARY).toSql();
 
       expectsql(result, {
         default: 'CHAR(12) BINARY',
@@ -191,7 +191,7 @@ describe('Data types', () => {
     });
 
     it('Char binary', () => {
-      const result = current.normalizeDataType((DataTypes.CHAR as any).BINARY).toSql();
+      const result = current.normalizeDataType(new DataTypes.CHAR().BINARY).toSql();
 
       expectsql(result, {
         default: 'CHAR(255) BINARY',
@@ -206,7 +206,7 @@ describe('Data types', () => {
   describe('Boolean', () => {
 
     it('Boolean', () => {
-      const result = current.normalizeDataType(DataTypes.BOOLEAN).toSql();
+      const result = current.normalizeDataType(new DataTypes.BOOLEAN()).toSql();
 
       expectsql(result, {
         postgres: 'BOOLEAN',
@@ -219,14 +219,14 @@ describe('Data types', () => {
 
     describe('validate Boolean', () => {
       it('should throw an error if `value` is invalid', () => {
-        const type = DataTypes.BOOLEAN();
+        const type = new DataTypes.BOOLEAN();
 
         expect(() => {
           type.validate(12345);
         }).to.throw(Sequelize.ValidationError, '12345 is not a valid boolean');
       });
       it('should return `true` if `value` is a boolean', () => {
-        const type = DataTypes.BOOLEAN();
+        const type = new DataTypes.BOOLEAN();
 
         expect(type.validate(true)).to.equal(true);
         expect(type.validate(false)).to.equal(true);
@@ -243,7 +243,7 @@ describe('Data types', () => {
   describe('Date', () => {
 
     it('Date standart', () => {
-      const result = current.normalizeDataType(DataTypes.DATE).toSql();
+      const result = current.normalizeDataType(new DataTypes.DATE()).toSql();
 
       expectsql(result, {
         postgres: 'TIMESTAMP WITH TIME ZONE',
@@ -255,7 +255,7 @@ describe('Data types', () => {
     });
 
     it('Date(6)', () => {
-      const result = current.normalizeDataType(DataTypes.DATE(6)).toSql();
+      const result = current.normalizeDataType(new DataTypes.DATE(6)).toSql();
 
       expectsql(result, {
         postgres: 'TIMESTAMP WITH TIME ZONE',
@@ -266,9 +266,34 @@ describe('Data types', () => {
       });
     });
 
+    if (current.dialect.name === 'oracle' || current.dialect.name === 'mssql') {
+
+      it('Date standart without timezone', () => {
+        GlobalOptions.Instance.dialectOptions[current.dialect.name] = {
+          noTimezone: true
+        };
+        const result = current.normalizeDataType(new DataTypes.DATE()).toSql();
+
+        expectsql(result, {
+          mssql: 'DATETIME2',
+          oracle: 'TIMESTAMP'
+        });
+      });
+
+      it('Date(6) without timezon', () => {
+        const result = current.normalizeDataType(new DataTypes.DATE(6)).toSql();
+
+        expectsql(result, {
+          mssql: 'DATETIME2',
+          oracle: 'TIMESTAMP'
+        });
+        GlobalOptions.Instance.dialectOptions = {};
+      });
+    }
+
     describe('validate Date', () => {
       it('should throw an error if `value` is invalid', () => {
-        const type = DataTypes.DATE();
+        const type = new DataTypes.DATE();
 
         expect(() => {
           type.validate('foobar');
@@ -276,7 +301,7 @@ describe('Data types', () => {
       });
 
       it('should return `true` if `value` is a date', () => {
-        const type = DataTypes.DATE();
+        const type = new DataTypes.DATE();
 
         expect(type.validate(new Date())).to.equal(true);
       });
@@ -286,10 +311,10 @@ describe('Data types', () => {
 
   if (current.dialect.supports.HSTORE) {
     describe('Hstore', () => {
-    
+
       describe('validate Hstore', () => {
         it('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.HSTORE();
+          const type = new DataTypes.HSTORE();
 
           expect(() => {
             type.validate('foobar');
@@ -297,19 +322,19 @@ describe('Data types', () => {
         });
 
         it('should return `true` if `value` is an hstore', () => {
-          const type = DataTypes.HSTORE();
+          const type = new DataTypes.HSTORE();
 
           expect(type.validate({ foo: 'bar' })).to.equal(true);
         });
       });
-    
+
     });
   }
 
   describe('Uuid', () => {
-    
+
     it('Uuid', () => {
-      const result = current.normalizeDataType(DataTypes.UUID).toSql();
+      const result = current.normalizeDataType(new DataTypes.UUID()).toSql();
 
       expectsql(result, {
         postgres: 'UUID',
@@ -322,7 +347,7 @@ describe('Data types', () => {
 
     describe('validate Uuid', () => {
       it('should throw an error if `value` is invalid', () => {
-        const type = DataTypes.UUID();
+        const type = new DataTypes.UUID();
 
         expect(() => {
           type.validate('foobar');
@@ -334,13 +359,13 @@ describe('Data types', () => {
       });
 
       it('should return `true` if `value` is an uuid', () => {
-        const type = DataTypes.UUID();
+        const type = new DataTypes.UUID();
 
         expect(type.validate(uuid.v4())).to.equal(true);
       });
 
       it('should return `true` if `value` is a string and we accept strings', () => {
-        const type = DataTypes.UUID();
+        const type = new DataTypes.UUID();
 
         expect(type.validate('foobar', { acceptStrings: true })).to.equal(true);
       });
@@ -349,9 +374,9 @@ describe('Data types', () => {
   });
 
   describe('Uuidv1', () => {
-    
+
     it('Uuidv1', () => {
-      const result = current.normalizeDataType(DataTypes.UUIDV1).toSql();
+      const result = current.normalizeDataType(new DataTypes.UUIDV1()).toSql();
 
       expectsql(result, {
         default: 'UUIDV1'
@@ -360,7 +385,7 @@ describe('Data types', () => {
 
     describe('validate Uuidv1', () => {
       it('should throw an error if `value` is invalid', () => {
-        const type = DataTypes.UUIDV1();
+        const type = new DataTypes.UUIDV1();
 
         expect(() => {
           type.validate('foobar');
@@ -372,13 +397,13 @@ describe('Data types', () => {
       });
 
       it('should return `true` if `value` is an uuid', () => {
-        const type = DataTypes.UUIDV1();
+        const type = new DataTypes.UUIDV1();
 
         expect(type.validate(uuid.v1())).to.equal(true);
       });
 
       it('should return `true` if `value` is a string and we accept strings', () => {
-        const type = DataTypes.UUIDV1();
+        const type = new DataTypes.UUIDV1();
 
         expect(type.validate('foobar', { acceptStrings: true })).to.equal(true);
       });
@@ -387,9 +412,9 @@ describe('Data types', () => {
   });
 
   describe('Uuidv4', () => {
-    
+
     it('Uuidv4', () => {
-      const result = current.normalizeDataType(DataTypes.UUIDV4).toSql();
+      const result = current.normalizeDataType(new DataTypes.UUIDV4()).toSql();
 
       expectsql(result, {
         default: 'UUIDV4'
@@ -398,7 +423,7 @@ describe('Data types', () => {
 
     describe('validate Uuidv4', () => {
       it('should throw an error if `value` is invalid', () => {
-        const type = DataTypes.UUIDV4();
+        const type = new DataTypes.UUIDV4();
         const value = uuid.v1();
 
         expect(() => {
@@ -411,13 +436,13 @@ describe('Data types', () => {
       });
 
       it('should return `true` if `value` is an uuid', () => {
-        const type = DataTypes.UUIDV4();
+        const type = new DataTypes.UUIDV4();
 
         expect(type.validate(uuid.v4())).to.equal(true);
       });
 
       it('should return `true` if `value` is a string and we accept strings', () => {
-        const type = DataTypes.UUIDV4();
+        const type = new DataTypes.UUIDV4();
 
         expect(type.validate('foobar', { acceptStrings: true })).to.equal(true);
       });
@@ -426,9 +451,9 @@ describe('Data types', () => {
   });
 
   describe('Now', () => {
-    
+
     it('Now', () => {
-      const result = current.normalizeDataType(DataTypes.NOW).toSql();
+      const result = current.normalizeDataType(new DataTypes.NOW()).toSql();
 
       expectsql(result, {
         default: 'NOW',
@@ -437,13 +462,13 @@ describe('Data types', () => {
         mssql: 'GETDATE()'
       });
     });
-    
+
   });
 
   describe('Integer', () => {
 
     it('Integer standard', () => {
-      const result = current.normalizeDataType(DataTypes.INTEGER).toSql();
+      const result = current.normalizeDataType(new DataTypes.INTEGER()).toSql();
 
       expectsql(result, {
         default: 'INTEGER'
@@ -451,7 +476,7 @@ describe('Data types', () => {
     });
 
     it('Integer unsigned', () => {
-      const result = current.normalizeDataType((DataTypes.INTEGER as any).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.INTEGER().UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'INTEGER UNSIGNED',
@@ -462,7 +487,7 @@ describe('Data types', () => {
     });
 
     it('Integer unsigned zerofill', () => {
-      const result = current.normalizeDataType((DataTypes.INTEGER as any).UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.INTEGER().UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'INTEGER UNSIGNED ZEROFILL',
@@ -473,7 +498,7 @@ describe('Data types', () => {
     });
 
     it('Integer length 11', () => {
-      const result = current.normalizeDataType(DataTypes.INTEGER(11)).toSql();
+      const result = current.normalizeDataType(new DataTypes.INTEGER(11)).toSql();
 
       expectsql(result, {
         default: 'INTEGER(11)',
@@ -484,7 +509,7 @@ describe('Data types', () => {
     });
 
     it('Integer { length: 11 }', () => {
-      const result = current.normalizeDataType(DataTypes.INTEGER({ length: 11 })).toSql();
+      const result = current.normalizeDataType(new DataTypes.INTEGER({ length: 11 })).toSql();
 
       expectsql(result, {
         default: 'INTEGER(11)',
@@ -495,7 +520,7 @@ describe('Data types', () => {
     });
 
     it('Integer length 11 unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.INTEGER(11).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.INTEGER(11).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'INTEGER(11) UNSIGNED',
@@ -507,7 +532,7 @@ describe('Data types', () => {
     });
 
     it('Integer length 11 unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.INTEGER(11).UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.INTEGER(11).UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'INTEGER(11) UNSIGNED ZEROFILL',
@@ -519,7 +544,7 @@ describe('Data types', () => {
     });
 
     it('Integer length 11 zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.INTEGER(11).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.INTEGER(11).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'INTEGER(11) ZEROFILL',
@@ -531,7 +556,7 @@ describe('Data types', () => {
     });
 
     it('Integer length 11 zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.INTEGER(11).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.INTEGER(11).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'INTEGER(11) UNSIGNED ZEROFILL',
@@ -544,7 +569,7 @@ describe('Data types', () => {
 
     describe('validate Integer', () => {
       it('should throw an error if `value` is invalid', () => {
-        const type = DataTypes.INTEGER();
+        const type = new DataTypes.INTEGER();
 
         expect(() => {
           type.validate('foobar');
@@ -560,7 +585,7 @@ describe('Data types', () => {
       });
 
       it('should return `true` if `value` is a valid integer', () => {
-        const type = DataTypes.INTEGER();
+        const type = new DataTypes.INTEGER();
 
         expect(type.validate('12345')).to.equal(true);
         expect(type.validate(12345)).to.equal(true);
@@ -571,7 +596,7 @@ describe('Data types', () => {
   describe('Tinyint', () => {
 
     it('Tinyint standard', () => {
-      const result = current.normalizeDataType(DataTypes.TINYINT).toSql();
+      const result = current.normalizeDataType(new DataTypes.TINYINT()).toSql();
 
       expectsql(result, {
         default: 'TINYINT'
@@ -579,7 +604,7 @@ describe('Data types', () => {
     });
 
     it('Tinyint length 2', () => {
-      const result = current.normalizeDataType(DataTypes.TINYINT(2)).toSql();
+      const result = current.normalizeDataType(new DataTypes.TINYINT(2)).toSql();
 
       expectsql(result, {
         default: 'TINYINT(2)',
@@ -588,7 +613,7 @@ describe('Data types', () => {
     });
 
     it('Tinyint { length: 2 }', () => {
-      const result = current.normalizeDataType(DataTypes.TINYINT({ length: 2 })).toSql();
+      const result = current.normalizeDataType(new DataTypes.TINYINT({ length: 2 })).toSql();
 
       expectsql(result, {
         default: 'TINYINT(2)',
@@ -597,7 +622,7 @@ describe('Data types', () => {
     });
 
     it('Tinyint unsigned', () => {
-      const result = current.normalizeDataType((DataTypes.TINYINT as any).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.TINYINT().UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'TINYINT UNSIGNED',
@@ -606,7 +631,7 @@ describe('Data types', () => {
     });
 
     it('Tinyint length 2 unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.TINYINT(2).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.TINYINT(2).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'TINYINT(2) UNSIGNED',
@@ -616,7 +641,7 @@ describe('Data types', () => {
     });
 
     it('Tinyint unsigned zerofill', () => {
-      const result = current.normalizeDataType((DataTypes.TINYINT as any).UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.TINYINT().UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'TINYINT UNSIGNED ZEROFILL',
@@ -625,7 +650,7 @@ describe('Data types', () => {
     });
 
     it('Tinyint length 2 unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.TINYINT(2).UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.TINYINT(2).UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'TINYINT(2) UNSIGNED ZEROFILL',
@@ -635,7 +660,7 @@ describe('Data types', () => {
     });
 
     it('Tinyint zerofill', () => {
-      const result = current.normalizeDataType((DataTypes.TINYINT as any).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.TINYINT().ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'TINYINT ZEROFILL',
@@ -644,7 +669,7 @@ describe('Data types', () => {
     });
 
     it('Tinyint length 2 zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.TINYINT(2).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.TINYINT(2).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'TINYINT(2) ZEROFILL',
@@ -654,7 +679,7 @@ describe('Data types', () => {
     });
 
     it('Tinyint zerofill unsigned', () => {
-      const result = current.normalizeDataType((DataTypes.TINYINT as any).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.TINYINT().ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'TINYINT UNSIGNED ZEROFILL',
@@ -663,7 +688,7 @@ describe('Data types', () => {
     });
 
     it('Tinyint length 2 zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.TINYINT(2).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.TINYINT(2).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'TINYINT(2) UNSIGNED ZEROFILL',
@@ -674,7 +699,7 @@ describe('Data types', () => {
 
     describe('validate Tinyint', () => {
       it('should throw an error if `value` is invalid', () => {
-        const type = DataTypes.TINYINT();
+        const type = new DataTypes.TINYINT();
 
         expect(() => {
           type.validate('foobar');
@@ -686,7 +711,7 @@ describe('Data types', () => {
       });
 
       it('should return `true` if `value` is an integer', () => {
-        const type = DataTypes.TINYINT();
+        const type = new DataTypes.TINYINT();
 
         expect(type.validate(-128)).to.equal(true);
         expect(type.validate('127')).to.equal(true);
@@ -697,7 +722,7 @@ describe('Data types', () => {
   describe('Smallint', () => {
 
     it('Smallint standard', () => {
-      const result = current.normalizeDataType(DataTypes.SMALLINT).toSql();
+      const result = current.normalizeDataType(new DataTypes.SMALLINT()).toSql();
 
       expectsql(result, {
         default: 'SMALLINT'
@@ -705,7 +730,7 @@ describe('Data types', () => {
     });
 
     it('Smallint length 4', () => {
-      const result = current.normalizeDataType(DataTypes.SMALLINT(4)).toSql();
+      const result = current.normalizeDataType(new DataTypes.SMALLINT(4)).toSql();
 
       expectsql(result, {
         default: 'SMALLINT(4)',
@@ -715,7 +740,7 @@ describe('Data types', () => {
     });
 
     it('Smallint { length: 4 }', () => {
-      const result = current.normalizeDataType(DataTypes.SMALLINT({ length: 4 })).toSql();
+      const result = current.normalizeDataType(new DataTypes.SMALLINT({ length: 4 })).toSql();
 
       expectsql(result, {
         default: 'SMALLINT(4)',
@@ -725,7 +750,7 @@ describe('Data types', () => {
     });
 
     it('Smallint unsigned', () => {
-      const result = current.normalizeDataType((DataTypes.SMALLINT as any).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.SMALLINT().UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'SMALLINT UNSIGNED',
@@ -735,7 +760,7 @@ describe('Data types', () => {
     });
 
     it('Smallint length 4 unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.SMALLINT(4).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.SMALLINT(4).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'SMALLINT(4) UNSIGNED',
@@ -746,7 +771,7 @@ describe('Data types', () => {
     });
 
     it('Smallint unsigned zerofill', () => {
-      const result = current.normalizeDataType((DataTypes.SMALLINT as any).UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.SMALLINT().UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'SMALLINT UNSIGNED ZEROFILL',
@@ -756,7 +781,7 @@ describe('Data types', () => {
     });
 
     it('Smallint length 4 unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.SMALLINT(4).UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.SMALLINT(4).UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'SMALLINT(4) UNSIGNED ZEROFILL',
@@ -767,7 +792,7 @@ describe('Data types', () => {
     });
 
     it('Smallint zerofill', () => {
-      const result = current.normalizeDataType((DataTypes.SMALLINT as any).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.SMALLINT().ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'SMALLINT ZEROFILL',
@@ -777,7 +802,7 @@ describe('Data types', () => {
     });
 
     it('Smallint length 4 zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.SMALLINT(4).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.SMALLINT(4).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'SMALLINT(4) ZEROFILL',
@@ -788,7 +813,7 @@ describe('Data types', () => {
     });
 
     it('Smallint zerofill unsigned', () => {
-      const result = current.normalizeDataType((DataTypes.SMALLINT as any).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.SMALLINT().ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'SMALLINT UNSIGNED ZEROFILL',
@@ -798,7 +823,7 @@ describe('Data types', () => {
     });
 
     it('Smallint length 4 zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.SMALLINT(4).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.SMALLINT(4).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'SMALLINT(4) UNSIGNED ZEROFILL',
@@ -810,7 +835,7 @@ describe('Data types', () => {
 
     describe('validate Smallint', () => {
       it('should throw an error if `value` is invalid', () => {
-        const type = DataTypes.SMALLINT();
+        const type = new DataTypes.SMALLINT();
 
         expect(() => {
           type.validate('foobar');
@@ -822,7 +847,7 @@ describe('Data types', () => {
       });
 
       it('should return `true` if `value` is an integer', () => {
-        const type = DataTypes.SMALLINT();
+        const type = new DataTypes.SMALLINT();
 
         expect(type.validate(-32768)).to.equal(true);
         expect(type.validate('32767')).to.equal(true);
@@ -833,7 +858,7 @@ describe('Data types', () => {
   describe('MediumInt', () => {
 
     it('MediumInt standard', () => {
-      const result = current.normalizeDataType(DataTypes.MEDIUMINT).toSql();
+      const result = current.normalizeDataType(new DataTypes.MEDIUMINT()).toSql();
 
       expectsql(result, {
         default: 'MEDIUMINT'
@@ -841,7 +866,7 @@ describe('Data types', () => {
     });
 
     it('MediumInt length 6', () => {
-      const result = current.normalizeDataType(DataTypes.MEDIUMINT(6)).toSql();
+      const result = current.normalizeDataType(new DataTypes.MEDIUMINT(6)).toSql();
 
       expectsql(result, {
         default: 'MEDIUMINT(6)'
@@ -849,7 +874,7 @@ describe('Data types', () => {
     });
 
     it('MediumInt { length: 6 }', () => {
-      const result = current.normalizeDataType(DataTypes.MEDIUMINT({ length: 6 })).toSql();
+      const result = current.normalizeDataType(new DataTypes.MEDIUMINT({ length: 6 })).toSql();
 
       expectsql(result, {
         default: 'MEDIUMINT(6)'
@@ -857,7 +882,7 @@ describe('Data types', () => {
     });
 
     it('MediumInt unsigned', () => {
-      const result = current.normalizeDataType((DataTypes.MEDIUMINT as any).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.MEDIUMINT().UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'MEDIUMINT UNSIGNED'
@@ -865,7 +890,7 @@ describe('Data types', () => {
     });
 
     it('MediumInt length 6 unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.MEDIUMINT(6).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.MEDIUMINT(6).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'MEDIUMINT(6) UNSIGNED',
@@ -874,7 +899,7 @@ describe('Data types', () => {
     });
 
     it('MediumInt unsigned zerofill', () => {
-      const result = current.normalizeDataType((DataTypes.MEDIUMINT as any).UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.MEDIUMINT().UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'MEDIUMINT UNSIGNED ZEROFILL'
@@ -882,7 +907,7 @@ describe('Data types', () => {
     });
 
     it('MediumInt length 6 unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.MEDIUMINT(6).UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.MEDIUMINT(6).UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'MEDIUMINT(6) UNSIGNED ZEROFILL',
@@ -891,7 +916,7 @@ describe('Data types', () => {
     });
 
     it('MediumInt zerofill', () => {
-      const result = current.normalizeDataType((DataTypes.MEDIUMINT as any).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.MEDIUMINT().ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'MEDIUMINT ZEROFILL'
@@ -899,7 +924,7 @@ describe('Data types', () => {
     });
 
     it('MediumInt length 6 zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.MEDIUMINT(6).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.MEDIUMINT(6).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'MEDIUMINT(6) ZEROFILL',
@@ -908,7 +933,7 @@ describe('Data types', () => {
     });
 
     it('MediumInt length zerofill unsigned', () => {
-      const result = current.normalizeDataType((DataTypes.MEDIUMINT as any).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.MEDIUMINT().ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'MEDIUMINT UNSIGNED ZEROFILL'
@@ -916,7 +941,7 @@ describe('Data types', () => {
     });
 
     it('MediumInt length 6 zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.MEDIUMINT(6).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.MEDIUMINT(6).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'MEDIUMINT(6) UNSIGNED ZEROFILL',
@@ -926,7 +951,7 @@ describe('Data types', () => {
 
     describe('validate MediumInt', () => {
       it('should throw an error if `value` is invalid', () => {
-        const type = DataTypes.MEDIUMINT();
+        const type = new DataTypes.MEDIUMINT();
 
         expect(() => {
           type.validate('foobar');
@@ -938,7 +963,7 @@ describe('Data types', () => {
       });
 
       it('should return `true` if `value` is an integer', () => {
-        const type = DataTypes.MEDIUMINT();
+        const type = new DataTypes.MEDIUMINT();
 
         expect(type.validate(-8388608)).to.equal(true);
         expect(type.validate('8388607')).to.equal(true);
@@ -949,7 +974,7 @@ describe('Data types', () => {
   describe('BigInt', () => {
 
     it('BigInt standard', () => {
-      const result = current.normalizeDataType(DataTypes.BIGINT).toSql();
+      const result = current.normalizeDataType(new DataTypes.BIGINT()).toSql();
 
       expectsql(result, {
         default: 'BIGINT',
@@ -958,7 +983,7 @@ describe('Data types', () => {
     });
 
     it('BigInt length 11', () => {
-      const result = current.normalizeDataType(DataTypes.BIGINT(11)).toSql();
+      const result = current.normalizeDataType(new DataTypes.BIGINT(11)).toSql();
 
       expectsql(result, {
         default: 'BIGINT(11)',
@@ -969,7 +994,7 @@ describe('Data types', () => {
     });
 
     it('BigInt { length: 11 }', () => {
-      const result = current.normalizeDataType(DataTypes.BIGINT({ length: 11 })).toSql();
+      const result = current.normalizeDataType(new DataTypes.BIGINT({ length: 11 })).toSql();
 
       expectsql(result, {
         default: 'BIGINT(11)',
@@ -980,7 +1005,7 @@ describe('Data types', () => {
     });
 
     it('BigInt unsigned', () => {
-      const result = current.normalizeDataType((DataTypes.BIGINT as any).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.BIGINT().UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'BIGINT UNSIGNED',
@@ -991,7 +1016,7 @@ describe('Data types', () => {
     });
 
     it('BigInt length 11 unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.BIGINT(11).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.BIGINT(11).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'BIGINT(11) UNSIGNED',
@@ -1003,7 +1028,7 @@ describe('Data types', () => {
     });
 
     it('BigInt unsigned zerofill', () => {
-      const result = current.normalizeDataType((DataTypes.BIGINT as any).UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.BIGINT().UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'BIGINT UNSIGNED ZEROFILL',
@@ -1014,7 +1039,7 @@ describe('Data types', () => {
     });
 
     it('BigInt length 11 unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.BIGINT(11).UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.BIGINT(11).UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'BIGINT(11) UNSIGNED ZEROFILL',
@@ -1026,7 +1051,7 @@ describe('Data types', () => {
     });
 
     it('BigInt zerofill', () => {
-      const result = current.normalizeDataType((DataTypes.BIGINT as any).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.BIGINT().ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'BIGINT ZEROFILL',
@@ -1038,7 +1063,7 @@ describe('Data types', () => {
     });
 
     it('BigInt length 11 zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.BIGINT(11).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.BIGINT(11).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'BIGINT(11) ZEROFILL',
@@ -1050,7 +1075,7 @@ describe('Data types', () => {
     });
 
     it('BigInt zerofill unsigned', () => {
-      const result = current.normalizeDataType((DataTypes.BIGINT as any).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.BIGINT().ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'BIGINT UNSIGNED ZEROFILL',
@@ -1061,7 +1086,7 @@ describe('Data types', () => {
     });
 
     it('BigInt length 11 zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.BIGINT(11).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.BIGINT(11).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'BIGINT(11) UNSIGNED ZEROFILL',
@@ -1074,7 +1099,7 @@ describe('Data types', () => {
 
     describe('validate BigInt', () => {
       it('should throw an error if `value` is invalid', () => {
-        const type = DataTypes.BIGINT();
+        const type = new DataTypes.BIGINT();
 
         expect(() => {
           type.validate('foobar');
@@ -1086,7 +1111,7 @@ describe('Data types', () => {
       });
 
       it('should return `true` if `value` is an integer', () => {
-        const type = DataTypes.BIGINT();
+        const type = new DataTypes.BIGINT();
 
         expect(type.validate('9223372036854775807')).to.equal(true);
       });
@@ -1096,7 +1121,7 @@ describe('Data types', () => {
   describe('Real', () => {
 
     it('Real standard', () => {
-      const result = current.normalizeDataType(DataTypes.REAL).toSql();
+      const result = current.normalizeDataType(new DataTypes.REAL()).toSql();
 
       expectsql(result, {
         default: 'REAL'
@@ -1104,7 +1129,7 @@ describe('Data types', () => {
     });
 
     it('Real length 11', () => {
-      const result = current.normalizeDataType(DataTypes.REAL(11)).toSql();
+      const result = current.normalizeDataType(new DataTypes.REAL(11)).toSql();
 
       expectsql(result, {
         default: 'REAL(11)',
@@ -1115,7 +1140,7 @@ describe('Data types', () => {
     });
 
     it('Real { length: 11 }', () => {
-      const result = current.normalizeDataType(DataTypes.REAL({ length: 11 })).toSql();
+      const result = current.normalizeDataType(new DataTypes.REAL({ length: 11 })).toSql();
 
       expectsql(result, {
         default: 'REAL(11)',
@@ -1126,7 +1151,7 @@ describe('Data types', () => {
     });
 
     it('Real unsigned', () => {
-      const result = current.normalizeDataType((DataTypes.REAL as any).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.REAL().UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'REAL UNSIGNED',
@@ -1137,7 +1162,7 @@ describe('Data types', () => {
     });
 
     it('Real length 11 unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.REAL(11).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.REAL(11).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'REAL(11) UNSIGNED',
@@ -1149,7 +1174,7 @@ describe('Data types', () => {
     });
 
     it('Real unsigned zerofill', () => {
-      const result = current.normalizeDataType((DataTypes.REAL as any).UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.REAL().UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'REAL UNSIGNED ZEROFILL',
@@ -1161,7 +1186,7 @@ describe('Data types', () => {
     });
 
     it('Real length 11 unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.REAL(11).UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.REAL(11).UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'REAL(11) UNSIGNED ZEROFILL',
@@ -1173,7 +1198,7 @@ describe('Data types', () => {
     });
 
     it('Real zerofill', () => {
-      const result = current.normalizeDataType((DataTypes.REAL as any).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.REAL().ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'REAL ZEROFILL',
@@ -1185,7 +1210,7 @@ describe('Data types', () => {
     });
 
     it('Real length 11 zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.REAL(11).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.REAL(11).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'REAL(11) ZEROFILL',
@@ -1197,7 +1222,7 @@ describe('Data types', () => {
     });
 
     it('Real zerofill unsigned', () => {
-      const result = current.normalizeDataType((DataTypes.REAL as any).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.REAL().ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'REAL UNSIGNED ZEROFILL',
@@ -1209,7 +1234,7 @@ describe('Data types', () => {
     });
 
     it('Real length 11 zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.REAL(11).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.REAL(11).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'REAL(11) UNSIGNED ZEROFILL',
@@ -1221,7 +1246,7 @@ describe('Data types', () => {
     });
 
     it('Real length 11 decimals 12 ', () => {
-      const result = current.normalizeDataType(DataTypes.REAL(11, 12)).toSql();
+      const result = current.normalizeDataType(new DataTypes.REAL(11, 12)).toSql();
 
       expectsql(result, {
         default: 'REAL(11,12)',
@@ -1233,7 +1258,7 @@ describe('Data types', () => {
     });
 
     it('Real length 11 decimals 12 unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.REAL(11, 12).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.REAL(11, 12).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'REAL(11,12) UNSIGNED',
@@ -1245,7 +1270,7 @@ describe('Data types', () => {
     });
 
     it('Real { length: 11, decimals: 12 } unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.REAL(11, 12).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.REAL({ length: 11, decimals: 12 }).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'REAL(11,12) UNSIGNED',
@@ -1257,7 +1282,7 @@ describe('Data types', () => {
     });
 
     it('Real length 11 decimals 12 unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.REAL(11, 12).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.REAL(11, 12).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'REAL(11,12) UNSIGNED ZEROFILL',
@@ -1269,7 +1294,7 @@ describe('Data types', () => {
     });
 
     it('Real length 11 decimals 12 zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.REAL(11, 12).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.REAL(11, 12).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'REAL(11,12) ZEROFILL',
@@ -1281,7 +1306,7 @@ describe('Data types', () => {
     });
 
     it('Real length 11 decimals 12 zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.REAL(11, 12).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.REAL(11, 12).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'REAL(11,12) UNSIGNED ZEROFILL',
@@ -1296,7 +1321,7 @@ describe('Data types', () => {
   describe('Double', () => {
 
     it('Double standard', () => {
-      const result = current.normalizeDataType(DataTypes.DOUBLE).toSql();
+      const result = current.normalizeDataType(new DataTypes.DOUBLE()).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION',
@@ -1305,7 +1330,7 @@ describe('Data types', () => {
     });
 
     it('Double length 11', () => {
-      const result = current.normalizeDataType(DataTypes.DOUBLE(11)).toSql();
+      const result = current.normalizeDataType(new DataTypes.DOUBLE(11)).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION(11)',
@@ -1315,7 +1340,7 @@ describe('Data types', () => {
     });
 
     it('Double { length: 11 }', () => {
-      const result = current.normalizeDataType(DataTypes.DOUBLE({ length: 11 })).toSql();
+      const result = current.normalizeDataType(new DataTypes.DOUBLE({ length: 11 })).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION(11)',
@@ -1325,7 +1350,7 @@ describe('Data types', () => {
     });
 
     it('Double unsigned', () => {
-      const result = current.normalizeDataType((DataTypes.DOUBLE as any).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.DOUBLE().UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION UNSIGNED',
@@ -1335,7 +1360,7 @@ describe('Data types', () => {
     });
 
     it('Double length 11 unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.DOUBLE(11).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.DOUBLE(11).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION(11) UNSIGNED',
@@ -1346,7 +1371,7 @@ describe('Data types', () => {
     });
 
     it('Double unsigned zerofill', () => {
-      const result = current.normalizeDataType((DataTypes.DOUBLE as any).UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.DOUBLE().UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION UNSIGNED ZEROFILL',
@@ -1357,7 +1382,7 @@ describe('Data types', () => {
     });
 
     it('Double length 11 unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.DOUBLE(11).UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.DOUBLE(11).UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION(11) UNSIGNED ZEROFILL',
@@ -1368,7 +1393,7 @@ describe('Data types', () => {
     });
 
     it('Double zerofill', () => {
-      const result = current.normalizeDataType((DataTypes.DOUBLE as any).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.DOUBLE().ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION ZEROFILL',
@@ -1379,7 +1404,7 @@ describe('Data types', () => {
     });
 
     it('Double length 11 zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.DOUBLE(11).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.DOUBLE(11).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION(11) ZEROFILL',
@@ -1390,7 +1415,7 @@ describe('Data types', () => {
     });
 
     it('Double zerofill unsigned', () => {
-      const result = current.normalizeDataType((DataTypes.DOUBLE as any).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.DOUBLE().ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION UNSIGNED ZEROFILL',
@@ -1401,7 +1426,7 @@ describe('Data types', () => {
     });
 
     it('Double length 11 zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.DOUBLE(11).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.DOUBLE(11).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION(11) UNSIGNED ZEROFILL',
@@ -1412,7 +1437,7 @@ describe('Data types', () => {
     });
 
     it('Double length 11 decimals 12 ', () => {
-      const result = current.normalizeDataType(DataTypes.DOUBLE(11, 12)).toSql();
+      const result = current.normalizeDataType(new DataTypes.DOUBLE(11, 12)).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION(11,12)',
@@ -1422,7 +1447,7 @@ describe('Data types', () => {
     });
 
     it('Double length 11 decimals 12 unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.DOUBLE(11, 12).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.DOUBLE(11, 12).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION(11,12) UNSIGNED',
@@ -1433,7 +1458,7 @@ describe('Data types', () => {
     });
 
     it('Double { length: 11, decimals: 12 } unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.DOUBLE(11, 12).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.DOUBLE({ length: 11, decimals: 12 }).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION(11,12) UNSIGNED',
@@ -1444,7 +1469,7 @@ describe('Data types', () => {
     });
 
     it('Double length 11 decimals 12 unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.DOUBLE(11, 12).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.DOUBLE(11, 12).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION(11,12) UNSIGNED ZEROFILL',
@@ -1455,7 +1480,7 @@ describe('Data types', () => {
     });
 
     it('Double length 11 decimals 12 zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.DOUBLE(11, 12).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.DOUBLE(11, 12).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION(11,12) ZEROFILL',
@@ -1466,7 +1491,7 @@ describe('Data types', () => {
     });
 
     it('Double length 11 decimals 12 zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.DOUBLE(11, 12).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.DOUBLE(11, 12).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'DOUBLE PRECISION(11,12) UNSIGNED ZEROFILL',
@@ -1480,7 +1505,7 @@ describe('Data types', () => {
   describe('Float', () => {
 
     it('Float standard', () => {
-      const result = current.normalizeDataType(DataTypes.FLOAT).toSql();
+      const result = current.normalizeDataType(new DataTypes.FLOAT()).toSql();
 
       expectsql(result, {
         default: 'FLOAT',
@@ -1489,7 +1514,7 @@ describe('Data types', () => {
     });
 
     it('Float length 11', () => {
-      const result = current.normalizeDataType(DataTypes.FLOAT(11)).toSql();
+      const result = current.normalizeDataType(new DataTypes.FLOAT(11)).toSql();
 
       expectsql(result, {
         default: 'FLOAT(11)',
@@ -1500,7 +1525,7 @@ describe('Data types', () => {
     });
 
     it('Float { length: 11 }', () => {
-      const result = current.normalizeDataType(DataTypes.FLOAT({ length: 11 })).toSql();
+      const result = current.normalizeDataType(new DataTypes.FLOAT({ length: 11 })).toSql();
 
       expectsql(result, {
         default: 'FLOAT(11)',
@@ -1511,7 +1536,7 @@ describe('Data types', () => {
     });
 
     it('Float unsigned', () => {
-      const result = current.normalizeDataType((DataTypes.FLOAT as any).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.FLOAT().UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'FLOAT UNSIGNED',
@@ -1522,7 +1547,7 @@ describe('Data types', () => {
     });
 
     it('Float length 11 unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.FLOAT(11).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.FLOAT(11).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'FLOAT(11) UNSIGNED',
@@ -1534,7 +1559,7 @@ describe('Data types', () => {
     });
 
     it('Float unsigned zerofill', () => {
-      const result = current.normalizeDataType((DataTypes.FLOAT as any).UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.FLOAT().UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'FLOAT UNSIGNED ZEROFILL',
@@ -1546,7 +1571,7 @@ describe('Data types', () => {
     });
 
     it('Float length 11 unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.FLOAT(11).UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.FLOAT(11).UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'FLOAT(11) UNSIGNED ZEROFILL',
@@ -1558,7 +1583,7 @@ describe('Data types', () => {
     });
 
     it('Float zerofill', () => {
-      const result = current.normalizeDataType((DataTypes.FLOAT as any).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.FLOAT().ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'FLOAT ZEROFILL',
@@ -1570,7 +1595,7 @@ describe('Data types', () => {
     });
 
     it('Float length 11 zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.FLOAT(11).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.FLOAT(11).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'FLOAT(11) ZEROFILL',
@@ -1582,7 +1607,7 @@ describe('Data types', () => {
     });
 
     it('Float zerofill unsigned', () => {
-      const result = current.normalizeDataType((DataTypes.FLOAT as any).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.FLOAT().ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'FLOAT UNSIGNED ZEROFILL',
@@ -1594,7 +1619,7 @@ describe('Data types', () => {
     });
 
     it('Float length 11 zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.FLOAT(11).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.FLOAT(11).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'FLOAT(11) UNSIGNED ZEROFILL',
@@ -1606,7 +1631,7 @@ describe('Data types', () => {
     });
 
     it('Float length 11 decimals 12 ', () => {
-      const result = current.normalizeDataType(DataTypes.FLOAT(11, 12)).toSql();
+      const result = current.normalizeDataType(new DataTypes.FLOAT(11, 12)).toSql();
 
       expectsql(result, {
         default: 'FLOAT(11,12)',
@@ -1617,7 +1642,7 @@ describe('Data types', () => {
     });
 
     it('Float length 11 decimals 12 unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.FLOAT(11, 12).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.FLOAT(11, 12).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'FLOAT(11,12) UNSIGNED',
@@ -1629,7 +1654,7 @@ describe('Data types', () => {
     });
 
     it('Float { length: 11, decimals: 12 } unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.FLOAT(11, 12).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.FLOAT({ length: 11, decimals: 12 }).UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'FLOAT(11,12) UNSIGNED',
@@ -1641,7 +1666,7 @@ describe('Data types', () => {
     });
 
     it('Float length 11 decimals 12 unsigned zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.FLOAT(11, 12).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.FLOAT(11, 12).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'FLOAT(11,12) UNSIGNED ZEROFILL',
@@ -1653,7 +1678,7 @@ describe('Data types', () => {
     });
 
     it('Float length 11 decimals 12 zerofill', () => {
-      const result = current.normalizeDataType(DataTypes.FLOAT(11, 12).ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.FLOAT(11, 12).ZEROFILL).toSql();
 
       expectsql(result, {
         default: 'FLOAT(11,12) ZEROFILL',
@@ -1665,7 +1690,7 @@ describe('Data types', () => {
     });
 
     it('Float length 11 decimals 12 zerofill unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.FLOAT(11, 12).ZEROFILL.UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.FLOAT(11, 12).ZEROFILL.UNSIGNED).toSql();
 
       expectsql(result, {
         default: 'FLOAT(11,12) UNSIGNED ZEROFILL',
@@ -1678,7 +1703,7 @@ describe('Data types', () => {
 
     describe('validate Float', () => {
       it('should throw an error if `value` is invalid', () => {
-        const type = DataTypes.FLOAT();
+        const type = new DataTypes.FLOAT();
 
         expect(() => {
           type.validate('foobar');
@@ -1686,7 +1711,7 @@ describe('Data types', () => {
       });
 
       it('should return `true` if `value` is a float', () => {
-        const type = DataTypes.FLOAT();
+        const type = new DataTypes.FLOAT();
 
         expect(type.validate(1.2)).to.equal(true);
         expect(type.validate('1')).to.equal(true);
@@ -1701,8 +1726,8 @@ describe('Data types', () => {
     describe('Numeric', () => {
 
       it('Numeric standart', () => {
-        const result = current.normalizeDataType(DataTypes.NUMERIC).toSql();
-    
+        const result = current.normalizeDataType(new DataTypes.NUMERIC()).toSql();
+
         expectsql(result, {
           default: 'DECIMAL',
           oracle: 'NUMBER'
@@ -1710,8 +1735,8 @@ describe('Data types', () => {
       });
 
       it('Numeric length 15 decimals 5', () => {
-        const result = current.normalizeDataType(DataTypes.NUMERIC(15, 5)).toSql();
-    
+        const result = current.normalizeDataType(new DataTypes.NUMERIC(15, 5)).toSql();
+
         expectsql(result, {
           default: 'DECIMAL(15,5)',
           oracle: 'NUMBER(15,5)'
@@ -1723,7 +1748,7 @@ describe('Data types', () => {
   describe('Decimal', () => {
 
     it('Decimal standard', () => {
-      const result = current.normalizeDataType(DataTypes.DECIMAL).toSql();
+      const result = current.normalizeDataType(new DataTypes.DECIMAL()).toSql();
 
       expectsql(result, {
         default: 'DECIMAL',
@@ -1732,7 +1757,7 @@ describe('Data types', () => {
     });
 
     it('Decimal precision 10 scale 2', () => {
-      const result = current.normalizeDataType(DataTypes.DECIMAL(10, 2)).toSql();
+      const result = current.normalizeDataType(new DataTypes.DECIMAL(10, 2)).toSql();
 
       expectsql(result, {
         default: 'DECIMAL(10,2)',
@@ -1741,7 +1766,7 @@ describe('Data types', () => {
     });
 
     it('Decimal { precision: 10, scale: 2 }', () => {
-      const result = current.normalizeDataType(DataTypes.DECIMAL({ precision: 10, scale: 2 })).toSql();
+      const result = current.normalizeDataType(new DataTypes.DECIMAL({ precision: 10, scale: 2 })).toSql();
 
       expectsql(result, {
         default: 'DECIMAL(10,2)',
@@ -1750,7 +1775,7 @@ describe('Data types', () => {
     });
 
     it('Decimal precision 10', () => {
-      const result = current.normalizeDataType(DataTypes.DECIMAL(10)).toSql();
+      const result = current.normalizeDataType(new DataTypes.DECIMAL(10)).toSql();
 
       expectsql(result, {
         default: 'DECIMAL(10)',
@@ -1759,7 +1784,7 @@ describe('Data types', () => {
     });
 
     it('Decimal { precision: 10 }', () => {
-      const result = current.normalizeDataType(DataTypes.DECIMAL({ precision: 10 })).toSql();
+      const result = current.normalizeDataType(new DataTypes.DECIMAL({ precision: 10 })).toSql();
 
       expectsql(result, {
         default: 'DECIMAL(10)',
@@ -1768,7 +1793,7 @@ describe('Data types', () => {
     });
 
     it('Decimal unsigned', () => {
-      const result = current.normalizeDataType((DataTypes.DECIMAL as any).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.DECIMAL().UNSIGNED).toSql();
 
       expectsql(result, {
         mysql: 'DECIMAL UNSIGNED',
@@ -1778,7 +1803,7 @@ describe('Data types', () => {
     });
 
     it('Decimal unsigned zerofill', () => {
-      const result = current.normalizeDataType((DataTypes.DECIMAL as any).UNSIGNED.ZEROFILL).toSql();
+      const result = current.normalizeDataType(new DataTypes.DECIMAL().UNSIGNED.ZEROFILL).toSql();
 
       expectsql(result, {
         mysql: 'DECIMAL UNSIGNED ZEROFILL',
@@ -1788,7 +1813,7 @@ describe('Data types', () => {
     });
 
     it('Decimal { precision: 10, scale: 2 } unsigned', () => {
-      const result = current.normalizeDataType(DataTypes.DECIMAL(10, 2).UNSIGNED).toSql();
+      const result = current.normalizeDataType(new DataTypes.DECIMAL(10, 2).UNSIGNED).toSql();
 
       expectsql(result, {
         mysql: 'DECIMAL(10,2) UNSIGNED',
@@ -1799,7 +1824,7 @@ describe('Data types', () => {
 
     describe('validate Decimal', () => {
       it('should throw an error if `value` is invalid', () => {
-        const type = DataTypes.DECIMAL(10);
+        const type = new DataTypes.DECIMAL(10);
 
         expect(() => {
           type.validate('foobar');
@@ -1815,7 +1840,7 @@ describe('Data types', () => {
       });
 
       it('should return `true` if `value` is a decimal', () => {
-        const type = DataTypes.DECIMAL(10);
+        const type = new DataTypes.DECIMAL(10);
 
         expect(type.validate(123)).to.equal(true);
         expect(type.validate(1.2)).to.equal(true);
@@ -1831,12 +1856,12 @@ describe('Data types', () => {
 
   describe('Enum', () => {
     // TODO: Fix Enums and add more tests
-    // testsql('ENUM("value 1", "value 2")', (DataTypes as any).ENUM('value 1', 'value 2'), {
+    // testsql('ENUM("value 1", "value 2")', (DataTypes().ENUM('value 1', 'value 2'), {
     //   default: 'ENUM'
     // });
 
     //it('Enum "value 1", "value 2"', function() {
-    //  const result = current.normalizeDataType(DataTypes.ENUM("value 1","value 2")).toSql();
+    //  const result = current.normalizeDataType(new DataTypes.ENUM("value 1","value 2")).toSql();
     //  expectsql(result, {
     //    default: 'ENUM'
     //  });
@@ -1844,7 +1869,7 @@ describe('Data types', () => {
 
     describe('validate Enum', () => {
       it('should throw an error if `value` is invalid', () => {
-        const type = (DataTypes as any).ENUM('foo');
+        const type = new DataTypes.ENUM('foo');
 
         expect(() => {
           type.validate('foobar');
@@ -1852,7 +1877,7 @@ describe('Data types', () => {
       });
 
       it('should return `true` if `value` is a valid choice', () => {
-        const type = (DataTypes as any).ENUM('foobar', 'foobiz');
+        const type = new DataTypes.ENUM('foobar', 'foobiz');
 
         expect(type.validate('foobar')).to.equal(true);
         expect(type.validate('foobiz')).to.equal(true);
@@ -1863,7 +1888,7 @@ describe('Data types', () => {
   describe('Blob', () => {
 
     it('Blob standard', () => {
-      const result = current.normalizeDataType(DataTypes.BLOB).toSql();
+      const result = current.normalizeDataType(new DataTypes.BLOB()).toSql();
 
       expectsql(result, {
         default: 'BLOB',
@@ -1873,7 +1898,7 @@ describe('Data types', () => {
     });
 
     it('Blob tiny', () => {
-      const result = current.normalizeDataType(DataTypes.BLOB('tiny')).toSql();
+      const result = current.normalizeDataType(new DataTypes.BLOB('tiny')).toSql();
 
       expectsql(result, {
         default: 'TINYBLOB',
@@ -1884,7 +1909,7 @@ describe('Data types', () => {
     });
 
     it('Blob medium', () => {
-      const result = current.normalizeDataType(DataTypes.BLOB('medium')).toSql();
+      const result = current.normalizeDataType(new DataTypes.BLOB('medium')).toSql();
 
       expectsql(result, {
         default: 'MEDIUMBLOB',
@@ -1895,7 +1920,7 @@ describe('Data types', () => {
     });
 
     it('Blob { length: "medium" }', () => {
-      const result = current.normalizeDataType(DataTypes.BLOB({ length: 'medium' })).toSql();
+      const result = current.normalizeDataType(new DataTypes.BLOB({ length: 'medium' })).toSql();
 
       expectsql(result, {
         default: 'MEDIUMBLOB',
@@ -1906,7 +1931,7 @@ describe('Data types', () => {
     });
 
     it('Blob long', () => {
-      const result = current.normalizeDataType(DataTypes.BLOB('long')).toSql();
+      const result = current.normalizeDataType(new DataTypes.BLOB('long')).toSql();
 
       expectsql(result, {
         default: 'LONGBLOB',
@@ -1918,7 +1943,7 @@ describe('Data types', () => {
 
     describe('validate Blob', () => {
       it('should throw an error if `value` is invalid', () => {
-        const type = DataTypes.BLOB();
+        const type = new DataTypes.BLOB();
 
         expect(() => {
           type.validate(12345);
@@ -1926,7 +1951,7 @@ describe('Data types', () => {
       });
 
       it('should return `true` if `value` is a blob', () => {
-        const type = DataTypes.BLOB();
+        const type = new DataTypes.BLOB();
 
         expect(type.validate('foobar')).to.equal(true);
         expect(type.validate(new Buffer('foobar'))).to.equal(true);
@@ -1938,7 +1963,7 @@ describe('Data types', () => {
 
     describe('validate Range', () => {
       it('should throw an error if `value` is invalid', () => {
-        const type = DataTypes.RANGE();
+        const type = new DataTypes.RANGE();
 
         expect(() => {
           type.validate('foobar');
@@ -1946,7 +1971,7 @@ describe('Data types', () => {
       });
 
       it('should throw an error if `value` is not an array with two elements', () => {
-        const type = DataTypes.RANGE();
+        const type = new DataTypes.RANGE();
 
         expect(() => {
           type.validate([1]);
@@ -1954,7 +1979,7 @@ describe('Data types', () => {
       });
 
       it('should throw an error if `value.inclusive` is invalid', () => {
-        const type = DataTypes.RANGE();
+        const type = new DataTypes.RANGE();
 
         expect(() => {
           type.validate({ inclusive: 'foobar' });
@@ -1962,7 +1987,7 @@ describe('Data types', () => {
       });
 
       it('should throw an error if `value.inclusive` is not an array with two elements', () => {
-        const type = DataTypes.RANGE();
+        const type = new DataTypes.RANGE();
 
         expect(() => {
           type.validate({ inclusive: [1] });
@@ -1970,13 +1995,13 @@ describe('Data types', () => {
       });
 
       it('should return `true` if `value` is a range', () => {
-        const type = DataTypes.RANGE();
+        const type = new DataTypes.RANGE();
 
         expect(type.validate([1, 2])).to.equal(true);
       });
 
       it('should return `true` if `value.inclusive` is a range', () => {
-        const type = DataTypes.RANGE();
+        const type = new DataTypes.RANGE();
 
         expect(type.validate({ inclusive: [1, 2] })).to.equal(true);
       });
@@ -1988,7 +2013,7 @@ describe('Data types', () => {
     describe('Array', () => {
 
       it('Array varchar', () => {
-        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.STRING)).toSql();
+        const result = current.normalizeDataType(new DataTypes.ARRAY(new DataTypes.STRING())).toSql();
 
         expectsql(result, {
           postgres: 'VARCHAR(255)[]'
@@ -1996,7 +2021,7 @@ describe('Data types', () => {
       });
 
       it('Array varchar(100)', () => {
-        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.STRING(100))).toSql();
+        const result = current.normalizeDataType(new DataTypes.ARRAY(new DataTypes.STRING(100))).toSql();
 
         expectsql(result, {
           postgres: 'VARCHAR(100)[]'
@@ -2004,7 +2029,7 @@ describe('Data types', () => {
       });
 
       it('Array hstore', () => {
-        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.HSTORE)).toSql();
+        const result = current.normalizeDataType(new DataTypes.ARRAY(new DataTypes.HSTORE())).toSql();
 
         expectsql(result, {
           postgres: 'HSTORE[]'
@@ -2012,7 +2037,7 @@ describe('Data types', () => {
       });
 
       it('Array array(varchar)', () => {
-        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.ARRAY(DataTypes.STRING))).toSql();
+        const result = current.normalizeDataType(new DataTypes.ARRAY(new DataTypes.ARRAY(new DataTypes.STRING()))).toSql();
 
         expectsql(result, {
           postgres: 'VARCHAR(255)[][]'
@@ -2020,7 +2045,7 @@ describe('Data types', () => {
       });
 
       it('Array text', () => {
-        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.TEXT)).toSql();
+        const result = current.normalizeDataType(new DataTypes.ARRAY(new DataTypes.TEXT())).toSql();
 
         expectsql(result, {
           postgres: 'TEXT[]'
@@ -2028,7 +2053,7 @@ describe('Data types', () => {
       });
 
       it('Array date', () => {
-        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.DATE)).toSql();
+        const result = current.normalizeDataType(new DataTypes.ARRAY(new DataTypes.DATE())).toSql();
 
         expectsql(result, {
           postgres: 'TIMESTAMP WITH TIME ZONE[]'
@@ -2036,7 +2061,7 @@ describe('Data types', () => {
       });
 
       it('Array boolean', () => {
-        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.BOOLEAN)).toSql();
+        const result = current.normalizeDataType(new DataTypes.ARRAY(new DataTypes.BOOLEAN())).toSql();
 
         expectsql(result, {
           postgres: 'BOOLEAN[]'
@@ -2044,7 +2069,7 @@ describe('Data types', () => {
       });
 
       it('Array decimal', () => {
-        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.DECIMAL)).toSql();
+        const result = current.normalizeDataType(new DataTypes.ARRAY(new DataTypes.DECIMAL())).toSql();
 
         expectsql(result, {
           postgres: 'DECIMAL[]'
@@ -2052,7 +2077,7 @@ describe('Data types', () => {
       });
 
       it('Array decimal(6)', () => {
-        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.DECIMAL(6))).toSql();
+        const result = current.normalizeDataType(new DataTypes.ARRAY(new DataTypes.DECIMAL(6))).toSql();
 
         expectsql(result, {
           postgres: 'DECIMAL(6)[]'
@@ -2060,7 +2085,7 @@ describe('Data types', () => {
       });
 
       it('Array decimal(6,4)', () => {
-        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.DECIMAL(6, 4))).toSql();
+        const result = current.normalizeDataType(new DataTypes.ARRAY(new DataTypes.DECIMAL(6, 4))).toSql();
 
         expectsql(result, {
           postgres: 'DECIMAL(6,4)[]'
@@ -2068,7 +2093,7 @@ describe('Data types', () => {
       });
 
       it('Array double', () => {
-        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.DOUBLE)).toSql();
+        const result = current.normalizeDataType(new DataTypes.ARRAY(new DataTypes.DOUBLE())).toSql();
 
         expectsql(result, {
           postgres: 'DOUBLE PRECISION[]'
@@ -2076,7 +2101,7 @@ describe('Data types', () => {
       });
 
       it('Array real', () => {
-        const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.REAL)).toSql();
+        const result = current.normalizeDataType(new DataTypes.ARRAY(new DataTypes.REAL())).toSql();
 
         expectsql(result, {
           postgres: 'REAL[]'
@@ -2086,7 +2111,7 @@ describe('Data types', () => {
 
       if (current.dialect.supports.JSON) {
         it('Array json', () => {
-          const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.JSON)).toSql();
+          const result = current.normalizeDataType(new DataTypes.ARRAY(new DataTypes.JSON())).toSql();
 
           expectsql(result, {
             postgres: 'JSON[]'
@@ -2096,7 +2121,7 @@ describe('Data types', () => {
 
       if (current.dialect.supports.JSONB) {
         it('Array jsonb', () => {
-          const result = current.normalizeDataType(DataTypes.ARRAY(DataTypes.JSONB)).toSql();
+          const result = current.normalizeDataType(new DataTypes.ARRAY(new DataTypes.JSONB())).toSql();
 
           expectsql(result, {
             postgres: 'JSONB[]'
@@ -2106,7 +2131,7 @@ describe('Data types', () => {
 
       describe('validate Array', () => {
         it('should throw an error if `value` is invalid', () => {
-          const type = DataTypes.ARRAY();
+          const type = new DataTypes.ARRAY();
 
           expect(() => {
             type.validate('foobar');
@@ -2114,7 +2139,7 @@ describe('Data types', () => {
         });
 
         it('should return `true` if `value` is an array', () => {
-          const type = DataTypes.ARRAY();
+          const type = new DataTypes.ARRAY();
 
           expect(type.validate(['foo', 'bar'])).to.equal(true);
         });
@@ -2126,7 +2151,7 @@ describe('Data types', () => {
     describe('Geometry', () => {
 
       it('Geometry standart', () => {
-        const result = current.normalizeDataType(DataTypes.GEOMETRY).toSql();
+        const result = current.normalizeDataType(new DataTypes.GEOMETRY()).toSql();
 
         expectsql(result, {
           default: 'GEOMETRY'
@@ -2134,7 +2159,7 @@ describe('Data types', () => {
       });
 
       it('Geometry point', () => {
-        const result = current.normalizeDataType(DataTypes.GEOMETRY('POINT')).toSql();
+        const result = current.normalizeDataType(new DataTypes.GEOMETRY('POINT')).toSql();
 
         expectsql(result, {
           postgres: 'GEOMETRY(POINT)',
@@ -2143,7 +2168,7 @@ describe('Data types', () => {
       });
 
       it('Geometry linestring', () => {
-        const result = current.normalizeDataType(DataTypes.GEOMETRY('LINESTRING')).toSql();
+        const result = current.normalizeDataType(new DataTypes.GEOMETRY('LINESTRING')).toSql();
 
         expectsql(result, {
           postgres: 'GEOMETRY(LINESTRING)',
@@ -2152,7 +2177,7 @@ describe('Data types', () => {
       });
 
       it('Geometry polygon', () => {
-        const result = current.normalizeDataType(DataTypes.GEOMETRY('POLYGON')).toSql();
+        const result = current.normalizeDataType(new DataTypes.GEOMETRY('POLYGON')).toSql();
 
         expectsql(result, {
           postgres: 'GEOMETRY(POLYGON)',
@@ -2161,12 +2186,32 @@ describe('Data types', () => {
       });
 
       it('Geometry point (4326)', () => {
-        const result = current.normalizeDataType(DataTypes.GEOMETRY('POINT', 4326)).toSql();
+        const result = current.normalizeDataType(new DataTypes.GEOMETRY('POINT', 4326)).toSql();
 
         expectsql(result, {
           postgres: 'GEOMETRY(POINT,4326)',
           mysql: 'POINT'
         });
+      });
+    });
+  }
+
+  if (current.dialect.supports.JSON) {
+    it('json', () => {
+      const result = new DataTypes.JSON().toSql();
+
+      expectsql(result, {
+        default: 'JSON'
+      });
+    });
+  }
+
+  if (current.dialect.supports.JSONB) {
+    it('jsonb', () => {
+      const result = new DataTypes.JSONB().toSql();
+
+      expectsql(result, {
+        default: 'JSONB'
       });
     });
   }

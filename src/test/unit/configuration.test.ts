@@ -1,8 +1,8 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
 import Support from '../support';
+const expect = chai.expect;
 const Sequelize = Support.Sequelize;
 const dialect = Support.getTestDialect();
 
@@ -10,12 +10,14 @@ describe('Sequelize', () => {
   describe('dialect is required', () => {
     it('throw error when no dialect is supplied', () => {
       expect(() => {
+        // tslint:disable-next-line:no-unused-expression-chai
         new Sequelize('localhost', 'test', 'test');
       }).to.throw(Error);
     });
 
     it('works when dialect explicitly supplied', () => {
       expect(() => {
+        // tslint:disable-next-line:no-unused-expression-chai
         new Sequelize('localhost', 'test', 'test', {
           dialect: 'mysql'
         });
@@ -25,6 +27,7 @@ describe('Sequelize', () => {
 
   it('should throw error if pool:false', () => {
     expect(() => {
+      // tslint:disable-next-line:no-unused-expression-chai
       new Sequelize('localhost', 'test', 'test', {
         dialect: 'mysql',
         pool: false
@@ -69,7 +72,7 @@ describe('Sequelize', () => {
       expect(config.port).to.equal('9821');
     });
 
-    describe('sqllite path inititalization', () =>{
+    describe('sqllite path inititalization', () => {
       const current   = Support.sequelize;
       if (current.dialect.name === 'sqlite') {
         it('should accept relative paths for sqlite', () => {
@@ -100,7 +103,7 @@ describe('Sequelize', () => {
 
           // empty host is treated as :memory:
           expect(options.host).to.equal('');
-          expect(options.storage).to.equal();
+          (expect(options.storage).to as any).equal();
         });
       }
     });
@@ -123,9 +126,9 @@ describe('Sequelize', () => {
 
     it('should use the default port when no other is specified', () => {
       const sequelize = new Sequelize('dbname', 'root', 'pass', {
-          dialect
-        }),
-        config = sequelize.config;
+        dialect
+      });
+      const config = sequelize.config;
       let port;
 
       if (dialect === 'mysql') {

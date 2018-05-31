@@ -1,16 +1,16 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
-const dialect = Support.getTestDialect();
 import * as sinon from 'sinon';
 import DataTypes from '../../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
+const dialect = Support.getTestDialect();
 
 if (dialect === 'mysql') {
   describe('[MYSQL Specific] Connection Manager', () => {
     it('works correctly after being idle', function() {
-      const User = this.sequelize.define('User', { username: DataTypes.STRING });
+      const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
       const spy = sinon.spy();
 
       return User
@@ -35,7 +35,7 @@ if (dialect === 'mysql') {
     it('accepts new queries after shutting down a connection', () => {
       // Create a sequelize instance with fast disconnecting connection
       const sequelize = Support.createSequelizeInstance({ pool: { idle: 50, max: 1, evict: 10 }});
-      const User = sequelize.define('User', { username: DataTypes.STRING });
+      const User = sequelize.define('User', { username: new DataTypes.STRING() });
 
       return User
         .sync({force: true})
@@ -110,7 +110,7 @@ if (dialect === 'mysql') {
 
     it('-FOUND_ROWS can be suppressed to get back legacy behavior', () => {
       const sequelize = Support.createSequelizeInstance({ dialectOptions: { flags: '' }});
-      const User = sequelize.define('User', { username: DataTypes.STRING });
+      const User = sequelize.define('User', { username: new DataTypes.STRING() });
 
       return User.sync({force: true})
         .then(() => User.create({ id: 1, username: 'jozef' }))

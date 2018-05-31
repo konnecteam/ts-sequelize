@@ -1,9 +1,9 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
 import DataTypes from '../../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
@@ -12,7 +12,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       describe('Sequelize.literal()', () => {
         beforeEach(function() {
           this.User = this.sequelize.define('User', {
-            email: DataTypes.STRING
+            email: new DataTypes.STRING()
           });
 
           return this.User.sync({force: true}).bind(this).then(function() {
@@ -23,7 +23,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         if (current.dialect.name !== 'mssql' && current.dialect.name !== 'oracle') {
-          it('should work with order: literal()', function () {
+          it('should work with order: literal()', function() {
             return this.User.findAll({
               order: this.sequelize.literal('email = ' + this.sequelize.escape('test@sequelizejs.com'))
             }).then(users => {
@@ -48,8 +48,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           it('should work with order: [[literal()]]', function() {
             return this.User.findAll({
               order: [
-                [this.sequelize.literal('email = ' + this.sequelize.escape('test@sequelizejs.com'))]
-              ]
+                [this.sequelize.literal('email = ' + this.sequelize.escape('test@sequelizejs.com'))]]
             }).then(users => {
               expect(users.length).to.equal(1);
               users.forEach(user => {
@@ -63,7 +62,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       describe('injections', () => {
         beforeEach(function() {
           this.User = this.sequelize.define('user', {
-            name: DataTypes.STRING
+            name: new DataTypes.STRING()
           });
           this.Group = this.sequelize.define('group', {
 
@@ -78,18 +77,17 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               include: [this.Group],
               order: [
                 ['id', 'ASC NULLS LAST'],
-                [this.Group, 'id', 'DESC NULLS FIRST']
-              ]
+                [this.Group, 'id', 'DESC NULLS FIRST']]
             });
           });
         }
 
         //Oracle doesn't suport if ASC is stuck to the identifier
         if (current.dialect.name !== 'oracle') {
-          it('should not throw on a literal', function () {
+          it('should not throw on a literal', function() {
             return this.User.findAll({
               order: [
-                ['id', this.sequelize.literal('ASC, name DESC')]
+                ['id', this.sequelize.literal('ASC, name DESC')],
               ]
             });
           });
@@ -99,7 +97,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           return this.User.findAll({
             include: [this.Group],
             order: [
-              [this.Group, 'id']
+              [this.Group, 'id'],
             ]
           });
         });

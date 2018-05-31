@@ -2,8 +2,8 @@
 
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-const expect = chai.expect;
 import Support from '../support';
+const expect = chai.expect;
 const Sequelize = Support.sequelize;
 const Promise = Sequelize.Promise;
 const current = Support.sequelize;

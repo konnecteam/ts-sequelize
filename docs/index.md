@@ -1,9 +1,7 @@
-<div>
-  <div class="center logo">
-    ![logo](manual/asset/logo-small.png)
-  </div>
-  <div class="center sequelize">Sequelize</span>
-</div>
+<center>
+    ![logo](asset/logo-small.png)
+</center>
+<div class="center sequelize">Sequelize</div>
 
 [![Travis build](https://img.shields.io/travis/sequelize/sequelize/master.svg?style=flat-square)](https://travis-ci.org/sequelize/sequelize)
 [![npm](https://img.shields.io/npm/dm/sequelize.svg?style=flat-square)](https://npmjs.org/package/sequelize)
@@ -34,8 +32,8 @@ const sequelize = new Sequelize('database', 'username', 'password', {
 });
 
 const User = sequelize.define('user', {
-  username: Sequelize.STRING,
-  birthday: Sequelize.DATE
+  username: new Sequelize.STRING(),
+  birthday: new Sequelize.DATE()
 });
 
 sequelize.sync()
@@ -48,4 +46,4 @@ sequelize.sync()
   });
 ```
 
-Please use [Getting Started](manual/installation/getting-started) to learn more. If you wish to learn about Sequelize API please use [API Reference](identifiers)
+Please use [Getting Started](manual/installation/getting-started) to learn more. If you wish to learn about Sequelize API please use [API Reference](./api/index.html)

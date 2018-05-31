@@ -5,17 +5,17 @@
  * It require a `context` for which messages will be printed.
  *
  * @module logging
- * @private
  */
 
-import * as depd from 'depd';
 import * as debug from 'debug';
+import * as depd from 'depd';
 import * as _ from 'lodash';
+import { IConfig } from '../model/iconfig';
 
 export class Logger {
-  config;
-  depd;
-  constructor(config) {
+  public config;
+  public depd;
+  constructor(config : IConfig) {
 
     this.config = _.extend({
       context: 'sequelize',
@@ -26,19 +26,33 @@ export class Logger {
     this.debug = debug(this.config.context);
   }
 
-  deprecate(message) {
+  /**
+   * deprecate a message
+   */
+  public deprecate(message : string) {
     this.depd(message);
   }
 
-  debug(message) {
-    this.config.debug && this.debug(message);
+  /**
+   * debug a message
+   */
+  public debug(message : string) {
+    if (this.config.debug) {
+      this.debug(message);
+    }
   }
 
-  warn(message) {
+  /**
+   * write a warning massage in the console
+   */
+  public warn(message : string) {
     console.warn(`(${this.config.context}) Warning: ${message}`);
   }
 
-  debugContext(childContext) {
+  /**
+   * debug a context
+   */
+  public debugContext(childContext : string) {
     if (!childContext) {
       throw new Error('No context supplied to debug');
     }

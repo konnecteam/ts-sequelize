@@ -1,16 +1,17 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import config from '../config/config';
-import Support from './support';
-const dialect = Support.getTestDialect();
-const Sequelize = Support.Sequelize;
 import * as fs from 'fs';
 import * as path from 'path';
 import * as sqlite from 'sqlite3';
+import config from '../config/config';
+import Support from './support';
+const expect = chai.expect;
+const dialect = Support.getTestDialect();
+const Sequelize = Support.Sequelize;
 
 if (dialect === 'sqlite') {
+  // tslint:disable-next-line
   var sqlite3 = sqlite; // eslint-disable-line
 }
 
@@ -22,7 +23,7 @@ describe(Support.getTestDialectTeaser('Configuration'), () => {
         // SQLite doesn't have a breakdown of error codes, so we are unable to discern between the different types of errors.
         return expect(seq.query('select 1 as hello')).to.eventually.be.rejectedWith(seq.ConnectionError, 'SQLITE_CANTOPEN: unable to open database file');
       } else {
-        return expect(seq.query('select 1 as hello')).to.eventually.be.rejectedWith([seq.HostNotReachableError, seq.InvalidConnectionError]);
+        return (expect(seq.query('select 1 as hello')).to.eventually.be as any).rejectedWith([seq.HostNotReachableError, seq.InvalidConnectionError]);
       }
     });
 
@@ -40,7 +41,7 @@ describe(Support.getTestDialectTeaser('Configuration'), () => {
         return expect(seq.query('select 1 as hello')).to.eventually.be.fulfilled;
       } else {
         if (dialect === 'oracle') {
-          return expect(seq.query('select 1 as hello')).to.eventually.be.rejectedWith(seq.ConnectionAccessDeniedError);  
+          return expect(seq.query('select 1 as hello')).to.eventually.be.rejectedWith(seq.ConnectionAccessDeniedError);
         }
         return expect(seq.query('select 1 as hello')).to.eventually.be.rejectedWith(seq.ConnectionRefusedError, 'connect ECONNREFUSED');
       }
@@ -48,6 +49,7 @@ describe(Support.getTestDialectTeaser('Configuration'), () => {
 
     it('when we don\'t have a valid dialect.', () => {
       expect(() => {
+        // tslint:disable-next-line:no-unused-expression-chai
         new Sequelize(config[dialect].database, config[dialect].username, config[dialect].password, {host: '0.0.0.1', port: config[dialect].port, dialect: 'some-fancy-dialect'});
       }).to.throw(Error, 'The dialect some-fancy-dialect is not supported. Supported dialects: mssql, mysql, postgres, oracle and sqlite.');
     });
@@ -62,6 +64,7 @@ describe(Support.getTestDialectTeaser('Configuration'), () => {
 
         const testAccess = Sequelize.Promise.method(() => {
           if (fs.access) {
+            // tslint:disable-next-line:no-bitwise
             return Sequelize.Promise.promisify(fs.access)(p, (fs as any).R_OK | (fs as any).W_OK);
           } else { // Node v0.10 and older don't have fs.access
             return Sequelize.Promise.promisify(fs.open)(p, 'r+')

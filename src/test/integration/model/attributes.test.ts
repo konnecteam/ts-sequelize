@@ -1,11 +1,11 @@
 'use strict';
 
 import * as chai from 'chai';
+import {Sequelize} from '../../../index';
 import DataTypes from '../../../lib/data-types';
-import {Sequelize}from '../../../index';
+import Support from '../support';
 const Promise = Sequelize.Promise;
 const expect = chai.expect;
-import Support from '../support';
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('attributes', () => {
@@ -15,25 +15,25 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         self.callCount = 0;
 
         this.Student = this.sequelize.define('student', {
-          no: {type: DataTypes.INTEGER, primaryKey: true},
-          name: DataTypes.STRING
+          no: {type: new DataTypes.INTEGER(), primaryKey: true},
+          name: new DataTypes.STRING()
         }, {
           tableName: 'student',
           timestamps: false
         });
 
         this.Course = this.sequelize.define('course', {
-          no: {type: DataTypes.INTEGER, primaryKey: true},
-          name: DataTypes.STRING
+          no: {type: new DataTypes.INTEGER(), primaryKey: true},
+          name: new DataTypes.STRING()
         }, {
           tableName: 'course',
           timestamps: false
         });
 
         this.Score = this.sequelize.define('score', {
-          score: DataTypes.INTEGER,
+          score: new DataTypes.INTEGER(),
           test_value: {
-            type: DataTypes.INTEGER,
+            type: new DataTypes.INTEGER(),
             set(v) {
               self.callCount++;
               this.setDataValue('test_value', v + 1);
@@ -73,10 +73,10 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
       });
 
-      it('allows for an attribute to be called "toString"', function () {
+      it('allows for an attribute to be called "toString"', function() {
         const Person = this.sequelize.define('person', {
-          name: DataTypes.STRING,
-          nick: DataTypes.STRING
+          name: new DataTypes.STRING(),
+          nick: new DataTypes.STRING()
         }, {
           timestamps: false
         });
@@ -86,7 +86,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           .then(() => Person.findOne({
             attributes: [
               'nick',
-              ['name', 'toString']
+              ['name', 'toString'],
             ],
             where: {
               name: 'Jozef'

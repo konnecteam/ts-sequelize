@@ -2,18 +2,18 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../../lib/data-types';
-const expect = chai.expect;
 import Support from '../../support';
+const expect = chai.expect;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('scopes', () => {
     beforeEach(function() {
       this.ScopeMe = this.sequelize.define('ScopeMe', {
-        username: DataTypes.STRING,
-        email: DataTypes.STRING,
-        access_level: DataTypes.INTEGER,
-        other_value: DataTypes.INTEGER,
-        parent_id: DataTypes.INTEGER
+        username: new DataTypes.STRING(),
+        email: new DataTypes.STRING(),
+        access_level: new DataTypes.INTEGER(),
+        other_value: new DataTypes.INTEGER(),
+        parent_id: new DataTypes.INTEGER()
       }, {
         defaultScope: {
           where: {
@@ -38,7 +38,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                     like: '%@sequelizejs.com'
                   }
                 },
-                { access_level: 3 }
+                { access_level: 3 },
               ]
             }
           }
@@ -50,7 +50,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           {username: 'tony', email: 'tony@sequelizejs.com', access_level: 3, other_value: 7, parent_id: 1},
           {username: 'tobi', email: 'tobi@fakeemail.com', access_level: 10, other_value: 11, parent_id: 2},
           {username: 'dan', email: 'dan@sequelizejs.com', access_level: 5, other_value: 10, parent_id: 1},
-          {username: 'fred', email: 'fred@foobar.com', access_level: 3, other_value: 7, parent_id: 1}
+          {username: 'fred', email: 'fred@foobar.com', access_level: 3, other_value: 7, parent_id: 1},
         ];
         return this.ScopeMe.bulkCreate(records);
       });
@@ -65,6 +65,22 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('should be able to combine scope and findAll where clauses', function() {
       return this.ScopeMe.scope({where: { parent_id: 1 }}).findAll({ where: {access_level: 3}}).then(users => {
+        expect(users).to.have.length(2);
+        expect(['tony', 'fred'].indexOf(users[0].username) !== -1).to.be.true;
+        expect(['tony', 'fred'].indexOf(users[1].username) !== -1).to.be.true;
+      });
+    });
+
+    it('should be able to combine $or scope and findAll where clauses', function() {
+      return this.ScopeMe.scope({where: { $or: { parent_id: 1 }}}).findAll({ where: {access_level: 3}}).then(users => {
+        expect(users).to.have.length(2);
+        expect(['tony', 'fred'].indexOf(users[0].username) !== -1).to.be.true;
+        expect(['tony', 'fred'].indexOf(users[1].username) !== -1).to.be.true;
+      });
+    });
+
+    it('should be able to combine $or scope and $or findAll where clauses', function() {
+      return this.ScopeMe.scope({where: { $or: { parent_id: 1 }}}).findAll({ where: { $or: {access_level: 3}}}).then(users => {
         expect(users).to.have.length(2);
         expect(['tony', 'fred'].indexOf(users[0].username) !== -1).to.be.true;
         expect(['tony', 'fred'].indexOf(users[1].username) !== -1).to.be.true;

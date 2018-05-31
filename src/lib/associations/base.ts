@@ -1,5 +1,8 @@
 'use strict';
+import { Sequelize } from '../..';
 import * as Errors from '../errors/index';
+import { Model } from '../model';
+import { HasOne } from './has-one';
 const AssociationError = Errors.AssociationError;
 
 
@@ -86,34 +89,163 @@ const AssociationError = Errors.AssociationError;
  * These kinds of problems are detected by sequelize before the models are synced to the database, and you will get an error along the lines of `Error: Cyclic dependency found.
  * 'users' is dependent of itself`. If you encounter this, you should either disable some constraints, or rethink your associations completely.
  */
-export class Association {
-  public target;
-  public options;
-  public scope;
-  public isSelfAssociation;
-  public source;
-  public as;
-  public associationType;
-  public through;
 
-  constructor(source, target, options) {
+export class Association {
+  /**
+   * contains the name of the accessors
+   */
+  public accessors : {
+    get? : string,
+    set? : string,
+    addMultiple? : string,
+    add? : string,
+    create? : string,
+    remove? : string,
+    removeMultiple? : string,
+    hasSingle? : string,
+    hasAll? : string,
+    count? : string
+  };
+  /**
+   * type : string | { plural : string, singular : string }
+   */
+  public as : any;
+  public associationAccessor : string;
+  public associationType : string;
+  public foreignIdentifier : string;
+  public foreignIdentifierField : string;
+  public foreignKey : string;
+  public foreignKeyAttribute;
+  public identifierField : string;
+  public isAliased : boolean;
+  public isMultiAssociation : boolean;
+  public isSingleAssociation : boolean;
+  public isSelfAssociation : boolean;
+  public oneFromTarget : HasOne;
+  public options : {
+    /** : string | {}, assocation alias */
+    as? : any,
+    constraints? : boolean,
+    createByBTM? : boolean,
+    /** = {}, Define the default search scope to use for this model. Scopes have the same form as the options passed to find / findAll */
+    defaultScope? : {},
+    foreignKey? : string,
+    /** = false If freezeTableName is true, sequelize will not try to alter the model name to get the table name. Otherwise, the model name will be pluralized */
+    freezeTableName? : boolean,
+    /** An object of hook function that are called before and after certain lifecycle events */
+    hooks? : boolean,
+    indexes? : any[],
+    keyType? : string,
+    /** An object with two attributes, `singular` and `plural`, which are used when this model is associated to others. */
+    name? : {
+      /** = Utils.pluralize(modelName) */
+      plural? : string,
+      /** = Utils.singularize(modelName) */
+      singular? : string
+    },
+    /** = false, A flag that defines if null values should be passed to SQL queries or not. */
+    omitNull? : boolean,
+    onDelete? : string,
+    onUpdate? : string,
+    otherKey? : string,
+    /** = false, Calling `destroy` will not delete the model, but instead set a `deletedAt` timestamp if this is true. Needs `timestamps=true` to work */
+    paranoid? : boolean,
+    /** Error if no result found */
+    rejectOnEmpty? : boolean,
+    /** The schema that the tables should be created in. This can be overriden for each table in sequelize.define */
+    schema? : string,
+    schemaDelimiter? : string,
+    scope? : any,
+    scopes? : any[],
+    sequelize? : Sequelize,
+    sourceKey?
+    /** Defaults to pluralized model name, unless freezeTableName is true, in which case it uses model name verbatim */
+    tableName? : string,
+    targetKey? : string,
+    /** Additional attributes for the join table */
+    through? : {
+      model?
+    },
+    /** = true Adds createdAt and updatedAt timestamps to the model. */
+    timestamps? : boolean,
+    /** = false Converts all camelCased columns to underscored if true. Will not affect timestamp fields named explicitly by model options and will not affect fields with explicitly set `field` option */
+    underscored? : boolean,
+    /** = false Converts camelCased model names to underscored table names if true. Will not change model name if freezeTableName is set to true */
+    underscoredAll? : boolean,
+    uniqueKeys? : {},
+    useHooks? : boolean,
+    validate? : {},
+    whereCollection? : {}
+  };
+  public otherKey : string;
+  public otherKeyDefault : boolean;
+  public scope : {
+    ismain? : boolean
+  };
+  public source : typeof Model;
+  public sourceKeyAttribute;
+  public sourceKeyField : string;
+  public target : typeof Model;
+  public through : {
+    model?,
+    unique? : boolean,
+    scope?
+  };
+  public toTarget : Association;
+
+  constructor(source : typeof Model, target : typeof Model, options : {
+    /** : string | {}, assocation alias */
+    as? : any,
+    createByBTM? : boolean,
+    /** = {}, Define the default search scope to use for this model. Scopes have the same form as the options passed to find / findAll */
+    defaultScope? : {},
+    foreignKey? : string,
+    /** = false If freezeTableName is true, sequelize will not try to alter the model name to get the table name. Otherwise, the model name will be pluralized */
+    freezeTableName? : boolean,
+    /** An object of hook function that are called before and after certain lifecycle events */
+    hooks? : boolean,
+    indexes? : any[],
+    /** An object with two attributes, `singular` and `plural`, which are used when this model is associated to others. */
+    name? : {
+      /** = Utils.pluralize(modelName) */
+      plural? : string,
+      /** = Utils.singularize(modelName) */
+      singular? : string
+    },
+    /** = false, A flag that defines if null values should be passed to SQL queries or not. */
+    omitNull? : boolean,
+    /** = false, Calling `destroy` will not delete the model, but instead set a `deletedAt` timestamp if this is true. Needs `timestamps=true` to work */
+    paranoid? : boolean,
+    /** Error if no result found */
+    rejectOnEmpty? : boolean,
+    /** The schema that the tables should be created in. This can be overriden for each table in sequelize.define */
+    schema? : string,
+    schemaDelimiter? : string,
+    scope? : any,
+    scopes? : any[],
+    sequelize? : Sequelize,
+    /** Additional attributes for the join table */
+    through? : {
+      model?
+    },
+    /** = true Adds createdAt and updatedAt timestamps to the model. */
+    timestamps? : boolean,
+    /** = false Converts all camelCased columns to underscored if true. Will not affect timestamp fields named explicitly by model options and will not affect fields with explicitly set `field` option */
+    underscored? : boolean,
+    /** = false Converts camelCased model names to underscored table names if true. Will not change model name if freezeTableName is set to true */
+    underscoredAll? : boolean,
+    uniqueKeys? : {},
+    useHooks? : boolean,
+    validate? : {},
+    whereCollection? : {}
+  }) {
     options = options || {};
-    /**
-     * @type {Model}
-     */
     this.source = source;
-    /**
-     * @type {Model}
-     */
     this.target = target;
     this.options = options;
     this.scope = options.scope;
     this.isSelfAssociation = this.source === this.target;
     this.as = options.as;
-    /**
-     * The type of the association. One of `HasMany`, `BelongsTo`, `HasOne`, `BelongsToMany`
-     * @type {string}
-     */
     this.associationType = '';
 
     if (source.hasAlias(options.as)) {
@@ -122,8 +254,11 @@ export class Association {
       );
     }
   }
-  // Normalize input - may be array or single obj, instance or primary key - convert it to an array of built objects
-  public toInstanceArray(objs) {
+
+  /**
+   * Normalize input - may be array or single obj, instance or primary key - convert it to an array of built objects
+   */
+  public toInstanceArray(objs : any) : any[] {
     if (!Array.isArray(objs)) {
       objs = [objs];
     }
@@ -138,7 +273,11 @@ export class Association {
       return obj;
     }, this);
   }
-  public inspect() {
+
+  /**
+   * return the alias of the association
+   */
+  public inspect() : any {
     return this.as;
   }
 }

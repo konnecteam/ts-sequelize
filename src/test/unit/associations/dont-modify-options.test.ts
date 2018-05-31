@@ -1,9 +1,9 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
 
 describe(Support.getTestDialectTeaser('associations'), () => {
   describe('Test options.foreignKey', () => {
@@ -11,13 +11,13 @@ describe(Support.getTestDialectTeaser('associations'), () => {
 
       this.A = this.sequelize.define('A', {
         id: {
-          type: DataTypes.CHAR(20),
+          type: new DataTypes.CHAR(20),
           primaryKey: true
         }
       });
       this.B = this.sequelize.define('B', {
         id: {
-          type: DataTypes.CHAR(20),
+          type: new DataTypes.CHAR(20),
           primaryKey: true
         }
       });

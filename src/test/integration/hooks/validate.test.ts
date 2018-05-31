@@ -2,19 +2,19 @@
 
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-const expect = chai.expect;
-import Support from '../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../support';
+const expect = chai.expect;
 
 describe(Support.getTestDialectTeaser('Hooks'), () => {
   beforeEach(function() {
     this.User = this.sequelize.define('User', {
       username: {
-        type: DataTypes.STRING,
+        type: new DataTypes.STRING(),
         allowNull: false
       },
       mood: {
-        type: DataTypes.ENUM,
+        type: new DataTypes.ENUM(),
         values: ['happy', 'sad', 'neutral']
       }
     });

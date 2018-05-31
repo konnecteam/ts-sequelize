@@ -1,20 +1,20 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import {Sequelize}from '../../../../index';
-import Support from '../../../support';
-const dialect = Support.getTestDialect();
-import * as tedious from 'tedious';
 import * as sinon from 'sinon';
+import * as tedious from 'tedious';
+import {Sequelize} from '../../../../index';
+import Support from '../../../support';
+const expect = chai.expect;
+const dialect = Support.getTestDialect();
 const connectionStub = sinon.stub(tedious, 'Connection');
 
 connectionStub.returns({on() {}});
 
 if (dialect === 'mssql') {
   describe('[MSSQL Specific] Connection Manager', () => {
-    let instance,
-      config;
+    let instance;
+    let config;
     beforeEach(() => {
       config = {
         dialect: 'mssql',

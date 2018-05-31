@@ -1,19 +1,19 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../support';
+const expect = chai.expect;
 
 describe(Support.getTestDialectTeaser('Hooks'), () => {
   beforeEach(function() {
     this.User = this.sequelize.define('User', {
       username: {
-        type: DataTypes.STRING,
+        type: new DataTypes.STRING(),
         allowNull: false
       },
       mood: {
-        type: DataTypes.ENUM,
+        type: new DataTypes.ENUM(),
         values: ['happy', 'sad', 'neutral']
       }
     });
@@ -25,7 +25,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
     beforeEach(function() {
       return this.User.bulkCreate([
         {username: 'adam', mood: 'happy'},
-        {username: 'joe', mood: 'sad'}
+        {username: 'joe', mood: 'sad'},
       ]);
     });
 
@@ -40,10 +40,10 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
     describe('on success', () => {
       it('all hooks run', function() {
-        let beforeHook = false,
-          beforeHook2 = false,
-          beforeHook3 = false,
-          afterHook = false;
+        let beforeHook = false;
+        let beforeHook2 = false;
+        let beforeHook3 = false;
+        let afterHook = false;
 
         this.User.beforeFind(() => {
           beforeHook = true;

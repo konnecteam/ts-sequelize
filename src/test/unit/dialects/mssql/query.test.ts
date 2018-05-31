@@ -1,23 +1,24 @@
 'use strict';
 
-import {Query} from './../../../../lib/dialects/mssql/query';
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+import * as tedious from 'tedious';
 import Support from '../../../support';
+import { MssqlQuery } from './../../../../lib/dialects/mssql/mssql-query';
+const expect = chai.expect;
 const dialect = Support.getTestDialect();
 const sequelize = Support.sequelize;
-import * as sinon from 'sinon';
-import * as chai from 'chai';
-const expect = chai.expect;
-import * as tedious from 'tedious';
 const tediousIsolationLevel = tedious.ISOLATION_LEVEL;
-const connectionStub = { 
+const connectionStub = {
   beginTransaction: () => {},
   lib: tedious
 };
 
-let sandbox, query;
+let sandbox;
+let query;
 
 if (dialect === 'mssql') {
-  describe('[MSSQL Specific] Query', () => { 
+  describe('[MSSQL Specific] Query', () => {
     describe('beginTransaction', () => {
       beforeEach(() => {
         sandbox = sinon.sandbox.create();
@@ -29,7 +30,7 @@ if (dialect === 'mssql') {
         sandbox.stub(connectionStub, 'beginTransaction').callsFake(cb => {
           cb();
         });
-        query = new Query(connectionStub, sequelize, options);
+        query = new MssqlQuery(connectionStub, sequelize, options);
       });
 
       it('should call beginTransaction with correct arguments', () => {
@@ -53,7 +54,7 @@ if (dialect === 'mssql') {
 
         const expected = 'select @one as a, @two as b, @one as c, @three as d, @one as e';
 
-        const result = Query.formatBindParameters(sql, values, dialect);
+        const result = MssqlQuery.formatBindParameters(sql, values, dialect);
         expect(result[0]).to.be.a('string');
         expect(result[0]).to.equal(expected);
       });
@@ -64,10 +65,36 @@ if (dialect === 'mssql') {
 
         const expected = 'select @0 as a, @1 as b, @0 as c, @2 as d, @0 as e';
 
-        const result = Query.formatBindParameters(sql, values, dialect);
+        const result = MssqlQuery.formatBindParameters(sql, values, dialect);
         expect(result[0]).to.be.a('string');
         expect(result[0]).to.equal(expected);
       });
+    });
+  });
+
+  describe('mapIsolationLevelStringToTedious', () => {
+    it('READ_UNCOMMITTED', () => {
+      expect(MssqlQuery.mapIsolationLevelStringToTedious('READ_UNCOMMITTED', tedious)).to.equal(tediousIsolationLevel.READ_UNCOMMITTED);
+    });
+
+    it('READ_COMMITTED', () => {
+      expect(MssqlQuery.mapIsolationLevelStringToTedious('READ_COMMITTED', tedious)).to.equal(tediousIsolationLevel.READ_COMMITTED);
+    });
+
+    it('REPEATABLE_READ', () => {
+      expect(MssqlQuery.mapIsolationLevelStringToTedious('REPEATABLE_READ', tedious)).to.equal(tediousIsolationLevel.REPEATABLE_READ);
+    });
+
+    it('SERIALIZABLE', () => {
+      expect(MssqlQuery.mapIsolationLevelStringToTedious('SERIALIZABLE', tedious)).to.equal(tediousIsolationLevel.SERIALIZABLE);
+    });
+
+    it('SNAPSHOT', () => {
+      expect(MssqlQuery.mapIsolationLevelStringToTedious('SNAPSHOT', tedious)).to.equal(tediousIsolationLevel.SNAPSHOT);
+    });
+
+    it('should throw error if tedious lib is not passed as a parameter', () => {
+      expect(MssqlQuery.mapIsolationLevelStringToTedious.bind(MssqlQuery, 'SNAPSHOT')).to.throw('An instance of tedious lib should be passed to this function');
     });
   });
 }

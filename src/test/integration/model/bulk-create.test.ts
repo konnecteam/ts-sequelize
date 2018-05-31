@@ -1,13 +1,13 @@
 'use strict';
 
 import * as chai from 'chai';
-import {Sequelize}from '../../../index';
+import * as _ from 'lodash';
+import {Sequelize} from '../../../index';
+import DataTypes from '../../../lib/data-types';
+import Support from '../support';
 const Promise = Sequelize.Promise;
 const expect = chai.expect;
-import Support from '../support';
-import DataTypes from '../../../lib/data-types';
 const dialect = Support.getTestDialect();
-import * as _ from 'lodash';
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
@@ -16,20 +16,20 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       this.sequelize = sequelize;
 
       this.User = this.sequelize.define('User', {
-        username: DataTypes.STRING,
-        secretValue: DataTypes.STRING,
-        data: DataTypes.STRING,
-        intVal: DataTypes.INTEGER,
-        theDate: DataTypes.DATE,
-        aBool: DataTypes.BOOLEAN,
-        uniqueName: { type: DataTypes.STRING, unique: true }
+        username: new DataTypes.STRING(),
+        secretValue: new DataTypes.STRING(),
+        data: new DataTypes.STRING(),
+        intVal: new DataTypes.INTEGER(),
+        theDate: new DataTypes.DATE(),
+        aBool: new DataTypes.BOOLEAN(),
+        uniqueName: { type: new DataTypes.STRING(), unique: true }
       });
       this.Account = this.sequelize.define('Account', {
-        accountName: DataTypes.STRING
+        accountName: new DataTypes.STRING()
       });
       this.Student = this.sequelize.define('Student', {
-        no: {type: DataTypes.INTEGER, primaryKey: true},
-        name: {type: DataTypes.STRING, allowNull: false}
+        no: {type: new DataTypes.INTEGER(), primaryKey: true},
+        name: {type: new DataTypes.STRING(), allowNull: false}
       });
 
       return this.sequelize.sync({ force: true });
@@ -40,9 +40,10 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
         const User = this.sequelize.define('User', {
-          username: DataTypes.STRING
+          username: new DataTypes.STRING()
         });
-        let transaction, count1;
+        let transaction;
+        let count1;
         return User.sync({ force: true })
           .then(() => this.sequelize.transaction())
           .then(t => {
@@ -64,7 +65,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('should be able to set createdAt and updatedAt if using silent: true', function() {
       const User = this.sequelize.define('user', {
-        name: DataTypes.STRING
+        name: new DataTypes.STRING()
       }, {
         timestamps: true
       });
@@ -100,20 +101,20 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('should not fail on validate: true and individualHooks: true', function() {
       const User = this.sequelize.define('user', {
-        name: DataTypes.STRING
+        name: new DataTypes.STRING()
       });
 
       return User.sync({force: true}).then(() => {
         return User.bulkCreate([
-          {name: 'James'}
+          {name: 'James'},
         ], {validate: true, individualHooks: true});
       });
     });
 
     it('should not insert NULL for unused fields', function() {
       const Beer = this.sequelize.define('Beer', {
-        style: DataTypes.STRING,
-        size: DataTypes.INTEGER
+        style: new DataTypes.STRING(),
+        size: new DataTypes.INTEGER()
       });
 
       return Beer.sync({force: true}).then(() => {
@@ -136,8 +137,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('properly handles disparate field lists', function() {
-      const self = this,
-        data = [{username: 'Peter', secretValue: '42', uniqueName: '1' },
+      const self = this;
+      const data = [{username: 'Peter', secretValue: '42', uniqueName: '1' },
           {username: 'Paul', uniqueName: '2'},
           {username: 'Steve', uniqueName: '3'}];
 
@@ -151,8 +152,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('inserts multiple values respecting the white list', function() {
-      const self = this,
-        data = [{ username: 'Peter', secretValue: '42', uniqueName: '1' },
+      const self = this;
+      const data = [{ username: 'Peter', secretValue: '42', uniqueName: '1' },
           { username: 'Paul', secretValue: '23', uniqueName: '2'}];
 
       return this.User.bulkCreate(data, { fields: ['username', 'uniqueName'] }).then(() => {
@@ -167,8 +168,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('should store all values if no whitelist is specified', function() {
-      const self = this,
-        data = [{ username: 'Peter', secretValue: '42', uniqueName: '1' },
+      const self = this;
+      const data = [{ username: 'Peter', secretValue: '42', uniqueName: '1' },
           { username: 'Paul', secretValue: '23', uniqueName: '2'}];
 
       return this.User.bulkCreate(data).then(() => {
@@ -183,8 +184,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('should set isNewRecord = false', function() {
-      const self = this,
-        data = [{ username: 'Peter', secretValue: '42', uniqueName: '1' },
+      const self = this;
+      const data = [{ username: 'Peter', secretValue: '42', uniqueName: '1' },
           { username: 'Paul', secretValue: '23', uniqueName: '2'}];
 
       return this.User.bulkCreate(data).then(() => {
@@ -198,9 +199,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('saves data with single quote', function() {
-      const self = this,
-        quote = "Single'Quote",
-        data = [{ username: 'Peter', data: quote, uniqueName: '1'},
+      const self = this;
+      const quote = "Single'Quote";
+      const data = [{ username: 'Peter', data: quote, uniqueName: '1'},
           { username: 'Paul', data: quote, uniqueName: '2'}];
 
       return this.User.bulkCreate(data).then(() => {
@@ -215,9 +216,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('saves data with double quote', function() {
-      const self = this,
-        quote = 'Double"Quote',
-        data = [{ username: 'Peter', data: quote, uniqueName: '1'},
+      const self = this;
+      const quote = 'Double"Quote';
+      const data = [{ username: 'Peter', data: quote, uniqueName: '1'},
           { username: 'Paul', data: quote, uniqueName: '2'}];
 
       return this.User.bulkCreate(data).then(() => {
@@ -232,9 +233,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('saves stringified JSON data', function() {
-      const self = this,
-        json = JSON.stringify({ key: 'value' }),
-        data = [{ username: 'Peter', data: json, uniqueName: '1'},
+      const self = this;
+      const json = JSON.stringify({ key: 'value' });
+      const data = [{ username: 'Peter', data: json, uniqueName: '1'},
           { username: 'Paul', data: json, uniqueName: '2'}];
 
       return this.User.bulkCreate(data).then(() => {
@@ -250,7 +251,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('properly handles a model with a length column', function() {
       const UserWithLength = this.sequelize.define('UserWithLength', {
-        length: DataTypes.INTEGER
+        length: new DataTypes.INTEGER()
       });
 
       return UserWithLength.sync({force: true}).then(() => {
@@ -259,8 +260,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('stores the current date in createdAt', function() {
-      const self = this,
-        data = [{ username: 'Peter', uniqueName: '1'},
+      const self = this;
+      const data = [{ username: 'Peter', uniqueName: '1'},
           { username: 'Paul', uniqueName: '2'}];
 
       return this.User.bulkCreate(data).then(() => {
@@ -277,11 +278,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     it('emits an error when validate is set to true', function() {
       const Tasks = this.sequelize.define('Task', {
         name: {
-          type: DataTypes.STRING,
+          type: new DataTypes.STRING(),
           allowNull: false
         },
         code: {
-          type: DataTypes.STRING,
+          type: new DataTypes.STRING(),
           validate: {
             len: [3, 10]
           }
@@ -292,7 +293,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         return Tasks.bulkCreate([
           {name: 'foo', code: '123'},
           {code: '1234'},
-          {name: 'bar', code: '1'}
+          {name: 'bar', code: '1'},
         ], { validate: true }).catch(errors => {
           expect(errors).to.be.instanceof(Promise.AggregateError);
           expect(errors).to.have.length(2);
@@ -312,13 +313,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     it("doesn't emit an error when validate is set to true but our selectedValues are fine", function() {
       const Tasks = this.sequelize.define('Task', {
         name: {
-          type: DataTypes.STRING,
+          type: new DataTypes.STRING(),
           validate: {
             notEmpty: true
           }
         },
         code: {
-          type: DataTypes.STRING,
+          type: new DataTypes.STRING(),
           validate: {
             len: [3, 10]
           }
@@ -328,7 +329,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       return Tasks.sync({ force: true }).then(() => {
         return Tasks.bulkCreate([
           {name: 'foo', code: '123'},
-          {code: '1234'}
+          {code: '1234'},
         ], { fields: ['code'], validate: true });
       });
     });
@@ -357,7 +358,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       return Worker.sync().then(() => {
         return Worker.bulkCreate([
           {id: 5},
-          {id: 10}
+          {id: 10},
         ]).then(() => {
           return Worker.findAll({order: [['id', 'ASC']]}).then(workers => {
             expect(workers[0].id).to.equal(5);
@@ -369,8 +370,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('should support schemas', function() {
       const Dummy = this.sequelize.define('Dummy', {
-        foo: DataTypes.STRING,
-        bar: DataTypes.STRING
+        foo: new DataTypes.STRING(),
+        bar: new DataTypes.STRING()
       }, {
         schema: 'space1',
         tableName: 'Dummy'
@@ -383,7 +384,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       }).then(() => {
         return Dummy.bulkCreate([
           {foo: 'a', bar: 'b'},
-          {foo: 'c', bar: 'd'}
+          {foo: 'c', bar: 'd'},
         ]);
       });
     });
@@ -393,7 +394,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         const self = this;
         const data = [
           { uniqueName: 'Peter', secretValue: '42' },
-          { uniqueName: 'Paul', secretValue: '23' }
+          { uniqueName: 'Paul', secretValue: '23' },
         ];
 
         return this.User.bulkCreate(data, { fields: ['uniqueName', 'secretValue'] }).then(() => {
@@ -417,7 +418,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         const self = this;
         const data = [
           { uniqueName: 'Peter', secretValue: '42' },
-          { uniqueName: 'Paul', secretValue: '23' }
+          { uniqueName: 'Paul', secretValue: '23' },
         ];
 
         return this.User.bulkCreate(data, { fields: ['uniqueName', 'secretValue'] }).then(() => {
@@ -441,14 +442,14 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         const self = this;
         const data = [
           { uniqueName: 'Peter', secretValue: '42' },
-          { uniqueName: 'Paul', secretValue: '23' }
+          { uniqueName: 'Paul', secretValue: '23' },
         ];
 
         return this.User.bulkCreate(data, { fields: ['uniqueName', 'secretValue'], updateOnDuplicate: ['secretValue'] }).then(() => {
           const new_data = [
             { uniqueName: 'Peter', secretValue: '43' },
             { uniqueName: 'Paul', secretValue: '24' },
-            { uniqueName: 'Michael', secretValue: '26' }
+            { uniqueName: 'Michael', secretValue: '26' },
           ];
           return self.User.bulkCreate(new_data, { fields: ['uniqueName', 'secretValue'], updateOnDuplicate: ['secretValue'] }).then(() => {
             return self.User.findAll({order: ['id']}).then(users => {
@@ -475,7 +476,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             .then(() => User.bulkCreate([
               {},
               {},
-              {}
+              {},
             ], {
               returning: true
             }))
@@ -496,7 +497,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         it('should make the auto incremented values available on the returned instances with custom fields', function() {
           const User = this.sequelize.define('user', {
             maId: {
-              type: DataTypes.INTEGER,
+              type: new DataTypes.INTEGER(),
               primaryKey: true,
               autoIncrement: true,
               field: 'yo_id'
@@ -508,7 +509,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             .then(() => User.bulkCreate([
               {},
               {},
-              {}
+              {},
             ], {
               returning: true
             }))
@@ -530,11 +531,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     describe('enums', () => {
       it('correctly restores enum values', function() {
-        const self = this,
-          Item = self.sequelize.define('Item', {
-            state: { type: DataTypes.ENUM, values: ['available', 'in_cart', 'shipped'] },
-            name: DataTypes.STRING
-          });
+        const self = this;
+        const Item = self.sequelize.define('Item', {
+          state: { type: new DataTypes.ENUM(), values: ['available', 'in_cart', 'shipped'] },
+          name: new DataTypes.STRING()
+        });
 
         return Item.sync({ force: true }).then(() => {
           return Item.bulkCreate([{state: 'in_cart', name: 'A'}, { state: 'available', name: 'B'}]).then(() => {
@@ -548,18 +549,18 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('should properly map field names to attribute names', function() {
       const Maya = this.sequelize.define('Maya', {
-        name: DataTypes.STRING,
+        name: new DataTypes.STRING(),
         secret: {
           field: 'secret_given',
-          type: DataTypes.STRING
+          type: new DataTypes.STRING()
         },
         createdAt: {
           field: 'created_at',
-          type: DataTypes.DATE
+          type: new DataTypes.DATE()
         },
         updatedAt: {
           field: 'updated_at',
-          type: DataTypes.DATE
+          type: new DataTypes.DATE()
         }
       });
 
@@ -618,7 +619,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           .then(() => User.bulkCreate([
             { id: 1 },
             { id: 2 },
-            { id: 3 }
+            { id: 3 },
           ], { returning: true }))
           .then(users =>
             User.findAll({ order: [['id', 'ASC']] })
@@ -640,12 +641,12 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           .sync({ force: true })
           .then(() => User.bulkCreate([
             { id: 1 },
-            { id: 3 }
+            { id: 3 },
           ]))
           .then(() => User.bulkCreate([
             { id: 2 },
             { id: 4 },
-            { id: 5 }
+            { id: 5 },
           ], { returning: true }))
           .then(users => {
             expect(users.length).to.eql(3);

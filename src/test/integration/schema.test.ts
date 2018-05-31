@@ -1,9 +1,9 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from './support';
 import DataTypes from '../../lib/data-types';
+import Support from './support';
+const expect = chai.expect;
 
 describe(Support.getTestDialectTeaser('Schema'), () => {
   beforeEach(function() {
@@ -16,7 +16,7 @@ describe(Support.getTestDialectTeaser('Schema'), () => {
 
   beforeEach(function() {
     this.User = this.sequelize.define('User', {
-      aNumber: { type: DataTypes.INTEGER }
+      aNumber: { type: new DataTypes.INTEGER() }
     }, {
       schema: 'testschema'
     });

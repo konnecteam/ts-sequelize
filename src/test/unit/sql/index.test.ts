@@ -113,7 +113,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             type: {
               $or: [
                 'group',
-                'private'
+                'private',
               ]
             }
           }

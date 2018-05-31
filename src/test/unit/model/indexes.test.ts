@@ -1,17 +1,17 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
-const current = Support.sequelize;
 import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('indexes', () => {
     it('should automatically set a gin index for JSONB indexes', () => {
       const Model = current.define('event', {
         eventData: {
-          type: DataTypes.JSONB,
+          type: new DataTypes.JSONB(),
           index: true,
           field: 'data'
         }
@@ -31,7 +31,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           },
           {
             type: 'UNIQUE'
-          }
+          },
         ]
       });
 
@@ -41,7 +41,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('should not set rawAttributes when indexes are defined via options', () => {
       const User = current.define('User', {
-        username: DataTypes.STRING
+        username: new DataTypes.STRING()
       }, {
         indexes: [{
           unique: true,
@@ -54,8 +54,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('should not set rawAttributes when composite unique indexes are defined via options', () => {
       const User = current.define('User', {
-        name: DataTypes.STRING,
-        address: DataTypes.STRING
+        name: new DataTypes.STRING(),
+        address: new DataTypes.STRING()
       }, {
         indexes: [{
           unique: 'users_name_address',

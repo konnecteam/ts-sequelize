@@ -2,9 +2,9 @@
 
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-const expect = chai.expect;
-import Support from '../../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
@@ -13,7 +13,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       this.getSpy = sinon.spy();
       this.User = current.define('User', {
         name: {
-          type: DataTypes.STRING,
+          type: new DataTypes.STRING(),
           get: this.getSpy
         }
       });
@@ -26,7 +26,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('does not invoke getter if raw: true', function() {
-      expect(this.getSpy, { raw: true }).not.to.have.been.called;
+      expect(this.getSpy, ({ raw: true } as any)).not.to.have.been.called;
     });
   });
 });

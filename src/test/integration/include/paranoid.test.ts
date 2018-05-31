@@ -1,21 +1,20 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
 import * as sinon from 'sinon';
-import Support from '../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../support';
+const expect = chai.expect;
 
 describe(Support.getTestDialectTeaser('Paranoid'), () => {
 
   beforeEach(function( ) {
-    const S = this.sequelize,
-      DT = DataTypes,
-
-      A = this.A = S.define('A', { name: DT.STRING }, { paranoid: true }),
-      B = this.B = S.define('B', { name: DT.STRING }, { paranoid: true }),
-      C = this.C = S.define('C', { name: DT.STRING }, { paranoid: true }),
-      D = this.D = S.define('D', { name: DT.STRING }, { paranoid: true });
+    const S = this.sequelize;
+    const DT = DataTypes;
+    const A = this.A = S.define('A', { name: DT.STRING }, { paranoid: true });
+    const B = this.B = S.define('B', { name: DT.STRING }, { paranoid: true });
+    const C = this.C = S.define('C', { name: DT.STRING }, { paranoid: true });
+    const D = this.D = S.define('D', { name: DT.STRING }, { paranoid: true });
 
     A.belongsTo(B);
     A.belongsToMany(D, {through: 'a_d'});
@@ -41,13 +40,13 @@ describe(Support.getTestDialectTeaser('Paranoid'), () => {
   });
 
   it('paranoid with timestamps: false should be ignored / not crash', function() {
-    const S = this.sequelize,
-      Test = S.define('Test', {
-        name: DataTypes.STRING
-      }, {
-        timestamps: false,
-        paranoid: true
-      });
+    const S = this.sequelize;
+    const Test = S.define('Test', {
+      name: new DataTypes.STRING()
+    }, {
+      timestamps: false,
+      paranoid: true
+    });
 
     return S.sync({ force: true }).then(() => {
       return Test.findById(1);
@@ -55,16 +54,16 @@ describe(Support.getTestDialectTeaser('Paranoid'), () => {
   });
 
   it('test if non required is marked as false', function( ) {
-    const A = this.A,
-      B = this.B,
-      options = {
-        include: [
-          {
-            model: B,
-            required: false
-          }
-        ]
-      };
+    const A = this.A;
+    const B = this.B;
+    const options = {
+      include: [
+        {
+          model: B,
+          required: false
+        },
+      ]
+    };
 
     return A.find(options).then(() => {
       expect(options.include[0].required).to.be.equal(false);
@@ -72,16 +71,16 @@ describe(Support.getTestDialectTeaser('Paranoid'), () => {
   });
 
   it('test if required is marked as true', function( ) {
-    const A = this.A,
-      B = this.B,
-      options = {
-        include: [
-          {
-            model: B,
-            required: true
-          }
-        ]
-      };
+    const A = this.A;
+    const B = this.B;
+    const options = {
+      include: [
+        {
+          model: B,
+          required: true
+        },
+      ]
+    };
 
     return A.find(options).then(() => {
       expect(options.include[0].required).to.be.equal(true);
@@ -90,13 +89,13 @@ describe(Support.getTestDialectTeaser('Paranoid'), () => {
 
   it('should not load paranoid, destroyed instances, with a non-paranoid parent', function() {
     const X = this.sequelize.define('x', {
-      name: DataTypes.STRING
+      name: new DataTypes.STRING()
     }, {
       paranoid: false
     });
 
     const Y = this.sequelize.define('y', {
-      name: DataTypes.STRING
+      name: new DataTypes.STRING()
     }, {
       timestamps: true,
       paranoid: true
@@ -107,7 +106,7 @@ describe(Support.getTestDialectTeaser('Paranoid'), () => {
     return this.sequelize.sync({ force: true}).bind(this).then(function() {
       return this.sequelize.Promise.all([
         X.create(),
-        Y.create()
+        Y.create(),
       ]);
     }).spread(function(x, y) {
       this.x = x;

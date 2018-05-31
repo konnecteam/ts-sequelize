@@ -1,36 +1,36 @@
 'use strict';
 
 import * as chai from 'chai';
+import * as _ from 'lodash';
 import * as sinon from 'sinon';
+import { BelongsTo } from '../../../lib/associations/belongs-to';
+import { HasMany } from '../../../lib/associations/has-many';
+import { HasOne } from '../../../lib/associations/has-one';
+import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
 const expect = chai.expect;
 const stub = sinon.stub;
-import * as _ from 'lodash';
-import Support from '../../support';
-import DataTypes from '../../../lib/data-types';
-import {BelongsTo} from '../../../lib/associations/belongs-to';
-import {HasMany} from '../../../lib/associations/has-many';
-import {HasOne} from '../../../lib/associations/has-one';
 const current = Support.sequelize;
 const Promise = current.Promise;
 const AssociationError = require(__dirname + '/../../../lib/errors').AssociationError;
 
 describe(Support.getTestDialectTeaser('belongsToMany'), () => {
   it('should not inherit scopes from parent to join table', () => {
-    const A = current.define('a'),
-      B = current.define('b', {}, {
-        defaultScope: {
+    const A = current.define('a');
+    const B = current.define('b', {}, {
+      defaultScope: {
+        where: {
+          foo: 'bar'
+        }
+      },
+      scopes: {
+        baz: {
           where: {
-            foo: 'bar'
-          }
-        },
-        scopes: {
-          baz: {
-            where: {
-              fooz: 'zab'
-            }
+            fooz: 'zab'
           }
         }
-      });
+      }
+    });
 
     B.belongsToMany(A, { through: 'AB' });
 
@@ -41,14 +41,14 @@ describe(Support.getTestDialectTeaser('belongsToMany'), () => {
   });
 
   it('should not inherit validations from parent to join table', () => {
-    const A = current.define('a'),
-      B = current.define('b', {}, {
-        validate: {
-          validateModel() {
-            return true;
-          }
+    const A = current.define('a');
+    const B = current.define('b', {}, {
+      validate: {
+        validateModel() {
+          return true;
         }
-      });
+      }
+    });
 
     B.belongsToMany(A, { through: 'AB' });
 
@@ -112,8 +112,8 @@ describe(Support.getTestDialectTeaser('belongsToMany'), () => {
 
   describe('timestamps', () => {
     it('follows the global timestamps true option', () => {
-      const User =current.define('User', {}),
-        Task = current.define('Task', {});
+      const User = current.define('User', {});
+      const Task = current.define('Task', {});
 
       User.belongsToMany(Task, { through: 'user_task1' });
 
@@ -121,8 +121,8 @@ describe(Support.getTestDialectTeaser('belongsToMany'), () => {
     });
 
     it('allows me to override the global timestamps option', () => {
-      const User =current.define('User', {}),
-        Task = current.define('Task', {});
+      const User = current.define('User', {});
+      const Task = current.define('Task', {});
 
       User.belongsToMany(Task, { through: 'user_task2', timestamps: false });
 
@@ -130,36 +130,36 @@ describe(Support.getTestDialectTeaser('belongsToMany'), () => {
     });
 
     it('follows the global timestamps false option', () => {
-      const current = Support.createSequelizeInstance({
+      const _current = Support.createSequelizeInstance({
         timestamps: false
       });
 
-      const User =current.define('User', {}),
-        Task = current.define('Task', {});
+      const User = _current.define('User', {});
+      const Task = _current.define('Task', {});
 
       User.belongsToMany(Task, { through: 'user_task3' });
 
-      expect(current.models.user_task3.rawAttributes).not.to.have.all.keys(['createdAt', 'updatedAt']);
+      expect(_current.models.user_task3.rawAttributes).not.to.have.all.keys(['createdAt', 'updatedAt']);
     });
   });
 
   describe('optimizations using bulk create, destroy and update', () => {
-    const User =current.define('User', { username: DataTypes.STRING }),
-      Task = current.define('Task', { title: DataTypes.STRING }),
-      UserTasks = current.define('UserTasks', {});
+    const User = current.define('User', { username: new DataTypes.STRING() });
+    const Task = current.define('Task', { title: new DataTypes.STRING() });
+    const UserTasks = current.define('UserTasks', {});
 
     User.belongsToMany(Task, { through: UserTasks });
     Task.belongsToMany(User, { through: UserTasks });
 
-    const user =User.build({
-        id: 42
-      }),
-      task1 = Task.build({
-        id: 15
-      }),
-      task2 = Task.build({
-        id: 16
-      });
+    const user = User.build({
+      id: 42
+    });
+    const task1 = Task.build({
+      id: 15
+    });
+    const task2 = Task.build({
+      id: 16
+    });
 
     beforeEach(function() {
       this.findAll = stub(UserTasks, 'findAll').returns(Promise.resolve([]));
@@ -185,7 +185,7 @@ describe(Support.getTestDialectTeaser('belongsToMany'), () => {
         .onFirstCall().returns(Promise.resolve([]))
         .onSecondCall().returns(Promise.resolve([
           { userId: 42, taskId: 15 },
-          { userId: 42, taskId: 16 }
+          { userId: 42, taskId: 16 },
         ]));
 
       return user.setTasks([task1, task2]).bind(this).then(() => {
@@ -221,7 +221,7 @@ describe(Support.getTestDialectTeaser('belongsToMany'), () => {
       const UserPlace = this.sequelize.define('UserPlace', {
         id: {
           primaryKey: true,
-          type: DataTypes.INTEGER,
+          type: new DataTypes.INTEGER(),
           autoIncrement: true
         }
       }, {timestamps: false});
@@ -245,21 +245,21 @@ describe(Support.getTestDialectTeaser('belongsToMany'), () => {
   describe('pseudo associations', () => {
     it('should setup belongsTo relations to source and target from join model with defined foreign/other keys', function() {
       const Product = this.sequelize.define('Product', {
-          title: DataTypes.STRING
-        }),
-        Tag = this.sequelize.define('Tag', {
-          name: DataTypes.STRING
-        }),
-        ProductTag = this.sequelize.define('ProductTag', {
-          id: {
-            primaryKey: true,
-            type: DataTypes.INTEGER,
-            autoIncrement: true
-          },
-          priority: DataTypes.INTEGER
-        }, {
-          timestamps: false
-        });
+        title: new DataTypes.STRING()
+      });
+      const Tag = this.sequelize.define('Tag', {
+        name: new DataTypes.STRING()
+      });
+      const ProductTag = this.sequelize.define('ProductTag', {
+        id: {
+          primaryKey: true,
+          type: new DataTypes.INTEGER(),
+          autoIncrement: true
+        },
+        priority: new DataTypes.INTEGER()
+      }, {
+        timestamps: false
+      });
 
       Product.Tags = Product.belongsToMany(Tag, {through: ProductTag, foreignKey: 'productId', otherKey: 'tagId'});
       Tag.Products = Tag.belongsToMany(Product, {through: ProductTag, foreignKey: 'tagId', otherKey: 'productId'});
@@ -282,21 +282,21 @@ describe(Support.getTestDialectTeaser('belongsToMany'), () => {
 
     it('should setup hasOne relations to source and target from join model with defined foreign/other keys', function() {
       const Product = this.sequelize.define('Product', {
-          title: DataTypes.STRING
-        }),
-        Tag = this.sequelize.define('Tag', {
-          name: DataTypes.STRING
-        }),
-        ProductTag = this.sequelize.define('ProductTag', {
-          id: {
-            primaryKey: true,
-            type: DataTypes.INTEGER,
-            autoIncrement: true
-          },
-          priority: DataTypes.INTEGER
-        }, {
-          timestamps: false
-        });
+        title: new DataTypes.STRING()
+      });
+      const Tag = this.sequelize.define('Tag', {
+        name: new DataTypes.STRING()
+      });
+      const ProductTag = this.sequelize.define('ProductTag', {
+        id: {
+          primaryKey: true,
+          type: new DataTypes.INTEGER(),
+          autoIncrement: true
+        },
+        priority: new DataTypes.INTEGER()
+      }, {
+        timestamps: false
+      });
 
       Product.Tags = Product.belongsToMany(Tag, {through: ProductTag, foreignKey: 'productId', otherKey: 'tagId'});
       Tag.Products = Tag.belongsToMany(Product, {through: ProductTag, foreignKey: 'tagId', otherKey: 'productId'});
@@ -319,21 +319,21 @@ describe(Support.getTestDialectTeaser('belongsToMany'), () => {
 
     it('should setup hasOne relations to source and target from join model with defined foreign/other keys', function() {
       const Product = this.sequelize.define('Product', {
-          title: DataTypes.STRING
-        }),
-        Tag = this.sequelize.define('Tag', {
-          name: DataTypes.STRING
-        }),
-        ProductTag = this.sequelize.define('ProductTag', {
-          id: {
-            primaryKey: true,
-            type: DataTypes.INTEGER,
-            autoIncrement: true
-          },
-          priority: DataTypes.INTEGER
-        }, {
-          timestamps: false
-        });
+        title: new DataTypes.STRING()
+      });
+      const Tag = this.sequelize.define('Tag', {
+        name: new DataTypes.STRING()
+      });
+      const ProductTag = this.sequelize.define('ProductTag', {
+        id: {
+          primaryKey: true,
+          type: new DataTypes.INTEGER(),
+          autoIncrement: true
+        },
+        priority: new DataTypes.INTEGER()
+      }, {
+        timestamps: false
+      });
 
       Product.Tags = Product.belongsToMany(Tag, {through: ProductTag, foreignKey: 'productId', otherKey: 'tagId'});
       Tag.Products = Tag.belongsToMany(Product, {through: ProductTag, foreignKey: 'tagId', otherKey: 'productId'});
@@ -356,21 +356,21 @@ describe(Support.getTestDialectTeaser('belongsToMany'), () => {
 
     it('should setup belongsTo relations to source and target from join model with only foreign keys defined', function() {
       const Product = this.sequelize.define('Product', {
-          title: DataTypes.STRING
-        }),
-        Tag = this.sequelize.define('Tag', {
-          name: DataTypes.STRING
-        }),
-        ProductTag = this.sequelize.define('ProductTag', {
-          id: {
-            primaryKey: true,
-            type: DataTypes.INTEGER,
-            autoIncrement: true
-          },
-          priority: DataTypes.INTEGER
-        }, {
-          timestamps: false
-        });
+        title: new DataTypes.STRING()
+      });
+      const Tag = this.sequelize.define('Tag', {
+        name: new DataTypes.STRING()
+      });
+      const ProductTag = this.sequelize.define('ProductTag', {
+        id: {
+          primaryKey: true,
+          type: new DataTypes.INTEGER(),
+          autoIncrement: true
+        },
+        priority: new DataTypes.INTEGER()
+      }, {
+        timestamps: false
+      });
 
       Product.Tags = Product.belongsToMany(Tag, {through: ProductTag, foreignKey: 'product_ID'});
       Tag.Products = Tag.belongsToMany(Product, {through: ProductTag, foreignKey: 'tag_ID'});
@@ -393,21 +393,21 @@ describe(Support.getTestDialectTeaser('belongsToMany'), () => {
 
     it('should setup hasOne relations to source and target from join model with only foreign keys defined', function() {
       const Product = this.sequelize.define('Product', {
-          title: DataTypes.STRING
-        }),
-        Tag = this.sequelize.define('Tag', {
-          name: DataTypes.STRING
-        }),
-        ProductTag = this.sequelize.define('ProductTag', {
-          id: {
-            primaryKey: true,
-            type: DataTypes.INTEGER,
-            autoIncrement: true
-          },
-          priority: DataTypes.INTEGER
-        }, {
-          timestamps: false
-        });
+        title: new DataTypes.STRING()
+      });
+      const Tag = this.sequelize.define('Tag', {
+        name: new DataTypes.STRING()
+      });
+      const ProductTag = this.sequelize.define('ProductTag', {
+        id: {
+          primaryKey: true,
+          type: new DataTypes.INTEGER(),
+          autoIncrement: true
+        },
+        priority: new DataTypes.INTEGER()
+      }, {
+        timestamps: false
+      });
 
       Product.Tags = Product.belongsToMany(Tag, {through: ProductTag, foreignKey: 'product_ID'});
       Tag.Products = Tag.belongsToMany(Product, {through: ProductTag, foreignKey: 'tag_ID'});
@@ -430,21 +430,21 @@ describe(Support.getTestDialectTeaser('belongsToMany'), () => {
 
     it('should setup belongsTo relations to source and target from join model with no foreign keys defined', function() {
       const Product = this.sequelize.define('Product', {
-          title: DataTypes.STRING
-        }),
-        Tag = this.sequelize.define('Tag', {
-          name: DataTypes.STRING
-        }),
-        ProductTag = this.sequelize.define('ProductTag', {
-          id: {
-            primaryKey: true,
-            type: DataTypes.INTEGER,
-            autoIncrement: true
-          },
-          priority: DataTypes.INTEGER
-        }, {
-          timestamps: false
-        });
+        title: new DataTypes.STRING()
+      });
+      const Tag = this.sequelize.define('Tag', {
+        name: new DataTypes.STRING()
+      });
+      const ProductTag = this.sequelize.define('ProductTag', {
+        id: {
+          primaryKey: true,
+          type: new DataTypes.INTEGER(),
+          autoIncrement: true
+        },
+        priority: new DataTypes.INTEGER()
+      }, {
+        timestamps: false
+      });
 
       Product.Tags = Product.belongsToMany(Tag, {through: ProductTag});
       Tag.Products = Tag.belongsToMany(Product, {through: ProductTag});
@@ -490,9 +490,9 @@ describe(Support.getTestDialectTeaser('belongsToMany'), () => {
 
   describe('self-associations', () => {
     it('does not pair multiple self associations with different through arguments', () => {
-      const User =current.define('user', {}),
-        UserFollowers = current.define('userFollowers', {}),
-        Invite = current.define('invite', {});
+      const User = current.define('user', {});
+      const UserFollowers = current.define('userFollowers', {});
+      const Invite = current.define('invite', {});
 
       User.Followers = User.belongsToMany(User, {
         as: 'Followers',
@@ -512,16 +512,16 @@ describe(Support.getTestDialectTeaser('belongsToMany'), () => {
     });
 
     it('correctly generates a foreign/other key when none are defined', () => {
-      const User =current.define('user', {}),
-        UserFollowers = current.define('userFollowers', {
-          id: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true
-          }
-        }, {
-          timestamps: false
-        });
+      const User = current.define('user', {});
+      const UserFollowers = current.define('userFollowers', {
+        id: {
+          type: new DataTypes.INTEGER(),
+          primaryKey: true,
+          autoIncrement: true
+        }
+      }, {
+        timestamps: false
+      });
 
       User.Followers = User.belongsToMany(User, {
         as: 'Followers',
@@ -558,8 +558,8 @@ describe(Support.getTestDialectTeaser('belongsToMany'), () => {
   describe('constraints', () => {
 
     it('work properly when through is a string', function() {
-      const User = this.sequelize.define('User', {}),
-        Group = this.sequelize.define('Group', {});
+      const User = this.sequelize.define('User', {});
+      const Group = this.sequelize.define('Group', {});
 
       User.belongsToMany(Group, { as: 'MyGroups', through: 'group_user', onUpdate: 'RESTRICT', onDelete: 'SET NULL' });
       Group.belongsToMany(User, { as: 'MyUsers', through: 'group_user', onUpdate: 'SET NULL', onDelete: 'RESTRICT' });
@@ -572,9 +572,9 @@ describe(Support.getTestDialectTeaser('belongsToMany'), () => {
     });
 
     it('work properly when through is a model', function() {
-      const User = this.sequelize.define('User', {}),
-        Group = this.sequelize.define('Group', {}),
-        UserGroup = this.sequelize.define('GroupUser', {}, {tableName: 'user_groups'});
+      const User = this.sequelize.define('User', {});
+      const Group = this.sequelize.define('Group', {});
+      const UserGroup = this.sequelize.define('GroupUser', {}, {tableName: 'user_groups'});
 
       User.belongsToMany(Group, { as: 'MyGroups', through: UserGroup, onUpdate: 'RESTRICT', onDelete: 'SET NULL' });
       Group.belongsToMany(User, { as: 'MyUsers', through: UserGroup, onUpdate: 'SET NULL', onDelete: 'RESTRICT' });

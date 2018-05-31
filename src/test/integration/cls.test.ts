@@ -1,12 +1,12 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from './support';
-const Sequelize = Support.Sequelize;
-const Promise = Sequelize.Promise;
 import * as cls from 'continuation-local-storage';
 import DataTypes from '../../lib/data-types';
+import Support from './support';
+const expect = chai.expect;
+const Sequelize = Support.Sequelize;
+const Promise = Sequelize.Promise;
 const current = Support.sequelize;
 
 if (current.dialect.supports.transactions) {
@@ -27,7 +27,7 @@ if (current.dialect.supports.transactions) {
         this.ns = cls.getNamespace('sequelize');
 
         this.User = this.sequelize.define('user', {
-          name: DataTypes.STRING
+          name: new DataTypes.STRING()
         });
         return this.sequelize.sync({ force: true });
       });
@@ -46,7 +46,8 @@ if (current.dialect.supports.transactions) {
       });
 
       it('supports several concurrent transactions', function() {
-        let t1id, t2id;
+        let t1id;
+        let t2id;
         const self = this;
 
         return Promise.join(
@@ -86,8 +87,8 @@ if (current.dialect.supports.transactions) {
         // We can't just call another function from inside that transaction, since that would transfer the context to that function - exactly what we are trying to prevent;
 
         const self = this;
-        let transactionSetup = false,
-          transactionEnded = false;
+        let transactionSetup = false;
+        let transactionEnded = false;
 
         this.sequelize.transaction(() => {
           transactionSetup = true;
@@ -149,7 +150,7 @@ if (current.dialect.supports.transactions) {
           return self.User.create({ name: 'bob' }).then(() => {
             return Promise.all([
               expect(self.User.findAll({ transaction: null })).to.eventually.have.length(0),
-              expect(self.User.findAll({})).to.eventually.have.length(1)
+              expect(self.User.findAll({})).to.eventually.have.length(1),
             ]);
           });
         });

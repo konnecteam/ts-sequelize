@@ -1,10 +1,10 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
-const dialect = Support.getTestDialect();
 import DataTypes from '../../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
+const dialect = Support.getTestDialect();
 
 if (dialect === 'postgres') {
   describe('[POSTGRES Specific] Data Types', () => {
@@ -13,23 +13,23 @@ if (dialect === 'postgres') {
       const nowString = now.toISOString();
 
       it('DATE should validate a Date as normal', () => {
-        expect((DataTypes[dialect] as any).DATE().validate(now)).to.equal(true);
-        expect((DataTypes[dialect] as any).DATE().validate(nowString)).to.equal(true);
+        expect(new DataTypes[dialect].DATE().validate(now)).to.equal(true);
+        expect(new DataTypes[dialect].DATE().validate(nowString)).to.equal(true);
       });
 
       it('DATE should validate Infinity/-Infinity as true', () => {
-        expect((DataTypes[dialect] as any).DATE().validate(Infinity)).to.equal(true);
-        expect((DataTypes[dialect] as any).DATE().validate(-Infinity)).to.equal(true);
+        expect(new DataTypes[dialect].DATE().validate(Infinity)).to.equal(true);
+        expect(new DataTypes[dialect].DATE().validate(-Infinity)).to.equal(true);
       });
 
       it('DATE should stringify Infinity/-Infinity to infinity/-infinity', () => {
-        expect((DataTypes[dialect] as any).DATE().stringify(Infinity)).to.equal('Infinity');
-        expect((DataTypes[dialect] as any).DATE().stringify(-Infinity)).to.equal('-Infinity');
+        expect(new DataTypes[dialect].DATE().stringify(Infinity)).to.equal('Infinity');
+        expect(new DataTypes[dialect].DATE().stringify(-Infinity)).to.equal('-Infinity');
       });
 
       it('DATEONLY should stringify Infinity/-Infinity to infinity/-infinity', () => {
-        expect((DataTypes[dialect] as any).DATEONLY().stringify(Infinity)).to.equal('Infinity');
-        expect((DataTypes[dialect] as any).DATEONLY().stringify(-Infinity)).to.equal('-Infinity');
+        expect(new DataTypes[dialect].DATEONLY().stringify(Infinity)).to.equal('Infinity');
+        expect(new DataTypes[dialect].DATEONLY().stringify(-Infinity)).to.equal('-Infinity');
       });
     });
 
@@ -39,34 +39,33 @@ if (dialect === 'postgres') {
       const nowDateOnly = nowString.substr(0, 10);
 
       it('DATE should sanitize a Date as normal', () => {
-        const d = DataTypes;
-        expect((DataTypes[dialect] as any).DATE()._sanitize(now)).to.equalTime(now);
-        expect((DataTypes[dialect] as any).DATE()._sanitize(nowString)).to.equalTime(now);
+        expect(new DataTypes[dialect].DATE()._sanitize(now)).to.equalTime(now);
+        expect(new DataTypes[dialect].DATE()._sanitize(nowString)).to.equalTime(now);
       });
 
       it('DATE should sanitize Infinity/-Infinity as Infinity/-Infinity', () => {
-        expect((DataTypes[dialect] as any).DATE()._sanitize(Infinity)).to.equal(Infinity);
-        expect((DataTypes[dialect] as any).DATE()._sanitize(-Infinity)).to.equal(-Infinity);
+        expect(new DataTypes[dialect].DATE()._sanitize(Infinity)).to.equal(Infinity);
+        expect(new DataTypes[dialect].DATE()._sanitize(-Infinity)).to.equal(-Infinity);
       });
 
       it('DATE should sanitize "Infinity"/"-Infinity" as Infinity/-Infinity', () => {
-        expect((DataTypes[dialect] as any).DATE()._sanitize('Infinity')).to.equal(Infinity);
-        expect((DataTypes[dialect] as any).DATE()._sanitize('-Infinity')).to.equal(-Infinity);
+        expect(new DataTypes[dialect].DATE()._sanitize('Infinity')).to.equal(Infinity);
+        expect(new DataTypes[dialect].DATE()._sanitize('-Infinity')).to.equal(-Infinity);
       });
 
       it('DATEONLY should sanitize a Date as normal', () => {
-        expect((DataTypes[dialect] as any).DATEONLY()._sanitize(now)).to.equal(nowDateOnly);
-        expect((DataTypes[dialect] as any).DATEONLY()._sanitize(nowString)).to.equal(nowDateOnly);
+        expect(new DataTypes[dialect].DATEONLY()._sanitize(now)).to.equal(nowDateOnly);
+        expect(new DataTypes[dialect].DATEONLY()._sanitize(nowString)).to.equal(nowDateOnly);
       });
 
       it('DATEONLY should sanitize Infinity/-Infinity as Infinity/-Infinity', () => {
-        expect((DataTypes[dialect] as any).DATEONLY()._sanitize(Infinity)).to.equal(Infinity);
-        expect((DataTypes[dialect] as any).DATEONLY()._sanitize(-Infinity)).to.equal(-Infinity);
+        expect(new DataTypes[dialect].DATEONLY()._sanitize(Infinity)).to.equal(Infinity);
+        expect(new DataTypes[dialect].DATEONLY()._sanitize(-Infinity)).to.equal(-Infinity);
       });
 
       it('DATEONLY should sanitize "Infinity"/"-Infinity" as Infinity/-Infinity', () => {
-        expect((DataTypes[dialect] as any).DATEONLY()._sanitize('Infinity')).to.equal(Infinity);
-        expect((DataTypes[dialect] as any).DATEONLY()._sanitize('-Infinity')).to.equal(-Infinity);
+        expect(new DataTypes[dialect].DATEONLY()._sanitize('Infinity')).to.equal(Infinity);
+        expect(new DataTypes[dialect].DATEONLY()._sanitize('-Infinity')).to.equal(-Infinity);
       });
     });
 
@@ -109,7 +108,7 @@ if (dialect === 'postgres') {
         }).then(user => {
           expect(user.username).to.equal('bob');
           expect(user.beforeTime).to.equal(-Infinity);
-          expect(user.sometime).to.be.withinTime(date, new Date());
+          (expect(user.sometime).to.be as any).withinTime(date, new Date());
           expect(user.anotherTime).to.equal(Infinity);
           expect(user.afterTime).to.equal(Infinity);
 
@@ -133,7 +132,7 @@ if (dialect === 'postgres') {
             returning: true
           });
         }).then(user => {
-          expect(user.sometime).to.be.withinTime(date, new Date());
+          (expect(user.sometime).to.be as any).withinTime(date, new Date());
 
           // find
           return User.findAll();
@@ -196,7 +195,7 @@ if (dialect === 'postgres') {
         }).then(user => {
           expect(user.username).to.equal('bob');
           expect(user.beforeTime).to.equal(-Infinity);
-          expect(new Date(user.sometime)).to.be.withinDate(date, new Date());
+          (expect(new Date(user.sometime)).to.be as any).withinDate(date, new Date());
           expect(user.anotherTime).to.equal(Infinity);
           expect(user.afterTime).to.equal(Infinity);
 
@@ -221,7 +220,7 @@ if (dialect === 'postgres') {
           });
         }).then(user => {
           expect(user.sometime).to.not.equal(Infinity);
-          expect(new Date(user.sometime)).to.be.withinDate(date, new Date());
+          (expect(new Date(user.sometime)).to.be as any).withinDate(date, new Date());
 
           // find
           return User.findAll();

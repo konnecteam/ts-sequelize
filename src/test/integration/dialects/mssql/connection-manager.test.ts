@@ -1,8 +1,8 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
 import Support from '../../support';
+const expect = chai.expect;
 const dialect = Support.getTestDialect();
 
 if (dialect.match(/^mssql/)) {
@@ -83,7 +83,7 @@ if (dialect.match(/^mssql/)) {
     describe('Errors', () => {
       it('ECONNREFUSED', () => {
         const sequelize = Support.createSequelizeInstance({ port: 34237 });
-        return expect(sequelize.connectionManager.getConnection()).to.have.been.rejectedWith(sequelize.ConnectionRefusedError);
+        return expect(sequelize.connectionManager.getConnection()).to.have.been.rejectedWith(sequelize.ConnectionError);
       });
 
       it('ENOTFOUND', () => {

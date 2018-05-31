@@ -1,10 +1,10 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
-const dialect = Support.getTestDialect();
 import DataTypes from '../../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
+const dialect = Support.getTestDialect();
 
 if (dialect === 'mysql') {
   describe('[MYSQL Specific] Errors', () => {
@@ -18,9 +18,9 @@ if (dialect === 'mysql') {
 
     describe('ForeignKeyConstraintError', () => {
       beforeEach(function() {
-        this.Task = this.sequelize.define('task', { title: DataTypes.STRING });
-        this.User = this.sequelize.define('user', { username: DataTypes.STRING });
-        this.UserTasks = this.sequelize.define('tasksusers', { userId: DataTypes.INTEGER, taskId: DataTypes.INTEGER });
+        this.Task = this.sequelize.define('task', { title: new DataTypes.STRING() });
+        this.User = this.sequelize.define('user', { username: new DataTypes.STRING() });
+        this.UserTasks = this.sequelize.define('tasksusers', { userId: new DataTypes.INTEGER(), taskId: new DataTypes.INTEGER() });
 
         this.User.belongsToMany(this.Task, { onDelete: 'RESTRICT', through: 'tasksusers' });
         this.Task.belongsToMany(this.User, { onDelete: 'RESTRICT', through: 'tasksusers' });
@@ -29,13 +29,13 @@ if (dialect === 'mysql') {
       });
 
       it('in context of DELETE restriction', function() {
-        const self = this,
-          ForeignKeyConstraintError = this.sequelize.ForeignKeyConstraintError;
+        const self = this;
+        const ForeignKeyConstraintError = this.sequelize.ForeignKeyConstraintError;
 
         return this.sequelize.sync({ force: true }).bind({}).then(() => {
           return Promise.all([
             self.User.create({ id: 67, username: 'foo' }),
-            self.Task.create({ id: 52, title: 'task' })
+            self.Task.create({ id: 52, title: 'task' }),
           ]);
         }).spread(function(user1, task1) {
           this.user1 = user1;
@@ -56,14 +56,14 @@ if (dialect === 'mysql') {
               value: undefined,
               index: 'tasksusers_ibfk_2',
               reltype: 'parent'
-            })
+            }),
           ]);
         });
       });
 
       it('in context of missing relation', function() {
-        const self = this,
-          ForeignKeyConstraintError = this.sequelize.ForeignKeyConstraintError;
+        const self = this;
+        const ForeignKeyConstraintError = this.sequelize.ForeignKeyConstraintError;
 
         return this.sequelize.sync({ force: true }).then(() =>
           validateError(self.Task.create({ title: 'task', primaryUserId: 5 }), ForeignKeyConstraintError, {

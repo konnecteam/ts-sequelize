@@ -1,8 +1,8 @@
 'use strict';
 
-import ResourceLock from '../../../../lib/dialects/mssql/resource-lock';
-import Promise from '../../../../lib/promise';
 import * as assert from 'assert';
+import { ResourceLock } from '../../../../lib/dialects/mssql/resource-lock';
+import Promise from '../../../../lib/promise';
 import Support from '../../../support';
 const dialect = Support.getTestDialect();
 
@@ -36,7 +36,7 @@ if (dialect === 'mssql') {
           last = 3;
 
           return Promise.delay(5);
-        })
+        }),
       ]);
     });
 
@@ -54,7 +54,7 @@ if (dialect === 'mssql') {
 
           throw new Error('unexpected error');
         }).catch(() => {}),
-        Promise.using(lock.lock(), validateResource)
+        Promise.using(lock.lock(), validateResource),
       ]);
     });
 

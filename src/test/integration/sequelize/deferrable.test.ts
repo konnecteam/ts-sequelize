@@ -1,12 +1,12 @@
 'use strict';
 
-import * as _ from 'lodash';
 import * as chai from 'chai';
-const expect = chai.expect;
+import * as _ from 'lodash';
+import {Sequelize} from '../../../index';
 import DataTypes from '../../../lib/data-types';
-import Support from '../support';
-import {Sequelize}from '../../../index';
 import config from '../../config/config';
+import Support from '../support';
+const expect = chai.expect;
 
 if (Support.sequelize.dialect.supports.deferrableConstraints) {
   describe(Support.getTestDialectTeaser('Sequelize'), () => {
@@ -16,19 +16,19 @@ if (Support.sequelize.dialect.supports.deferrableConstraints) {
           options = options || {};
 
           const taskTableName      = options.taskTableName || 'tasks_' + config.rand();
-          const transactionOptions = _.assign({}, { deferrable: Sequelize.Deferrable.SET_DEFERRED }, options);
+          const transactionOptions = _.assign({}, { deferrable: new Sequelize.Deferrable.SetDeferred() }, options);
           const userTableName      = 'users_' + config.rand();
 
           const User = this.sequelize.define(
-            'User', { name: DataTypes.STRING }, { tableName: userTableName }
+            'User', { name: new DataTypes.STRING() }, { tableName: userTableName }
           );
 
           const Task = this.sequelize.define(
             'Task', {
-              title: DataTypes.STRING,
+              title: new DataTypes.STRING(),
               user_id: {
                 allowNull: false,
-                type: DataTypes.INTEGER,
+                type: new DataTypes.INTEGER(),
                 references: {
                   model: userTableName,
                   key: 'id',
@@ -60,14 +60,14 @@ if (Support.sequelize.dialect.supports.deferrableConstraints) {
 
       describe('NOT', () => {
         it('does not allow the violation of the foreign key constraint', function() {
-          return expect(this.run(Sequelize.Deferrable.NOT)).to.eventually.be.rejectedWith(Sequelize.ForeignKeyConstraintError);
+          return expect(this.run(new Sequelize.Deferrable.NOT())).to.eventually.be.rejectedWith(Sequelize.ForeignKeyConstraintError);
         });
       });
 
-      describe('INITIALLY_IMMEDIATE', () => {
+      describe('InitiallyImmediate', () => {
         it('allows the violation of the foreign key constraint if the transaction is deferred', function() {
           return this
-            .run(Sequelize.Deferrable.INITIALLY_IMMEDIATE)
+            .run(new Sequelize.Deferrable.InitiallyImmediate())
             .then(task => {
               expect(task.title).to.equal('a task');
               expect(task.user_id).to.equal(1);
@@ -75,7 +75,7 @@ if (Support.sequelize.dialect.supports.deferrableConstraints) {
         });
 
         it('does not allow the violation of the foreign key constraint if the transaction is not deffered', function() {
-          return expect(this.run(Sequelize.Deferrable.INITIALLY_IMMEDIATE, {
+          return expect(this.run(new Sequelize.Deferrable.InitiallyImmediate(), {
             deferrable: undefined
           })).to.eventually.be.rejectedWith(Sequelize.ForeignKeyConstraintError);
         });
@@ -84,8 +84,8 @@ if (Support.sequelize.dialect.supports.deferrableConstraints) {
           const taskTableName = 'tasks_' + config.rand();
 
           return this
-            .run(Sequelize.Deferrable.INITIALLY_IMMEDIATE, {
-              deferrable: Sequelize.Deferrable.SET_DEFERRED([taskTableName + '_user_id_fkey']),
+            .run(new Sequelize.Deferrable.InitiallyImmediate(), {
+              deferrable: new Sequelize.Deferrable.SetDeferred([taskTableName + '_user_id_fkey']),
               taskTableName
             })
             .then(task => {
@@ -95,10 +95,10 @@ if (Support.sequelize.dialect.supports.deferrableConstraints) {
         });
       });
 
-      describe('INITIALLY_DEFERRED', () => {
+      describe('InitiallyDeferred', () => {
         it('allows the violation of the foreign key constraint', function() {
           return this
-            .run(Sequelize.Deferrable.INITIALLY_DEFERRED)
+            .run(new Sequelize.Deferrable.InitiallyDeferred())
             .then(task => {
               expect(task.title).to.equal('a task');
               expect(task.user_id).to.equal(1);

@@ -1,16 +1,16 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
 import * as _ from 'lodash';
-import Support from '../../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('hasOne'), () => {
   it('properly use the `as` key to generate foreign key name', () => {
-    const User = current.define('User', { username: DataTypes.STRING }),
-      Task = current.define('Task', { title: DataTypes.STRING });
+    const User = current.define('User', { username: new DataTypes.STRING() });
+    const Task = current.define('Task', { title: new DataTypes.STRING() });
 
     User.hasOne(Task);
     expect(Task.rawAttributes.UserId).not.to.be.empty;
@@ -35,7 +35,6 @@ describe(Support.getTestDialectTeaser('hasOne'), () => {
         return realMethod;
       };
     });
-
     User.hasOne(Task, { as: 'task' });
 
     const user = User.build();

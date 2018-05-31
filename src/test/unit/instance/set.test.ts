@@ -1,18 +1,18 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
+import * as sinon from 'sinon';
 import DataTypes from '../../../lib/data-types';
+import Support from '../../support';
+const expect = chai.expect;
 const current = Support.sequelize;
 const Promise = current.Promise;
-import * as sinon from 'sinon';
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
   describe('set', () => {
     it('sets nested keys in JSON objects', () => {
       const User = current.define('User', {
-        meta: DataTypes.JSONB
+        meta: new DataTypes.JSONB()
       });
       const user = User.build({
         meta: {
@@ -35,7 +35,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     it('doesnt mutate the JSONB defaultValue', () => {
       const User = current.define('User', {
         meta: {
-          type: DataTypes.JSONB,
+          type: new DataTypes.JSONB(),
           allowNull: false,
           defaultValue: {}
         }
@@ -49,7 +49,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     it('sets the date "1970-01-01" to previously null field', () => {
       const User = current.define('User', {
         date: {
-          type: DataTypes.DATE,
+          type: new DataTypes.DATE(),
           allowNull: true
         }
       });
@@ -63,7 +63,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     it('overwrites non-date originalValue with date', () => {
       const User = current.define('User', {
-        date: DataTypes.DATE
+        date: new DataTypes.DATE()
       });
       const user = User.build({
         date: ' '
@@ -90,7 +90,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
       const User = current.define('User', {
         phoneNumber: {
-          type: DataTypes.STRING,
+          type: new DataTypes.STRING(),
           set(val) {
             if (typeof val === 'object' && val !== null) {
               val = `00${val.country}${val.area}${val.local}`;

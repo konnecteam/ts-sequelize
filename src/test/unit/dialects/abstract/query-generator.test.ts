@@ -44,12 +44,12 @@ describe('QueryGenerator', () => {
     });
 
     it('should parse set aliases strings as operators', function() {
-      const QG = support.getAbstractQueryGenerator(this.sequelize),
-        aliases = {
-          OR: Op.or,
-          '!': Op.not,
-          '^^': Op.gt
-        };
+      const QG = support.getAbstractQueryGenerator(this.sequelize);
+      const aliases = {
+        'OR': Op.or,
+        '!': Op.not,
+        '^^': Op.gt
+      };
 
       QG.setOperatorsAliases(aliases);
 

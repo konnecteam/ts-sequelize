@@ -1,39 +1,55 @@
 'use strict';
 
-import * as Toposort from 'toposort-class';
 import * as _ from 'lodash';
+import * as Toposort from 'toposort-class';
+import { Sequelize } from '..';
+import { Model } from './model';
 
 export class ModelManager {
-  models;
-  sequelize;
-  constructor(sequelize) {
+  public models : any[];
+  public sequelize : Sequelize;
+  constructor(sequelize : Sequelize) {
     this.models = [];
     this.sequelize = sequelize;
   }
 
-  addModel(model) {
+  /**
+   * Add a Model to the Model manager
+   */
+  public addModel(model : typeof Model) {
     this.models.push(model);
     this.sequelize.models[model.name] = model;
 
     return model;
   }
 
-  removeModel(modelToRemove) {
+  /**
+   * remove a Model to the Model manager
+   */
+  public removeModel(modelToRemove : typeof Model) {
     this.models = this.models.filter(model => model.name !== modelToRemove.name);
 
     delete this.sequelize.models[modelToRemove.name];
   }
 
-  getModel(against, options) {
+  /**
+   * get a Model of the Model manager
+   * @param against attributes of the desired model
+   * @param options
+   */
+  public getModel(against : {}, options? : { attribute? }) : typeof Model {
     options = _.defaults(options || {}, {
       attribute: 'name'
     });
 
-    const model = this.models.filter(model => model[options.attribute] === against);
+    const model = this.models.filter(filterModel => filterModel[options.attribute] === against);
 
     return model ? model[0] : null;
   }
 
+  /**
+   * get all Models of the Model manager
+   */
   get all() {
     return this.models;
   }
@@ -42,9 +58,8 @@ export class ModelManager {
    * Iterate over Models in an order suitable for e.g. creating tables. Will
    * take foreign key constraints into account so that dependencies are visited
    * before dependents.
-   * @private
    */
-  forEachModel(iterator, options) {
+  public forEachModel(iterator : any, options? : { reverse? }) {
     const models = {};
     const sorter = new Toposort();
     let sorted;
@@ -63,24 +78,21 @@ export class ModelManager {
       }
 
       models[tableName] = model;
+      Object.keys(model.rawAttributes).forEach(attrName => {
+        const attribute = model.rawAttributes[attrName];
 
-      for (const attrName in model.rawAttributes) {
-        if (model.rawAttributes.hasOwnProperty(attrName)) {
-          const attribute = model.rawAttributes[attrName];
+        if (attribute.references) {
+          dep = attribute.references.model;
 
-          if (attribute.references) {
-            dep = attribute.references.model;
-
-            if (_.isObject(dep)) {
-              dep = dep.schema + '.' + dep.tableName;
-            }
-
-            deps.push(dep);
+          if (_.isObject(dep)) {
+            dep = dep.schema + '.' + dep.tableName;
           }
-        }
-      }
 
-      deps = deps.filter(dep => tableName !== dep);
+          deps.push(dep);
+        }
+      });
+
+      deps = deps.filter(filterDep => tableName !== filterDep);
 
       sorter.add(tableName, deps);
     }

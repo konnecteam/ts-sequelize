@@ -1,27 +1,27 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../support';
 import DataTypes from '../../../lib/data-types';
+import Support from '../support';
+const expect = chai.expect;
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
   describe('toJSON', () => {
     beforeEach(function() {
       this.User = this.sequelize.define('User', {
-        username: { type: DataTypes.STRING },
-        age: DataTypes.INTEGER,
-        level: { type: DataTypes.INTEGER },
+        username: { type: new DataTypes.STRING() },
+        age: new DataTypes.INTEGER(),
+        level: { type: new DataTypes.INTEGER() },
         isUser: {
-          type: DataTypes.BOOLEAN,
+          type: new DataTypes.BOOLEAN(),
           defaultValue: false
         },
-        isAdmin: { type: DataTypes.BOOLEAN }
+        isAdmin: { type: new DataTypes.BOOLEAN() }
       }, {
         timestamps: false
       });
 
-      this.Project = this.sequelize.define('NiceProject', { title: DataTypes.STRING }, { timestamps: false });
+      this.Project = this.sequelize.define('NiceProject', { title: new DataTypes.STRING() }, { timestamps: false });
 
       this.User.hasMany(this.Project, { as: 'Projects', foreignKey: 'lovelyUserId' });
       this.Project.belongsTo(this.User, { as: 'LovelyUser', foreignKey: 'lovelyUserId' });
@@ -40,7 +40,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
               id: project.id
             },
             include: [
-              { model: self.User, as: 'LovelyUser' }
+              { model: self.User, as: 'LovelyUser' },
             ]
           });
         })
@@ -59,7 +59,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
               id: user.id
             },
             include: [
-              { model: self.Project, as: 'Projects' }
+              { model: self.Project, as: 'Projects' },
             ]
           });
         })

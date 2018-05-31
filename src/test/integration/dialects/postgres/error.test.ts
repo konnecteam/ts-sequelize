@@ -1,20 +1,20 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
+import * as _ from 'lodash';
 import DataTypes from '../../../../lib/data-types';
 import Support from '../../support';
+const expect = chai.expect;
 const Sequelize = Support.Sequelize;
 const dialect   = Support.getTestDialect();
-import * as _ from 'lodash';
 
 if (dialect.match(/^postgres/)) {
   const constraintName = 'overlap_period';
   beforeEach(function() {
     const self = this;
     this.Booking = self.sequelize.define('Booking', {
-      roomNo: DataTypes.INTEGER,
-      period: DataTypes.RANGE(DataTypes.DATE)
+      roomNo: new DataTypes.INTEGER(),
+      period: new DataTypes.RANGE(new DataTypes.DATE())
     });
     return self.Booking
       .sync({ force: true })
@@ -30,7 +30,7 @@ if (dialect.match(/^postgres/)) {
       const errDetails = {
         message: 'Exclusion constraint error',
         constraint: 'constraint_name',
-        fields: { 'field1': 1, 'field2': [123, 321] },
+        fields: { field1: 1, field2: [123, 321] },
         table: 'table_name',
         parent: new Error('Test error')
       };

@@ -1,15 +1,15 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
-import Operators from '../../../../lib/operators';
-import QueryGenerator from '../../../../lib/dialects/postgres/query-generator';
-import Support from '../../../support';
-const dialect = Support.getTestDialect();
-import DataTypes from '../../../../lib/data-types';
-import * as moment from 'moment';
-const current = Support.sequelize;
 import * as _ from 'lodash';
+import * as moment from 'moment';
+import DataTypes from '../../../../lib/data-types';
+import Operators from '../../../../lib/operators';
+import Support from '../../../support';
+const expect = chai.expect;
+const dialect = Support.getTestDialect();
+const current = Support.sequelize;
+const QueryGenerator = current.dialect.QueryGenerator;
 
 if (dialect.match(/^postgres/)) {
   describe('[POSTGRES Specific] QueryGenerator', () => {
@@ -49,7 +49,7 @@ if (dialect.match(/^postgres/)) {
           title: 'Should use the minus operator without returning clause',
           arguments: ['-', 'myTable', { foo: 'bar' }, {}, { returning: false }],
           expectation: 'UPDATE "myTable" SET "foo"="foo"- \'bar\' '
-        }
+        },
       ],
       attributesToSQL: [
         {
@@ -132,7 +132,7 @@ if (dialect.match(/^postgres/)) {
           arguments: [{id: {type: 'INTEGER', allowNull: false, defaultValue: 1, references: { model: 'Bar' }, onDelete: 'CASCADE', onUpdate: 'RESTRICT'}}],
           expectation: {id: 'INTEGER NOT NULL DEFAULT 1 REFERENCES Bar (id) ON DELETE CASCADE ON UPDATE RESTRICT'},
           context: {options: {quoteIdentifiers: false}}
-        }
+        },
       ],
 
       createTableQuery: [
@@ -145,11 +145,11 @@ if (dialect.match(/^postgres/)) {
           expectation: 'CREATE TABLE IF NOT EXISTS \"myTable\" (\"title\" VARCHAR(255), \"name\" VARCHAR(255));'
         },
         {
-          arguments: ['myTable', {data: current.normalizeDataType(DataTypes.BLOB).toSql()}],
+          arguments: ['myTable', {data: current.normalizeDataType(new DataTypes.BLOB()).toSql()}],
           expectation: 'CREATE TABLE IF NOT EXISTS \"myTable\" (\"data\" BYTEA);'
         },
         {
-          arguments: ['myTable', {data: current.normalizeDataType(DataTypes.BLOB('long')).toSql()}],
+          arguments: ['myTable', {data: current.normalizeDataType(new DataTypes.BLOB('long')).toSql()}],
           expectation: 'CREATE TABLE IF NOT EXISTS \"myTable\" (\"data\" BYTEA);'
         },
         {
@@ -194,7 +194,7 @@ if (dialect.match(/^postgres/)) {
           arguments: ['myTable', {title: 'VARCHAR(255)', name: 'VARCHAR(255)', otherId: 'INTEGER REFERENCES otherTable (id) ON DELETE CASCADE ON UPDATE NO ACTION'}],
           expectation: 'CREATE TABLE IF NOT EXISTS myTable (title VARCHAR(255), name VARCHAR(255), otherId INTEGER REFERENCES otherTable (id) ON DELETE CASCADE ON UPDATE NO ACTION);',
           context: {options: {quoteIdentifiers: false}}
-        }
+        },
       ],
 
       dropTableQuery: [
@@ -235,7 +235,7 @@ if (dialect.match(/^postgres/)) {
           arguments: [{tableName: 'myTable', schema: 'mySchema'}, {cascade: true}],
           expectation: 'DROP TABLE IF EXISTS mySchema.myTable CASCADE;',
           context: {options: {quoteIdentifiers: false}}
-        }
+        },
       ],
 
       changeColumnQuery: [
@@ -244,8 +244,10 @@ if (dialect.match(/^postgres/)) {
             col_1: "ENUM('value 1', 'value 2') NOT NULL",
             col_2: "ENUM('value 3', 'value 4') NOT NULL"
           }],
-          expectation: 'ALTER TABLE "myTable" ALTER COLUMN "col_1" SET NOT NULL;ALTER TABLE "myTable" ALTER COLUMN "col_1" DROP DEFAULT;CREATE TYPE "public"."enum_myTable_col_1" AS ENUM(\'value 1\', \'value 2\');ALTER TABLE "myTable" ALTER COLUMN "col_1" TYPE "public"."enum_myTable_col_1" USING ("col_1"::"public"."enum_myTable_col_1");ALTER TABLE "myTable" ALTER COLUMN "col_2" SET NOT NULL;ALTER TABLE "myTable" ALTER COLUMN "col_2" DROP DEFAULT;CREATE TYPE "public"."enum_myTable_col_2" AS ENUM(\'value 3\', \'value 4\');ALTER TABLE "myTable" ALTER COLUMN "col_2" TYPE "public"."enum_myTable_col_2" USING ("col_2"::"public"."enum_myTable_col_2");'
-        }
+          expectation: 'ALTER TABLE "myTable" ALTER COLUMN "col_1" SET NOT NULL;ALTER TABLE "myTable" ALTER COLUMN "col_1" DROP DEFAULT;CREATE TYPE "public"."enum_myTable_col_1" AS ENUM(\'value 1\', \'value 2\');' +
+          'ALTER TABLE "myTable" ALTER COLUMN "col_1" TYPE "public"."enum_myTable_col_1" USING ("col_1"::"public"."enum_myTable_col_1");ALTER TABLE "myTable" ALTER COLUMN "col_2" SET NOT NULL;ALTER TABLE "myTable" ALTER COLUMN "col_2" DROP DEFAULT;'
+          + 'CREATE TYPE "public"."enum_myTable_col_2" AS ENUM(\'value 3\', \'value 4\');ALTER TABLE "myTable" ALTER COLUMN "col_2" TYPE "public"."enum_myTable_col_2" USING ("col_2"::"public"."enum_myTable_col_2");'
+        },
       ],
 
       selectQuery: [
@@ -287,12 +289,12 @@ if (dialect.match(/^postgres/)) {
           expectation: 'SELECT * FROM "myTable" ORDER BY "myTable"."id" DESC;',
           context: QueryGenerator
         }, {
-          arguments: ['myTable', {order: [['id', 'DESC']]}, function(sequelize) {return sequelize.define('myTable', {});}],
+          arguments: ['myTable', {order: [['id', 'DESC']]}, function(sequelize) {return sequelize.define('myTable', {}); }],
           expectation: 'SELECT * FROM "myTable" AS "myTable" ORDER BY "myTable"."id" DESC;',
           context: QueryGenerator,
           needsSequelize: true
         }, {
-          arguments: ['myTable', {order: [['id', 'DESC'], ['name']]}, function(sequelize) {return sequelize.define('myTable', {});}],
+          arguments: ['myTable', {order: [['id', 'DESC'], ['name']]}, function(sequelize) {return sequelize.define('myTable', {}); }],
           expectation: 'SELECT * FROM "myTable" AS "myTable" ORDER BY "myTable"."id" DESC, "myTable"."name";',
           context: QueryGenerator,
           needsSequelize: true
@@ -348,7 +350,7 @@ if (dialect.match(/^postgres/)) {
             return {
               order: [
                 [sequelize.fn('f1', sequelize.col('myTable.id')), 'DESC'],
-                [sequelize.fn('f2', 12, 'lalala', new Date(Date.UTC(2011, 2, 27, 10, 1, 55))), 'ASC']
+                [sequelize.fn('f2', 12, 'lalala', new Date(Date.UTC(2011, 2, 27, 10, 1, 55))), 'ASC'],
               ]
             };
           }],
@@ -542,7 +544,7 @@ if (dialect.match(/^postgres/)) {
           arguments: ['myTable', {where: {field: {$notIRegexp: '^[h|a|t]'}}}],
           expectation: "SELECT * FROM \"myTable\" WHERE \"myTable\".\"field\" !~* '^[h|a|t]';",
           context: QueryGenerator
-        }
+        },
       ],
 
       insertQuery: [
@@ -654,7 +656,7 @@ if (dialect.match(/^postgres/)) {
           arguments: [{tableName: 'myTable', schema: 'mySchema'}, {name: "foo';DROP TABLE mySchema.myTable;"}],
           expectation: "INSERT INTO mySchema.myTable (name) VALUES ('foo'';DROP TABLE mySchema.myTable;');",
           context: {options: {quoteIdentifiers: false}}
-        }
+        },
       ],
 
       bulkInsertQuery: [
@@ -744,7 +746,7 @@ if (dialect.match(/^postgres/)) {
           arguments: [{schema: 'mySchema', tableName: 'myTable'}, [{name: "foo';DROP TABLE mySchema.myTable;"}, {name: 'bar'}]],
           expectation: "INSERT INTO mySchema.myTable (name) VALUES ('foo'';DROP TABLE mySchema.myTable;'),('bar');",
           context: {options: {quoteIdentifiers: false}}
-        }
+        },
       ],
 
       updateQuery: [
@@ -850,7 +852,7 @@ if (dialect.match(/^postgres/)) {
           arguments: [{schema: 'mySchema', tableName: 'myTable'}, {name: "foo';DROP TABLE mySchema.myTable;"}, {name: 'foo'}],
           expectation: "UPDATE mySchema.myTable SET name='foo'';DROP TABLE mySchema.myTable;' WHERE name = 'foo'",
           context: {options: {quoteIdentifiers: false}}
-        }
+        },
       ],
 
       removeIndexQuery: [
@@ -878,7 +880,7 @@ if (dialect.match(/^postgres/)) {
           arguments: ['User', 'mySchema.user_foo_bar'],
           expectation: 'DROP INDEX IF EXISTS mySchema.user_foo_bar',
           context: {options: {quoteIdentifiers: false}}
-        }
+        },
       ],
 
       startTransactionQuery: [
@@ -896,7 +898,7 @@ if (dialect.match(/^postgres/)) {
           arguments: [{parent: 'MockTransaction', name: 'transaction-uid'}],
           expectation: 'SAVEPOINT \"transaction-uid\";',
           context: {options: {quoteIdentifiers: true}}
-        }
+        },
       ],
 
       rollbackTransactionQuery: [
@@ -914,7 +916,7 @@ if (dialect.match(/^postgres/)) {
           arguments: [{parent: 'MockTransaction', name: 'transaction-uid'}],
           expectation: 'ROLLBACK TO SAVEPOINT \"transaction-uid\";',
           context: {options: {quoteIdentifiers: true}}
-        }
+        },
       ],
 
       createTrigger: [
@@ -933,7 +935,7 @@ if (dialect.match(/^postgres/)) {
         {
           arguments: ['myTable', 'myTrigger', 'after_constraint', ['insert', 'update'],  'myFunction', [{name: 'bar', type: 'INTEGER'}], ['FOR EACH ROW']],
           expectation: 'CREATE CONSTRAINT TRIGGER myTrigger\n\tAFTER INSERT OR UPDATE\n\tON myTable\n\t\n\tFOR EACH ROW\n\tEXECUTE PROCEDURE myFunction(bar INTEGER);'
-        }
+        },
       ],
       getForeignKeyReferenceQuery: [
         {
@@ -978,7 +980,7 @@ if (dialect.match(/^postgres/)) {
                 'ON ccu.constraint_name = tc.constraint_name ' +
             'WHERE constraint_type = \'FOREIGN KEY\' AND tc.table_name=\'myTable\' AND  kcu.column_name = \'myColumn\'' +
               ' AND tc.table_schema = \'mySchema\''
-        }
+        },
       ]
     };
 
@@ -986,24 +988,28 @@ if (dialect.match(/^postgres/)) {
       describe(suiteTitle, () => {
         afterEach(function() {
           this.sequelize.options.quoteIdentifiers = true;
-          (QueryGenerator.options as any).quoteIdentifiers = true;
+          QueryGenerator.options.quoteIdentifiers = true;
         });
 
-        tests.forEach(test => {
+        (tests as any).forEach(test => {
           const title = test.title || 'Postgres correctly returns ' + test.expectation + ' for ' + JSON.stringify(test.arguments);
           it(title, function() {
             // Options would normally be set by the query interface that instantiates the query-generator, but here we specify it explicitly
             const context = test.context || {options: {}};
 
             if (test.needsSequelize) {
-              if (_.isFunction(test.arguments[1])) test.arguments[1] = test.arguments[1](this.sequelize);
-              if (_.isFunction(test.arguments[2])) test.arguments[2] = test.arguments[2](this.sequelize);
+              if (_.isFunction(test.arguments[1])) {
+                test.arguments[1] = test.arguments[1](this.sequelize);
+              }
+              if (_.isFunction(test.arguments[2])) {
+                test.arguments[2] = test.arguments[2](this.sequelize);
+              }
             }
 
             QueryGenerator.options = _.assign(context.options, { timezone: '+00:00' });
-            (QueryGenerator as any)._dialect = this.sequelize.dialect;
-            (QueryGenerator as any).sequelize = this.sequelize;
-            (QueryGenerator as any).setOperatorsAliases(Operators.LegacyAliases);
+            QueryGenerator._dialect = this.sequelize.dialect;
+            QueryGenerator.sequelize = this.sequelize;
+            QueryGenerator.setOperatorsAliases(Operators.LegacyAliases);
             const conditions = QueryGenerator[suiteTitle].apply(QueryGenerator, test.arguments);
             expect(conditions).to.deep.equal(test.expectation);
           });

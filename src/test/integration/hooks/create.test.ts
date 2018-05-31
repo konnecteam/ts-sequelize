@@ -1,21 +1,21 @@
 'use strict';
 
-import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../support';
-import DataTypes from '../../../lib/data-types';
-import * as sinon from 'sinon';
 import * as Promise from 'bluebird';
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+import DataTypes from '../../../lib/data-types';
+import Support from '../support';
+const expect = chai.expect;
 
 describe(Support.getTestDialectTeaser('Hooks'), () => {
   beforeEach(function() {
     this.User = this.sequelize.define('User', {
       username: {
-        type: DataTypes.STRING,
+        type: new DataTypes.STRING(),
         allowNull: false
       },
       mood: {
-        type: DataTypes.ENUM,
+        type: new DataTypes.ENUM(),
         values: ['happy', 'sad', 'neutral']
       }
     });
@@ -25,10 +25,10 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
   describe('#create', () => {
     describe('on success', () => {
       it('should run hooks', function() {
-        const beforeHook = sinon.spy(),
-          afterHook = sinon.spy(),
-          beforeSave = sinon.spy(),
-          afterSave = sinon.spy();
+        const beforeHook = sinon.spy();
+        const afterHook = sinon.spy();
+        const beforeSave = sinon.spy();
+        const afterSave = sinon.spy();
 
         this.User.beforeCreate(beforeHook);
         this.User.afterCreate(afterHook);
@@ -46,10 +46,10 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
     describe('on error', () => {
       it('should return an error from before', function() {
-        const beforeHook = sinon.spy(),
-          beforeSave = sinon.spy(),
-          afterHook = sinon.spy(),
-          afterSave = sinon.spy();
+        const beforeHook = sinon.spy();
+        const beforeSave = sinon.spy();
+        const afterHook = sinon.spy();
+        const afterSave = sinon.spy();
 
         this.User.beforeCreate(() => {
           beforeHook();
@@ -68,10 +68,10 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       });
 
       it('should return an error from after', function() {
-        const beforeHook = sinon.spy(),
-          beforeSave = sinon.spy(),
-          afterHook = sinon.spy(),
-          afterSave = sinon.spy();
+        const beforeHook = sinon.spy();
+        const beforeSave = sinon.spy();
+        const afterHook = sinon.spy();
+        const afterSave = sinon.spy();
 
 
         this.User.beforeCreate(beforeHook);
@@ -93,10 +93,10 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
     it('should not trigger hooks on parent when using N:M association setters', function() {
       const A = this.sequelize.define('A', {
-        name: DataTypes.STRING
+        name: new DataTypes.STRING()
       });
       const B = this.sequelize.define('B', {
-        name: DataTypes.STRING
+        name: new DataTypes.STRING()
       });
 
       let hookCalled = 0;
@@ -112,7 +112,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       return this.sequelize.sync({force: true}).bind(this).then(function() {
         return this.sequelize.Promise.all([
           A.create({name: 'a'}),
-          B.create({name: 'b'})
+          B.create({name: 'b'}),
         ]).spread((a, b) => {
           return a.addB(b).then(() => {
             expect(hookCalled).to.equal(1);

@@ -1,11 +1,11 @@
 'use strict';
 
-import * as util from 'util';
 import * as chai from 'chai';
-const expect = chai.expect;
-import Support from '../../support';
+import * as util from 'util';
 import DataTypes from '../../../lib/data-types';
-import {Model} from '../../../lib/model';
+import { Model } from '../../../lib/model';
+import Support from '../../support';
+const expect = chai.expect;
 const expectsql = Support.expectsql;
 const current = Support.sequelize;
 const sql = current.dialect.QueryGenerator;
@@ -32,23 +32,23 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
     // models
     const User = Support.sequelize.define('User', {
       id: {
-        type: DataTypes.INTEGER,
+        type: new DataTypes.INTEGER(),
         primaryKey: true,
         autoIncrement: true,
         field: 'id'
       },
       name: {
-        type: DataTypes.STRING,
+        type: new DataTypes.STRING(),
         field: 'name',
         allowNull: false
       },
       createdAt: {
-        type: DataTypes.DATE,
+        type: new DataTypes.DATE(),
         field: 'created_at',
         allowNull: false
       },
       updatedAt: {
-        type: DataTypes.DATE,
+        type: new DataTypes.DATE(),
         field: 'updated_at',
         allowNull: true
       }
@@ -59,23 +59,23 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
 
     const Project = Support.sequelize.define('Project', {
       id: {
-        type: DataTypes.INTEGER,
+        type: new DataTypes.INTEGER(),
         primaryKey: true,
         autoIncrement: true,
         field: 'id'
       },
       name: {
-        type: DataTypes.STRING,
+        type: new DataTypes.STRING(),
         field: 'name',
         allowNull: false
       },
       createdAt: {
-        type: DataTypes.DATE,
+        type: new DataTypes.DATE(),
         field: 'created_at',
         allowNull: false
       },
       updatedAt: {
-        type: DataTypes.DATE,
+        type: new DataTypes.DATE(),
         field: 'updated_at',
         allowNull: true
       }
@@ -86,28 +86,28 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
 
     const ProjectUser = Support.sequelize.define('ProjectUser', {
       id: {
-        type: DataTypes.INTEGER,
+        type: new DataTypes.INTEGER(),
         primaryKey: true,
         autoIncrement: true,
         field: 'id'
       },
       userId: {
-        type: DataTypes.INTEGER,
+        type: new DataTypes.INTEGER(),
         field: 'user_id',
         allowNull: false
       },
       projectId: {
-        type: DataTypes.INTEGER,
+        type: new DataTypes.INTEGER(),
         field: 'project_id',
         allowNull: false
       },
       createdAt: {
-        type: DataTypes.DATE,
+        type: new DataTypes.DATE(),
         field: 'created_at',
         allowNull: false
       },
       updatedAt: {
-        type: DataTypes.DATE,
+        type: new DataTypes.DATE(),
         field: 'updated_at',
         allowNull: true
       }
@@ -118,28 +118,28 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
 
     const Task = Support.sequelize.define('Task', {
       id: {
-        type: DataTypes.INTEGER,
+        type: new DataTypes.INTEGER(),
         primaryKey: true,
         autoIncrement: true,
         field: 'id'
       },
       name: {
-        type: DataTypes.STRING,
+        type: new DataTypes.STRING(),
         field: 'name',
         allowNull: false
       },
       projectId: {
-        type: DataTypes.INTEGER,
+        type: new DataTypes.INTEGER(),
         field: 'project_id',
         allowNull: false
       },
       createdAt: {
-        type: DataTypes.DATE,
+        type: new DataTypes.DATE(),
         field: 'created_at',
         allowNull: false
       },
       updatedAt: {
-        type: DataTypes.DATE,
+        type: new DataTypes.DATE(),
         field: 'updated_at',
         allowNull: true
       }
@@ -150,28 +150,28 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
 
     const Subtask = Support.sequelize.define('Subtask', {
       id: {
-        type: DataTypes.INTEGER,
+        type: new DataTypes.INTEGER(),
         primaryKey: true,
         autoIncrement: true,
         field: 'id'
       },
       name: {
-        type: DataTypes.STRING,
+        type: new DataTypes.STRING(),
         field: 'name',
         allowNull: false
       },
       taskId: {
-        type: DataTypes.INTEGER,
+        type: new DataTypes.INTEGER(),
         field: 'task_id',
         allowNull: false
       },
       createdAt: {
-        type: DataTypes.DATE,
+        type: new DataTypes.DATE(),
         field: 'created_at',
         allowNull: false
       },
       updatedAt: {
-        type: DataTypes.DATE,
+        type: new DataTypes.DATE(),
         field: 'updated_at',
         allowNull: true
       }
@@ -230,7 +230,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       attributes: [
         'id',
         'name',
-        'createdAt'
+        'createdAt',
       ],
       include: Model._validateIncludedElements({
         include: [
@@ -240,7 +240,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             attributes: [
               'id',
               'name',
-              'createdAt'
+              'createdAt',
             ],
             include: [
               {
@@ -249,11 +249,11 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
                 attributes: [
                   'id',
                   'name',
-                  'createdAt'
+                  'createdAt',
                 ]
-              }
+              },
             ]
-          }
+          },
         ],
         model: Subtask
       }).include,
@@ -269,7 +269,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             as: 'Project'
           },
           'createdAt',
-          'ASC'
+          'ASC',
         ],
         // order with multiple simple association syntax without direction
         [
@@ -281,7 +281,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             model: Project,
             as: 'Project'
           },
-          'createdAt'
+          'createdAt',
         ],
 
         // order with simple association syntax with direction
@@ -291,7 +291,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             as: 'Task'
           },
           'createdAt',
-          'ASC'
+          'ASC',
         ],
         // order with simple association syntax without direction
         [
@@ -299,7 +299,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             model: Task,
             as: 'Task'
           },
-          'createdAt'
+          'createdAt',
         ],
 
         // through model object as array with direction
@@ -337,19 +337,31 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         // main order as array without direction
         ['createdAt'],
         // main order as string
-        'createdAt'
+        'createdAt',
       ]
     }, {
-      default: 'SELECT [Subtask].[id], [Subtask].[name], [Subtask].[createdAt], [Task].[id] AS [Task.id], [Task].[name] AS [Task.name], [Task].[created_at] AS [Task.createdAt], [Task->Project].[id] AS [Task.Project.id], [Task->Project].[name] AS [Task.Project.name], [Task->Project].[created_at] AS [Task.Project.createdAt] FROM [subtask] AS [Subtask] INNER JOIN [task] AS [Task] ON [Subtask].[task_id] = [Task].[id] INNER JOIN [project] AS [Task->Project] ON [Task].[project_id] = [Task->Project].[id] ORDER BY [Task->Project].[created_at] ASC, [Task->Project].[created_at], [Task].[created_at] ASC, [Task].[created_at], [Task->Project].[created_at] ASC, [Task->Project].[created_at], [Task].[created_at] ASC, [Task].[created_at], [Task->Project].[created_at] ASC, [Task->Project].[created_at], [Task].[created_at] ASC, [Task].[created_at], [Task->Project].[created_at] ASC, [Task->Project].[created_at], [Task].[created_at] ASC, [Task].[created_at], [Subtask].[created_at] ASC, [Subtask].[created_at], [Subtask].[created_at];',
-      postgres: 'SELECT "Subtask"."id", "Subtask"."name", "Subtask"."createdAt", "Task"."id" AS "Task.id", "Task"."name" AS "Task.name", "Task"."created_at" AS "Task.createdAt", "Task->Project"."id" AS "Task.Project.id", "Task->Project"."name" AS "Task.Project.name", "Task->Project"."created_at" AS "Task.Project.createdAt" FROM "subtask" AS "Subtask" INNER JOIN "task" AS "Task" ON "Subtask"."task_id" = "Task"."id" INNER JOIN "project" AS "Task->Project" ON "Task"."project_id" = "Task->Project"."id" ORDER BY "Task->Project"."created_at" ASC, "Task->Project"."created_at", "Task"."created_at" ASC, "Task"."created_at", "Task->Project"."created_at" ASC, "Task->Project"."created_at", "Task"."created_at" ASC, "Task"."created_at", "Task->Project"."created_at" ASC, "Task->Project"."created_at", "Task"."created_at" ASC, "Task"."created_at", "Task->Project"."created_at" ASC, "Task->Project"."created_at", "Task"."created_at" ASC, "Task"."created_at", "Subtask"."created_at" ASC, "Subtask"."created_at", "Subtask"."created_at";',
-      oracle: 'SELECT Subtask.id, Subtask.name, Subtask.createdAt, Task.id AS "Task.id", Task.name AS "Task.name", Task.created_at AS "Task.createdAt", "Task->Project".id AS "Task.Project.id", "Task->Project".name AS "Task.Project.name", "Task->Project".created_at AS "Task.Project.createdAt" FROM subtask Subtask INNER JOIN task Task ON Subtask.task_id = Task.id INNER JOIN project "Task->Project" ON Task.project_id = "Task->Project".id ORDER BY "Task->Project".created_at ASC, "Task->Project".created_at, Task.created_at ASC, Task.created_at, "Task->Project".created_at ASC, "Task->Project".created_at, Task.created_at ASC, Task.created_at, "Task->Project".created_at ASC, "Task->Project".created_at, Task.created_at ASC, Task.created_at, "Task->Project".created_at ASC, "Task->Project".created_at, Task.created_at ASC, Task.created_at, Subtask.created_at ASC, Subtask.created_at, Subtask.created_at;'
+      default: 'SELECT [Subtask].[id], [Subtask].[name], [Subtask].[createdAt], [Task].[id] AS [Task.id], [Task].[name] AS [Task.name], [Task].[created_at] AS [Task.createdAt], [Task->Project].[id] AS [Task.Project.id], [Task->Project].[name] AS'
+      + ' [Task.Project.name], [Task->Project].[created_at] AS [Task.Project.createdAt] FROM [subtask] AS [Subtask] INNER JOIN [task] AS [Task] ON [Subtask].[task_id] = [Task].[id] INNER JOIN [project] AS [Task->Project]'
+      + ' ON [Task].[project_id] = [Task->Project].[id] ORDER BY [Task->Project].[created_at] ASC, [Task->Project].[created_at], [Task].[created_at] ASC, [Task].[created_at], [Task->Project].[created_at] ASC, [Task->Project].[created_at],'
+      + ' [Task].[created_at] ASC, [Task].[created_at], [Task->Project].[created_at] ASC, [Task->Project].[created_at], [Task].[created_at] ASC, [Task].[created_at], [Task->Project].[created_at] ASC, [Task->Project].[created_at],'
+      + ' [Task].[created_at] ASC, [Task].[created_at], [Subtask].[created_at] ASC, [Subtask].[created_at], [Subtask].[created_at];',
+      postgres: 'SELECT "Subtask"."id", "Subtask"."name", "Subtask"."createdAt", "Task"."id" AS "Task.id", "Task"."name" AS "Task.name", "Task"."created_at" AS "Task.createdAt", "Task->Project"."id" AS "Task.Project.id", "Task->Project"."name" AS'
+      + ' "Task.Project.name", "Task->Project"."created_at" AS "Task.Project.createdAt" FROM "subtask" AS "Subtask" INNER JOIN "task" AS "Task" ON "Subtask"."task_id" = "Task"."id" INNER JOIN "project" AS "Task->Project" ON'
+      + ' "Task"."project_id" = "Task->Project"."id" ORDER BY "Task->Project"."created_at" ASC, "Task->Project"."created_at", "Task"."created_at" ASC, "Task"."created_at", "Task->Project"."created_at" ASC, "Task->Project"."created_at",'
+      + ' "Task"."created_at" ASC, "Task"."created_at", "Task->Project"."created_at" ASC, "Task->Project"."created_at", "Task"."created_at" ASC, "Task"."created_at", "Task->Project"."created_at" ASC, "Task->Project"."created_at",'
+      + ' "Task"."created_at" ASC, "Task"."created_at", "Subtask"."created_at" ASC, "Subtask"."created_at", "Subtask"."created_at";',
+      oracle: 'SELECT Subtask.id, Subtask.name, Subtask.createdAt, Task.id AS "Task.id", Task.name AS "Task.name", Task.created_at AS "Task.createdAt", "Task->Project".id AS "Task.Project.id", "Task->Project".name AS "Task.Project.name",'
+      + ' "Task->Project".created_at AS "Task.Project.createdAt" FROM subtask Subtask INNER JOIN task Task ON Subtask.task_id = Task.id INNER JOIN project "Task->Project" ON Task.project_id = "Task->Project".id'
+      + ' ORDER BY "Task->Project".created_at ASC, "Task->Project".created_at, Task.created_at ASC, Task.created_at, "Task->Project".created_at ASC, "Task->Project".created_at, Task.created_at ASC, Task.created_at,'
+      + ' "Task->Project".created_at ASC, "Task->Project".created_at, Task.created_at ASC, Task.created_at, "Task->Project".created_at ASC, "Task->Project".created_at, Task.created_at ASC,'
+      + ' Task.created_at, Subtask.created_at ASC, Subtask.created_at, Subtask.created_at;'
     });
 
     testsql({
       model: Subtask,
       attributes: ['id', 'name'],
       order: [
-        Support.sequelize.random()
+        Support.sequelize.random(),
       ]
     }, {
       mssql: 'SELECT [id], [name] FROM [subtask] AS [Subtask] ORDER BY RAND();',
@@ -358,12 +370,12 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       sqlite: 'SELECT `id`, `name` FROM `subtask` AS `Subtask` ORDER BY RANDOM();',
       oracle: 'SELECT id, name FROM subtask Subtask ORDER BY RAND();'
     });
-  
+
     describe('Invalid', () => {
       it('Error on invalid association', () => {
         return expect(Subtask.findAll({
           order: [
-            [Project, 'createdAt', 'ASC']
+            [Project, 'createdAt', 'ASC'],
           ]
         })).to.eventually.be.rejectedWith(Error, 'Unable to find a valid association for model, \'Project\'');
       });
@@ -371,7 +383,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       it('Error on invalid structure', () => {
         return expect(Subtask.findAll({
           order: [
-            [Subtask.associations.Task, 'createdAt', Task.associations.Project, 'ASC']
+            [Subtask.associations.Task, 'createdAt', Task.associations.Project, 'ASC'],
           ]
         })).to.eventually.be.rejectedWith(Error, 'Unknown structure passed to order / group: Project');
       });
@@ -387,7 +399,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           order: [
             {
               raw: 'this should throw an error'
-            }
+            },
           ]
         })).to.eventually.be.rejectedWith(Error, 'The `{raw: "..."}` syntax is no longer supported.  Use `sequelize.literal` instead.');
       });
@@ -398,8 +410,8 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             [
               {
                 raw: 'this should throw an error'
-              }
-            ]
+              },
+            ],
           ]
         })).to.eventually.be.rejectedWith(Error, 'The `{raw: "..."}` syntax is no longer supported.  Use `sequelize.literal` instead.');
       });
