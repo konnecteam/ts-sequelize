@@ -1,6 +1,6 @@
 'use strict';
 
-const fs = require('fs');
+import * as fs from 'fs';
 let mssqlConfig;
 try {
   mssqlConfig = JSON.parse(fs.readFileSync(__dirname + '/mssql.json', 'utf8'));
@@ -8,7 +8,7 @@ try {
   // ignore
 }
 
-module.exports = {
+export default {
   username: process.env.SEQ_USER || 'root',
   password: process.env.SEQ_PW   || null,
   database: process.env.SEQ_DB   || 'sequelize_test',
