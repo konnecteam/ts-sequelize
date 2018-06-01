@@ -15,6 +15,9 @@
     "baseUrl": "./src",
     "outDir": "./build"
   },
+  "include": [
+    "src/**/*"
+  ],
   "exclude": [
     "./build",
     "node_modules"
