@@ -69,7 +69,7 @@ export class PostgresQuery extends AbstractQuery {
       this.sql = (this.sequelize.getQueryInterface().QueryGenerator as PostgresQueryGenerator).setSearchPath(this.options.searchPath) + sql;
     }
 
-    if (maxRows && Cursor && this.sql.startsWith('SELECT')) {
+    if (maxRows && Cursor && this.sql.startsWith('SELECT') && !('native' in this.client)) {
       const cursor = this.client.query(new Cursor(this.sql, parameters && parameters.length ? parameters : undefined));
       query = new Promise((resolve, reject) => cursor.read(maxRows, (error, result) => {
         if (error) {

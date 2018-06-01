@@ -7,6 +7,7 @@ import Support from '../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
 const Promise = Sequelize.Promise;
+const current = Support.sequelize;
 
 const sortById = function(a, b) {
   return a.id < b.id ? -1 : 1;
@@ -2509,8 +2510,8 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       });
     });
 
-    if (dialect === 'postgres' || dialect === 'mssql') {
-      it('should be able to force a limit resultsSet for avoid memory crash', function() {
+    if (dialect === 'postgres' && current.options.native === false || dialect === 'mssql') {
+      it.only('should be able to force a limit resultsSet for avoid memory crash', function() {
 
         const Customer = this.sequelize.define('customer', {
           name: new DataTypes.STRING()
