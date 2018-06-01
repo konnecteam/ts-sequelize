@@ -4223,7 +4223,7 @@ export class Model extends Mixin {
     const where = _.extend({}, options.where);
     let values = {};
 
-    if (_.isString(fields)) {
+    if (typeof fields === 'string') {
       values[fields] = options.by;
     } else if (_.isArray(fields)) {
       Object.keys(fields).forEach(key => {

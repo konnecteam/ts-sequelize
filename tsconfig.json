@@ -13,16 +13,14 @@
     "noUnusedLocals" : true,
     "lib": ["es2017", "dom"],
     "baseUrl": "./src",
-    "outDir": "./build",
-    "skipLibCheck": true
+    "outDir": "./build"
   },
   "exclude": [
     "./build",
     "node_modules"
   ],
   "filesGlob": [
-    "./src/**/*.ts",
-    "./test/**/*.ts"
+    "./src/**/*.ts"
   ],
   "atom": {
     "rewriteTsconfig": false
