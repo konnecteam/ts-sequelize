@@ -2511,7 +2511,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     if (dialect === 'postgres' && current.options.native === false || dialect === 'mssql') {
-      it.only('should be able to force a limit resultsSet for avoid memory crash', function() {
+      it('should be able to force a limit resultsSet for avoid memory crash', function() {
 
         const Customer = this.sequelize.define('customer', {
           name: new DataTypes.STRING()
