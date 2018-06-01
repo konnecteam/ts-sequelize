@@ -71,31 +71,25 @@ script:
 jobs:
   include:
     - stage: test
-      node_js: '8'
+      node_js: '10'
       env: ORACLE_VER=oracle-12c DIALECT=oracle COVERAGE=true
     - stage: test
-      node_js: '8'
+      node_js: '10'
       env: DIALECT=sqlite COVERAGE=true
     - stage: test
-      node_js: '8'
+      node_js: '10'
       sudo: required
       env: MYSQL_VER=mysql-57 DIALECT=mysql COVERAGE=true
     - stage: test
-      node_js: '8'
+      node_js: '10'
       sudo: required
       env: POSTGRES_VER=postgres-95 DIALECT=postgres COVERAGE=true
     - stage: test
-      node_js: '8'
+      node_js: '10'
       sudo: required
       env: POSTGRES_VER=postgres-95 DIALECT=postgres-native COVERAGE=true
-    - stage: test
-      node_js: '8'
-      env: DIALECT=sqlite
-    - stage: test
-      node_js: '8'
-      env: ORACLE_VER=oracle-12c DIALECT=oracle
     - stage: release
-      node_js: '8'
+      node_js: '10'
       script:
         - npm run semantic-release
       before_deploy:
