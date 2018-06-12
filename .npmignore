@@ -12,6 +12,12 @@ coverage*
 .vscode
 get-pip.py
 typedoc.js
+.history
+tslint.json
+tsconfig.json
+typings.json
+Dockerfile
+node_modules
 
 appveyor-setup.ps1
 appveyor.yml
