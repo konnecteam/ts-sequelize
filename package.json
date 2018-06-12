@@ -1,39 +1,18 @@
 {
   "name": "ts-sequelize",
-  "description": "Multi dialect ORM for Node.JS",
-  "version": "0.0.0-development",
-  "author": "Sascha Depold <sascha@depold.com>",
+  "description": "Multi dialect ORM for Node.JS on typescript",
+  "version": "1.0.0",
+  "author": "Guillaume Grimbert <ggrimbert@kimoce.com>",
   "contributors": [
-    {
-      "name": "Sascha Depold",
-      "email": "sascha@depold.com"
-    },
-    {
-      "name": "Jan Aagaard Meier",
-      "email": [
-        "janzeh@gmail.com",
-        "jmei@itu.dk"
-      ]
-    },
-    {
-      "name": "Daniel Durante",
-      "email": "me@danieldurante.com"
-    },
-    {
-      "name": "Mick Hansen",
-      "email": "mick.kasper.hansen@gmail.com"
-    },
-    {
-      "name": "Sushant Dhiman",
-      "email": "sushantdhiman@outlook.com"
-    }
+    "Alexandre Genet <agenet@kimoce.com>",
+    "Guillaume Poncioni <gponcioni@kimoce.com>"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/sequelize/sequelize.git"
+    "url": "https://github.com/konnecteam/ts-sequelize.git"
   },
   "bugs": {
-    "url": "https://github.com/sequelize/sequelize/issues"
+    "url": "https://github.com/konnecteam/ts-sequelize/issues"
   },
   "dependencies": {
     "bluebird": "^3.4.6",
@@ -108,6 +87,8 @@
     "postgresql",
     "postgres",
     "mssql",
+    "oracle",
+    "typescript",
     "orm",
     "nodejs",
     "object relational mapper"
@@ -163,7 +144,7 @@
     "semantic-release": "semantic-release"
   },
   "engines": {
-    "node": ">=4.0.0"
+    "node": ">=6.0.0"
   },
   "license": "MIT",
   "config": {

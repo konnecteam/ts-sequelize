@@ -1,13 +1,17 @@
 docs
+site
 esdoc
 examples
-test
+src
 README.md
 .watchr.js
 changelog.md
 Makefile
 coverage*
 .github
+.vscode
+get-pip.py
+typedoc.js
 
 appveyor-setup.ps1
 appveyor.yml
