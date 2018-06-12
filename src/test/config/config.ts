@@ -3,11 +3,9 @@
 import * as fs from 'fs';
 let mssqlConfig;
 try {
-  console.log(__dirname + '/mssql.json');
   mssqlConfig = JSON.parse(fs.readFileSync(__dirname + '/mssql.json', 'utf8'));
 } catch (e) {
   // ignore
-  console.log(e);
 }
 
 export default {
