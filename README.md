@@ -1,4 +1,4 @@
-# Sequelize
+# ts-sequelize
 
 [![npm version](https://img.shields.io/npm/v/ts-sequelize.svg)](https://www.npmjs.com/package/ts-sequelize)
 [![Build Status](https://travis-ci.org/konnecteam/ts-sequelize.svg?)](https://travis-ci.org/konnecteam/ts-sequelize)
@@ -27,7 +27,7 @@ Sequelize is a promise-based Node.js ORM for Postgres, MySQL, SQLite and Microso
 ## Installation
 
 ```bash
-$ npm install --save sequelize
+$ npm install --save ts-sequelize
 
 # And one of the following:
 $ npm install --save pg@6 pg-hstore # Note that `pg@7` is not supported yet

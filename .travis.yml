@@ -5,7 +5,7 @@ language: node_js
 
 branches:
   only:
-    - master
+    - typescript
     - develop
     - /^greenkeeper/.*$/
   except:
@@ -90,35 +90,6 @@ jobs:
       env: POSTGRES_VER=postgres-95 DIALECT=postgres-native COVERAGE=true
     - stage: release
       node_js: '8'
-      script:
-        - npm run semantic-release
-      before_deploy:
-        - npm run docs
-      deploy:
-        provider: surge
-        project: ./esdoc/
-        domain: docs.sequelizejs.com
-        skip_cleanup: true
-    - stage: test
-      node_js: '10'
-      env: ORACLE_VER=oracle-12c DIALECT=oracle COVERAGE=true
-    - stage: test
-      node_js: '10'
-      env: DIALECT=sqlite COVERAGE=true
-    - stage: test
-      node_js: '10'
-      sudo: required
-      env: MYSQL_VER=mysql-57 DIALECT=mysql COVERAGE=true
-    - stage: test
-      node_js: '10'
-      sudo: required
-      env: POSTGRES_VER=postgres-95 DIALECT=postgres COVERAGE=true
-    - stage: test
-      node_js: '10'
-      sudo: required
-      env: POSTGRES_VER=postgres-95 DIALECT=postgres-native COVERAGE=true
-    - stage: release
-      node_js: '10'
       script:
         - npm run semantic-release
       before_deploy:
