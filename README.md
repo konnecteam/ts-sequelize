@@ -14,7 +14,7 @@ Improved version of Sequelize developed with typescript; based on Sequelize's V4
 Independant version, no links with Sequelize anymore
 
 
-Sequelize is a promise-based Node.js ORM for Postgres, MySQL, SQLite and Microsoft SQL Server. It features solid transaction support, relations, read replication and more.
+ts-sequelize is a promise-based Node.js ORM for Postgres, MySQL, SQLite, Oracle and Microsoft SQL Server. It features solid transaction support, relations, read replication and more.
 
 [Changelog](https://github.com/konnecteam/ts-sequelize/releases)
 
@@ -32,6 +32,7 @@ $ npm install --save ts-sequelize
 # And one of the following:
 $ npm install --save pg@6 pg-hstore # Note that `pg@7` is not supported yet
 $ npm install --save mysql2
+$ npm install --save oracledb
 $ npm install --save sqlite3
 $ npm install --save tedious # MSSQL
 ```
