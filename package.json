@@ -118,7 +118,7 @@
     "mocha": "--globals setImmediate,clearImmediate --ui tdd --exit --check-leaks --colors -t 30000 --reporter spec"
   },
   "scripts": {
-    "build": "node_modules/typescript/bin/tsc",
+    "build": "tsc",
     "lint": "tslint -c tslint.json 'src/**/*.ts'",
     "test": "npm run teaser && npm run test-unit && npm run test-integration",
     "test-docker": "npm run test-docker-unit && npm run test-docker-integration",
