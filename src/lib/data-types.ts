@@ -45,6 +45,13 @@ export class ABSTRACT {
     }
     return value;
   }
+
+  public bindParam(value, options) {
+    if ((this as any)._bindParam) {
+      return (this as any)._bindParam(value, options);
+    }
+    return options.bindParam(this.stringify(value, options));
+  }
 }
 
 export class STRING extends ABSTRACT {
@@ -337,17 +344,6 @@ export class FLOAT extends NUMBER {
 
     return true;
   }
-
-  public _stringify(value : any) : string {
-    if (isNaN(value)) {
-      return "'NaN'";
-    } else if (!isFinite(value)) {
-      const sign = value < 0 ? '-' : '';
-      return "'" + sign + "Infinity'";
-    }
-
-    return value;
-  }
 }
 
 export class REAL extends NUMBER {
@@ -366,17 +362,6 @@ export class REAL extends NUMBER {
     super(options);
     this.escape = false;
     this.key = 'REAL';
-  }
-
-  public _stringify(value : any) : string {
-    if (isNaN(value)) {
-      return "'NaN'";
-    } else if (!isFinite(value)) {
-      const sign = value < 0 ? '-' : '';
-      return "'" + sign + "Infinity'";
-    }
-
-    return value;
   }
 }
 
@@ -397,18 +382,28 @@ export class DOUBLE extends NUMBER {
     this.escape = false;
     this.key = 'DOUBLE PRECISION';
   }
+}
 
-  public _stringify(value : any) : string {
+for (const floating of [FLOAT, DOUBLE, REAL]) {
+  floating.prototype.escape = false;
+  (floating as any).prototype._value = function _value(value) {
     if (isNaN(value)) {
-      return "'NaN'";
+      return 'NaN';
     } else if (!isFinite(value)) {
       const sign = value < 0 ? '-' : '';
-      return "'" + sign + "Infinity'";
+      return sign + 'Infinity';
     }
 
     return value;
-  }
+  };
+  (floating as any).prototype._stringify = function _stringify(value) {
+    return "'" + this._value(value) + "'";
+  };
+  (floating as any).prototype._bindParam = function _bindParam(value, options) {
+    return options.bindParam(this._value(value));
+  };
 }
+
 
 export class DECIMAL extends NUMBER {
   public static key : string = 'DECIMAL';
@@ -756,9 +751,9 @@ export class BLOB extends ABSTRACT {
   public _stringify(value : any) : string {
     if (!Buffer.isBuffer(value)) {
       if (Array.isArray(value)) {
-        value = new Buffer(value);
+        value = Buffer.from(value);
       } else {
-        value = new Buffer(value.toString());
+        value = Buffer.from(value.toString());
       }
     }
     const hex = value.toString('hex');
@@ -768,6 +763,17 @@ export class BLOB extends ABSTRACT {
 
   public _hexify(hex : string) : string {
     return "X'" + hex + "'";
+  }
+
+  public _bindParam(value, options) {
+    if (!Buffer.isBuffer(value)) {
+      if (Array.isArray(value)) {
+        value = Buffer.from(value);
+      } else {
+        value = Buffer.from(value.toString());
+      }
+    }
+    return options.bindParam(value);
   }
 }
 
@@ -1030,6 +1036,10 @@ export class GEOMETRY extends ABSTRACT {
   public _stringify(value : any, options : { escape }) {
     return 'GeomFromText(' + options.escape(Wkt.convert(value)) + ')';
   }
+
+  public _bindParam(value, options) {
+    return 'GeomFromText(' + options.bindParam(Wkt.convert(value)) + ')';
+  }
 }
 
 export class GEOGRAPHY extends ABSTRACT {
@@ -1057,6 +1067,10 @@ export class GEOGRAPHY extends ABSTRACT {
 
   public _stringify(value : any, options : { escape? }) {
     return 'GeomFromText(' + options.escape(Wkt.convert(value)) + ')';
+  }
+
+  public _bindParam(value, options) {
+    return 'GeomFromText(' + options.bindParam(Wkt.convert(value)) + ')';
   }
 }
 

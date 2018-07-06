@@ -5,9 +5,9 @@ import * as _ from 'lodash';
 import * as moment from 'moment';
 import * as semver from 'semver';
 import * as sinon from 'sinon';
-import {Sequelize} from '../../index';
+import { Sequelize } from '../../index';
 import DataTypes from '../../lib/data-types';
-import * as Transaction from '../../lib/transaction';
+import { Transaction } from '../../lib/transaction';
 import { Utils } from '../../lib/utils';
 import config from '../config/config';
 import Support from './support';
@@ -76,17 +76,6 @@ describe(Support.getTestDialectTeaser('Sequelize'), () => {
       const sequelize = Support.createSequelizeInstance({ host: '127.0.0.1', port: 1234 });
       expect(sequelize.config.port).to.equal(1234);
       expect(sequelize.config.host).to.equal('127.0.0.1');
-    });
-
-
-    it('should log deprecated warning if operators aliases were not set', () => {
-      sinon.stub(Utils, 'deprecate');
-      Support.createSequelizeInstance();
-      expect(Utils.deprecate.calledOnce).to.be.true;
-      expect(Utils.deprecate.args[0][0]).to.be.equal('String based operators are now deprecated. Please use Symbol based operators for better security, read more at http://docs.sequelizejs.com/manual/tutorial/querying.html#operators');
-      Utils.deprecate.reset();
-      Support.createSequelizeInstance({ operatorsAliases: {} });
-      expect(Utils.deprecate.called).to.be.false;
     });
 
     it('should set operators aliases on dialect QueryGenerator', () => {
@@ -305,6 +294,25 @@ describe(Support.getTestDialectTeaser('Sequelize'), () => {
       return this.sequelize.query(this.insertQuery);
     });
 
+    if (dialect !== 'oracle') {
+      it('executes a query if a placeholder value is an array', function() {
+        return this.sequelize.query(`INSERT INTO ${qq(this.User.tableName)} (username, email_address, ` +
+          `${qq('createdAt')}, ${qq('updatedAt')}) VALUES ?;`, {
+            replacements: [[
+            ['john', 'john@gmail.com', '2012-01-01 10:10:10', '2012-01-01 10:10:10'],
+            ['michael', 'michael@gmail.com', '2012-01-01 10:10:10', '2012-01-01 10:10:10']]]
+          })
+          .then(() =>
+          this.sequelize.query(`SELECT * FROM ${qq(this.User.tableName)};`, {
+            type: this.sequelize.QueryTypes.SELECT
+          }))
+          .then(rows => {
+            expect(rows).to.be.lengthOf(2);
+            expect(rows[0].username).to.be.equal('john');
+            expect(rows[1].username).to.be.equal('michael');
+          });
+      });
+    }
 
     describe('logging', () => {
       it('executes a query with global benchmarking option and default logger', () => {
@@ -594,16 +602,22 @@ describe(Support.getTestDialectTeaser('Sequelize'), () => {
     it('uses properties `query` and `bind` if query is tagged', function() {
       const typeCast = dialect === 'postgres' ? '::int' : '';
       let logSql;
-      return this.sequelize.query({ query: formatQuery('select $1' + typeCast + ' as foo, $2' + typeCast + ' as bar'), bind: [1, 2] }, { type: this.sequelize.QueryTypes.SELECT, logging(s) { logSql = s; } }).then(result => {
-        expect(result).to.deep.equal([{ foo: 1, bar: 2 }]);
-        if (dialect === 'postgres' || dialect === 'sqlite') {
-          expect(logSql.indexOf('$1')).to.be.above(-1);
-          expect(logSql.indexOf('$2')).to.be.above(-1);
-        } else if (dialect === 'mssql') {
-          expect(logSql.indexOf('@0')).to.be.above(-1);
-          expect(logSql.indexOf('@1')).to.be.above(-1);
-        }
-      });
+      return this.sequelize.query({
+        query: formatQuery('select $1' + typeCast + ' as foo, $2' + typeCast + ' as bar'),
+        bind: [1, 2] },
+        { type: this.sequelize.QueryTypes.SELECT, logging(s) { logSql = s; } })
+        .then(result => {
+          expect(result).to.deep.equal([{ foo: 1, bar: 2 }]);
+          if (dialect === 'postgres' || dialect === 'sqlite') {
+            expect(logSql.indexOf('$1')).to.be.above(-1);
+            expect(logSql.indexOf('$2')).to.be.above(-1);
+          } else if (dialect === 'mssql') {
+            expect(logSql.indexOf('@0')).to.be.above(-1);
+            expect(logSql.indexOf('@1')).to.be.above(-1);
+          } else if (dialect === 'mysql') {
+            expect(logSql.match(/\?/g).length).to.equal(2);
+          }
+        });
     });
 
     it('dot separated attributes when doing a raw query without nest', function() {
@@ -1204,7 +1218,7 @@ describe(Support.getTestDialectTeaser('Sequelize'), () => {
 
       it('through Sequelize.sync()', function() {
         const self = this;
-        self.spy.reset();
+        self.spy.resetHistory();
         return this.sequelize.sync({ force: true, logging: false }).then(() => {
           expect(self.spy.notCalled).to.be.true;
         });
@@ -1212,7 +1226,7 @@ describe(Support.getTestDialectTeaser('Sequelize'), () => {
 
       it('through DAOFactory.sync()', function() {
         const self = this;
-        self.spy.reset();
+        self.spy.resetHistory();
         return this.User.sync({ force: true, logging: false }).then(() => {
           expect(self.spy.notCalled).to.be.true;
         });
@@ -1353,6 +1367,7 @@ describe(Support.getTestDialectTeaser('Sequelize'), () => {
         it('passes a transaction object to the callback', function() {
           return this.sequelizeWithTransaction.transaction().then(t => {
             expect(t).to.be.instanceOf(Transaction);
+            return t.commit();
           });
         });
 

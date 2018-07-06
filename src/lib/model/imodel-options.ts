@@ -27,7 +27,7 @@ export interface IModelOptions {
   /** The schema that the tables should be created in. This can be overriden for each table in sequelize.define */
   schema? : string;
   schemaDelimiter? : string;
-  scopes? : any[];
+  scopes? : {};
   /** Defaults to pluralized model name, unless freezeTableName is true, in which case it uses model name verbatim */
   tableName? : string;
   /** = true Adds createdAt and updatedAt timestamps to the model. */

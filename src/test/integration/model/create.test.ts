@@ -104,6 +104,36 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
     });
 
+    it('should error correctly when defaults contain a unique key and a non-existent field', function() {
+      const User = this.sequelize.define('user', {
+        objectId: {
+          type: new DataTypes.STRING(),
+          unique: true
+        },
+        username: {
+          type: new DataTypes.STRING(),
+          unique: true
+        }
+      });
+
+      return User.sync({force: true}).then(() => {
+        return User.create({
+          username: 'gottlieb'
+        });
+      }).then(() => {
+        return expect(User.findOrCreate({
+          where: {
+            objectId: 'asdasdasd'
+          },
+          defaults: {
+            username: 'gottlieb',
+            foo: 'bar', // field that's not a defined attribute
+            bar: 121
+          }
+        })).to.eventually.be.rejectedWith(current.UniqueConstraintError);
+      });
+    });
+
     it('should error correctly when defaults contain a unique key and the where clause is complex', function() {
       const User = this.sequelize.define('user', {
         objectId: {
@@ -910,59 +940,49 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       }
     });
 
-    it('casts empty arrays correctly for postgresql insert', function() {
-      if (dialect !== 'postgres') {
-        expect('').to.equal('');
-        return void 0;
-      }
-
-      const User = this.sequelize.define('UserWithArray', {
-        myvals: { type: new DataTypes.ARRAY(new DataTypes.INTEGER()) },
-        mystr: { type: new DataTypes.ARRAY(new DataTypes.STRING()) }
-      });
-
-      let test = false;
-      return User.sync({force: true}).then(() => {
-        return User.create({myvals: [], mystr: []}, {
-          logging(sql) {
-            test = true;
-            expect(sql.indexOf('ARRAY[]::INTEGER[]')).to.be.above(-1);
-            expect(sql.indexOf('ARRAY[]::VARCHAR(255)[]')).to.be.above(-1);
-          }
+    if (dialect === 'postgres') {
+      it('does not cast arrays for postgresql insert', function() {
+        const User = this.sequelize.define('UserWithArray', {
+          myvals: { type: new DataTypes.ARRAY(new DataTypes.INTEGER()) },
+          mystr: { type: new DataTypes.ARRAY(new DataTypes.STRING()) }
         });
-      }).then(() => {
-        expect(test).to.be.true;
-      });
-    });
 
-    it('casts empty array correct for postgres update', function() {
-      if (dialect !== 'postgres') {
-        expect('').to.equal('');
-        return void 0;
-      }
-
-      const User = this.sequelize.define('UserWithArray', {
-        myvals: { type: new DataTypes.ARRAY(new DataTypes.INTEGER()) },
-        mystr: { type: new DataTypes.ARRAY(new DataTypes.STRING()) }
-      });
-      let test = false;
-
-      return User.sync({force: true}).then(() => {
-        return User.create({myvals: [1, 2, 3, 4], mystr: ['One', 'Two', 'Three', 'Four']}).then(user => {
-          user.myvals = [];
-          user.mystr = [];
-          return user.save({
+        let test = false;
+        return User.sync({force: true}).then(() => {
+          return User.create({myvals: [], mystr: []}, {
             logging(sql) {
               test = true;
-              expect(sql.indexOf('ARRAY[]::INTEGER[]')).to.be.above(-1);
-              expect(sql.indexOf('ARRAY[]::VARCHAR(255)[]')).to.be.above(-1);
+              expect(sql).to.contain('INSERT INTO "UserWithArrays" ("id","myvals","mystr","createdAt","updatedAt") VALUES (DEFAULT,$1,$2,$3,$4)');
             }
           });
+        }).then(() => {
+          expect(test).to.be.true;
         });
-      }).then(() => {
-        expect(test).to.be.true;
       });
-    });
+
+      it('does not cast arrays for postgres update', function() {
+        const User = this.sequelize.define('UserWithArray', {
+          myvals: { type: new DataTypes.ARRAY(new DataTypes.INTEGER()) },
+          mystr: { type: new DataTypes.ARRAY(new DataTypes.STRING()) }
+        });
+        let test = false;
+
+        return User.sync({force: true}).then(() => {
+          return User.create({myvals: [1, 2, 3, 4], mystr: ['One', 'Two', 'Three', 'Four']}).then(user => {
+            user.myvals = [];
+            user.mystr = [];
+            return user.save({
+              logging(sql) {
+                test = true;
+                expect(sql).to.contain('UPDATE "UserWithArrays" SET "myvals"=$1,"mystr"=$2,"updatedAt"=$3 WHERE "id" = $4');
+              }
+            });
+          });
+        }).then(() => {
+          expect(test).to.be.true;
+        });
+      });
+    }
 
     it("doesn't allow duplicated records with unique:true", function() {
       const self = this;

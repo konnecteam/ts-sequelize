@@ -295,7 +295,12 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           {code: '1234'},
           {name: 'bar', code: '1'},
         ], { validate: true }).catch(errors => {
+          const expectedValidationError = 'Validation len on code failed';
+          const expectedNotNullError = 'notNull Violation: Task.name cannot be null';
+
           expect(errors).to.be.instanceof(Promise.AggregateError);
+          expect(errors.toString()).to.include(expectedValidationError)
+            .and.to.include(expectedNotNullError);
           expect(errors).to.have.length(2);
 
           const e0name0 = errors[0].errors.get('name')[0];
@@ -305,7 +310,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
           expect(errors[1].record.name).to.equal('bar');
           expect(errors[1].record.code).to.equal('1');
-          expect(errors[1].errors.get('code')[0].message).to.equal('Validation len on code failed');
+          expect(errors[1].errors.get('code')[0].message).to.equal(expectedValidationError);
         });
       });
     });
@@ -415,7 +420,6 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
     } else {
       it('should throw an error when the ignoreDuplicates option is passed', function() {
-        const self = this;
         const data = [
           { uniqueName: 'Peter', secretValue: '42' },
           { uniqueName: 'Paul', secretValue: '23' },
@@ -424,44 +428,57 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         return this.User.bulkCreate(data, { fields: ['uniqueName', 'secretValue'] }).then(() => {
           data.push({ uniqueName: 'Michael', secretValue: '26' });
 
-          return self.User.bulkCreate(data, { fields: ['uniqueName', 'secretValue'], ignoreDuplicates: true }).catch(err => {
-            if (dialect === 'mssql') {
-              expect(err.message).to.match(/mssql does not support the \'ignoreDuplicates\' option./);
-            } else if (dialect === 'oracle') {
-              expect(err.message).to.match(/oracle does not support the \'ignoreDuplicates\' option./);
-            } else {
-              expect(err.message).to.match(/postgres does not support the \'ignoreDuplicates\' option./);
-            }
+          return this.User.bulkCreate(data, { fields: ['uniqueName', 'secretValue'], ignoreDuplicates: true }).catch(err => {
+            expect(err.message).to.equal(`${dialect} does not support the ignoreDuplicates option.`);
           });
         });
       });
     }
 
     if (current.dialect.supports.updateOnDuplicate) {
-      it('should support the updateOnDuplicate option', function() {
-        const self = this;
-        const data = [
-          { uniqueName: 'Peter', secretValue: '42' },
-          { uniqueName: 'Paul', secretValue: '23' },
-        ];
+      describe('updateOnDuplicate', () => {
+        it('should support the updateOnDuplicate option', function() {
+          const data = [
+            { uniqueName: 'Peter', secretValue: '42' },
+            { uniqueName: 'Paul', secretValue: '23' }];
 
-        return this.User.bulkCreate(data, { fields: ['uniqueName', 'secretValue'], updateOnDuplicate: ['secretValue'] }).then(() => {
-          const new_data = [
-            { uniqueName: 'Peter', secretValue: '43' },
-            { uniqueName: 'Paul', secretValue: '24' },
-            { uniqueName: 'Michael', secretValue: '26' },
-          ];
-          return self.User.bulkCreate(new_data, { fields: ['uniqueName', 'secretValue'], updateOnDuplicate: ['secretValue'] }).then(() => {
-            return self.User.findAll({order: ['id']}).then(users => {
-              expect(users.length).to.equal(3);
-              expect(users[0].uniqueName).to.equal('Peter');
-              expect(users[0].secretValue).to.equal('43');
-              expect(users[1].uniqueName).to.equal('Paul');
-              expect(users[1].secretValue).to.equal('24');
-              expect(users[2].uniqueName).to.equal('Michael');
-              expect(users[2].secretValue).to.equal('26');
+          return this.User.bulkCreate(data, { fields: ['uniqueName', 'secretValue'], updateOnDuplicate: ['secretValue'] }).then(() => {
+            const new_data = [
+              { uniqueName: 'Peter', secretValue: '43' },
+              { uniqueName: 'Paul', secretValue: '24' },
+              { uniqueName: 'Michael', secretValue: '26' }];
+            return this.User.bulkCreate(new_data, { fields: ['uniqueName', 'secretValue'], updateOnDuplicate: ['secretValue'] }).then(() => {
+              return this.User.findAll({order: ['id']}).then(users => {
+                expect(users.length).to.equal(3);
+                expect(users[0].uniqueName).to.equal('Peter');
+                expect(users[0].secretValue).to.equal('43');
+                expect(users[1].uniqueName).to.equal('Paul');
+                expect(users[1].secretValue).to.equal('24');
+                expect(users[2].uniqueName).to.equal('Michael');
+                expect(users[2].secretValue).to.equal('26');
+              });
             });
           });
+        });
+
+        it('should reject for non array updateOnDuplicate option', function() {
+          const data = [
+            { uniqueName: 'Peter', secretValue: '42' },
+            { uniqueName: 'Paul', secretValue: '23' }];
+
+          return expect(
+            this.User.bulkCreate(data, { updateOnDuplicate: true })
+          ).to.be.rejectedWith('updateOnDuplicate option only supports non-empty array.');
+        });
+
+        it('should reject for empty array updateOnDuplicate option', function() {
+          const data = [
+            { uniqueName: 'Peter', secretValue: '42' },
+            { uniqueName: 'Paul', secretValue: '23' }];
+
+          return expect(
+            this.User.bulkCreate(data, { updateOnDuplicate: [] })
+          ).to.be.rejectedWith('updateOnDuplicate option only supports non-empty array.');
         });
       });
     }

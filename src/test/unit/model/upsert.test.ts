@@ -43,18 +43,15 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       before(function() {
         this.query = current.query;
-        current.query = sinon.stub().returns(Promise.resolve());
 
-        self.stub = sinon.stub(current.getQueryInterface(), 'upsert').callsFake(() => {
-          return User.build({});
-        });
+        self.query = sinon.stub(current, 'query').returns(Promise.resolve());
       });
 
       beforeEach(() => {
-        self.stub.reset();
+        self.stub = sinon.stub(current.getQueryInterface(), 'upsert').returns(Promise.resolve([true, undefined]));
       });
 
-      after(function() {
+      afterEach(function() {
         current.query = this.query;
         self.stub.restore();
       });

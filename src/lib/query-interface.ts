@@ -120,7 +120,7 @@ export abstract class AbstractQueryInterface {
    *     updatedAt: {
    *       type: Sequelize.DATE
    *     },
-   *     attr1: Sequelize.STRING,
+   *     attr1: new DataTypes.STRING(),
    *     attr2: Sequelize.INTEGER,
    *     attr3: {
    *       type: Sequelize.BOOLEAN,
@@ -659,6 +659,12 @@ export abstract class AbstractQueryInterface {
   /**
    * Add a new column into a table
    *
+   * ```js
+   * queryInterface.addColumn('tableA', 'columnC', new DataTypes.STRING(), {
+   *    after: 'columnB' // after option is only supported by MySQL
+   * });
+   * ```
+   *
    * @param table Table to add column to
    * @param key Column name
    * @param attribute Attribute definition
@@ -1041,7 +1047,7 @@ export abstract class AbstractQueryInterface {
   /**
    * upsert
    */
-  public upsert(tableName : string, valuesByField : any, updateValues : any, where : {}, model : typeof Model, options : {
+  public upsert(tableName : string, insertValues : any, updateValues : any, where : {}, model : typeof Model, options : {
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
     benchmark? : boolean,
     fields? : any[],
@@ -1060,7 +1066,7 @@ export abstract class AbstractQueryInterface {
     validate? : boolean
   }) {
     const wheres = [];
-    const attributes = Object.keys(valuesByField);
+    const attributes = Object.keys(insertValues);
     let indexes = [];
     let indexFields;
 
@@ -1093,7 +1099,7 @@ export abstract class AbstractQueryInterface {
       if (_.intersection(attributes, index).length === index.length) {
         where = {};
         for (const field of index) {
-          where[field] = valuesByField[field];
+          where[field] = insertValues[field];
         }
         wheres.push(where);
       }
@@ -1104,15 +1110,27 @@ export abstract class AbstractQueryInterface {
     options.type = QueryTypes.UPSERT;
     options.raw = true;
 
-    const sql = this.QueryGenerator.upsertQuery(tableName, valuesByField, updateValues, where, model, options);
-    return this.sequelize.query(sql, options).then(rowCount => {
-      if (rowCount === undefined) {
-        return rowCount;
+    const sql = this.QueryGenerator.upsertQuery(tableName, insertValues, updateValues, where, model, options);
+    return this.sequelize.query(sql, options).then(result => {
+      switch (this.sequelize.options.dialect) {
+        case 'postgres':
+          return [result.created, result.primary_key];
+
+        case 'mssql':
+          return [
+            result.$action === 'INSERT',
+            result[model.primaryKeyField]];
+
+        // MySQL returns 1 for inserted, 2 for updated
+        // http://dev.mysql.com/doc/refman/5.0/en/insert-on-duplicate.html.
+        case 'mysql':
+          return [result === 1, undefined];
+        case 'oracle':
+          return [result === 1, undefined];
+
+        default:
+          return [result, undefined];
       }
-
-      // MySQL returns 1 for inserted, 2 for updated http://dev.mysql.com/doc/refman/5.0/en/insert-on-duplicate.html. Postgres has been modded to do the same
-
-      return rowCount === 1;
     });
   }
 
@@ -1159,8 +1177,10 @@ export abstract class AbstractQueryInterface {
   }, attributes : any) {
     options = _.clone(options) || {};
     options.type = QueryTypes.INSERT;
-    const sql = this.QueryGenerator.bulkInsertQuery(tableName, records, options, attributes);
-    return this.sequelize.query(sql, options).then(results => results[0]);
+    return this.sequelize.query(
+      this.QueryGenerator.bulkInsertQuery(tableName, records, options, attributes),
+      options
+    ).then(results => results[0]);
   }
 
   /**
@@ -1234,7 +1254,7 @@ export abstract class AbstractQueryInterface {
     type? : string
   }) {
     const cascades = [];
-    const sql = this.QueryGenerator.deleteQuery(tableName, identifier, null, instance.constructor);
+    const sql = this.QueryGenerator.deleteQuery(tableName, identifier, {}, instance.constructor);
 
     options = _.clone(options) || {};
 
@@ -1309,17 +1329,28 @@ export abstract class AbstractQueryInterface {
     tableNames? : string[],
     topLimit? : any,
     topModel? : typeof Model,
+    truncate? : boolean,
     /** A hash of search attributes. */
     where? : {}
   }, model : typeof Model) {
     options = Utils.cloneDeep(options);
-    options = _.defaults(options, {limit: null});
+    options = _.defaults(options, { limit: null });
+
+    if (options.truncate === true) {
+      return this.sequelize.query(
+        this.QueryGenerator.truncateTableQuery(tableName, options),
+        options
+      );
+    }
+
     if (typeof identifier === 'object') {
       identifier = Utils.cloneDeep(identifier);
     }
 
-    const sql = this.QueryGenerator.deleteQuery(tableName, identifier, options, model);
-    return this.sequelize.query(sql, options);
+    return this.sequelize.query(
+      this.QueryGenerator.deleteQuery(tableName, identifier, options, model),
+      options
+    );
   }
 
   /**
@@ -1358,28 +1389,15 @@ export abstract class AbstractQueryInterface {
     /** A hash of search attributes. */
     where? : {}
   }) {
-    // options = Utils.cloneDeep(options);
-    // options.type = QueryTypes.SELECT;
-    // options.model = model;
-
-    // return this.sequelize.query(
-    //   this.QueryGenerator.selectQuery(tableName, options, model),
-    //   options
-    // );
-
     options = options || {};
     options.type = QueryTypes.SELECT;
     options.model = model;
-
-    //console.log(options);
-
     // New option to get the raw query instead of execute it
 
     if ('rawQuery' in options && options.rawQuery) {
       const rawQuery = this.QueryGenerator.selectQuery(tableName, options, model);
 
       if (this.QueryGenerator.dialect === 'oracle' && !options.rawQuery.original) {
-        // const query = new this.sequelize.dialect.Query(null, this.sequelize);
         const opts = OracleQuery.prototype._dealWithLongAliasesBeforeSelect(rawQuery);
         return opts.sql;
       } else {

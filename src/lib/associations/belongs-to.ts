@@ -8,7 +8,6 @@ import { Utils } from '../utils';
 import { Association } from './base';
 import { Helpers } from './helpers';
 
-
 /**
  * One-to-one association
  *
@@ -55,31 +54,35 @@ export class BelongsTo extends Association {
     }
 
     if (!this.foreignKey) {
-      this.foreignKey = Utils.camelizeIf(
+      this.foreignKey = Utils.camelize(
         [
-          Utils.underscoredIf(this.as, this.source.options.underscored),
-          this.target.primaryKeyAttribute,
-        ].join('_'),
-        !this.source.options.underscored
+          this.as,
+          this.target.primaryKeyAttribute].join('_')
       );
     }
 
     this.identifier = this.foreignKey;
-
     if (this.source.rawAttributes[this.identifier]) {
       this.identifierField = this.source.rawAttributes[this.identifier].field || this.identifier;
+    }
+
+    if (
+      this.options.targetKey
+      && !this.target.rawAttributes[this.options.targetKey]
+    ) {
+      throw new Error(`Unknown attribute "${this.options.targetKey}" passed as targetKey, define this attribute on model "${this.target.name}" first`);
     }
 
     this.targetKey = this.options.targetKey || this.target.primaryKeyAttribute;
     this.targetKeyField = this.target.rawAttributes[this.targetKey].field || this.targetKey;
     this.targetKeyIsPrimary = this.targetKey === this.target.primaryKeyAttribute;
-
     this.targetIdentifier = this.targetKey;
+
     this.associationAccessor = this.as;
     this.options.useHooks = options.useHooks;
 
     // Get singular name, trying to uppercase the first letter, unless the model forbids it
-    const singular = Utils.uppercaseFirst(this.options.name.singular);
+    const singular = _.upperFirst(this.options.name.singular);
 
     this.accessors = {
       get: 'get' + singular,
@@ -108,9 +111,9 @@ export class BelongsTo extends Association {
     Helpers.addForeignKeyConstraints(newAttributes[this.foreignKey], this.target, this.source, this.options, this.targetKeyField);
     Utils.mergeDefaults(this.source.rawAttributes, newAttributes);
 
-    this.identifierField = this.source.rawAttributes[this.foreignKey].field || this.foreignKey;
-
     this.source.refreshAttributes();
+
+    this.identifierField = this.source.rawAttributes[this.foreignKey].field || this.foreignKey;
 
     Helpers.checkNamingCollision(this);
 
@@ -143,9 +146,8 @@ export class BelongsTo extends Association {
     /** A hash of search attributes. */
     where? : {}
   }) : Promise<Model> {
-    const association = this;
     const where = {};
-    let Target = association.target;
+    let Target = this.target;
     let instanceNoArray;
 
     options = Utils.cloneDeep(options);
@@ -168,14 +170,14 @@ export class BelongsTo extends Association {
     }
 
     if (instances) {
-      where[association.targetKey] = {
-        [Op.in]: instances.map(instance => instance.get(association.foreignKey))
+      where[this.targetKey] = {
+        [Op.in]: instances.map(instance => instance.get(this.foreignKey))
       };
     } else {
-      if (association.targetKeyIsPrimary && !options.where) {
-        return Target.findById(instanceNoArray.get(association.foreignKey), options);
+      if (this.targetKeyIsPrimary && !options.where) {
+        return Target.findById(instanceNoArray.get(this.foreignKey), options);
       } else {
-        where[association.targetKey] = instanceNoArray.get(association.foreignKey);
+        where[this.targetKey] = instanceNoArray.get(this.foreignKey);
         options.limit = null;
       }
     }
@@ -188,11 +190,11 @@ export class BelongsTo extends Association {
       return Target.findAll(options).then(results => {
         const result = {};
         for (const instance of instances) {
-          result[instance.get(association.foreignKey, {raw: true})] = null;
+          result[instance.get(this.foreignKey, {raw: true})] = null;
         }
 
         for (const instance of results) {
-          result[instance.get(association.targetKey, {raw: true})] = instance;
+          result[instance.get(this.targetKey, {raw: true})] = instance;
         }
 
         return result;
@@ -213,25 +215,22 @@ export class BelongsTo extends Association {
     logging? : boolean | any,
     /** = true Skip saving this after setting the foreign key if false. */
     save? : boolean
-  }) : Promise<any> {
-    const association = this;
-
-    options = options || {};
-
+  } = {}) : Promise<any> {
     let value = associatedInstance;
-    if (associatedInstance instanceof association.target) {
-      value = associatedInstance[association.targetKey];
+
+    if (associatedInstance instanceof this.target) {
+      value = associatedInstance[this.targetKey];
     }
 
-    sourceInstance.set(association.foreignKey, value);
+    sourceInstance.set(this.foreignKey, value);
 
     if (options.save === false) {
       return;
     }
 
     options = _.extend({
-      fields: [association.foreignKey],
-      allowNull: [association.foreignKey],
+      fields: [this.foreignKey],
+      allowNull: [this.foreignKey],
       association: true
     }, options);
 
@@ -251,20 +250,21 @@ export class BelongsTo extends Association {
     /** Transaction to run query under */
     transaction? : Transaction
   }) : Promise<any> {
-    const association = this;
 
     const options = {
       transaction: undefined,
       logging: undefined
     };
 
+    options.logging = (fieldsOrOptions || {}).logging;
+
     if ((fieldsOrOptions || {}).transaction instanceof Transaction) {
       options.transaction = fieldsOrOptions.transaction;
     }
-    options.logging = (fieldsOrOptions || {}).logging;
 
-    return association.target.create(values, fieldsOrOptions).then(newAssociatedObject =>
-      sourceInstance[association.accessors.set](newAssociatedObject, options)
-    );
+    return this.target.create(values, fieldsOrOptions)
+      .then(newAssociatedObject =>
+        sourceInstance[this.accessors.set](newAssociatedObject, options)
+      );
   }
 }

@@ -7,12 +7,10 @@ import {Sequelize} from '../../../../index';
 import Support from '../../../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
-const connectionStub = sinon.stub(tedious, 'Connection');
-
-connectionStub.returns({on() {}});
 
 if (dialect === 'mssql') {
   describe('[MSSQL Specific] Connection Manager', () => {
+    let connectionStub;
     let instance;
     let config;
     beforeEach(() => {
@@ -32,13 +30,42 @@ if (dialect === 'mssql') {
         , config.username
         , config.password
         , config);
+
+      connectionStub = sinon.stub(tedious, 'Connection');
     });
 
-    it('connectionManager._connect() Does not delete `domain` from config.dialectOptions',
-      () => {
-        expect(config.dialectOptions.domain).to.equal('TEST.COM');
-        instance.dialect.connectionManager._connect(config);
-        expect(config.dialectOptions.domain).to.equal('TEST.COM');
-      });
+    afterEach(function() {
+      connectionStub.restore();
+    });
+
+    it('connectionManager._connect() does not delete `domain` from config.dialectOptions', function() {
+      connectionStub.returns({on(event, cb) {
+        if (event === 'connect') {
+          setTimeout(() => {
+            cb();
+          }, 500);
+        }
+      }});
+
+      expect(config.dialectOptions.domain).to.equal('TEST.COM');
+      instance.dialect.connectionManager._connect(config);
+      expect(config.dialectOptions.domain).to.equal('TEST.COM');
+    });
+
+    it('connectionManager._connect() should reject if end was called and connect was not', function() {
+      connectionStub.returns({ on(event, cb) {
+        if (event === 'end') {
+          setTimeout(() => {
+            cb();
+          }, 500);
+        }
+      } });
+
+      return instance.dialect.connectionManager._connect(config)
+        .catch(err => {
+          expect(err.name).to.equal('SequelizeConnectionError');
+          expect(err.parent).to.equal('Connection was closed by remote server');
+        });
+    });
   });
 }

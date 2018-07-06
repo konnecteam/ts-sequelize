@@ -1,6 +1,7 @@
 export interface ISequelizeOption {
   /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
   benchmark? : boolean;
+  database? : string;
   databaseVersion? : number;
   /** = {}, Default options for model definitions. See sequelize.define for options */
   define? : {};
@@ -25,6 +26,7 @@ export interface ISequelizeOption {
   omitNull? : boolean;
   /** = true, String based operator alias, default value is true which will enable all operators alias. Pass object to limit set of aliased operators or false to disable completely. */
   operatorsAliases? : boolean;
+  password? : string;
   /** sequelize connection pool configuration */
   pool? : {};
   /** The port of the relational database. */
@@ -52,4 +54,5 @@ export interface ISequelizeOption {
   timezone? : string;
   transactionType? : string;
   typeValidation? : boolean;
+  username? : string;
 }

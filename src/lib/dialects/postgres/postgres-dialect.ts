@@ -43,6 +43,7 @@ export class PostgresDialect extends AbstractDialect {
       'lockOf': true,
       'lockKey': true,
       'lockOuterJoinFailure': true,
+      'skipLocked': true,
       'forShare': 'FOR SHARE',
       'index': {
         concurrently: true,

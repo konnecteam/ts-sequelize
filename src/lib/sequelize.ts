@@ -280,7 +280,11 @@ export class Sequelize {
       pool: {},
       quoteIdentifiers: true,
       hooks: {},
-      retry: {max: 5, match: ['SQLITE_BUSY: database is locked']},
+      retry: {
+        max: 5,
+        match: [
+          'SQLITE_BUSY: database is locked']
+      },
       transactionType: Transaction.TYPES.DEFERRED,
       isolationLevel: null,
       databaseVersion: 0,
@@ -308,14 +312,10 @@ export class Sequelize {
 
     (this as any)._setupHooks(options.hooks);
 
-    if (['', null, false].indexOf(config.password) > -1 || typeof config.password === 'undefined') {
-      config.password = null;
-    }
-
     this.config = {
-      database: config.database,
-      username: config.username,
-      password: config.password,
+      database: config.database || this.options.database,
+      username: config.username || this.options.username,
+      password: config.password || this.options.password || null,
       host: config.host || this.options.host,
       port: config.port || this.options.port,
       pool: this.options.pool,
@@ -452,9 +452,7 @@ export class Sequelize {
     /** Set name of the model. By default its same as Class name. */
     modelName? : string,
     sequelize? : Sequelize
-  }) : typeof Model {
-    options = options || {};
-
+  } = {}) : typeof Model {
     options.modelName = modelName;
     options.sequelize = this;
 
@@ -484,8 +482,7 @@ export class Sequelize {
    * @param modelName The name of a model defined with Sequelize.define
    */
   public isDefined(modelName : string) : boolean {
-    const models = this.modelManager.models;
-    return models.filter(model => model.name === modelName).length !== 0;
+    return !!this.modelManager.models.find(model => model.name === modelName);
   }
 
   /**
@@ -588,11 +585,13 @@ export class Sequelize {
     /** = false Force the query to use the write pool, regardless of the query type. */
     useMaster? : boolean;
   }) {
+    options = _.assign({}, this.options.query, options);
+    const retryOptions = _.assignIn({}, this.options.retry, options.retry || {});
+
     let bindParameters;
 
-    return Promise.try(() => {
-
-      options = _.assign({}, this.options.query, options);
+    return Promise.resolve(retry(retryParameters => Promise.try(() => {
+      const isFirstTry = retryParameters.current === 1;
 
       if (options.instance && !options.model) {
         options.model = options.instance.constructor;
@@ -645,6 +644,12 @@ export class Sequelize {
         const bindSql = this.dialect.Query.formatBindParameters(sql, options.bind, this.options.dialect);
         sql = bindSql[0];
         bindParameters = bindSql[1];
+        if (!Array.isArray(options.bind)) {
+          const keys = Object.keys(options.bind);
+          if ((sql as string).includes(':' + keys[0])) {
+            bindParameters = options.bind;
+          }
+        }
       }
 
       options = _.defaults(options, {
@@ -665,41 +670,47 @@ export class Sequelize {
       }
 
       if (options.transaction && options.transaction.finished) {
-        const error = new Error(options.transaction.finished + ' has been called on this transaction(' + options.transaction.id + '), you can no longer use it. (The rejected query is attached as the \'sql\' property of this error)');
+        const error = new Error(`${options.transaction.finished} has been called on this transaction(${options.transaction.id}), you can no longer use it. (The rejected query is attached as the \'sql\' property of this error)`);
         (error as any).sql = sql;
         return Promise.reject(error);
       }
 
-      if (this.test._trackRunningQueries) {
+      if (isFirstTry && this.test._trackRunningQueries) {
         this.test._runningQueries++;
       }
 
       //if dialect doesn't support search_path or dialect option
       //to prepend searchPath is not true delete the searchPath option
-      if (!this.dialect.supports.searchPath || !this.options.dialectOptions || !this.options.dialectOptions.prependSearchPath ||
-        options.supportsSearchPath === false) {
+      if (
+        !this.dialect.supports.searchPath ||
+        !this.options.dialectOptions ||
+        !this.options.dialectOptions.prependSearchPath ||
+        options.supportsSearchPath === false
+      ) {
         delete options.searchPath;
       } else if (!options.searchPath) {
         //if user wants to always prepend searchPath (dialectOptions.preprendSearchPath = true)
         //then set to DEFAULT if none is provided
         options.searchPath = 'DEFAULT';
       }
-      return options.transaction ? options.transaction.connection : this.connectionManager.getConnection(options);
+
+      return options.transaction
+        ? options.transaction.connection
+        : this.connectionManager.getConnection(options);
     }).then(connection => {
       const query = new this.dialect.Query(connection, this, options);
-      const retryOptions = _.extend(this.options.retry, options.retry || {});
 
-      return retry(() => query.run(sql, bindParameters), retryOptions)
+      return query.run(sql, bindParameters)
         .finally(() => {
+          if (this.test._trackRunningQueries) {
+            this.test._runningQueries--;
+          }
+
           if (!options.transaction) {
             return this.connectionManager.releaseConnection(connection);
           }
         });
-    }).finally(() => {
-      if (this.test._trackRunningQueries) {
-        this.test._runningQueries--;
-      }
-    });
+    }), retryOptions));
   }
 
   /**
@@ -852,7 +863,7 @@ export class Sequelize {
         if (model) {
           models.push(model);
         } else {
-          // DB should throw an SQL error if referencing inexistant table
+          // DB should throw an SQL error if referencing non-existent table
         }
       });
 
@@ -939,8 +950,7 @@ export class Sequelize {
    * @returns Sequelize.fn,
    */
   public random() : any {
-    const dialect = this.getDialect();
-    if (_.includes(['postgres', 'sqlite'], dialect)) {
+    if (['postgres', 'sqlite'].includes(this.getDialect())) {
       return this.fn('RANDOM');
     } else {
       return this.fn('RAND');
@@ -1206,20 +1216,6 @@ export class Sequelize {
     return res;
   }
 
-  /*
-   * Getter/setter for `Sequelize.cls`
-   * To maintain backward compatibility with Sequelize v3.x
-   * Calling the
-   */
-  static get cls() {
-    Utils.deprecate('Sequelize.cls is deprecated and will be removed in a future version. Keep track of the CLS namespace you use in your own code.');
-    return this._cls;
-  }
-
-  static set cls(ns) {
-    Utils.deprecate('Sequelize.cls should not be set directly. Use Sequelize.useCLS().');
-    this.useCLS(ns);
-  }
 
   public log(arg1?, arg2?, arg3?) {
     let options;
@@ -1416,10 +1412,10 @@ Hooks.applyTo(Sequelize.prototype);
 /**
  * Expose various errors available
  */
+Sequelize.prototype.Error = Sequelize.Error = sequelizeErrors.BaseError;
+
 for (const error of Object.keys(sequelizeErrors)) {
-  if (sequelizeErrors[error] === sequelizeErrors.BaseError) {
-    Sequelize.prototype.Error = Sequelize.Error = sequelizeErrors.BaseError;
-  } else {
+  if (sequelizeErrors[error] !== sequelizeErrors.BaseError) {
     Sequelize.prototype[error] = Sequelize[error] = sequelizeErrors[error];
   }
 }

@@ -29,7 +29,20 @@ export class MysqlQuery extends AbstractQuery {
     this.checkLoggingOption();
   }
 
-  public run(sql : string) : Promise<any> {
+  public static formatBindParameters(sql, values, dialect) {
+    const bindParam = [];
+    const replacementFunc = (match, key, _values) => {
+      if (_values[key] !== undefined) {
+        bindParam.push(_values[key]);
+        return '?';
+      }
+      return undefined;
+    };
+    sql = AbstractQuery.formatBindParameters(sql, values, dialect, replacementFunc)[0];
+    return [sql, bindParam.length > 0 ? bindParam : undefined];
+  }
+
+  public run(sql : string, parameters? : any) : Promise<any> {
     this.sql = sql;
 
     //do we need benchmark for this query execution
@@ -46,7 +59,7 @@ export class MysqlQuery extends AbstractQuery {
     debug(`executing(${this.connection.uuid || 'default'}) : ${this.sql}`);
 
     return new Utils.Promise((resolve, reject) => {
-      this.connection.query({ sql: this.sql }, (err, results) => {
+      const handler = (err, results) => {
         debug(`executed(${this.connection.uuid || 'default'}) : ${this.sql}`);
 
         if (benchmark) {
@@ -60,7 +73,13 @@ export class MysqlQuery extends AbstractQuery {
         } else {
           resolve(results);
         }
-      }).setMaxListeners(100);
+      };
+      if (parameters) {
+        debug('parameters(%j)', parameters);
+        this.connection.execute(sql, parameters, handler).setMaxListeners(100);
+      } else {
+        this.connection.query({ sql: this.sql }, handler).setMaxListeners(100);
+      }
     })
     // Log warnings if we've got them.
       .then(results => {

@@ -19,7 +19,7 @@ describe('QueryGenerator', () => {
         .should.be.equal('(test IS NULL OR testSame IS NULL)');
     });
 
-    it('should not parse any strings as aliases  operators', function() {
+    it('should not parse any strings as aliases operators', function() {
       const QG = support.getAbstractQueryGenerator(this.sequelize);
       expect(() => QG.whereItemQuery('$or', [{test: 5}, {test: 3}]))
         .to.throw('Invalid value { test: 5 }');
@@ -87,6 +87,19 @@ describe('QueryGenerator', () => {
         .to.throw('Invalid value { \'$in\': [ 4 ] }');
     });
 
+    it('should correctly parse sequelize.where with .fn as logic', function() {
+      const QG = support.getAbstractQueryGenerator(this.sequelize);
+      (QG as any).handleSequelizeMethod(this.sequelize.where(this.sequelize.col('foo'), 'LIKE', this.sequelize.col('bar')))
+        .should.be.equal('foo LIKE bar');
+    });
+  });
+
+  describe('format', () => {
+    it('should throw an error if passed SequelizeMethod', function() {
+      const QG = support.getAbstractQueryGenerator(this.sequelize);
+      const value = this.sequelize.fn('UPPER', 'test');
+      expect(() => (QG as any).format(value)).to.throw(Error);
+    });
   });
 });
 

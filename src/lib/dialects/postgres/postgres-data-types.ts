@@ -391,12 +391,16 @@ export class GEOMETRY extends BaseTypes.GEOMETRY {
   }
 
   public static parse(value) {
-    const b = new Buffer(value, 'hex');
+    const b = Buffer.from(value, 'hex');
     return wkx.Geometry.parse(b).toGeoJSON();
   }
 
   public _stringify(value, options) {
     return 'ST_GeomFromGeoJSON(' + options.escape(JSON.stringify(value)) + ')';
+  }
+
+  public _bindParam(value, options) {
+    return 'ST_GeomFromGeoJSON(' + options.bindParam(value) + ')';
   }
 }
 
@@ -419,12 +423,16 @@ export class GEOGRAPHY extends BaseTypes.GEOGRAPHY {
   }
 
   public static parse(value) {
-    const b = new Buffer(value, 'hex');
+    const b = Buffer.from(value, 'hex');
     return wkx.Geometry.parse(b).toGeoJSON();
   }
 
   public _stringify(value, options) {
     return 'ST_GeomFromGeoJSON(' + options.escape(JSON.stringify(value)) + ')';
+  }
+
+  public bindParam(value, options) {
+    return 'ST_GeomFromGeoJSON(' + options.bindParam(value) + ')';
   }
 }
 
@@ -453,12 +461,20 @@ export class HSTORE extends BaseTypes.HSTORE {
     return hstore.parse(value);
   }
 
-  public _stringify(value) {
+  private _value(value) {
     if (!hstore) {
       // All datatype files are loaded at import - make sure we don't load the hstore parser before a hstore is instantiated
       hstore = require('./hstore')['Hstore'];
     }
-    return "'" + hstore.stringify(value) + "'";
+    return hstore.stringify(value);
+  }
+
+  public _stringify(value) {
+    return "'" + this._value(value) + "'";
+  }
+
+  public _bindParam(value, options) {
+    return options.bindParam(this._value(value));
   }
 }
 
@@ -491,11 +507,34 @@ export class RANGE extends BaseTypes.RANGE {
   }
 
   public _stringify(values, options) {
+    const value = this._value(values, options);
     if (!Array.isArray(values)) {
-      return "'" + this.options.subtype.stringify(values, options) + "'::" +
-        this.toCastType();
+      return `'${value}'::` + this.toCastType();
     }
-    const valuesStringified = values.map(value => {
+    return `'${value}'`;
+  }
+
+  public _bindParam(values, options) {
+    const value = this._value(values, options);
+    if (!Array.isArray(values)) {
+      return options.bindParam(value) + '::' + this.toCastType();
+    }
+    return options.bindParam(value);
+  }
+
+  public _value(values, options) {
+    if (!Array.isArray(values)) {
+      return this.options.subtype.stringify(values, options);
+    }
+
+    const valueInclusivity = [true, false];
+    const valuesStringified = values.map((value, index) => {
+      if (_.isObject(value) && value.hasOwnProperty('value')) {
+        if (value.hasOwnProperty('inclusive')) {
+          valueInclusivity[index] = value.inclusive;
+        }
+        value = value.value;
+      }
       if (_.includes([null, -Infinity, Infinity], value)) {
         // Pass through "unbounded" bounds unchanged
         return value;
@@ -507,9 +546,9 @@ export class RANGE extends BaseTypes.RANGE {
     });
 
     // Array.map does not preserve extra array properties
-    (valuesStringified as any).inclusive = (values as any).inclusive;
+    (valuesStringified as any).inclusive = valueInclusivity;
 
-    return  '\'' + Range.stringify(valuesStringified) + '\'';
+    return Range.stringify(valuesStringified);
   }
 }
 
@@ -518,41 +557,12 @@ BaseTypes.RANGE.types.postgres = {
   array_oids: [3905, 3907, 3909, 3911, 3913, 3927]
 };
 
-export class ARRAY extends BaseTypes.ARRAY {
-  public escape : boolean = false;
-
-  public _stringify(values, options) {
-    let str = 'ARRAY[' + values.map(value => {
-      if (this.type && this.type.stringify) {
-        value = this.type.stringify(value, options);
-
-        if (this.type.escape === false) {
-          return value;
-        }
-      }
-      return options.escape(value);
-    }, this).join(',') + ']';
-
-    if (this.type) {
-      let castKey = this.toSql();
-
-      if (this.type instanceof BaseTypes.ENUM) {
-        castKey = Utils.addTicks(
-          Utils.generateEnumName(options.field.Model.getTableName(), options.field.fieldName),
-          '"'
-        ) + '[]';
-      }
-
-      str += '::' + castKey;
-    }
-
-    return str;
-  }
-}
-
 (BaseTypes.ARRAY.prototype as any).escape = false;
-(BaseTypes.ARRAY.prototype as any)._stringify = function _stringify(values, options) {
-  let str = 'ARRAY[' + values.map(value => {
+(BaseTypes.ARRAY.prototype as any)._value = function _value(values, options) {
+  return values.map(value => {
+    if (options && options.bindParam && this.type && this.type._value) {
+      return this.type._value(value, options);
+    }
     if (this.type && this.type.stringify) {
       value = this.type.stringify(value, options);
 
@@ -561,15 +571,17 @@ export class ARRAY extends BaseTypes.ARRAY {
       }
     }
     return options.escape(value);
-  }, this).join(',') + ']';
+  }, this);
+};
+(BaseTypes.ARRAY.prototype as any)._stringify = function _stringify(values, options) {
+  let str = 'ARRAY[' + this._value(values, options).join(',') + ']';
 
   if (this.type) {
-    const AllUtils = require('../../utils');
     let castKey = this.toSql();
 
     if (this.type instanceof BaseTypes.ENUM) {
-      castKey = AllUtils.Utils.addTicks(
-        AllUtils.Utils.generateEnumName(options.field.Model.getTableName(), options.field.fieldName),
+      castKey = Utils.addTicks(
+        Utils.generateEnumName(options.field.Model.getTableName(), options.field.fieldName),
         '"'
       ) + '[]';
     }
@@ -579,6 +591,10 @@ export class ARRAY extends BaseTypes.ARRAY {
 
   return str;
 };
+(BaseTypes.ARRAY.prototype as any)._bindParam = function _bindParam(values, options) {
+  return options.bindParam(this._value(values, options));
+};
+
 
 export class ENUM extends BaseTypes.ENUM {
   public static parse(value) {

@@ -1,6 +1,7 @@
 'use strict';
 
 import * as _ from 'lodash';
+import { Sequelize } from '../..';
 import { Model } from '../model';
 import { Utils } from '../utils';
 import { Association } from './base';
@@ -27,15 +28,14 @@ export class Mixin {
       onDelete? : string,
       onUpdate? : string,
       useHooks? : boolean,
-    }) : BelongsTo | HasOne { // testhint options:none
+    } = {}) : BelongsTo | HasOne { // testhint options:none
       if (!target || !target.prototype || !(target.prototype instanceof this.sequelize.Model)) {
-        throw new Error(this.name + '.' + Utils.lowercaseFirst(Type.toString()) + ' called with something that\'s not a subclass of Sequelize.Model');
+        throw new Error(this.name + '.' + Utils.lowercaseFirst(Type.name) + ' called with something that\'s not a subclass of Sequelize.Model');
       }
 
       const source = this;
 
       // Since this is a mixin, we'll need a unique letiable name for hooks (since Model will override our hooks option)
-      options = options || {};
       options.hooks = options.hooks === undefined ? false : Boolean(options.hooks);
       options.useHooks = options.hooks;
 
@@ -71,7 +71,7 @@ export class Mixin {
     hooks? : boolean,
     scope? : {}
     useHooks? : boolean,
-  }) : HasMany { // testhint options:none
+  } = {}) : HasMany { // testhint options:none
     if (!target || !target.prototype || !(target.prototype instanceof (this as any).sequelize.Model)) {
       throw new Error(this.name + '.hasMany called with something that\'s not a subclass of Sequelize.Model');
     }
@@ -79,7 +79,6 @@ export class Mixin {
     const source : any = this;
 
     // Since this is a mixin, we'll need a unique letiable name for hooks (since Model will override our hooks option)
-    options = options || {};
     options.hooks = options.hooks === undefined ? false : Boolean(options.hooks);
     options.useHooks = options.hooks;
 
@@ -112,7 +111,7 @@ export class Mixin {
     /** = true Adds createdAt and updatedAt timestamps to the model. */
     timestamps? : any,
     useHooks? : boolean,
-  }) : BelongsToMany { // testhint options:none
+  } = {}) : BelongsToMany { // testhint options:none
     if (!targetModel || !targetModel.prototype || !(targetModel.prototype instanceof (this as any).sequelize.Model)) {
       throw new Error(this.name + '.belongsToMany called with something that\'s not a subclass of Sequelize.Model');
     }
@@ -120,7 +119,6 @@ export class Mixin {
     const sourceModel : any = this;
 
     // Since this is a mixin, we'll need a unique letiable name for hooks (since Model will override our hooks option)
-    options = options || {};
     options.hooks = options.hooks === undefined ? false : Boolean(options.hooks);
     options.useHooks = options.hooks;
     options.timestamps = options.timestamps === undefined ? (this as any).sequelize.options.timestamps : options.timestamps;
@@ -161,5 +159,11 @@ export class Mixin {
     } else {
       return !association.isAliased;
     }
+  }
+
+  public isModel(model : typeof Model, sequelize : Sequelize) {
+    return model
+      && model.prototype
+      && model.prototype instanceof sequelize.Model;
   }
 }

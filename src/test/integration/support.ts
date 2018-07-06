@@ -1,5 +1,6 @@
 'use strict';
 
+// import { MssqlQuery } from '../../lib/dialects/mssql/mssql-query';
 import Support from '../support';
 
 beforeEach(function() {

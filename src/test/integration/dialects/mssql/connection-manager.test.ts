@@ -82,8 +82,8 @@ if (dialect.match(/^mssql/)) {
 
     describe('Errors', () => {
       it('ECONNREFUSED', () => {
-        const sequelize = Support.createSequelizeInstance({ port: 34237 });
-        return expect(sequelize.connectionManager.getConnection()).to.have.been.rejectedWith(sequelize.ConnectionError);
+        const sequelize = Support.createSequelizeInstance({ host: '127.0.0.1', port: 34237 });
+        return expect(sequelize.connectionManager.getConnection()).to.have.been.rejectedWith(sequelize.ConnectionRefusedError);
       });
 
       it('ENOTFOUND', () => {

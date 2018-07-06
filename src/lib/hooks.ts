@@ -2,10 +2,10 @@
 
 import * as _ from 'lodash';
 import Promise from './promise';
-import * as AllUtils from './utils';
+import { Utils } from './utils';
 
-const Utils = AllUtils.Utils;
 const debug = Utils.getLogger().debugContext('hooks');
+
 
 export const hookTypes = {
   beforeValidate: {params: 2},

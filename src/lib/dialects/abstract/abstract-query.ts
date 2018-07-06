@@ -615,10 +615,7 @@ export abstract class AbstractQuery {
    * @hidden
    */
   public static groupJoinData(rows, includeOptions, options) {
-
-    // const startTime = new Date();
     const result = this._groupJoinData(rows, includeOptions, options);
-    // console.log('execution time: ' + (new Date().getTime() - startTime.getTime()));
     return result;
   }
 }

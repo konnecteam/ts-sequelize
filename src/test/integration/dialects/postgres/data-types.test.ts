@@ -76,7 +76,7 @@ if (dialect === 'postgres') {
 
         const date = new Date();
         const User = this.sequelize.define('User', {
-          username: this.sequelize.Sequelize.STRING,
+          username: new this.sequelize.Sequelize.STRING(),
           beforeTime: {
             type: this.sequelize.Sequelize.DATE,
             defaultValue: -Infinity

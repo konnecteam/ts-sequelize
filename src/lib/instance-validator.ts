@@ -1,6 +1,7 @@
 'use strict';
 
 import * as _ from 'lodash';
+import { BelongsTo } from './associations/belongs-to';
 import DataTypes from './data-types';
 import * as sequelizeError from './errors/index';
 import { Model } from './model';
@@ -315,19 +316,22 @@ export class InstanceValidator {
    * @param value anything.
    * @hidden
    */
-  private _validateSchema(rawAttribute : { allowNull? : boolean, type? }, field : string, value : any) {
+  private _validateSchema(rawAttribute : { allowNull? : boolean, type?, fieldName? }, field : string, value : any) {
     if (rawAttribute.allowNull === false && (value === null || value === undefined)) {
-      const validators = this.modelInstance.validators[field];
-      const errMsg = _.get(validators, 'notNull.msg', `${this.modelInstance.constructor.name}.${field} cannot be null`);
+      const association = _.values(this.modelInstance.constructor.associations).find(_association => _association instanceof BelongsTo && _association.foreignKey === rawAttribute.fieldName);
+      if (!association || !this.modelInstance.get((association as any).associationAccessor)) {
+        const validators = this.modelInstance.validators[field];
+        const errMsg = _.get(validators, 'notNull.msg', `${this.modelInstance.constructor.name}.${field} cannot be null`);
 
-      this.errors.push(new sequelizeError.ValidationErrorItem(
-        errMsg,
-        'notNull Violation', // sequelizeError.ValidationErrorItem.Origins.CORE,
-        field,
-        value,
-        this.modelInstance,
-        'is_null'
-      ));
+        this.errors.push(new sequelizeError.ValidationErrorItem(
+          errMsg,
+          'notNull Violation', // sequelizeError.ValidationErrorItem.Origins.CORE,
+          field,
+          value,
+          this.modelInstance,
+          'is_null'
+        ));
+      }
     }
 
     if (rawAttribute.type === DataTypes.STRING || rawAttribute.type instanceof DataTypes.STRING || rawAttribute.type === DataTypes.TEXT || rawAttribute.type instanceof DataTypes.TEXT) {
@@ -398,4 +402,4 @@ export class InstanceValidator {
 /**
  * @define {string} The error key for arguments as passed by custom validators
  */
-InstanceValidator.RAW_KEY_NAME = '__raw';
+InstanceValidator.RAW_KEY_NAME = 'original';

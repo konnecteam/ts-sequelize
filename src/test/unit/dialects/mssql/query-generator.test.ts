@@ -25,7 +25,7 @@ if (current.dialect.name === 'mssql') {
       });
     });
 
-    it('bulkInsertQuery', () => {
+    it('bulkInsertQuery', function() {
       //normal cases
       expectsql(QueryGenerator.bulkInsertQuery('myTable', [{ name: 'foo' }, {name: 'bar'}]), {
         mssql: "INSERT INTO [myTable] ([name]) VALUES (N'foo'),(N'bar');"
@@ -46,7 +46,7 @@ if (current.dialect.name === 'mssql') {
       });
     });
 
-    it('selectFromTableFragment', () => {
+    it('selectFromTableFragment', function() {
       const modifiedGen = _.clone(QueryGenerator);
       // Test newer versions first
       // Should be all the same since handling is done in addLimitAndOffset

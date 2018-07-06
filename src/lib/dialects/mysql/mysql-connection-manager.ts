@@ -7,14 +7,15 @@ import * as SequelizeErrors from '../../errors/index';
 import { IConfigMysql } from '../../model/iconfig';
 import { Utils } from '../../utils';
 import { AbstractConnectionManager } from '../abstract/abstract-connection-manager';
+import { ParserStore } from '../parserStore';
 import { MysqlDialect } from './mysql-dialect';
 
 const DataTypes = AllDataTypes.mysql;
 const debug = Utils.getLogger().debugContext('connection:mysql');
-const parserMap = new Map();
+export const parserStore = new ParserStore('mysql');
 
 /**
- * MySQL Connection Managger
+ * MySQL Connection Manager
  *
  * Get connections, validate and disconnect them.
  * AbstractConnectionManager pooling use it to handle MySQL specific connections
@@ -49,24 +50,22 @@ export class MysqlConnectionManager extends AbstractConnectionManager {
    *  Update parsing when the user has added additional, custom types
    */
   public _refreshTypeParser(dataType : any) {
-    for (const type of dataType.types.mysql) {
-      parserMap.set(type, dataType.parse);
-    }
+    parserStore.refresh(dataType);
   }
 
   /**
    * clear all type parser
    */
   public _clearTypeParser() {
-    parserMap.clear();
+    parserStore.clear();
   }
 
   /**
    * @hidden
    */
   private static _typecast(field : { type? : string }, next : any) : any {
-    if (parserMap.has(field.type)) {
-      return parserMap.get(field.type)(field, this.sequelize.options, next);
+    if (parserStore.get(field.type)) {
+      return parserStore.get(field.type)(field, this.sequelize.options, next);
     }
     return next();
   }
@@ -140,12 +139,12 @@ export class MysqlConnectionManager extends AbstractConnectionManager {
             // but named timezone are not directly supported in mysql, so get its offset first
             let tzOffset = this.sequelize.options.timezone;
             tzOffset = /\//.test(tzOffset) ? momentTz.tz(tzOffset).format('Z') : tzOffset;
-            connection.query(`SET time_zone = '${tzOffset}'`, err => {
+            return connection.query(`SET time_zone = '${tzOffset}'`, err => {
               if (err) { reject(err); } else { resolve(connection); }
             });
-          } else {
-            resolve(connection);
           }
+          // return connection without executing SET time_zone query
+          resolve(connection);
         });
       })
       .catch(err => {

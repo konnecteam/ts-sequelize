@@ -27,10 +27,25 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       };
       expectsql(sql.updateQuery(User.tableName, {user_name: 'triggertest'}, {id: 2}, options, User.rawAttributes),
         {
-          mssql: 'declare @tmp table ([id] INTEGER,[user_name] NVARCHAR(255));UPDATE [users] SET [user_name]=N\'triggertest\' OUTPUT INSERTED.[id],INSERTED.[user_name] into @tmp WHERE [id] = 2;select * from @tmp',
-          postgres: 'UPDATE "users" SET "user_name"=\'triggertest\' WHERE "id" = 2 RETURNING *',
-          default: "UPDATE `users` SET `user_name`=\'triggertest\' WHERE `id` = 2",
-          oracle: "UPDATE users SET user_name='triggertest' WHERE id = 2"
+          query: {
+            mssql: 'declare @tmp table ([id] INTEGER,[user_name] NVARCHAR(255));UPDATE [users] SET [user_name]=$1 OUTPUT INSERTED.[id],INSERTED.[user_name] into @tmp WHERE [id] = $2;select * from @tmp',
+            postgres: 'UPDATE "users" SET "user_name"=$1 WHERE "id" = $2 RETURNING *',
+            oracle: 'UPDATE users SET user_name=:updateuser_name1 WHERE id = :whereid1',
+            default: 'UPDATE `users` SET `user_name`=$1 WHERE `id` = $2'
+          },
+          bind: {
+            oracle: {
+              updateuser_name1: {
+                dir: 3001,
+                val: 'triggertest'
+              },
+              whereid1: {
+                dir: 3001,
+                val: 2
+              }
+            },
+            default: ['triggertest', 2]
+          }
         });
     });
 
@@ -48,11 +63,26 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       });
 
       expectsql(sql.updateQuery(User.tableName, { username: 'new.username' }, { username: 'username' }, { limit: 1 }), {
-        mssql: "UPDATE TOP(1) [Users] SET [username]=N'new.username' OUTPUT INSERTED.* WHERE [username] = N'username'",
-        mysql: "UPDATE `Users` SET `username`='new.username' WHERE `username` = 'username' LIMIT 1",
-        oracle: 'UPDATE Users SET username=\'new.username\' WHERE username = \'username\' AND rownum <= 1',
-        sqlite: "UPDATE `Users` SET `username`='new.username' WHERE rowid IN (SELECT rowid FROM `Users` WHERE `username` = 'username' LIMIT 1)",
-        default: "UPDATE [Users] SET [username]='new.username' WHERE [username] = 'username'"
+        query: {
+          mssql: 'UPDATE TOP(1) [Users] SET [username]=$1 OUTPUT INSERTED.* WHERE [username] = $2',
+          mysql: 'UPDATE `Users` SET `username`=$1 WHERE `username` = $2 LIMIT 1',
+          sqlite: 'UPDATE `Users` SET `username`=$1 WHERE rowid IN (SELECT rowid FROM `Users` WHERE `username` = $2 LIMIT 1)',
+          oracle: 'UPDATE Users SET username=:updateusername1 WHERE username = :whereusername1 AND rownum <= 1 ',
+          default: 'UPDATE [Users] SET [username]=$1 WHERE [username] = $2'
+        },
+        bind: {
+          oracle: {
+            updateusername1: {
+              dir: 3001,
+              val: 'new.username'
+            },
+            whereusername1: {
+              dir: 3001,
+              val: 'username'
+            }
+          },
+          default: ['new.username', 'username']
+        }
       });
     });
   });

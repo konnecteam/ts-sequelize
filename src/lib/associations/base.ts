@@ -1,9 +1,8 @@
 'use strict';
 import { Sequelize } from '../..';
-import * as Errors from '../errors/index';
+import { AssociationError } from '../errors/index';
 import { Model } from '../model';
 import { HasOne } from './has-one';
-const AssociationError = Errors.AssociationError;
 
 
 /**
@@ -238,8 +237,7 @@ export class Association {
     useHooks? : boolean,
     validate? : {},
     whereCollection? : {}
-  }) {
-    options = options || {};
+  } = {}) {
     this.source = source;
     this.target = target;
     this.options = options;
@@ -257,21 +255,24 @@ export class Association {
 
   /**
    * Normalize input - may be array or single obj, instance or primary key - convert it to an array of built objects
+   * @param input {Any}, it may be array or single obj, instance or primary key
+   * @returns <Array>, built objects
    */
-  public toInstanceArray(objs : any) : any[] {
-    if (!Array.isArray(objs)) {
-      objs = [objs];
+  public toInstanceArray(input : any) : any[] {
+    if (!Array.isArray(input)) {
+      input = [input];
     }
-    return objs.map(function(obj) {
-      if (!(obj instanceof this.target)) {
-        const tmpInstance = {};
-        tmpInstance[this.target.primaryKeyAttribute] = obj;
-        return this.target.build(tmpInstance, {
-          isNewRecord: false
-        });
+
+    return input.map(element => {
+      if (element instanceof this.target) {
+        return element;
       }
-      return obj;
-    }, this);
+
+      const tmpInstance = {};
+      tmpInstance[this.target.primaryKeyAttribute] = element;
+
+      return this.target.build(tmpInstance, { isNewRecord: false });
+    });
   }
 
   /**

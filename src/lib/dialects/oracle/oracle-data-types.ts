@@ -79,6 +79,14 @@ export class STRING extends BaseTypes.STRING {
       return options.escape(value);
     }
   }
+
+  public _bindParam(value, options) {
+    if (this._binary) {
+      return options.bindParam(value);
+    } else {
+      return options.bindParam(this._stringify(value, options));
+    }
+  }
 }
 
 export class TEXT extends BaseTypes.TEXT {
@@ -304,7 +312,7 @@ export class DATEONLY extends BaseTypes.DATEONLY {
     return moment(value).format('YYYY-MM-DD');
   }
 
-  public _stringify(date : Date) : string {
+  public _stringify(date) : string {
     const format = 'YYYY/MM/DD';
     return `TO_DATE('${date}','${format}')`;
   }

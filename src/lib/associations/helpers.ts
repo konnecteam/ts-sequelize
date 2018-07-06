@@ -1,6 +1,5 @@
 'use strict';
 
-import * as _ from 'lodash';
 import { Sequelize } from '../..';
 import { Model } from '../model';
 import { Association } from './base';
@@ -9,8 +8,8 @@ export class Helpers {
   public static checkNamingCollision(association : Association) : void {
     if (association.source.rawAttributes.hasOwnProperty(association.as)) {
       throw new Error(
-        'Naming collision between attribute \'' + association.as +
-        '\' and association \'' + association.as + '\' on model ' + association.source.name +
+        `Naming collision between attribute '${association.as}'` +
+        ` and association '${association.as}' on model ${association.source.name}` +
         '. To remedy this, change either foreignKey or as in your association definition'
       );
     }
@@ -69,9 +68,8 @@ export class Helpers {
     if (options.foreignKeyConstraint || options.onDelete || options.onUpdate) {
 
       // Find primary keys: composite keys not supported with this approach
-      const primaryKeys = _.chain(source.rawAttributes).keys()
-      .filter(attributesKey => source.rawAttributes[(attributesKey as any)].primaryKey)
-      .map(primaryKey => source.rawAttributes[(primaryKey as any)].field || primaryKey).value();
+      const primaryKeys = Object.keys(source.primaryKeys)
+      .map(primaryKeyAttribute => source.rawAttributes[primaryKeyAttribute].field || primaryKeyAttribute);
 
       if (primaryKeys.length === 1) {
         if (source._schema) {

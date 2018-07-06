@@ -16,6 +16,9 @@ const dataTypes : IDataTypes = AllDataTypes;
 const debug = Utils.getLogger().debugContext('connection:pg');
 
 export class PostgresConnectionManager extends AbstractConnectionManager {
+  public oidMap : {};
+  public arrayOidMap : {};
+
   constructor(dialect : PostgresDialect, sequelize : Sequelize) {
     super(dialect, sequelize);
 
@@ -36,6 +39,7 @@ export class PostgresConnectionManager extends AbstractConnectionManager {
       throw err;
     }
 
+    this._clearTypeParser();
     this.refreshTypeParser(dataTypes.postgres);
   }
 
@@ -45,19 +49,34 @@ export class PostgresConnectionManager extends AbstractConnectionManager {
   public _refreshTypeParser(dataType : any) {
     if (dataType.types.postgres.oids) {
       for (const oid of dataType.types.postgres.oids) {
-        this.lib.types.setTypeParser(oid, value => dataType.parse(value, oid, this.lib.types.getTypeParser));
+        this.oidMap[oid] = value => dataType.parse(value, oid, this.lib.types.getTypeParser);
       }
     }
 
     if (dataType.types.postgres.array_oids) {
       for (const oid of dataType.types.postgres.array_oids) {
-        this.lib.types.setTypeParser(oid, value =>
-          this.lib.types.arrayParser.create(value, v =>
+        this.arrayOidMap[oid] = value => {
+          return this.lib.types.arrayParser.create(value, v =>
             dataType.parse(v, oid, this.lib.types.getTypeParser)
-          ).parse()
-        );
+          ).parse();
+        };
       }
     }
+  }
+
+  private _clearTypeParser() {
+    this.oidMap = {};
+    this.arrayOidMap = {};
+  }
+
+  public getTypeParser(oid) {
+    if (this.oidMap[oid]) {
+      return this.oidMap[oid];
+    } else if (this.arrayOidMap[oid]) {
+      return this.arrayOidMap[oid];
+    }
+
+    return this.lib.types.getTypeParser.apply(undefined, arguments);
   }
 
   /**
@@ -68,6 +87,10 @@ export class PostgresConnectionManager extends AbstractConnectionManager {
     const connectionConfig : IConfig = _.pick(config, [
       'user', 'password', 'host', 'database', 'port',
     ]);
+
+    connectionConfig.types = {
+      getTypeParser: PostgresConnectionManager.prototype.getTypeParser.bind(this)
+    };
 
     if (config.dialectOptions) {
       _.merge(connectionConfig,
@@ -207,7 +230,16 @@ export class PostgresConnectionManager extends AbstractConnectionManager {
     return (connection || this.sequelize).query(
       "SELECT typname, typtype, oid, typarray FROM pg_type WHERE (typtype = 'b' AND typname IN ('hstore', 'geometry', 'geography')) OR (typtype = 'e')"
     ).then(results => {
-      const result = Array.isArray(results) ? results.pop() : results;
+      let result = Array.isArray(results) ? results.pop() : results;
+
+      // When searchPath is prepended then two statements are executed and the result is
+      // an array of those two statements. First one is the SET search_path and second is
+      // the SELECT query result.
+      if (Array.isArray(result)) {
+        if (result[0].command === 'SET') {
+          result = result.pop();
+        }
+      }
 
       // Reset OID mapping for dynamic type
       [
@@ -235,9 +267,9 @@ export class PostgresConnectionManager extends AbstractConnectionManager {
 
         type.types.postgres.oids.push(row.oid);
         type.types.postgres.array_oids.push(row.typarray);
-
-        this._refreshTypeParser(type);
       }
+
+      this.refreshTypeParser(dataTypes.postgres);
     });
   }
 }

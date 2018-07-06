@@ -2,7 +2,6 @@
 
 import * as chai from 'chai';
 import * as chaiaspromised from 'chai-as-promised';
-const chaidatetime = require('chai-datetime');
 import * as chaispies from 'chai-spies';
 import * as fs from 'fs';
 import * as _ from 'lodash';
@@ -13,6 +12,7 @@ import DataTypes from '../lib/data-types';
 import Config from './config/config';
 import { DummyQueryGenerator } from './dummy/dummy-query-generator';
 import * as SupportShim from './supportShim';
+const chaidatetime = require('chai-datetime');
 const expect = chai.expect;
 
 chai.use(chaispies);
@@ -215,7 +215,8 @@ const Support = {
     return url;
   },
 
-  expectsql(query, expectations) {
+  expectsql(query, assertions) {
+    const expectations = assertions.query || assertions;
     let expectation = expectations[Support.sequelize.dialect.name];
 
     if (!expectation) {
@@ -231,7 +232,12 @@ const Support = {
     if (_.isError(query)) {
       expect(query.message).to.equal(expectation.message);
     } else {
-      expect(query).to.equal(expectation);
+      expect(query.query || query).to.equal(expectation);
+    }
+
+    if (assertions.bind) {
+      const bind = assertions.bind[Support.sequelize.dialect.name] || assertions.bind['default'] || assertions.bind;
+      expect(query.bind).to.deep.equal(bind);
     }
   }
 };

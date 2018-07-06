@@ -100,13 +100,12 @@ export class SqliteQuery extends AbstractQuery {
     const method = this.getDatabaseMethod();
     if (method === 'exec') {
       // exec does not support bind parameter
-      sql = AbstractQuery.formatBindParameters(sql, this.options.bind, this.options.dialect, { skipUnescape: true })[0];
+      sql = AbstractQuery.formatBindParameters(sql, this.options.bind, this.options.dialect || 'sqlite', { skipUnescape: true })[0];
       this.sql = sql;
     }
 
     //do we need benchmark for this query execution
     const benchmark = this.sequelize.options.benchmark || this.options.benchmark;
-
     let queryBegin;
     if (benchmark) {
       queryBegin = Date.now();
@@ -491,4 +490,5 @@ export class SqliteQuery extends AbstractQuery {
       return 'all';
     }
   }
+
 }

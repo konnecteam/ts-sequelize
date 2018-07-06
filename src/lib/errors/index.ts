@@ -1,6 +1,5 @@
 'use strict';
 
-import * as _ from 'lodash';
 import { Model } from '../model';
 
 /**
@@ -330,7 +329,7 @@ export class ValidationErrorItem {
       if (ValidationErrorItem.Origins[ type ]) {
         this.origin = type;
       } else {
-        const lowercaseType = _.toLower(type + '').trim();
+        const lowercaseType = (type + '').toLowerCase().trim();
         const realType  = ValidationErrorItem.TypeStringMap[ lowercaseType ];
 
         if (realType && ValidationErrorItem.Origins[ realType ]) {
@@ -371,7 +370,7 @@ export class ValidationErrorItem {
       return '';
     }
 
-    return _.toLower(useNS ? [type, key].join(NSSep) : key).trim();
+    return (useNS ? [type, key].join(NSSep) : key).toLowerCase().trim();
   }
 
   /**
@@ -547,6 +546,26 @@ export class QueryError extends BaseError {
   constructor(message : string) {
     super(message);
     this.name = 'SequelizeQueryError';
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+/**
+ * Thrown when bulk operation fails, it represent per record level error.
+ * Used with Promise.AggregateError
+ *
+ * @param error   Error for a given record/instance
+ * @param record  DAO instance that error belongs to
+ */
+export class BulkRecordError extends BaseError {
+  public errors : Error;
+  public record : {};
+
+  constructor(error : Error, record : {}) {
+    super(error.message);
+    this.name = 'SequelizeBulkRecordError';
+    this.errors = error;
+    this.record = record;
     Error.captureStackTrace(this, this.constructor);
   }
 }

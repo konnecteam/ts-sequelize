@@ -176,17 +176,17 @@ export class MysqlQueryGenerator extends AbstractQueryGenerator {
 
     if (options.uniqueKeys) {
       _.each(options.uniqueKeys, (columns, indexName) => {
-        if (!columns.singleField) { // If it's a single field it's handled in column def, not as an index
+        if (columns.customIndex) {
           if (!_.isString(indexName)) {
             indexName = 'uniq_' + tableName + '_' + columns.fields.join('_');
           }
-          values.attributes += ', UNIQUE ' + this.quoteIdentifier(indexName) + ' (' + _.map(columns.fields, this.quoteIdentifier).join(', ') + ')';
+          values.attributes += `, UNIQUE ${this.quoteIdentifier(indexName)} (${columns.fields.map(field => this.quoteIdentifier(field)).join(', ')})`;
         }
       });
     }
 
     if (pkString.length > 0) {
-      values.attributes += ', PRIMARY KEY (' + pkString + ')';
+      values.attributes += `, PRIMARY KEY (${pkString})`;
     }
 
     Object.keys(foreignKeys).forEach(fkey => {
@@ -364,7 +364,7 @@ export class MysqlQueryGenerator extends AbstractQueryGenerator {
      * The type is a string, but `Sequelize.QueryTypes` is provided as convenience shortcuts.
      */
     type? : string
-  }) : string {
+  }) : any {
     options.onDuplicate = 'UPDATE ';
 
     options.onDuplicate += Object.keys(updateValues).map(key => {
@@ -373,6 +373,10 @@ export class MysqlQueryGenerator extends AbstractQueryGenerator {
     }).join(', ');
 
     return this.insertQuery(tableName, insertValues, model.rawAttributes, options);
+  }
+
+  public truncateTableQuery(tableName : string) : string {
+    return `TRUNCATE ${this.quoteTable(tableName)}`;
   }
 
   /**
@@ -437,33 +441,21 @@ export class MysqlQueryGenerator extends AbstractQueryGenerator {
      */
     type? : string,
     typeValidation? : boolean
-  }, model) : string {
-    options = options || {};
-
-    const table = this.quoteTable(tableName);
-    if (options.truncate === true) {
-      // Truncate does not allow LIMIT and WHERE
-      return 'TRUNCATE ' + table;
-    }
-
-    where = this.getWhereConditions(where, null, model, options);
+  } = {}, model : typeof Model) : string {
     let limit = '';
-
-    if (_.isUndefined(options.limit)) {
-      options.limit = 1;
-    }
+    let query = 'DELETE FROM ' + this.quoteTable(tableName);
 
     if (options.limit) {
       limit = ' LIMIT ' + this.escape(options.limit);
     }
 
-    let query = 'DELETE FROM ' + table;
+    where = this.getWhereConditions(where, null, model, options);
+
     if (where) {
       query += ' WHERE ' + where;
     }
-    query += limit;
 
-    return query;
+    return query + limit;
   }
 
   /**
@@ -861,7 +853,7 @@ export class MysqlQueryGenerator extends AbstractQueryGenerator {
   /**
    * @hidden
    */
-  private wrapSingleQuote(identifier : string) : string {
+  public wrapSingleQuote(identifier : string) : string {
     return Utils.addTicks(identifier, '\'');
   }
 }

@@ -135,10 +135,10 @@ export class OracleQueryInterface extends AbstractQueryInterface {
         const model = this.sequelize.models[keys[i]];
         if (model.tableName === tableName) {
           if (options) {
-            options['describeModelAttributes'] = model.attributes;
+            options['describeModelAttributes'] = model.rawAttributes;
           } else {
             options = {
-              describeModelAttributes : model.attributes
+              describeModelAttributes : model.rawAttributes
             };
           }
           found = true;

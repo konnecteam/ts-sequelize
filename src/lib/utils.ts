@@ -140,7 +140,7 @@ export class Utils {
    * remove [-_\s.] of the string and puts the next letter in upper case
    * @hidden
    */
-  private static camelize(str : string) : string {
+  public static camelize(str : string) : string {
     return str.trim().replace(/[-_\s]+(.)?/g, (match, c) => c.toUpperCase());
   }
 
@@ -574,6 +574,57 @@ export class Utils {
       newObj[Utils.camelize(key)] = obj[key];
     });
     return newObj;
+  }
+
+  /**
+   * Assigns own and inherited enumerable string and symbol keyed properties of source
+   * objects to the destination object.
+   *
+   * https://lodash.com/docs/4.17.4#defaults
+   *
+   * **Note:** This method mutates `object`.
+   *
+   * @param object The destination object.
+   * @param arg The sources
+   */
+  public static defaults(object : {}, arg?) : {} {
+    object = Object(object);
+
+    const sources = _.tail(arguments);
+
+    sources.forEach(source => {
+      if (source) {
+        source = Object(source);
+
+        Utils.getComplexKeys(source).forEach(key => {
+          const value = object[key];
+          if (
+            value === undefined || (
+              _.eq(value, Object.prototype[key]) &&
+              !Object.prototype.hasOwnProperty.call(object, key)
+            )
+          ) {
+            object[key] = source[key];
+          }
+        });
+      }
+    });
+
+    return object;
+  }
+
+  /**
+   * replace all bind in a query
+   */
+  public replaceBinding(sql : string, bind : any[]) : string {
+    if (bind) {
+      const bindKeys = Object.keys(bind);
+      for (let i = 0; i < bindKeys.length; i++) {
+        const key = bindKeys[i];
+        sql = sql.replace(':' + key, bind[key]);
+      }
+    }
+    return sql;
   }
 }
 

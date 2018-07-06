@@ -132,7 +132,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           });
         });
 
-        it('should be ignored in bulkCreate and and bulkUpdate', function() {
+        it('should be ignored in bulkCreate and bulkUpdate', function() {
           const self = this;
           return this.User.bulkCreate([{
             field1: 'something'

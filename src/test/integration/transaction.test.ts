@@ -1,9 +1,11 @@
 'use strict';
 
 import * as chai from 'chai';
+import * as semver from 'semver';
 import * as sinon from 'sinon';
 import DataTypes from '../../lib/data-types';
 import Promise from '../../lib/promise';
+import { QueryTypes } from '../../lib/query-types';
 import { Transaction } from '../../lib/transaction';
 import Support from './support';
 const expect = chai.expect;
@@ -88,6 +90,32 @@ if (current.dialect.supports.transactions) {
           return Promise.reject(new Error('Swag'));
         })).to.eventually.be.rejected.then(() => {
           expect(t.finished).to.be.equal('rollback');
+        });
+      });
+
+      it('supports running hooks when a transaction is commited', function() {
+        const hook = sinon.spy();
+        let transaction;
+        const sql = dialect === 'oracle' ? 'SELECT 1+1 FROM DUAL' : 'SELECT 1+1';
+        return expect(this.sequelize.transaction(t => {
+          transaction = t;
+          transaction.afterCommit(hook);
+          return this.sequelize.query(sql, {transaction, type: QueryTypes.SELECT});
+        }).then(() => {
+          expect(hook).to.have.been.calledOnce;
+          expect(hook).to.have.been.calledWith(transaction);
+        })
+        ).to.eventually.be.fulfilled;
+      });
+
+      it('does not run hooks when a transaction is rolled back', function() {
+        const hook = sinon.spy();
+        return expect(this.sequelize.transaction(transaction => {
+          transaction.afterCommit(hook);
+          return Promise.reject(new Error('Rollback'));
+        })
+        ).to.eventually.be.rejected.then(() => {
+          expect(hook).to.not.have.been.called;
         });
       });
 
@@ -194,6 +222,105 @@ if (current.dialect.supports.transactions) {
           });
         })
       ).to.be.rejectedWith('Transaction cannot be committed because it has been finished with state: commit');
+    });
+
+    it('should run hooks if a non-auto callback transaction is committed', function() {
+      const hook = sinon.spy();
+      let transaction;
+      return expect(
+        this.sequelize.transaction().then(t => {
+          transaction = t;
+          transaction.afterCommit(hook);
+          return t.commit().then(() => {
+            expect(hook).to.have.been.calledOnce;
+            expect(hook).to.have.been.calledWith(t);
+          });
+        }).catch(err => {
+          // Cleanup this transaction so other tests don't
+          // fail due to an open transaction
+          if (!transaction.finished) {
+            return transaction.rollback().then(() => {
+              throw err;
+            });
+          }
+          throw err;
+        })
+      ).to.eventually.be.fulfilled;
+    });
+
+    it('should not run hooks if a non-auto callback transaction is rolled back', function() {
+      const hook = sinon.spy();
+      return expect(
+        this.sequelize.transaction().then(t => {
+          t.afterCommit(hook);
+          return t.rollback().then(() => {
+            expect(hook).to.not.have.been.called;
+          });
+        })
+      ).to.eventually.be.fulfilled;
+    });
+
+    it('should throw an error if null is passed to afterCommit', function() {
+      const hook = null;
+      let transaction;
+      return expect(
+        this.sequelize.transaction().then(t => {
+          transaction = t;
+          transaction.afterCommit(hook);
+          return t.commit();
+        }).catch(err => {
+          // Cleanup this transaction so other tests don't
+          // fail due to an open transaction
+          if (!transaction.finished) {
+            return transaction.rollback().then(() => {
+              throw err;
+            });
+          }
+          throw err;
+        })
+      ).to.eventually.be.rejectedWith('"fn" must be a function');
+    });
+
+    it('should throw an error if undefined is passed to afterCommit', function() {
+      const hook = undefined;
+      let transaction;
+      return expect(
+        this.sequelize.transaction().then(t => {
+          transaction = t;
+          transaction.afterCommit(hook);
+          return t.commit();
+        }).catch(err => {
+          // Cleanup this transaction so other tests don't
+          // fail due to an open transaction
+          if (!transaction.finished) {
+            return transaction.rollback().then(() => {
+              throw err;
+            });
+          }
+          throw err;
+        })
+      ).to.eventually.be.rejectedWith('"fn" must be a function');
+    });
+
+    it('should throw an error if an object is passed to afterCommit', function() {
+      const hook = {};
+      let transaction;
+      return expect(
+        this.sequelize.transaction().then(t => {
+          transaction = t;
+          transaction.afterCommit(hook);
+          return t.commit();
+        }).catch(err => {
+          // Cleanup this transaction so other tests don't
+          // fail due to an open transaction
+          if (!transaction.finished) {
+            return transaction.rollback().then(() => {
+              throw err;
+            });
+          }
+          throw err;
+        })
+      ).to.eventually.be.rejectedWith('"fn" must be a function');
     });
 
     it('does not allow commits after rollback', function() {
@@ -409,6 +536,50 @@ if (current.dialect.supports.transactions) {
             });
           });
         });
+
+        if (current.dialect.supports.skipLocked) {
+          it('supports for update with skip locked', function() {
+            if (dialect !== 'postgres' || semver.gte(current.options.databaseVersion, '9.5.0')) {
+              const User = this.sequelize.define('user', {
+                username: new Support.Sequelize.STRING(),
+                awesome: new Support.Sequelize.BOOLEAN()
+              });
+
+              return this.sequelize.sync({ force: true }).then(() => {
+                return Promise.all([
+                  User.create(
+                    { username: 'jan'}
+                  ),
+                  User.create(
+                    { username: 'joe'}
+                  )]);
+              }).then(() => {
+                return this.sequelize.transaction().then(t1 => {
+                  return User.findAll({
+                    limit: 1,
+                    lock: true,
+                    transaction: t1
+                  }).then(results => {
+                    const firstUserId = results[0].id;
+                    return this.sequelize.transaction().then(t2 => {
+                      return User.findAll({
+                        limit: 1,
+                        lock: true,
+                        skipLocked: true,
+                        transaction: t2
+                      }).then(secondResults => {
+                        expect(secondResults[0].id).to.not.equal(firstUserId);
+                        return Promise.all([
+                          t1.commit(),
+                          t2.commit()]);
+                      });
+                    });
+                  });
+                });
+              });
+            }
+          });
+        }
 
         it('fail locking with outer joins', function() {
           const User = this.sequelize.define('User', { username: new DataTypes.STRING() });

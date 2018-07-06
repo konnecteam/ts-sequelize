@@ -706,8 +706,10 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
      * The type is a string, but `Sequelize.QueryTypes` is provided as convenience shortcuts.
      */
     type? : string
-  }) : string {
+  }) : any {
     const rawAttributes = model.rawAttributes;
+    const updateQuery = this.updateQuery(tableName, updateValues, where, options, rawAttributes);
+    const insertQuery = this.insertQuery(tableName, insertValues, rawAttributes, options);
     const sql = [
       'DECLARE ',
       'CURSOR findingRow IS ',
@@ -718,23 +720,133 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
       'OPEN findingRow; ',
       'FETCH findingRow INTO firstRow; ',
       'IF findingRow%FOUND THEN ',
-      this.updateQuery(tableName, updateValues, where, options, rawAttributes),
+      updateQuery.query,
       '; $:isUpdate;NUMBER$ := 2; ',
       'ELSE ',
-      this.insertQuery(tableName, insertValues, rawAttributes, options),
+      insertQuery.query,
       '; $:isUpdate;NUMBER$ := 1; ',
       'END IF; ',
       'CLOSE findingRow; ',
       'END;',
-    ];
+    ].join('');
+    const bind = Object.assign(updateQuery.bind, insertQuery.bind);
 
-    return sql.join('');
+    return { query : sql, bind };
+  }
+
+  /**
+   * generate an update query
+   * override for bind
+   */
+  public updateQuery(tableName : string, attrValueHash : {}, where : any, options : {
+    bindParam? : boolean,
+    fields? : string[],
+    hasTrigger? : boolean,
+    /** How many rows to update */
+    limit? : number,
+    /** = false, A flag that defines if null values should be passed to SQL queries or not. */
+    omitNull? : boolean,
+  } = {}, attributes : {}) : any {
+    _.defaults(options, this.options);
+
+    attrValueHash = Utils.removeNullValuesFromHash(attrValueHash, options.omitNull, options);
+
+    const values = [];
+    const bind = {};
+    const bindParam = function _bindParam(val) {
+      return val;
+    };
+    const modelAttributeMap = {};
+    let query = 'UPDATE <%= table %> SET <%= values %> <%= where %>';
+
+    if (this._dialect.supports['LIMIT ON UPDATE'] && options.limit) {
+      //This cannot be setted in where because rownum will be quoted
+      if (where && ((where.length && where.length > 0) || (Object.keys(where).length > 0))) {
+        //If we have a where clause, we add AND
+        query += ' AND ';
+      } else {
+        //No where clause, we add where
+        query += ' WHERE ';
+      }
+      query += `rownum <= ${this.escape(options.limit)} `;
+    }
+
+    if (attributes) {
+      Object.keys(attributes).forEach(key => {
+        const attribute = attributes[key];
+        modelAttributeMap[key] = attribute;
+        if (attribute.field) {
+          modelAttributeMap[attribute.field] = attribute;
+        }
+      });
+    }
+
+    Object.keys(attrValueHash).forEach(key => {
+      if (modelAttributeMap && modelAttributeMap[key] &&
+          modelAttributeMap[key].autoIncrement === true &&
+          !this._dialect.supports.autoIncrement.update) {
+        // not allowed to update identity column
+        return;
+      }
+
+      const value = attrValueHash[key];
+      const currAttribute = modelAttributeMap[key];
+
+      if (value instanceof AllUtils.SequelizeMethod || options.bindParam === false ||
+        (currAttribute && currAttribute.type != null &&
+          (currAttribute.type.key === DataTypes.DATE.key || currAttribute.type.key === DataTypes.DATEONLY.key || currAttribute.type.key === DataTypes.TIME.key))) {
+        values.push(this.quoteIdentifier(key) + '=' + this.escape(value, modelAttributeMap && modelAttributeMap[key] || undefined, { context: 'UPDATE' }));
+      } else {
+        const bindKey = this.findBindKey(bind, 'update' + key);
+        values.push(this.quoteIdentifier(key) + '=:' + bindKey);
+        const val = this.format(value, modelAttributeMap && modelAttributeMap[key] || undefined, { context: 'UPDATE' }, bindParam);
+        bind[bindKey] = {
+          dir : oracleDb.BIND_IN,
+          val
+        };
+        if (val === null) {
+          bind[bindKey]['type'] = oracleDb.STRING;
+        }
+      }
+    });
+
+    const whereOptions = _.defaults({ bindParam, bind, modelAttributeMap }, options);
+    const replacements = {
+      table: this.quoteTable(tableName),
+      values: values.join(','),
+      where: this.whereQuery(where, whereOptions)
+    };
+
+    if (values.length === 0) {
+      return '';
+    }
+
+    query = _.template(query, this._templateSettings)(replacements);
+    const result : { query : string, bind? : {} } = { query };
+    if (options.bindParam !== false) {
+      result.bind = bind;
+    }
+    return result;
+  }
+
+  /**
+   * Return a valid bind key for multiple bind with the same field name
+   * @param bind the object wish contains all the bind
+   * @param key the basic key for bind of this attribute (: + input/update/where + field name)
+   */
+  public findBindKey(bind, key) {
+    let cpt = 1;
+    while (bind[key + cpt] !== undefined) {
+      cpt++;
+    }
+    return key + cpt;
   }
 
   /*
   * Override of insertQuery, Oracle specific
   */
   public insertQuery(table : any, valueHash : {}, modelAttributes : {}, options : {
+    bindParam? : boolean,
     defaultFields? : string[],
     fields? : string[],
     hasTrigger? : boolean,
@@ -742,7 +854,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
     inputParameters? : any,
     returning? : boolean,
     validate? : boolean
-  }) : string {
+  }) : any {
     options = options || {};
     _.defaults(options, this.options);
 
@@ -750,14 +862,16 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
     const emptyQuery = 'INSERT INTO <%= table %> VALUES (DEFAULT)';
     const fields = [];
     const values = [];
+    const bind = {};
+    const bindParam = function _bindParam(val) {
+      return val;
+    };
     const primaryKeys = [];
     const modelAttributeMap = {};
     const realTableName = this.quoteTable(table);
     const primaryKeyReturn = [];
     let query;
     let value;
-    const inputParameters = {};
-    const inputParamCpt = 0;
 
 
     //We have to specify a variable that will be used as return value for the id
@@ -797,45 +911,28 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
         values.push('DEFAULT');
 
       } else {
-        if (modelAttributeMap && modelAttributeMap[key] && !modelAttributeMap[key].allowNull && (value != null && value.length === 0)) {
+        const currAttribute = modelAttributeMap[key];
+        if (currAttribute && !currAttribute.allowNull && (value != null && value.length === 0)) {
           //Oracle refuses an insert in not null column with empty value (considered as null)
           value = ' ';
         }
-        const currAttribute = modelAttributeMap[key];
-        if (currAttribute && currAttribute.type != null && (currAttribute.type.key === DataTypes.TEXT.key || currAttribute.type.key === DataTypes.BLOB.key)) {
-          //If we try to insert into TEXT or BLOB, we need to pass by input-parameters to avoid the 4000 char length limit
-
-          const paramName = `:input${key}${inputParamCpt}`;
-          const inputParam = {
-            // dir : oracleDb.BIND_IN,
-            val : value
-          };
-          //Binding type to parameter
-          if (modelAttributes[key].type.key === DataTypes.TEXT.key) {
-            //if text with length, it's generated as a String inside Oracle,
-            if (modelAttributes[key].type._length !== '') {
-              inputParam['type'] = oracleDb.STRING;
-            } else {
-              //No length -> it's a CLOB
-              inputParam['type'] = oracleDb.STRING;
-            }
-          } else {
-            //No TEXT, it's a BLOB
-            // inputParam['type'] =  oracleDb.BLOB;
-            inputParam['val'] = Buffer.from(inputParam['val']);
-          }
-          inputParameters[paramName.slice(1, paramName.length)] = inputParam;
-          values.push(paramName);
+        if (value instanceof AllUtils.SequelizeMethod || options.bindParam === false ||
+          (currAttribute && currAttribute.type != null && (currAttribute.type.key === DataTypes.DATE.key || currAttribute.type.key === DataTypes.DATEONLY.key || currAttribute.type.key === DataTypes.TIME.key))) {
+          values.push(this.escape(value, modelAttributeMap && modelAttributeMap[key] || undefined, { context: 'INSERT' }));
         } else {
-          // return this.escape(value) + ' AS "' + key + '"';
-          values.push(this.escape(value, (modelAttributeMap && modelAttributeMap[key]) || undefined, { context: 'INSERT' }));
+          const bindKey = this.findBindKey(bind, 'input' + key);
+          values.push(':' + bindKey);
+          const val = this.format(value, modelAttributeMap && modelAttributeMap[key] || undefined, { context: 'INSERT' }, bindParam);
+          bind[bindKey] = {
+            dir : oracleDb.BIND_IN,
+            val
+          };
+          if (val === null) {
+            bind[bindKey]['type'] = oracleDb.STRING;
+          }
         }
       }
     });
-
-    if (Object.keys(inputParameters).length > 0) {
-      options.inputParameters = inputParameters;
-    }
 
     let primaryKey = '';
 
@@ -897,8 +994,12 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
     } else {
       query = (replacements.attributes.length ? valueQuery : emptyQuery);
     }
-
-    return _.template(query)(replacements);
+    query = _.template(query, this._templateSettings)(replacements);
+    const result : { query : string, bind? : {} } = { query };
+    if (options.bindParam !== false) {
+      result.bind = bind;
+    }
+    return result;
   }
 
 
@@ -941,7 +1042,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
     const inputParameters = {};
     let inputParamCpt = 0;
 
-    // options.model.attributes.memo.type; -> "TEXT"
+    // options.model.rawAttributes.memo.type; -> "TEXT"
 
     _.forEach(attrValueHashes, attrValueHash => {
       // special case for empty objects with primary keys
@@ -969,12 +1070,12 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
         //Generating the row
         let row = 'SELECT ';
         const attrs = allAttributes.map(key => {
-          let currAttribute = options.model != null && options.model.attributes != null && key in options.model.attributes ? options.model.attributes[key] : key;
+          let currAttribute = options.model != null && options.model.rawAttributes != null && key in options.model.rawAttributes ? options.model.rawAttributes[key] : key;
 
           if (currAttribute === null) {
             //Maybe we should find the attribute by field and not fieldName
-            Object.keys(options.model.attributes).forEach(attr => {
-              const attribute = options.model.attributes[attr];
+            Object.keys(options.model.rawAttributes).forEach(attr => {
+              const attribute = options.model.rawAttributes[attr];
               if (attribute.field === key) {
                 currAttribute = attribute;
                 return;
@@ -990,9 +1091,9 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
               val : attrValueHash[key]
             };
             //Binding type to parameter
-            if (options.model.attributes[key].type.key === DataTypes.TEXT.key) {
+            if (options.model.rawAttributes[key].type.key === DataTypes.TEXT.key) {
               //if text with length, it's generated as a String inside Oracle,
-              if (options.model.attributes[key].type._length !== '') {
+              if (options.model.rawAttributes[key].type._length !== '') {
                 inputParam['type'] = oracleDb.STRING;
               } else {
                 //No length -> it's a CLidxOB
@@ -1038,6 +1139,10 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
     };
 
     return _.template(allQueries.join(';'))(replacements);
+  }
+
+  public truncateTableQuery(tableName : string) : string {
+    return `TRUNCATE TABLE ${tableName}`;
   }
 
   /**
@@ -1217,7 +1322,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
       template += ' REFERENCES ' + this.quoteTable(attribute.references.model);
 
       if (attribute.references.key) {
-        template += ' (' + attribute.references.key + ')';
+        template += ' (' + this.quoteIdentifier(attribute.references.key) + ')';
       } else {
         template += ' (' + 'id' + ')';
       }
@@ -1654,7 +1759,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
   /**
    * @hidden
    */
-  private wrapSingleQuote(identifier : string) : string {
+  public wrapSingleQuote(identifier : string) : string {
     return Utils.addTicks(identifier, "'");
   }
 }

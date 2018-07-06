@@ -10,67 +10,6 @@ const Utils = AllUtils.Utils;
 const queryGenerator = Support.sequelize.dialect.QueryGenerator;
 
 describe(Support.getTestDialectTeaser('Utils'), () => {
-  // Utils.removeCommentsFromFunctionString unused
-  describe('removeCommentsFromFunctionString', () => {
-    it('removes line comments at the start of a line', () => {
-      const functionWithLineComments = function() {
-        // noot noot
-      };
-
-      const string = functionWithLineComments.toString();
-      const result = Utils.removeCommentsFromFunctionString(string);
-
-      expect(result).not.to.match(/.*noot.*/);
-    });
-
-    it('removes lines comments in the middle of a line', () => {
-      const functionWithLineComments = function() {
-        console.log(1); // noot noot
-      };
-
-      const string = functionWithLineComments.toString();
-      const result = Utils.removeCommentsFromFunctionString(string);
-
-      expect(result).not.to.match(/.*noot.*/);
-    });
-
-    it('removes range comments', () => {
-      const s = function() {
-        console.log(1); /*
-          noot noot
-        */
-        console.log(2); /*
-          foo
-        */
-      }.toString();
-
-      const result = Utils.removeCommentsFromFunctionString(s);
-
-      expect(result).not.to.match(/.*noot.*/);
-      expect(result).not.to.match(/.*foo.*/);
-      expect(result).to.match(/.*console.log\(2\).*/);
-    });
-  });
-
-  // Utils.argsArePrimaryKeys unused
-  describe('argsArePrimaryKeys', () => {
-    it('doesn\'t detect primary keys if primareyKeys and values have different lengths', () => {
-      expect(Utils.argsArePrimaryKeys([1, 2, 3], [1])).to.be.false;
-    });
-
-    it('doesn\'t detect primary keys if primary keys are hashes or arrays', () => {
-      expect(Utils.argsArePrimaryKeys([[]], [1])).to.be.false;
-    });
-
-    it('detects primary keys if length is correct and data types are matching', () => {
-      expect(Utils.argsArePrimaryKeys([1, 2, 3], ['INTEGER', 'INTEGER', 'INTEGER'])).to.be.true;
-    });
-
-    it('detects primary keys if primary keys are dates and lengths are matching', () => {
-      expect(Utils.argsArePrimaryKeys([new Date()], ['foo'])).to.be.true;
-    });
-  });
-
   describe('underscore', () => {
     describe('underscoredIf', () => {
       it('is defined', () => {
@@ -190,7 +129,7 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
   if (Support.getTestDialect() === 'postgres') {
     describe('json', () => {
 
-      it('successfully parses a complex nested condition hash', () => {
+      it('successfully parses a complex nested condition hash', function() {
         const conditions = {
           metadata: {
             language: 'icelandic',
@@ -202,17 +141,17 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
         expect(queryGenerator.handleSequelizeMethod(new AllUtils.Json(conditions))).to.deep.equal(expected);
       });
 
-      it('successfully parses a string using dot notation', () => {
+      it('successfully parses a string using dot notation', function() {
         const path = 'metadata.pg_rating.dk';
         expect(queryGenerator.handleSequelizeMethod(new AllUtils.Json(path))).to.equal('("metadata"#>>\'{pg_rating,dk}\')');
       });
 
-      it('allows postgres json syntax', () => {
+      it('allows postgres json syntax', function() {
         const path = 'metadata->pg_rating->>dk';
         expect(queryGenerator.handleSequelizeMethod(new AllUtils.Json(path))).to.equal(path);
       });
 
-      it('can take a value to compare against', () => {
+      it('can take a value to compare against', function() {
         const path = 'metadata.pg_rating.is';
         const value = 'U';
         expect(queryGenerator.handleSequelizeMethod(new AllUtils.Json(path, value))).to.equal('("metadata"#>>\'{pg_rating,is}\') = \'U\'');

@@ -24,4 +24,5 @@ export class DummyQueryGenerator extends AbstractQueryGenerator {
   public showConstraintsQuery() {}
   public upsertQuery() {}
   public deleteQuery() {}
+  public truncateTableQuery() {}
 }

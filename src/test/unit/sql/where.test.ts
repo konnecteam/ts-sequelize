@@ -1584,7 +1584,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options  = undefined;
           const expectation  = {
-            mysql: "`newline` REGEXP '^new\nline$'",
+            mysql: "`newline` REGEXP '^new\\nline$'",
             postgres: '"newline" ~ \'^new\nline$\''
           };
           expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);
@@ -1612,7 +1612,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = undefined;
           const expectation = {
-            mysql: "`newline` NOT REGEXP '^new\nline$'",
+            mysql: "`newline` NOT REGEXP '^new\\nline$'",
             postgres: '"newline" !~ \'^new\nline$\''
           };
           expectsql(queryGenerator.whereItemQuery(key, params, options), expectation);

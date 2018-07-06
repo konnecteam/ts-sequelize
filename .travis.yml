@@ -7,6 +7,7 @@ branches:
   only:
     - typescript
     - develop
+    - develop-import-v5
     - /^greenkeeper/.*$/
   except:
     - /^v\d+\.\d+\.\d+$/
@@ -102,5 +103,5 @@ jobs:
 
 stages:
   - test
-  - name: release
-    if: branch = master AND type = push AND fork = false
+  # - name: release
+  #   if: branch = master AND type = push AND fork = false

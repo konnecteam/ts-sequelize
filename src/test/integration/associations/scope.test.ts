@@ -15,6 +15,7 @@ describe(Support.getTestDialectTeaser('associations'), () => {
       this.Question = this.sequelize.define('question', {});
       this.Comment = this.sequelize.define('comment', {
         title: new DataTypes.STRING(),
+        type: new DataTypes.STRING(),
         commentable: new DataTypes.STRING(),
         commentable_id: new DataTypes.INTEGER(),
         isMain: {
@@ -40,6 +41,15 @@ describe(Support.getTestDialectTeaser('associations'), () => {
         foreignKey: 'commentable_id',
         scope: {
           commentable: 'post'
+        },
+        constraints: false
+      });
+      this.Post.hasMany(this.Comment, {
+        foreignKey: 'commentable_id',
+        as: 'coloredComments',
+        scope: {
+          commentable: 'post',
+          type: { in: ['blue', 'green'] }
         },
         constraints: false
       });
@@ -135,6 +145,24 @@ describe(Support.getTestDialectTeaser('associations'), () => {
           expect(mainComment.get('commentable')).to.equal('post');
           expect(mainComment.get('isMain')).to.be.true;
           expect(mainComment.get('title')).to.equal('I am a future main comment');
+        });
+      });
+      it('should create included association with scope values', function() {
+        return this.sequelize.sync({force: true}).then(() => {
+          return this.Post.create({
+            mainComment: {
+              title: 'I am a main comment created with a post'
+            }
+          }, {
+            include: [{model: this.Comment, as: 'mainComment'}]
+          });
+        }).then(post => {
+          expect(post.mainComment.get('commentable')).to.equal('post');
+          expect(post.mainComment.get('isMain')).to.be.true;
+          return this.Post.scope('withMainComment').findById(post.id);
+        }).then(post => {
+          expect(post.mainComment.get('commentable')).to.equal('post');
+          expect(post.mainComment.get('isMain')).to.be.true;
         });
       });
     });
@@ -243,6 +271,64 @@ describe(Support.getTestDialectTeaser('associations'), () => {
           });
         }).then(() => {
           expect(logs[0]).to.equal(logs[1]);
+        });
+      });
+      it('should created included association with scope values', function() {
+        return this.sequelize.sync({force: true}).then(() => {
+          return this.Post.create({
+            comments: [{
+              title: 'I am a comment created with a post'
+            }, {
+              title: 'I am a second comment created with a post'
+            }]
+          }, {
+            include: [{model: this.Comment, as: 'comments'}]
+          });
+        }).then(post => {
+          this.post = post;
+          return post.comments;
+        }).each(comment => {
+          expect(comment.get('commentable')).to.equal('post');
+        }).then(() => {
+          return this.Post.scope('withComments').findById(this.post.id);
+        }).then(post => {
+          return post.getComments();
+        }).each(comment => {
+          expect(comment.get('commentable')).to.equal('post');
+        });
+      });
+      it('should include associations with operator scope values', function() {
+        return this.sequelize.sync({force: true}).then(() => {
+          return Promise.join(
+            this.Post.create(),
+            this.Comment.create({
+              title: 'I am a blue comment',
+              type: 'blue'
+            }),
+            this.Comment.create({
+              title: 'I am a red comment',
+              type: 'red'
+            }),
+            this.Comment.create({
+              title: 'I am a green comment',
+              type: 'green'
+            })
+          );
+        }).spread((post, commentA, commentB, commentC) => {
+          this.post = post;
+          return post.addComments([commentA, commentB, commentC]);
+        }).then(() => {
+          return this.Post.findById(this.post.id, {
+            include: [{
+              model: this.Comment,
+              as: 'coloredComments'
+            }]
+          });
+        }).then(post => {
+          expect(post.coloredComments.length).to.equal(2);
+          for (const comment of post.coloredComments) {
+            expect(comment.type).to.match(/blue|green/);
+          }
         });
       });
     });

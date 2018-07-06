@@ -80,12 +80,10 @@ export class Range {
       return null;
     }
     if (value === 'empty') {
-      const empty = [];
-      (empty as any).inclusive = [];
-      return empty;
+      return [];
     }
 
-    let result = value
+    let result : any = value
       .substring(1, value.length - 1)
       .split(',', 2);
 
@@ -93,9 +91,12 @@ export class Range {
       return value;
     }
 
-    result = result.map(mapValue => Range.parseRangeBound(mapValue, parser));
-
-    (result as any).inclusive = [value[0] === '[', value[value.length - 1] === ']'];
+    result = result.map((item, index) => {
+      return {
+        value: Range.parseRangeBound(item, parser),
+        inclusive: index === 0 ? value[0] === '[' : value[value.length - 1] === ']'
+      };
+    });
 
     return result;
   }

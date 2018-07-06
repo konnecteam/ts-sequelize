@@ -16,6 +16,8 @@ const TYPES = Tedious.TYPES;
 
 export class MssqlQuery extends AbstractQuery {
 
+  public static query = {};
+
   constructor(connection : {}, sequelize : Sequelize, options : { transaction?, isolationLevel? : string, logging? : boolean, instance?, model? }) {
     super();
     this.connection = connection;
@@ -41,19 +43,16 @@ export class MssqlQuery extends AbstractQuery {
   /**
    * @hidden
    */
-  private getSQLTypeFromJsType(value : any) : { type?, typeOptions? } {
-    const paramType = {type: TYPES.VarChar, typeOptions: {} };
-    paramType.type = TYPES.NVarChar;
-    if (typeof value === 'number') {
-      if (Number.isInteger(value)) {
-        paramType.type = TYPES.Int;
-      } else {
-        paramType.type = TYPES.Numeric;
-        //Default to a reasonable numeric precision/scale pending more sophisticated logic
-        paramType.typeOptions = {precision: 30, scale: 15};
-      }
+  private getSQLTypeFromJsType(param : any) : { val? : any, type?, typeOptions? } {
+    if (param === null || !(typeof param === 'object' && param.type)) {
+      const paramType = Buffer.isBuffer(param) ? TYPES.VarBinary : TYPES.NVarChar;
+      param = {
+        val: param,
+        type: paramType
+      };
     }
-    return paramType;
+    param['typeOptions'] = param['typeOptions'] || {};
+    return param;
   }
 
   public _run(connection : any, sql : string, parameters : {}) : Promise<any> {
@@ -132,6 +131,7 @@ export class MssqlQuery extends AbstractQuery {
             this.sequelize.log('Executed (' + (this.connection.uuid || 'default') + '): ' + this.sql, Date.now() - queryBegin, this.options);
           }
 
+
           if (err) {
             err.sql = sql;
             reject(this.formatError(err));
@@ -145,10 +145,14 @@ export class MssqlQuery extends AbstractQuery {
         });
 
         if (parameters) {
-          _.forOwn(parameters, (value, key) => {
-            const paramType = this.getSQLTypeFromJsType(value);
-            request.addParameter(key, paramType.type, value, paramType.typeOptions);
-          });
+
+          const keys = Object.keys(parameters);
+          for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
+            const param = this.getSQLTypeFromJsType(parameters[key]);
+            request.addParameter(key, param.type, param.val, param.typeOptions);
+          }
+
         }
 
         request.on('row', columns => {
@@ -185,7 +189,6 @@ export class MssqlQuery extends AbstractQuery {
               }
               row[column.metadata.colName] = value;
             }
-
             results.push(row);
           }
         });
@@ -265,7 +268,8 @@ export class MssqlQuery extends AbstractQuery {
           type: _result.Type.toUpperCase(),
           allowNull: _result.IsNull === 'YES' ? true : false,
           defaultValue: _result.Default,
-          primaryKey: _result.Constraint === 'PRIMARY KEY'
+          primaryKey: _result.Constraint === 'PRIMARY KEY',
+          autoIncrement: _result.IsIdentity === 1
         };
       }
     } else if (this.isShowIndexesQuery()) {
@@ -273,12 +277,7 @@ export class MssqlQuery extends AbstractQuery {
     } else if (this.isSelectQuery()) {
       result = this.handleSelectQuery(data);
     } else if (this.isUpsertQuery()) {
-      //Use the same return value as that of MySQL & Postgres
-      if (data[0].$action === 'INSERT') {
-        result = 1;
-      } else {
-        result = 2;
-      }
+      result = data[0];
     } else if (this.isCallQuery()) {
       result = data[0];
     } else if (this.isBulkUpdateQuery()) {
@@ -330,7 +329,7 @@ export class MssqlQuery extends AbstractQuery {
 
   public formatError(err : { message? : string }) : Error {
     let match;
-    match = err.message.match(/Violation of UNIQUE KEY constraint '((.|\s)*)'. Cannot insert duplicate key in object '.*'.(:? The duplicate key value is \((.*)\).)?/);
+    match = err.message.match(/Violation of (?:UNIQUE|PRIMARY) KEY constraint '((.|\s)*)'. Cannot insert duplicate key in object '.*'.(:? The duplicate key value is \((.*)\).)?/);
     match = match || err.message.match(/Cannot insert duplicate key row in object .* with unique index '(.*)'/);
     if (match && match.length > 1) {
       let fields = {};

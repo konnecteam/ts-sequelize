@@ -14,8 +14,6 @@ const dialect = Support.getTestDialect();
 describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
   describe('getAssociations', () => {
     beforeEach(function() {
-      const self = this;
-
       this.User = this.sequelize.define('User', { username: new DataTypes.STRING() });
       this.Task = this.sequelize.define('Task', { title: new DataTypes.STRING(), active: new DataTypes.BOOLEAN() });
 
@@ -24,13 +22,13 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
 
       return this.sequelize.sync({ force: true }).then(() => {
         return Promise.all([
-          self.User.create({ username: 'John'}),
-          self.Task.create({ title: 'Get rich', active: true}),
-          self.Task.create({ title: 'Die trying', active: false}),
+          this.User.create({ username: 'John'}),
+          this.Task.create({ title: 'Get rich', active: true}),
+          this.Task.create({ title: 'Die trying', active: false}),
         ]);
       }).spread((john, task1, task2) => {
-        self.tasks = [task1, task2];
-        self.user = john;
+        this.tasks = [task1, task2];
+        this.user = john;
         return john.setTasks([task1, task2]);
       });
     });
@@ -75,7 +73,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
       return this.User.find({where: {username: 'John'}}).then(john => {
         return john.getTasks();
       }).then(tasks => {
-        tasks[0].attributes.forEach(attr => {
+        Object.keys(tasks[0].rawAttributes).forEach(attr => {
           expect(tasks[0]).to.have.property(attr);
         });
       });
@@ -177,15 +175,14 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
     });
 
     it('should support schemas', function() {
-      const self = this;
-      const AcmeUser = self.sequelize.define('User', {
+      const AcmeUser = this.sequelize.define('User', {
         username: new DataTypes.STRING()
       }).schema('acme', '_');
-      const AcmeProject = self.sequelize.define('Project', {
+      const AcmeProject = this.sequelize.define('Project', {
         title: new DataTypes.STRING(),
         active: new DataTypes.BOOLEAN()
       }).schema('acme', '_');
-      const AcmeProjectUsers = self.sequelize.define('ProjectUsers', {
+      const AcmeProjectUsers = this.sequelize.define('ProjectUsers', {
         status: new DataTypes.STRING(),
         data: new DataTypes.INTEGER()
       }).schema('acme', '_');
@@ -193,8 +190,8 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
       AcmeUser.belongsToMany(AcmeProject, {through: AcmeProjectUsers});
       AcmeProject.belongsToMany(AcmeUser, {through: AcmeProjectUsers});
 
-      return self.sequelize.dropAllSchemas().then(() => {
-        return self.sequelize.createSchema('acme');
+      return this.sequelize.dropAllSchemas().then(() => {
+        return this.sequelize.createSchema('acme');
       }).then(() => {
         return Promise.all([
           AcmeUser.sync({force: true}),
@@ -217,6 +214,13 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
         expect(project.ProjectUsers).to.be.ok;
         expect(project.status).not.to.exist;
         expect(project.ProjectUsers.status).to.equal('active');
+        return this.sequelize.dropSchema('acme').then(() => {
+          return this.sequelize.showAllSchemas().then(schemas => {
+            if (dialect === 'postgres' || dialect === 'mssql') {
+              expect(schemas).to.be.empty;
+            }
+          });
+        });
       });
     });
 
@@ -1249,8 +1253,8 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
 
       const attributes = this.sequelize.model('user_places').rawAttributes;
 
-      expect(attributes.place_id).to.be.ok;
-      expect(attributes.user_id).to.be.ok;
+      expect(attributes.PlaceId.field).to.equal('place_id');
+      expect(attributes.UserId.field).to.equal('user_id');
     });
 
     it('should infer otherKey from paired BTM relationship with a through string defined', function() {
@@ -1334,7 +1338,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
         }).return (user);
       }).then(user => {
         expect(spy).to.have.been.calledTwice;
-        spy.reset();
+        spy.resetHistory();
         return Promise.join(
           user,
           user.getProjects({
@@ -1373,14 +1377,14 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
         return user.addProject(project, { logging: spy }).return (user);
       }).then(user => {
         expect(spy.calledTwice).to.be.ok; // Once for SELECT, once for INSERT
-        spy.reset();
+        spy.resetHistory();
         return user.getProjects({
           logging: spy
         });
       }).then(projects => {
         const project = projects[0];
         expect(spy.calledOnce).to.be.ok;
-        spy.reset();
+        spy.resetHistory();
 
         expect(project).to.be.ok;
         return self.user.removeProject(project, {
@@ -2281,10 +2285,12 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
       PersonChildren = this.sequelize.define('PersonChildren', {}, {underscored: true});
       Children = Person.belongsToMany(Person, { as: 'Children', through: PersonChildren});
 
-      expect(Children.foreignKey).to.equal('person_id');
-      expect(Children.otherKey).to.equal('child_id');
+      expect(Children.foreignKey).to.equal('PersonId');
+      expect(Children.otherKey).to.equal('ChildId');
       expect(PersonChildren.rawAttributes[Children.foreignKey]).to.be.ok;
       expect(PersonChildren.rawAttributes[Children.otherKey]).to.be.ok;
+      expect(PersonChildren.rawAttributes[Children.foreignKey].field).to.equal('person_id');
+      expect(PersonChildren.rawAttributes[Children.otherKey].field).to.equal('child_id');
     });
   });
 });

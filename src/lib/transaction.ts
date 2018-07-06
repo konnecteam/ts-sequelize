@@ -12,6 +12,7 @@ import { Utils } from './utils';
  * @see {@link Sequelize.transaction}
  */
 export class Transaction {
+  private _afterCommitHooks : any[];
   public sequelize : Sequelize;
   public savepoints : any[];
   public options : {
@@ -45,6 +46,7 @@ export class Transaction {
   }) {
     this.sequelize = sequelize;
     this.savepoints = [];
+    this._afterCommitHooks = [];
 
     // get dialect specific transaction options
     const transactionOptions = sequelize.dialect.supports.transactionOptions || {};
@@ -92,7 +94,11 @@ export class Transaction {
           return this._cleanup();
         }
         return null;
-      });
+      }).tap(
+        () => Utils.Promise.each(
+          this._afterCommitHooks,
+          hook => Utils.Promise.resolve(hook.apply(this, [this])))
+      );
   }
 
   /**
@@ -147,13 +153,15 @@ export class Transaction {
         this.connection = connection;
         this.connection.uuid = this.id;
       })
-      .then(() => this._begin())
-      .then(() => this._setDeferrable())
-      .then(() => this._setIsolationLevel())
-      .then(() => this._setAutocommit())
-      .catch(setupErr => this.rollback().finally(() => {
-        throw setupErr;
-      }))
+      .then(() => {
+        return this._begin()
+          .then(() => this._setDeferrable())
+          .then(() => this._setIsolationLevel())
+          .then(() => this._setAutocommit())
+          .catch(setupErr => this.rollback().finally(() => {
+            throw setupErr;
+          }));
+      })
       .tap(() => {
         if (useCLS && (this.sequelize.constructor as any)._cls) {
           (this.sequelize.constructor as any)._cls.set('transaction', this);
@@ -224,6 +232,19 @@ export class Transaction {
         cls.set('transaction');
       }
     }
+  }
+
+  /**
+   * A hook that is run after a transaction is committed
+   * @param {Function} fn   A callback function that is called with the committed transaction
+   * @name afterCommit
+   * @memberOf Sequelize.Transaction
+   */
+  public afterCommit(fn) {
+    if (!fn || typeof fn !== 'function') {
+      throw new Error('"fn" must be a function');
+    }
+    this._afterCommitHooks.push(fn);
   }
 
   /**
@@ -313,6 +334,19 @@ export class Transaction {
    * });
    * ```
    * UserModel will be locked but TaskModel won't!
+   *
+   * You can also skip locked rows:
+   *
+   * ```js
+   * t1 // is a transaction
+   * Model.findAll({
+   *   where: ...,
+   *   transaction: t1,
+   *   lock: true,
+   *   skipLocked: true
+   * });
+   * ```
+   * The query will now return any rows that aren't locked by another transaction
    * @property UPDATE
    * @property SHARE
    * @property KEY_SHARE Postgres 9.3+ only
@@ -334,7 +368,3 @@ export class Transaction {
     return Transaction.LOCK;
   }
 }
-
-module.exports = Transaction;
-module.exports.Transaction = Transaction;
-module.exports.default = Transaction;

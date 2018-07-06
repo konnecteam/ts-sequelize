@@ -151,14 +151,14 @@ export class SqliteQueryGenerator extends AbstractQueryGenerator {
     if (options.uniqueKeys) {
       Object.keys(options.uniqueKeys).forEach(indexName => {
         const columns = options.uniqueKeys[indexName];
-        if (!columns.singleField) { // If it's a single field it's handled in column def, not as an index
-          attrStr += ', UNIQUE (' + columns.fields.map(field => this.quoteIdentifier(field)).join(', ') + ')';
+        if (columns.customIndex) {
+          attrStr += `, UNIQUE (${columns.fields.map(field => this.quoteIdentifier(field)).join(', ')})`;
         }
       });
     }
 
     if (pkString.length > 0) {
-      attrStr += ', PRIMARY KEY (' + pkString + ')';
+      attrStr += `, PRIMARY KEY (${pkString})`;
     }
 
     const sql = `CREATE TABLE IF NOT EXISTS ${table} (${attrStr});`;
@@ -337,18 +337,26 @@ export class SqliteQueryGenerator extends AbstractQueryGenerator {
      * The type is a string, but `Sequelize.QueryTypes` is provided as convenience shortcuts.
      */
     type? : string,
-  }) : string {
+  }) : any {
     options.ignoreDuplicates = true;
 
-    const sql = this.insertQuery(tableName, insertValues, model.rawAttributes, options) + ' ' + this.updateQuery(tableName, updateValues, where, options, model.rawAttributes);
+    const bind = [];
+    const bindParam = this.bindParam(bind);
 
-    return sql;
+    const upsertOptions = _.defaults({ bindParam }, options);
+    const insert = this.insertQuery(tableName, insertValues, model.rawAttributes, upsertOptions);
+    const update = this.updateQuery(tableName, updateValues, where, upsertOptions, model.rawAttributes);
+
+    const query = insert.query + ' ' + update.query;
+
+    return { query, bind };
   }
 
   /**
    * return an upsert query
    */
   public updateQuery(tableName : string, attrValueHash : any, where : {}, options : {
+    bindParam? : boolean,
     defaultFields? : string[],
     fields? : string[],
     hasTrigger? : boolean,
@@ -369,6 +377,8 @@ export class SqliteQueryGenerator extends AbstractQueryGenerator {
 
     const modelAttributeMap = {};
     const values = [];
+    const bind = [];
+    const bindParam = options.bindParam || this.bindParam(bind);
 
     if (attributes) {
       Object.keys(attributes).forEach(key => {
@@ -382,14 +392,28 @@ export class SqliteQueryGenerator extends AbstractQueryGenerator {
 
     Object.keys(attrValueHash).forEach(key => {
       const value = attrValueHash[key];
-      values.push(this.quoteIdentifier(key) + '=' + this.escape(value, modelAttributeMap && modelAttributeMap[key] || undefined, { context: 'UPDATE' }));
+
+      if (value instanceof AllUtils.SequelizeMethod || options.bindParam === false) {
+        values.push(this.quoteIdentifier(key) + '=' + this.escape(value, modelAttributeMap && modelAttributeMap[key] || undefined, { context: 'UPDATE' }));
+      } else {
+        values.push(this.quoteIdentifier(key) + '=' + this.format(value, modelAttributeMap && modelAttributeMap[key] || undefined, { context: 'UPDATE' }, bindParam));
+      }
     });
 
+    let query;
+    const whereOptions = _.defaults({ bindParam }, options);
+
     if (options.limit) {
-      return `UPDATE ${this.quoteTable(tableName)} SET ${values.join(',')} WHERE rowid IN (SELECT rowid FROM ${this.quoteTable(tableName)} ${this.whereQuery(where, options)} LIMIT ${this.escape(options.limit)})`;
+      query = `UPDATE ${this.quoteTable(tableName)} SET ${values.join(',')} WHERE rowid IN (SELECT rowid FROM ${this.quoteTable(tableName)} ${this.whereQuery(where, whereOptions)} LIMIT ${this.escape(options.limit)})`;
     } else {
-      return `UPDATE ${this.quoteTable(tableName)} SET ${values.join(',')} ${this.whereQuery(where, options)}`;
+      query = `UPDATE ${this.quoteTable(tableName)} SET ${values.join(',')} ${this.whereQuery(where, whereOptions)}`;
     }
+
+    return { query, bind };
+  }
+
+  public truncateTableQuery(tableName : string) : string {
+    return `DELETE FROM ${this.quoteTable(tableName)}`;
   }
 
   /**

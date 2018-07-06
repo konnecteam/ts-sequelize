@@ -13,7 +13,7 @@ Furthermore you can specify a non-default host/port:
 
 ```js
 const sequelize = new Sequelize('database', 'username', 'password', {
-  dialect: 'mysql'
+  dialect: 'mysql',
   host: "my.server.tld",
   port: 9821,
 })
@@ -54,6 +54,9 @@ const sequelize = new Sequelize('database', 'username', 'password', {
 
   // custom host; default: localhost
   host: 'my.server.tld',
+  // for postgres, you can also specify an absolute path to a directory
+  // containing a UNIX socket to connect over
+  // host: '/sockets/psql_sockets'.
  
   // custom port; default: dialect default
   port: 12345,
@@ -201,7 +204,18 @@ const sequelize = new Sequelize('database', 'username', 'password', {
 })
 ```
 
-**Note:** `pg@^7.0.0` is currently not supported.
+To connect over a unix domain socket, specify the path to the socket directory
+in the `host` option.
+
+The socket path must start with `/`.
+
+```js
+const sequelize = new Sequelize('database', 'username', 'password', {
+  // gimme postgres, please!
+  dialect: 'postgres',
+  host: '/path/to/socket_directory'
+})
+```
 
 ### MSSQL
 
@@ -298,7 +312,7 @@ will be thrown.
 sequelize
   .query(
     'SELECT * FROM projects WHERE status = ?',
-    { raw: true, replacements: ['active']
+    { raw: true, replacements: ['active'] }
   )
   .then(projects => {
     console.log(projects)

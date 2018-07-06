@@ -56,6 +56,40 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
     ].join(' ');
   }
 
+  public dropSchema(schema : string) {
+    // Mimics Postgres CASCADE, will drop objects belonging to the schema
+    const quotedSchema = this.wrapSingleQuote(schema);
+    return [
+      'IF EXISTS (SELECT schema_name',
+      'FROM information_schema.schemata',
+      'WHERE schema_name =', quotedSchema, ')',
+      'BEGIN',
+      'DECLARE @id INT, @ms_sql NVARCHAR(2000);',
+      'DECLARE @cascade TABLE (',
+      'id INT NOT NULL IDENTITY PRIMARY KEY,',
+      'ms_sql NVARCHAR(2000) NOT NULL );',
+      'INSERT INTO @cascade ( ms_sql )',
+      "SELECT CASE WHEN o.type IN ('F','PK')",
+      "THEN N'ALTER TABLE ['+ s.name + N'].[' + p.name + N'] DROP CONSTRAINT [' + o.name + N']'",
+      "ELSE N'DROP TABLE ['+ s.name + N'].[' + o.name + N']' END",
+      'FROM sys.objects o',
+      'JOIN sys.schemas s on o.schema_id = s.schema_id',
+      'LEFT OUTER JOIN sys.objects p on o.parent_object_id = p.object_id',
+      "WHERE o.type IN ('F', 'PK', 'U') AND s.name = ", quotedSchema,
+      'ORDER BY o.type ASC;',
+      'SELECT TOP 1 @id = id, @ms_sql = ms_sql FROM @cascade ORDER BY id;',
+      'WHILE @id IS NOT NULL',
+      'BEGIN',
+      'BEGIN TRY EXEC sp_executesql @ms_sql; END TRY',
+      'BEGIN CATCH BREAK; THROW; END CATCH;',
+      'DELETE FROM @cascade WHERE id = @id;',
+      'SELECT @id = NULL, @ms_sql = NULL;',
+      'SELECT TOP 1 @id = id, @ms_sql = ms_sql FROM @cascade ORDER BY id;',
+      'END',
+      "EXEC sp_executesql N'DROP SCHEMA", this.quoteIdentifier(schema), ";'",
+      'END;'].join(' ');
+  }
+
   public versionQuery() : string {
     // Uses string manipulation to convert the MS Maj.Min.Patch.Build to semver Maj.Min.Patch
     return [
@@ -193,7 +227,7 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
     }
 
     if (pkString.length > 0) {
-      values.attributes += ', PRIMARY KEY (' + pkString + ')';
+      values.attributes += `, PRIMARY KEY (${pkString})`;
     }
 
     Object.keys(foreignKeys).forEach(fkey => {
@@ -214,7 +248,8 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
       "c.CHARACTER_MAXIMUM_LENGTH AS 'Length',",
       "c.IS_NULLABLE as 'IsNull',",
       "COLUMN_DEFAULT AS 'Default',",
-      "pk.CONSTRAINT_TYPE AS 'Constraint'",
+      "pk.CONSTRAINT_TYPE AS 'Constraint',",
+      "COLUMNPROPERTY(OBJECT_ID(c.TABLE_SCHEMA+'.'+c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') as 'IsIdentity'",
       'FROM',
       'INFORMATION_SCHEMA.TABLES t',
       'INNER JOIN',
@@ -468,11 +503,11 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
     /** = false, A flag that defines if null values should be passed to SQL queries or not. */
     omitNull? : boolean,
     returning? : boolean
-  }, attributes : {}) : string {
-    let sql = super.updateQuery(tableName, attrValueHash, where, options, attributes);
+  }, attributes : {}) : any {
+    const sql = super.updateQuery(tableName, attrValueHash, where, options, attributes);
     if (options.limit) {
       const updateArgs = `UPDATE TOP(${this.escape(options.limit)})`;
-      sql = sql.replace('UPDATE', updateArgs);
+      sql.query = sql.query.replace('UPDATE', updateArgs);
     }
     return sql;
   }
@@ -598,6 +633,10 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
     return query;
   }
 
+  public truncateTableQuery(tableName : string) : string {
+    return `TRUNCATE TABLE ${this.quoteTable(tableName)}`;
+  }
+
   /**
    * generate a delete query
    */
@@ -662,23 +701,13 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
      */
     type? : string,
     typeValidation? : boolean
-  }) {
-    options = options || {};
-
+  } = {}) {
     const table = this.quoteTable(tableName);
-    if (options.truncate === true) {
-      // Truncate does not allow LIMIT and WHERE
-      return 'TRUNCATE TABLE ' + table;
-    }
+    const query = 'DELETE<%= limit %> FROM <%= table %><%= where %>; SELECT @@ROWCOUNT AS AFFECTEDROWS;';
 
     where = this.getWhereConditions(where);
-    let limit = '';
-    const query = 'DELETE<%= limit %> FROM <%= table %><%= where %>; ' +
-                'SELECT @@ROWCOUNT AS AFFECTEDROWS;';
 
-    if (_.isUndefined(options.limit)) {
-      options.limit = 1;
-    }
+    let limit = '';
 
     if (options.limit) {
       limit = ' TOP(' + this.escape(options.limit) + ')';
@@ -929,7 +958,7 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
         (catalogName ? `referencedCatalog = '${catalogName}', ` : '') +
         'referencedTableName = RTB.NAME, ' +
         'referencedColumnName = RCOL.NAME ' +
-      'FROM SYS.FOREIGN_KEY_COLUMNS FKC ' +
+        'FROM SYS.FOREIGN_KEY_COLUMNS FKC ' +
         'INNER JOIN SYS.OBJECTS OBJ ON OBJ.OBJECT_ID = FKC.CONSTRAINT_OBJECT_ID ' +
         'INNER JOIN SYS.TABLES TB ON TB.OBJECT_ID = FKC.PARENT_OBJECT_ID ' +
         'INNER JOIN SYS.COLUMNS COL ON COL.COLUMN_ID = PARENT_COLUMN_ID AND COL.OBJECT_ID = TB.OBJECT_ID ' +
@@ -1230,13 +1259,11 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
       return '';
     }
 
-    let fragment = '';
     const offset = options.offset || 0;
     const isSubQuery = options.hasIncludeWhere || options.hasIncludeRequired || options.hasMultiAssociation;
 
-    let orders = {
-      subQueryOrder: undefined
-    };
+    let fragment = '';
+    let orders : { subQueryOrder? } = {};
     if (options.order) {
       orders = this.getQueryOrders(options, model, isSubQuery);
     }
@@ -1274,7 +1301,7 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
   /**
    * @hidden
    */
-  private wrapSingleQuote(identifier : string) : string {
+  public wrapSingleQuote(identifier : string) : string {
     return Utils.addTicks(identifier, "'");
   }
 }

@@ -2,6 +2,7 @@
 
 import * as Dottie from 'dottie';
 import * as _ from 'lodash';
+import * as oracleDb from 'oracledb';
 import * as semver from 'semver';
 import * as util from 'util';
 import * as uuid from 'uuid';
@@ -95,7 +96,7 @@ export abstract class AbstractQueryGenerator {
       })
     );
 
-    return 'DESCRIBE ' + table + ';';
+    return `DESCRIBE ${table};`;
   }
 
   /**
@@ -190,6 +191,7 @@ export abstract class AbstractQueryGenerator {
   * Returns an insert into command. Parameters: table name + hash of attribute-value-pairs.
   */
   public insertQuery(table : string, valueHash : { createdAt? : Date, id? : number, updatedAt? : Date}, modelAttributes : {}, options : {
+    bindParam? : boolean,
     defaultFields? : string[],
     fields? : string[],
     exception? : any,
@@ -199,6 +201,7 @@ export abstract class AbstractQueryGenerator {
     ignoreDuplicates? : boolean
     onDuplicate? : string,
     returning? : boolean,
+    searchPath? : boolean,
     validate? : boolean
   }) {
     options = options || {};
@@ -207,6 +210,8 @@ export abstract class AbstractQueryGenerator {
     const modelAttributeMap = {};
     const fields = [];
     const values = [];
+    const bind = [];
+    const bindParam = options.bindParam === undefined ? this.bindParam(bind) : options.bindParam;
     let query;
     let valueQuery = '<%= tmpTable %>INSERT<%= ignoreDuplicates %> INTO <%= table %> (<%= attributes %>)<%= output %> VALUES (<%= values %>)';
     let emptyQuery = '<%= tmpTable %>INSERT<%= ignoreDuplicates %> INTO <%= table %><%= output %>';
@@ -271,7 +276,14 @@ export abstract class AbstractQueryGenerator {
       }
     }
 
+    if (_.get(this, ['sequelize', 'options', 'dialectOptions', 'prependSearchPath']) || options.searchPath) {
+      // Not currently supported with search path (requires output of multiple queries)
+      options.bindParam = false;
+    }
+
     if (this._dialect.supports.EXCEPTION && options.exception) {
+      // Not currently supported with bind parameters (requires output of multiple queries)
+      options.bindParam = false;
       // Mostly for internal use, so we expect the user to know what he's doing!
       // pg_temp functions are private per connection, so we never risk this function interfering with another one.
       if (semver.gte(this.sequelize.options.databaseVersion, '9.2.0')) {
@@ -284,8 +296,8 @@ export abstract class AbstractQueryGenerator {
           ' LANGUAGE plpgsql; SELECT (testfunc.response).*, testfunc.sequelize_caught_exception FROM pg_temp.testfunc(); DROP FUNCTION IF EXISTS pg_temp.testfunc()';
       } else {
         options.exception = 'WHEN unique_violation THEN NULL;';
-        valueQuery = 'CREATE OR REPLACE FUNCTION pg_temp.testfunc() RETURNS SETOF <%= table %> AS $body$ BEGIN RETURN QUERY ' +
-        valueQuery + '; EXCEPTION ' + options.exception + ' END; $body$ LANGUAGE plpgsql; SELECT * FROM pg_temp.testfunc(); DROP FUNCTION IF EXISTS pg_temp.testfunc();';
+        valueQuery = 'CREATE OR REPLACE FUNCTION pg_temp.testfunc() RETURNS SETOF <%= table %> AS $body$ BEGIN RETURN QUERY '
+        + valueQuery + '; EXCEPTION ' + options.exception + ' END; $body$ LANGUAGE plpgsql; SELECT * FROM pg_temp.testfunc(); DROP FUNCTION IF EXISTS pg_temp.testfunc();';
       }
     }
 
@@ -313,7 +325,11 @@ export abstract class AbstractQueryGenerator {
           identityWrapperRequired = true;
         }
 
-        values.push(this.escape(value, modelAttributeMap && modelAttributeMap[key] || undefined, { context: 'INSERT' }));
+        if (value instanceof AllUtils.SequelizeMethod || options.bindParam === false) {
+          values.push(this.escape(value, modelAttributeMap && modelAttributeMap[key] || undefined, { context: 'INSERT' }));
+        } else {
+          values.push(this.format(value, modelAttributeMap && modelAttributeMap[key] || undefined, { context: 'INSERT' }, bindParam));
+        }
       }
     });
 
@@ -331,18 +347,23 @@ export abstract class AbstractQueryGenerator {
       query = [
         'SET IDENTITY_INSERT', this.quoteTable(table), 'ON;',
         query,
-        'SET IDENTITY_INSERT', this.quoteTable(table), 'OFF;',
-      ].join(' ');
+        'SET IDENTITY_INSERT', this.quoteTable(table), 'OFF;'].join(' ');
     }
 
-    return _.template(query, this._templateSettings)(replacements);
+    query = _.template(query, this._templateSettings)(replacements);
+    // Used by Postgres upsertQuery and calls to here with options.exception set to true
+    const result : { query : string, bind? : any[] } = { query };
+    if (options.bindParam !== false) {
+      result.bind = bind;
+    }
+    return result;
   }
 
   /**
    * Returns an insert into command for multiple values.
    * Parameters: table name + list of hashes of attribute-value-pairs.
    */
-  public bulkInsertQuery(tableName : string, attrValueHashes : any[], options? : {
+  public bulkInsertQuery(tableName : string, fieldValueHashes : any[], options? : {
     fields? : string[],
     /** An object of hook function that are called before and after certain lifecycle events */
     hooks? : boolean,
@@ -363,9 +384,9 @@ export abstract class AbstractQueryGenerator {
     type? : string,
     validate? : boolean,
     updateOnDuplicate? : string[],
-  }, rawAttributes? : {}) {
+  }, fieldMappedAttributes? : {}) {
     options = options || {};
-    rawAttributes = rawAttributes || {};
+    fieldMappedAttributes = fieldMappedAttributes || {};
 
     const query = 'INSERT<%= ignoreDuplicates %> INTO <%= table %> (<%= attributes %>) VALUES <%= tuples %><%= onDuplicateKeyUpdate %><%= returning %>;';
     const tuples = [];
@@ -373,31 +394,38 @@ export abstract class AbstractQueryGenerator {
     const allAttributes = [];
     let onDuplicateKeyUpdate = '';
 
-    for (const attrValueHash of attrValueHashes) {
-      _.forOwn(attrValueHash, (value, key) => {
+    for (const fieldValueHash of fieldValueHashes) {
+      _.forOwn(fieldValueHash, (value, key) => {
         if (allAttributes.indexOf(key) === -1) {
           allAttributes.push(key);
         }
-
-        if (rawAttributes[key] && rawAttributes[key].autoIncrement === true) {
+        if (
+          fieldMappedAttributes[key]
+          && fieldMappedAttributes[key].autoIncrement === true
+        ) {
           serials[key] = true;
         }
       });
     }
 
-    for (const attrValueHash of attrValueHashes) {
-      tuples.push('(' + allAttributes.map(key => {
-        if (this._dialect.supports.bulkDefault && serials[key] === true) {
-          return attrValueHash[key] || 'DEFAULT';
+    for (const fieldValueHash of fieldValueHashes) {
+      const values = allAttributes.map(key => {
+        if (
+          this._dialect.supports.bulkDefault
+          && serials[key] === true
+        ) {
+          return fieldValueHash[key] || 'DEFAULT';
         }
-        return this.escape(attrValueHash[key], rawAttributes[key], { context: 'INSERT' });
-      }).join(',') + ')');
+
+        return this.escape(fieldValueHash[key], fieldMappedAttributes[key], { context: 'INSERT' });
+      });
+
+      tuples.push(`(${values.join(',')})`);
     }
 
     if (this._dialect.supports.updateOnDuplicate && options.updateOnDuplicate) {
-      onDuplicateKeyUpdate += ' ON DUPLICATE KEY UPDATE ' + options.updateOnDuplicate.map(attr => {
-        const field = rawAttributes && rawAttributes[attr] && rawAttributes[attr].field || attr;
-        const key = this.quoteIdentifier(field);
+      onDuplicateKeyUpdate = ' ON DUPLICATE KEY UPDATE ' + options.updateOnDuplicate.map(attr => {
+        const key = this.quoteIdentifier(attr);
         return key + '=VALUES(' + key + ')';
       }).join(',');
     }
@@ -424,6 +452,7 @@ export abstract class AbstractQueryGenerator {
   *              If you use a string, you have to escape it on your own.
   */
   public updateQuery(tableName : string, attrValueHash : {}, where : { length? }, options : {
+    bindParam? : boolean,
     fields? : string[],
     hasTrigger? : boolean,
     /** An object of hook function that are called before and after certain lifecycle events */
@@ -442,13 +471,15 @@ export abstract class AbstractQueryGenerator {
      * The type is a string, but `Sequelize.QueryTypes` is provided as convenience shortcuts.
      */
     type? : string
-  }, attributes : {}) : string {
+  }, attributes : {}) : any {
     options = options || {};
     _.defaults(options, this.options);
 
     attrValueHash = Utils.removeNullValuesFromHash(attrValueHash, options.omitNull, options);
 
     const values = [];
+    const bind = [];
+    const bindParam = options.bindParam === undefined ? this.bindParam(bind) : options.bindParam;
     const modelAttributeMap = {};
     let query = '<%= tmpTable %>UPDATE <%= table %> SET <%= values %><%= output %> <%= where %>';
     let outputFragment;
@@ -456,17 +487,7 @@ export abstract class AbstractQueryGenerator {
     let selectFromTmp = '';   // Select statement for trigger
 
     if (this._dialect.supports['LIMIT ON UPDATE'] && options.limit) {
-      if (this.dialect === 'oracle') {
-        //This cannot be setted in where because rownum will be quoted
-        if (where && ((where.length && where.length > 0) || (Object.keys(where).length > 0))) {
-          //If we have a where clause, we add AND
-          query += ' AND ';
-        } else {
-          //No where clause, we add where
-          query += ' WHERE ';
-        }
-        query += `rownum <= ${this.escape(options.limit)} `;
-      } else if (this.dialect !== 'mssql') {
+      if (this.dialect !== 'mssql') {
         query += ' LIMIT ' + this.escape(options.limit) + ' ';
       }
     }
@@ -532,14 +553,20 @@ export abstract class AbstractQueryGenerator {
       }
 
       const value = attrValueHash[key];
-      values.push(this.quoteIdentifier(key) + '=' + this.escape(value, modelAttributeMap && modelAttributeMap[key] || undefined, { context: 'UPDATE' }));
+
+      if (value instanceof AllUtils.SequelizeMethod || options.bindParam === false) {
+        values.push(this.quoteIdentifier(key) + '=' + this.escape(value, modelAttributeMap && modelAttributeMap[key] || undefined, { context: 'UPDATE' }));
+      } else {
+        values.push(this.quoteIdentifier(key) + '=' + this.format(value, modelAttributeMap && modelAttributeMap[key] || undefined, { context: 'UPDATE' }, bindParam));
+      }
     }
 
+    const whereOptions = _.defaults({ bindParam }, options);
     const replacements = {
       table: this.quoteTable(tableName),
       values: values.join(','),
       output: outputFragment,
-      where: this.whereQuery(where, options),
+      where: this.whereQuery(where, whereOptions),
       tmpTable
     };
 
@@ -547,7 +574,13 @@ export abstract class AbstractQueryGenerator {
       return '';
     }
 
-    return _.template(query, this._templateSettings)(replacements).trim();
+    query = _.template(query, this._templateSettings)(replacements).trim();
+    // Used by Postgres upsertQuery and calls to here with options.exception set to true
+    const result : { query : string, bind? } = { query };
+    if (options.bindParam !== false) {
+      result.bind = bind;
+    }
+    return result;
   }
 
  /**
@@ -878,8 +911,14 @@ export abstract class AbstractQueryGenerator {
   /**
    * return a query to remove a constraint of a table
    */
-  public removeConstraintQuery(tableName : string, constraintName : string) {
-    return `ALTER TABLE ${this.quoteIdentifiers(tableName)} DROP CONSTRAINT ${this.quoteIdentifiers(constraintName)}`;
+  public removeConstraintQuery(tableName : string | { schema? : string, tableName? : string }, constraintName : string) {
+    if (typeof tableName === 'string') {
+      tableName = this.quoteIdentifiers(tableName);
+    } else {
+      tableName = this.quoteTable(tableName);
+    }
+
+    return `ALTER TABLE ${tableName} DROP CONSTRAINT ${this.quoteIdentifiers(constraintName)}`;
   }
 
   /**
@@ -1178,15 +1217,7 @@ export abstract class AbstractQueryGenerator {
         return this.handleSequelizeMethod(value);
       } else {
         if (field && field.type) {
-          if (this.typeValidation && field.type.validate && value) {
-            if (options.isList && Array.isArray(value)) {
-              for (const item of value) {
-                field.type.validate(item, options);
-              }
-            } else {
-              field.type.validate(value, options);
-            }
-          }
+          this.validate(value, field, options);
 
           if (field.type.stringify) {
             // Users shouldn't have to worry about these args - just give them a function that takes a single arg
@@ -1204,6 +1235,53 @@ export abstract class AbstractQueryGenerator {
     }
 
     return SqlString.escape(value, this.options.timezone, this.dialect);
+  }
+
+  public bindParam(bind) {
+    return value => {
+      bind.push(value);
+      return '$' + bind.length;
+    };
+  }
+
+  /*
+    Returns a bind parameter representation of a value (e.g. a string, number or date)
+    @private
+  */
+  public format(value, field, options, bindParam) {
+    options = options || {};
+
+    if (value !== null && value !== undefined) {
+      if (value instanceof AllUtils.SequelizeMethod) {
+        throw new Error('Cannot pass SequelizeMethod as a bind parameter - use escape instead');
+      } else {
+        if (field && field.type) {
+          this.validate(value, field, options);
+
+          if (field.type.bindParam) {
+            return field.type.bindParam(value, { escape: _.identity, field, timezone: this.options.timezone, operation: options.operation, bindParam });
+          }
+        }
+      }
+    }
+
+    return bindParam(value);
+  }
+
+  /*
+    Validate a value against a field specification
+    @private
+  */
+  public validate(value, field, options) {
+    if (this.typeValidation && field.type.validate && value) {
+      if (options.isList && Array.isArray(value)) {
+        for (const item of value) {
+          field.type.validate(item, options);
+        }
+      } else {
+        field.type.validate(value, options);
+      }
+    }
   }
 
   /**
@@ -1254,6 +1332,7 @@ export abstract class AbstractQueryGenerator {
     rejectOnEmpty? : boolean,
     /** Separate requests if multiple left outer */
     separate?,
+    skipLocked? : boolean,
     /** Passes by sub-query ? */
     subQuery? : boolean,
     tableAs? : string,
@@ -1519,10 +1598,12 @@ export abstract class AbstractQueryGenerator {
     // Add HAVING to sub or main query
     if (options.hasOwnProperty('having')) {
       options.having = this.getWhereConditions(options.having, tableName, model, options, false);
-      if (subQuery) {
-        subQueryItems.push(' HAVING ' + options.having);
-      } else {
-        mainQueryItems.push(' HAVING ' + options.having);
+      if (options.having) {
+        if (subQuery) {
+          subQueryItems.push(' HAVING ' + options.having);
+        } else {
+          mainQueryItems.push(' HAVING ' + options.having);
+        }
       }
     }
 
@@ -1568,6 +1649,9 @@ export abstract class AbstractQueryGenerator {
       }
       if (this._dialect.supports.lockOf && options.lock.of && options.lock.of.prototype instanceof Model) {
         query += ' OF ' + this.quoteTable(options.lock.of.name);
+      }
+      if (this._dialect.supports.skipLocked && options.skipLocked && (this.dialect !== 'postgres' || semver.gte(this.options.databaseVersion, '9.5.0'))) {
+        query += ' SKIP LOCKED';
       }
     }
 
@@ -1624,13 +1708,16 @@ export abstract class AbstractQueryGenerator {
           addTable = false;
         } else if (attr[0].indexOf('(') === -1 && attr[0].indexOf(')') === -1) {
           attr[0] = this.quoteIdentifier(attr[0]);
+        } else {
+          Utils.deprecate('Use sequelize.fn / sequelize.literal to construct attributes');
         }
-
         attr = [attr[0], this.quoteIdentifier(attr[1])].join(' AS ');
       } else {
-        attr = attr.indexOf(Utils.TICK_CHAR) < 0 && attr.indexOf('"') < 0 ? this.quoteIdentifiers(attr) : attr;
+        attr = attr.indexOf(Utils.TICK_CHAR) < 0 && attr.indexOf('"') < 0
+          ? this.quoteIdentifiers(attr)
+          : this.escape(attr);
       }
-      if (options.include && attr.indexOf('.') === -1 && addTable) {
+      if (!_.isEmpty(options.include) && attr.indexOf('.') === -1 && addTable) {
         attr = mainTableAs + '.' + attr;
       }
 
@@ -2162,6 +2249,7 @@ export abstract class AbstractQueryGenerator {
         }
       }
     }
+    this._generateSubQueryFilter(include, includeAs, topLevelInfo);
 
     if (!hasAttributes && (topLevelInfo.subQuery && include.required)) {
       // Already handled with subquery
@@ -2175,6 +2263,114 @@ export abstract class AbstractQueryGenerator {
       };
     }
   }
+
+  private _generateSubQueryFilter(include, includeAs, topLevelInfo) {
+    if (!topLevelInfo.subQuery || !include.subQueryFilter) {
+      return;
+    }
+
+    if (!topLevelInfo.options.where) {
+      topLevelInfo.options.where = {};
+    }
+    let parent = include.parent;
+    let child = include;
+    let nestedIncludes = this._getRequiredClosure(include).include;
+    let query;
+    while (parent) { // eslint-disable-line
+      if (parent.parent && !parent.required) {
+        return; // only generate subQueryFilter if all the parents of this include are required
+      }
+
+      if (parent.subQueryFilter) {
+        // the include is already handled as this parent has the include on its required closure
+        // skip to prevent duplicate subQueryFilter
+        return;
+      }
+
+      nestedIncludes = [_.extend({}, child, { include: nestedIncludes, attributes: [] })];
+      child = parent;
+      parent = parent.parent;
+    }
+
+    const topInclude = nestedIncludes[0];
+    const topParent = topInclude.parent;
+    const topAssociation = topInclude.association;
+    topInclude.association = undefined;
+
+    if (topInclude.through && Object(topInclude.through.model) === topInclude.through.model) {
+      query = this.selectQuery(topInclude.through.model.getTableName(), {
+        attributes: [topInclude.through.model.primaryKeyField],
+        include: Model._validateIncludedElements({
+          model: topInclude.through.model,
+          include: [{
+            association: topAssociation.toTarget,
+            required: true,
+            where: topInclude.where,
+            include: topInclude.include
+          }]
+        }).include,
+        model: topInclude.through.model,
+        where: {
+          [Op.and]: [
+            this.sequelize.asIs([
+              this.quoteTable(topParent.model.name) + '.' + this.quoteIdentifier(topParent.model.primaryKeyField),
+              this.quoteIdentifier(topInclude.through.model.name) + '.' + this.quoteIdentifier(topAssociation.identifierField)].join(' = ')),
+            topInclude.through.where]
+        },
+        limit: 1,
+        includeIgnoreAttributes: false
+      }, topInclude.through.model);
+    } else {
+      const isBelongsTo = topAssociation.associationType === 'BelongsTo';
+      const sourceField = isBelongsTo ? topAssociation.identifierField : (topAssociation.sourceKeyField || topParent.model.primaryKeyField);
+      const targetField = isBelongsTo ? (topAssociation.sourceKeyField || topInclude.model.primaryKeyField) : topAssociation.identifierField;
+
+      const join = [
+        this.quoteIdentifier(topInclude.as) + '.' + this.quoteIdentifier(targetField),
+        this.quoteTable(topParent.as || topParent.model.name) + '.' + this.quoteIdentifier(sourceField)].join(' = ');
+
+      query = this.selectQuery(topInclude.model.getTableName(), {
+        attributes: [targetField],
+        include: Model._validateIncludedElements(topInclude).include,
+        model: topInclude.model,
+        where: {
+          [Op.and]: [
+            topInclude.where,
+            { [Op.join]: this.sequelize.asIs(join) }]
+        },
+        limit: 1,
+        tableAs: topInclude.as,
+        includeIgnoreAttributes: false
+      }, topInclude.model);
+    }
+
+    if (!topLevelInfo.options.where[Op.and]) {
+      topLevelInfo.options.where[Op.and] = [];
+    }
+
+    topLevelInfo.options.where[`__${includeAs.internalAs}`] = this.sequelize.asIs([
+      '(',
+      query.replace(/\;$/, ''),
+      ')',
+      'IS NOT NULL'].join(' '));
+  }
+
+  /*
+   * For a given include hierarchy creates a copy of it where only the required includes
+   * are preserved.
+   */
+  private _getRequiredClosure(include) {
+    const copy = _.extend({}, include, {attributes: [], include: []});
+
+    if (Array.isArray(include.include)) {
+      copy.include = include.include
+        .filter(i => i.required)
+        .map(inc => this._getRequiredClosure(inc));
+    }
+
+    return copy;
+  }
+
 
   /**
    * return query orders
@@ -2507,6 +2703,10 @@ export abstract class AbstractQueryGenerator {
   public handleSequelizeMethod(smth : any, tableName? : string, factory?, options?, prepend?) : string {
     let result;
 
+    if (this.OperatorMap.hasOwnProperty(smth.comparator)) {
+      smth.comparator = this.OperatorMap[smth.comparator];
+    }
+
     if (smth instanceof AllUtils.Where) {
       let value = smth.logic;
       let key;
@@ -2520,7 +2720,7 @@ export abstract class AbstractQueryGenerator {
       if (value && value instanceof AllUtils.SequelizeMethod) {
         value = this.getWhereConditions(value, tableName, factory, options, prepend);
 
-        result = value === 'NULL' && smth.comparator !== 'IS NOT' ? key + ' IS NULL' : [key, value].join(smth.comparator);
+        result = value === 'NULL' && smth.comparator !== 'IS NOT' ? key + ' IS NULL' : [key, value].join(' ' + smth.comparator + ' ');
       } else if (_.isPlainObject(value)) {
         result = this.whereItemQuery(smth.attribute, value, {
           model: factory
@@ -2579,6 +2779,7 @@ export abstract class AbstractQueryGenerator {
     allowNull? : any[],
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
     benchmark? : boolean,
+    bind? : {};
     databaseVersion? : number,
     define? : {},
     /** The dialect of the database you are connecting to. One of mysql, postgres, sqlite, oracle and mssql. */
@@ -2737,8 +2938,11 @@ export abstract class AbstractQueryGenerator {
    * return an item of the where part of a query
    */
   public whereItemQuery(key : any, value : any, options? : {
+    bind? : {},
+    bindParam? : boolean,
     model? : typeof Model,
     type? : string,
+    modelAttributeMap? : {},
     prefix? : string,
     json? : {}
   }) : any {
@@ -2753,7 +2957,7 @@ export abstract class AbstractQueryGenerator {
       }
     }
 
-    const field = this._findField(key, options);
+    let field = this._findField(key, options);
     const fieldType = field && field.type || options.type;
 
     const isPlainObject = _.isPlainObject(value);
@@ -2763,6 +2967,7 @@ export abstract class AbstractQueryGenerator {
       value = this._replaceAliases(value);
     }
     const valueKeys = isPlainObject && Utils.getComplexKeys(value);
+    let opValue;
 
     if (key === undefined) {
       if (typeof value === 'string') {
@@ -2774,8 +2979,14 @@ export abstract class AbstractQueryGenerator {
       }
     }
 
+    if (value === null) {
+      opValue = options.bindParam ? 'NULL' : this.escape(value, field);
+      return this._joinKeyValue(key, opValue, this.OperatorMap[Op.is], options.prefix);
+    }
+
     if (!value) {
-      return this._joinKeyValue(key, this.escape(value, field), value === null ? this.OperatorMap[Op.is] : this.OperatorMap[Op.eq], options.prefix);
+      opValue = options.bindParam ? this.format(value, field, options, options.bindParam) : this.escape(value, field);
+      return this._joinKeyValue(key, opValue, this.OperatorMap[Op.eq], options.prefix);
     }
 
     if (value instanceof AllUtils.SequelizeMethod && !(key !== undefined && value instanceof AllUtils.Fn)) {
@@ -2805,7 +3016,8 @@ export abstract class AbstractQueryGenerator {
     }
 
     if (isArray && fieldType instanceof DataTypes.ARRAY) {
-      return this._joinKeyValue(key, this.escape(value, field), this.OperatorMap[Op.eq], options.prefix);
+      opValue = options.bindParam ? this.format(value, field, options, options.bindParam) : this.escape(value, field);
+      return this._joinKeyValue(key, opValue, this.OperatorMap[Op.eq], options.prefix);
     }
 
     if (isPlainObject && fieldType instanceof DataTypes.JSON && options.json !== false) {
@@ -2826,12 +3038,29 @@ export abstract class AbstractQueryGenerator {
         return this._whereParseSingleValueObject(key, field, this.OperatorMap[Op.eq], value, options);
       }
     }
-
-    if (key === Op.placeholder) {
-      return this._joinKeyValue(this.OperatorMap[key], this.escape(value, field), this.OperatorMap[Op.eq], options.prefix);
+    if (this.dialect === 'oracle' && options.bindParam) {
+      field = field || (options.modelAttributeMap && options.modelAttributeMap[key]) ? field : options.modelAttributeMap[key];
+      if (field && field.type != null && (field.type.key === DataTypes.DATE.key || field.type.key === DataTypes.DATEONLY.key || field.type.key === DataTypes.TIME.key)) {
+        opValue = this.escape(value, field);
+      } else {
+        const bindKey = (this as any).findBindKey(options.bind, 'where' + key);
+        opValue = ':' + bindKey;
+        const val = this.format(value, field, options, options.bindParam);
+        options.bind[bindKey] = {
+          dir : oracleDb.BIND_IN,
+          val
+        };
+        if (value === null) {
+          options.bind[bindKey]['type'] = oracleDb.STRING;
+        }
+      }
+    } else {
+      opValue = options.bindParam ? this.format(value, field, options, options.bindParam) : this.escape(value, field);
     }
-
-    return this._joinKeyValue(key, this.escape(value, field), this.OperatorMap[Op.eq], options.prefix);
+    if (key === Op.placeholder) {
+      return this._joinKeyValue(this.OperatorMap[key], opValue, this.OperatorMap[Op.eq], options.prefix);
+    }
+    return this._joinKeyValue(key, opValue, this.OperatorMap[Op.eq], options.prefix);
   }
 
   /**
@@ -3215,10 +3444,6 @@ export abstract class AbstractQueryGenerator {
       }
     }
 
-    if (comparator.indexOf(this.OperatorMap[Op.regexp]) !== -1) {
-      return this._joinKeyValue(key, `'${value}'`, comparator, options.prefix);
-    }
-
     if (value === null && comparator === this.OperatorMap[Op.eq]) {
       return this._joinKeyValue(key, this.escape(value, field, escapeOptions), this.OperatorMap[Op.is], options.prefix);
     } else if (value === null && comparator === this.OperatorMap[Op.ne]) {
@@ -3328,7 +3553,7 @@ export abstract class AbstractQueryGenerator {
       });
     }
 
-    return result || result === 0 ? result : '1=1';
+    return result || result === 0  ? result : '1=1';
   }
 
   /**
@@ -3426,4 +3651,6 @@ export abstract class AbstractQueryGenerator {
    * return a delete query
    */
   public abstract deleteQuery(tableName, where, options, model?);
+
+  public abstract truncateTableQuery(tablename, options?);
 }

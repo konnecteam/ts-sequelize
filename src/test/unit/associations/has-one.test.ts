@@ -8,6 +8,23 @@ const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('hasOne'), () => {
+  it('throws when invalid model is passed', () => {
+    const User = current.define('User');
+
+    expect(() => {
+      User.hasOne();
+    }).to.throw('User.hasOne called with something that\'s not a subclass of Sequelize.Model');
+  });
+
+  it('warn on invalid options', () => {
+    const User = current.define('User', {});
+    const Task = current.define('Task', {});
+
+    expect(() => {
+      User.hasOne(Task, { sourceKey: 'wowow' });
+    }).to.throw('Unknown attribute "wowow" passed as sourceKey, define this attribute on model "User" first');
+  });
+
   it('properly use the `as` key to generate foreign key name', () => {
     const User = current.define('User', { username: new DataTypes.STRING() });
     const Task = current.define('Task', { title: new DataTypes.STRING() });

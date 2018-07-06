@@ -13,6 +13,14 @@ const current = Support.sequelize;
 const Promise = current.Promise;
 
 describe(Support.getTestDialectTeaser('hasMany'), () => {
+  it('throws when invalid model is passed', () => {
+    const User = current.define('User');
+
+    expect(() => {
+      User.hasMany();
+    }).to.throw('User.hasMany called with something that\'s not a subclass of Sequelize.Model');
+  });
+
   describe('optimizations using bulk create, destroy and update', () => {
     const User = current.define('User', { username: new DataTypes.STRING() });
     const Task = current.define('Task', { title: new DataTypes.STRING() });
@@ -54,7 +62,7 @@ describe(Support.getTestDialectTeaser('hasMany'), () => {
           { userId: 42, taskId: 16 }        ]));
 
       return user.setTasks([task1, task2]).bind(this).then(function() {
-        this.update.reset();
+        this.update.resetHistory();
         return user.setTasks(null);
       }).then(function() {
         expect(this.findAll).to.have.been.calledTwice;

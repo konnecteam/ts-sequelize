@@ -35,4 +35,22 @@ describe(Support.getTestDialectTeaser('Pooling'), function() {
     return expect((this as any).testInstance.authenticate())
       .to.eventually.be.rejectedWith('ResourceRequest timed out');
   });
+
+  it('should not result in unhandled promise rejection when unable to acquire connection', () => {
+    (this as any).testInstance = new Sequelize('localhost', 'ffd', 'dfdf', {
+      dialect,
+      databaseVersion: '1.2.3',
+      pool: {
+        acquire: 1000,
+        max: 1
+      }
+    });
+
+    (this as any).sinon.stub((this as any).testInstance.connectionManager, '_connect')
+      .returns(new Sequelize.Promise(() => {}));
+
+    return expect((this as any).testInstance.transaction()
+      .then(() => (this as any).testInstance.transaction()))
+      .to.eventually.be.rejectedWith('ResourceRequest timed out');
+  });
 });

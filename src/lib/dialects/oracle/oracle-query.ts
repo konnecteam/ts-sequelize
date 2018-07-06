@@ -40,13 +40,8 @@ export class OracleQuery extends AbstractQuery {
     return 'id';
   }
 
-  public _run(connection, sql : string, parameters : {}) {
+  public _run(connection, sql : string, inputParameters : {}) {
     const self = this;
-
-    if (parameters) {
-      //Nothing, just for eslint
-    }
-
     //We set the oracledb
     const oracledb = self.sequelize.connectionManager.lib;
     //Regexp for the bind params
@@ -61,11 +56,12 @@ export class OracleQuery extends AbstractQuery {
     //Method to generate the object for Oracle out bindings; format -> $:name;type$
     let regExResult = regex.exec(this.sql);
     const outParameters = {};
+    let parameterName;
 
     while (regExResult !== null) { //if we have multiple params
 
       //We extract the name of the parameter to bind, removes the $: at the beginning
-      const parameterName = regExResult[1].substring(2, regExResult[1].length);
+      parameterName = regExResult[1].substring(2, regExResult[1].length);
       //We extract the type, removes the $ at the end
       const type = regExResult[2].substring(0, regExResult[2].length - 1);
 
@@ -176,15 +172,13 @@ export class OracleQuery extends AbstractQuery {
           self.autoCommit = true;
         }
       }
-
       if ('inputParameters' in self.options && self.options.inputParameters !== null) {
-        if (Object.keys(self.outParameters).length === 0) {
-          self.outParameters = {};
-        }
         Object.assign(self.outParameters, self.options.inputParameters);
       }
-
       if (Object.keys(self.outParameters).length > 0) {
+        if (inputParameters) {
+          Object.assign(self.outParameters, inputParameters);
+        }
         //If we have some mapping with parameters to do - INSERT queries
         return connection.execute(self.sql, self.outParameters, { outFormat: self.outFormat, autoCommit: self.autoCommit }).then(result => {
           if (benchmark) {
@@ -195,9 +189,7 @@ export class OracleQuery extends AbstractQuery {
 
             //For returning into, oracle returns : {ID : [id]}, we need : [{ID : id}]
             //Treating the outbinds parameters
-            const keys = Object.keys(self.outParameters);
-            const key = keys[0];
-
+            const key = parameterName;
             const row = {};
             //Treating the outbinds parameters
             row[key] = Array.isArray(result.outBinds[key]) ? result.outBinds[key][0] : result.outBinds[key];
@@ -240,7 +232,7 @@ export class OracleQuery extends AbstractQuery {
           sqlToExec = self.sql;
         }
 
-        return connection.execute(sqlToExec, [], { outFormat: self.outFormat, autoCommit: self.autoCommit }).then(result => {
+        return connection.execute(sqlToExec, inputParameters || [], { outFormat: self.outFormat, autoCommit: self.autoCommit }).then(result => {
           if (benchmark) {
             self.sequelize.log('Executed (' + (connection.uuid || 'default') + '): ' + self.sql, (Date.now() - queryBegin), self.options);
           }
@@ -547,10 +539,10 @@ export class OracleQuery extends AbstractQuery {
         }
 
         //We have a model, we will map the properties returned by Oracle to the field names in the model
-        const attrKeys = Object.keys(this.model.attributes);
+        const attrKeys = Object.keys(this.model.rawAttributes);
         attrKeys.forEach(attrKey => {
           //We map the fieldName in lowerCase to the real fieldName, makes it easy to rebuild the object
-          const attribute = this.model.attributes[attrKey];
+          const attribute = this.model.rawAttributes[attrKey];
           //We generate an array like this : attribute(toLowerCase) : attribute(real case)
           attrs[attribute.fieldName.toLowerCase()] = attribute.fieldName;
 
@@ -606,7 +598,7 @@ export class OracleQuery extends AbstractQuery {
               const realKey = this.sql.substr(firstIdx, key.length);
               newRow[realKey] = element[key];
             } else {
-              let typeid = this.model.attributes[attrs[key.toLowerCase()]].type.toLocaleString();
+              let typeid = this.model.rawAttributes[attrs[key.toLowerCase()]].type.toLocaleString();
 
               //For some types, the "name" of the type is returned with the length, we remove it
               if (typeid.indexOf('(') > -1) {

@@ -51,7 +51,7 @@ export class SqlString {
       if (dialect === 'postgres' && !format) {
         return dataTypes.ARRAY.prototype.stringify(val, {escape: partialEscape});
       }
-      return val.map(partialEscape);
+      return SqlString.arrayToList(val, timeZone, dialect, format);
     }
 
     if (!val.replace) {
@@ -62,7 +62,10 @@ export class SqlString {
       // http://www.postgresql.org/docs/8.2/static/sql-syntax-lexical.html#SQL-SYNTAX-STRINGS
       // http://stackoverflow.com/q/603572/130598
       val = val.replace(/'/g, "''");
-
+      if (dialect === 'postgres') {
+        // null character is not allowed in Postgres
+        val = val.replace(/\0/g, '\\0');
+      }
     } else if (dialect === 'oracle' && (val.indexOf('TO_TIMESTAMP') > -1 || val.indexOf('TO_DATE') > -1 || typeof val === 'string')) {
       //The insertion / selection of date has to pass by the TO_TIMESTAMP method, if we pass through the normal flow the method will be quoted -> 'TO_TIMESTAMP('1970-01-01 00:00:00.00','YYYY-MM-DD HH24:MI:SS.FF')'
       if (val.indexOf('TO_TIMESTAMP') > -1 || val.indexOf('TO_DATE') > -1) {
@@ -114,5 +117,19 @@ export class SqlString {
         throw new Error('Named parameter "' + value + '" has no value in the given object.');
       }
     });
+  }
+
+  private static arrayToList(array : any[], timeZone : string, dialect : string, format : boolean) {
+    return array.reduce((sql, val, i) => {
+      if (i !== 0) {
+        sql += ', ';
+      }
+      if (Array.isArray(val)) {
+        sql += `(${SqlString.arrayToList(val, timeZone, dialect, format)})`;
+      } else {
+        sql += SqlString.escape(val, timeZone, dialect, format);
+      }
+      return sql;
+    }, '');
   }
 }

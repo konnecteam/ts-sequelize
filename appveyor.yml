@@ -8,12 +8,9 @@ services:
 
 shallow_clone: true
 
-cache:
-  - node_modules
-
 environment:
   matrix:
-    - {NODE_VERSION: 8, DIALECT: mssql, COVERAGE: true}
+    - {NODE_VERSION: 6, DIALECT: mssql, COVERAGE: true}
 
 install:
   - ps: Install-Product node $env:NODE_VERSION x64
@@ -46,3 +43,4 @@ branches:
   only:
     - develop
     - typescript
+    - develop-import-v5

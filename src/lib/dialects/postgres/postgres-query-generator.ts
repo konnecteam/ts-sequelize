@@ -135,8 +135,8 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
     if (options.uniqueKeys) {
       Object.keys(options.uniqueKeys).forEach(indexName => {
         const columns = options.uniqueKeys[indexName];
-        if (!columns.singleField) { // If it's a single field it's handled in column def, not as an index
-          values.attributes += ', UNIQUE (' + columns.fields.map(f => this.quoteIdentifiers(f)).join(', ') + ')';
+        if (columns.customIndex) {
+          values.attributes += `, UNIQUE (${columns.fields.map(field => this.quoteIdentifier(field)).join(', ')})`;
         }
       });
     }
@@ -149,7 +149,7 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
     }, []).join(',');
 
     if (pks.length > 0) {
-      values.attributes += ', PRIMARY KEY (' + pks + ')';
+      values.attributes += `, PRIMARY KEY (${pks})`;
     }
 
     return `CREATE TABLE ${databaseVersion === 0 || semver.gte(databaseVersion, '9.1.0') ? 'IF NOT EXISTS ' : ''}${values.table} (${values.attributes})${values.comments};`;
@@ -452,20 +452,21 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
     return `ALTER TABLE ${this.quoteTable(tableName)} RENAME COLUMN ${attrString.join(', ')};`;
   }
 
-  public fn(fnName : string, tableName : string, body : string, returns : string, language : string) : string {
+  public fn(fnName : string, tableName : string, parameters : string, body : string, returns : string, language : string) : string {
     fnName = fnName || 'testfunc';
     language = language || 'plpgsql';
-    returns = returns || 'SETOF ' + this.quoteTable(tableName);
+    returns = returns ? `RETURNS ${returns}` : '';
+    parameters = parameters || '';
 
-    return `CREATE OR REPLACE FUNCTION pg_temp.${fnName}() RETURNS ${returns} AS $func$ BEGIN ${body} END; $func$ LANGUAGE ${language}; SELECT * FROM pg_temp.${fnName}();`;
+    return `CREATE OR REPLACE FUNCTION pg_temp.${fnName}(${parameters}) ${returns} AS $func$ BEGIN ${body} END; $func$ LANGUAGE ${language}; SELECT * FROM pg_temp.${fnName}();`;
   }
 
-  public exceptionFn(fnName : string, tableName : string, main : string, then : string, when : string, returns : string, language? : string) : string {
+  public exceptionFn(fnName : string, tableName : string, parameters, main : string, then : string, when? : string, returns? : string, language? : string) : string {
     when = when || 'unique_violation';
 
     const body = `${main} EXCEPTION WHEN ${when} THEN ${then};`;
 
-    return this.fn(fnName, tableName, body, returns, language);
+    return this.fn(fnName, tableName, parameters, body, returns, language);
   }
 
   /**
@@ -534,18 +535,32 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
     /** A hash of search attributes. */
     where? : {}
   }) : string {
-    const insert = this.insertQuery(tableName, insertValues, model.rawAttributes, options);
-    const update = this.updateQuery(tableName, updateValues, where, options, model.rawAttributes);
+    const primaryField = this.quoteIdentifier(model.primaryKeyField);
 
-    // The numbers here are selected to match the number of affected rows returned by MySQL
+    const upsertOptions = _.defaults({ bindParam: false }, options);
+    const insert = this.insertQuery(tableName, insertValues, model.rawAttributes, upsertOptions);
+    const update = this.updateQuery(tableName, updateValues, where, upsertOptions, model.rawAttributes);
+
+    insert.query = insert.query.replace('RETURNING *', `RETURNING ${primaryField} INTO primary_key`);
+    update.query = update.query.replace('RETURNING *', `RETURNING ${primaryField} INTO primary_key`);
+
     return this.exceptionFn(
       'sequelize_upsert',
       tableName,
-      insert + ' RETURN 1;',
-      update + '; RETURN 2',
-      'unique_violation',
-      'integer'
+      'OUT created boolean, OUT primary_key text',
+      `${insert.query} created := true;`,
+      `${update.query}; created := false`
     );
+  }
+
+  public truncateTableQuery(tableName : string, options : {
+    restartIdentity? : boolean,
+    cascade? : boolean
+  } = {}) {
+    return [
+      `TRUNCATE ${this.quoteTable(tableName)}`,
+      options.restartIdentity ? ' RESTART IDENTITY' : '',
+      options.cascade ? ' CASCADE' : ''].join('');
   }
 
   /**
@@ -1295,6 +1310,9 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
       if (_.includes(dataType, 'BIGINT')) {
         dataType = dataType.replace(/SERIAL/, 'BIGSERIAL');
         dataType = dataType.replace(/BIGINT/, '');
+      } else if (_.includes(dataType, 'SMALLINT')) {
+        dataType = dataType.replace(/SERIAL/, 'SMALLSERIAL');
+        dataType = dataType.replace(/SMALLINT/, '');
       } else {
         dataType = dataType.replace(/INTEGER/, '');
       }

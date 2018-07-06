@@ -321,12 +321,123 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
             });
           });
         });
+
+        it('supports schemas', function() {
+          const User = this.sequelize.define('User', {}).schema('work');
+          const Task = this.sequelize.define('Task', {
+              title: DataTypes.STRING
+            }).schema('work');
+          const SubTask = this.sequelize.define('SubTask', {
+              title: DataTypes.STRING
+            }).schema('work');
+
+          User.Tasks = User.hasMany(Task, {as: 'tasks'});
+          Task.SubTasks = Task.hasMany(SubTask, {as: 'subtasks'});
+
+          return this.sequelize.dropAllSchemas().then(() => {
+            return this.sequelize.createSchema('work');
+          }).then(() => {
+            return User.sync({force: true});
+          }).then(() => {
+            return Task.sync({force: true});
+          }).then(() => {
+            return SubTask.sync({force: true});
+          }).then(() => {
+            return Promise.join(
+              User.create({
+                id: 1,
+                tasks: [
+                  {title: 'b', subtasks: [
+                    {title: 'c'},
+                    {title: 'a'}]},
+                  {title: 'd'},
+                  {title: 'c', subtasks: [
+                    {title: 'b'},
+                    {title: 'a'},
+                    {title: 'c'}]},
+                  {title: 'a', subtasks: [
+                    {title: 'c'},
+                    {title: 'a'},
+                    {title: 'b'}]
+                  }]
+              }, {
+                include: [{association: User.Tasks, include: [Task.SubTasks]}]
+              }),
+              User.create({
+                id: 2,
+                tasks: [
+                  {title: 'a', subtasks: [
+                    {title: 'b'},
+                    {title: 'a'},
+                    {title: 'c'}]},
+                  {title: 'c', subtasks: [
+                    {title: 'a'}]},
+                  {title: 'b', subtasks: [
+                    {title: 'a'},
+                    {title: 'b'}]
+                  }]
+              }, {
+                include: [{association: User.Tasks, include: [Task.SubTasks]}]
+              })
+            );
+          }).then(() => {
+            return User.findAll({
+              include: [{
+                association: User.Tasks,
+                limit: 2,
+                order: [['title', 'ASC']],
+                separate: true,
+                as: 'tasks',
+                include: [
+                  {
+                    association: Task.SubTasks,
+                    order: [['title', 'DESC']],
+                    separate: true,
+                    as: 'subtasks'
+                  }]
+              }],
+              order: [
+                ['id', 'ASC']]
+            }).then(users => {
+              expect(users[0].tasks.length).to.equal(2);
+
+              expect(users[0].tasks[0].title).to.equal('a');
+              expect(users[0].tasks[0].subtasks.length).to.equal(3);
+              expect(users[0].tasks[0].subtasks[0].title).to.equal('c');
+              expect(users[0].tasks[0].subtasks[1].title).to.equal('b');
+              expect(users[0].tasks[0].subtasks[2].title).to.equal('a');
+
+              expect(users[0].tasks[1].title).to.equal('b');
+              expect(users[0].tasks[1].subtasks.length).to.equal(2);
+              expect(users[0].tasks[1].subtasks[0].title).to.equal('c');
+              expect(users[0].tasks[1].subtasks[1].title).to.equal('a');
+
+              expect(users[1].tasks.length).to.equal(2);
+              expect(users[1].tasks[0].title).to.equal('a');
+              expect(users[1].tasks[0].subtasks.length).to.equal(3);
+              expect(users[1].tasks[0].subtasks[0].title).to.equal('c');
+              expect(users[1].tasks[0].subtasks[1].title).to.equal('b');
+              expect(users[1].tasks[0].subtasks[2].title).to.equal('a');
+
+              expect(users[1].tasks[1].title).to.equal('b');
+              expect(users[1].tasks[1].subtasks.length).to.equal(2);
+              expect(users[1].tasks[1].subtasks[0].title).to.equal('b');
+              expect(users[1].tasks[1].subtasks[1].title).to.equal('a');
+              return this.sequelize.dropSchema('work').then(() => {
+                return this.sequelize.showAllSchemas().then(schemas => {
+                  if (dialect === 'postgres' || dialect === 'mssql') {
+                    expect(schemas).to.be.empty;
+                  }
+                });
+              });
+            });
+          });
+        });
       });
     }
   });
 
   describe('(1:N)', () => {
-
     describe('hasSingle', () => {
       beforeEach(function() {
         this.Article = this.sequelize.define('Article', { title: new DataTypes.STRING() });
@@ -1011,7 +1122,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
     });
   });
 
-  describe('Foreign key constraints', () => {
+  describe('foreign key constraints', () => {
     describe('1:m', () => {
       it('sets null by default', function() {
         const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
@@ -1190,13 +1301,31 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
             expect(tasks).to.have.length(1);
           });
         });
-
       }
-
     });
   });
 
   describe('Association options', () => {
+    it('should setup underscored field with foreign keys when using underscored', function() {
+      const User = this.sequelize.define('User', { username: new DataTypes.STRING() }, { underscored: true });
+      const Account = this.sequelize.define('Account', { name: new DataTypes.STRING() }, { underscored: true });
+
+      User.hasMany(Account);
+
+      expect(Account.rawAttributes.UserId).to.exist;
+      expect(Account.rawAttributes.UserId.field).to.equal('user_id');
+    });
+
+    it('should use model name when using camelcase', function() {
+      const User = this.sequelize.define('User', { username: new DataTypes.STRING() }, { underscored: false });
+      const Account = this.sequelize.define('Account', { name: new DataTypes.STRING() }, { underscored: false });
+
+      User.hasMany(Account);
+
+      expect(Account.rawAttributes.UserId).to.exist;
+      expect(Account.rawAttributes.UserId.field).to.equal('UserId');
+    });
+
     it('can specify data type for autogenerated relational keys', function() {
       const User = this.sequelize.define('UserXYZ', { username: new DataTypes.STRING() });
       const dataTypes = [DataTypes.INTEGER, DataTypes.BIGINT, DataTypes.STRING];
@@ -1263,7 +1392,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
           }
         });
 
-        User.hasMany(Project, { foreignKey: Project.rawAttributes.user_id});
+        User.hasMany(Project, { foreignKey: Project.rawAttributes.user_id });
 
         expect(Project.rawAttributes.user_id).to.be.ok;
         expect(Project.rawAttributes.user_id.references.model).to.equal(User.getTableName());
@@ -1395,7 +1524,10 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
       this.Task = this.sequelize.define('Task',
         { title: new DataTypes.STRING(), userEmail: new DataTypes.STRING(), taskStatus: new DataTypes.STRING() });
 
-      this.User.hasMany(this.Task, {foreignKey: 'userEmail', sourceKey: 'mail'});
+      this.User.hasMany(this.Task, {
+        foreignKey: 'userEmail',
+        sourceKey: 'email'
+      });
 
       return this.sequelize.sync({ force: true });
     });

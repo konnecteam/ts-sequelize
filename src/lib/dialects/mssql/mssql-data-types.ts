@@ -2,9 +2,11 @@
 
 import * as _ from 'lodash';
 import * as moment from 'moment';
+import * as Tedious from 'tedious';
 import * as BaseTypes from '../../data-types';
 import { GlobalOptions } from '../../global-options';
 
+const TYPES = Tedious.TYPES;
 const warn = BaseTypes.ABSTRACT.warn.bind(undefined, 'https://msdn.microsoft.com/en-us/library/ms187752%28v=sql.110%29.aspx');
 
 /**
@@ -70,6 +72,14 @@ export class STRING extends BaseTypes.STRING {
       return options.escape(value);
     }
   }
+
+  public _bindParam(value, options) {
+    return options.bindParam({
+      val: this._binary ? Buffer.from(value) : value,
+      type: this._binary ? TYPES.VarBinary : TYPES.NVarChar,
+      typeOptions: { length: this._length || 255 }
+    });
+  }
 }
 
 export class TEXT extends BaseTypes.TEXT {
@@ -85,11 +95,25 @@ export class TEXT extends BaseTypes.TEXT {
     }
     return 'NVARCHAR(MAX)';
   }
+
+  public _bindParam(value, options) {
+    return options.bindParam({
+      val: value,
+      type: TYPES.Text
+    });
+  }
 }
 
 export class BOOLEAN extends BaseTypes.BOOLEAN {
   public toSql() : string {
     return 'BIT';
+  }
+
+  public _bindParam(value, options) {
+    return options.bindParam({
+      val: value,
+      type: TYPES.Bit
+    });
   }
 }
 
@@ -149,6 +173,13 @@ export class INTEGER extends BaseTypes.INTEGER {
       this._zerofill = undefined;
     }
   }
+
+  public _bindParam(value, options) {
+    return options.bindParam({
+      val: value,
+      type: TYPES.Int
+    });
+  }
 }
 
 export class TINYINT extends BaseTypes.TINYINT {
@@ -164,6 +195,13 @@ export class TINYINT extends BaseTypes.TINYINT {
       this._zerofill = undefined;
     }
   }
+
+  public _bindParam(value, options) {
+    return options.bindParam({
+      val: value,
+      type: TYPES.TinyInt
+    });
+  }
 }
 
 export class SMALLINT extends BaseTypes.SMALLINT {
@@ -178,6 +216,13 @@ export class SMALLINT extends BaseTypes.SMALLINT {
       this._unsigned = undefined;
       this._zerofill = undefined;
     }
+  }
+
+  public _bindParam(value, options) {
+    return options.bindParam({
+      val: value,
+      type: TYPES.SmallInt
+    });
   }
 }
 
@@ -209,6 +254,13 @@ export class REAL extends BaseTypes.REAL {
       this._zerofill = undefined;
     }
   }
+
+  public _bindParam(value, options) {
+    return options.bindParam({
+      val: value,
+      type: TYPES.Real
+    });
+  }
 }
 
 export class FLOAT extends BaseTypes.FLOAT {
@@ -233,6 +285,13 @@ export class FLOAT extends BaseTypes.FLOAT {
       this._zerofill = undefined;
     }
   }
+
+  public _bindParam(value, options) {
+    return options.bindParam({
+      val: value,
+      type: TYPES.Float
+    });
+  }
 }
 
 export class ENUM extends BaseTypes.ENUM {
@@ -241,9 +300,20 @@ export class ENUM extends BaseTypes.ENUM {
   }
 }
 
+export class DECIMAL extends BaseTypes.DECIMAL {
+  public _bindParam(value, options) {
+    return options.bindParam({
+      val: value,
+      type: TYPES.Decimal,
+      typeOptions: {precision: 30, scale: 15}
+    });
+  }
+}
+
 const exp = {
   BLOB,
   BOOLEAN,
+  DECIMAL,
   ENUM,
   STRING,
   UUID,

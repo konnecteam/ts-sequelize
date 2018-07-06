@@ -52,6 +52,7 @@ export interface IConfig {
   /** The schema that the tables should be created in. This can be overriden for each table in sequelize.define */
   schema? : string;
   ssl? : boolean;
+  types? : {};
   user? : string;
   username? : string;
 

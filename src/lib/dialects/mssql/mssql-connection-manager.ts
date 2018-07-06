@@ -1,6 +1,6 @@
 'use strict';
 
-import * as _ from 'lodash';
+import AllDataTypes from '../../data-types';
 import * as sequelizeErrors from '../../errors/index';
 import { IConfig } from '../../model/iconfig';
 import Promise from '../../promise';
@@ -9,6 +9,7 @@ import { AbstractConnectionManager } from '../abstract/abstract-connection-manag
 import { ParserStore } from '../parserStore';
 import { ResourceLock } from './resource-lock';
 
+const DataTypes = AllDataTypes.mssql;
 const debug = Utils.getLogger().debugContext('connection:mssql');
 const debugTedious = Utils.getLogger().debugContext('connection:mssql:tedious');
 export const store = new ParserStore('mssql');
@@ -32,6 +33,8 @@ export class MssqlConnectionManager extends AbstractConnectionManager {
       }
       throw err;
     }
+
+    this.refreshTypeParser(DataTypes);
   }
 
   /**
@@ -52,43 +55,46 @@ export class MssqlConnectionManager extends AbstractConnectionManager {
    * connect to the database
    */
   public connect(config : IConfig) : Promise<any> {
-    return new Promise((resolve, reject) => {
-      const connectionConfig = {
-        userName: config.username,
-        password: config.password,
-        server: config.host,
-        options: {
-          port: config.port,
-          database: config.database
-        },
-        domain: undefined
-      };
+    const connectionConfig = {
+      userName: config.username,
+      password: config.password,
+      server: config.host,
+      options: {
+        port: config.port,
+        database: config.database
+      },
+      domain: undefined
+    };
 
-      if (config.dialectOptions) {
-        // only set port if no instance name was provided
-        if (config.dialectOptions.instanceName) {
-          delete connectionConfig.options.port;
-        }
-
-        // The 'tedious' driver needs domain property to be in the main Connection config object
-        if (config.dialectOptions.domain) {
-          connectionConfig.domain = config.dialectOptions.domain;
-        }
-
-        for (const key of Object.keys(config.dialectOptions)) {
-          connectionConfig.options[key] = config.dialectOptions[key];
-        }
+    if (config.dialectOptions) {
+      // only set port if no instance name was provided
+      if (config.dialectOptions.instanceName) {
+        delete connectionConfig.options.port;
       }
 
+      // The 'tedious' driver needs domain property to be in the main Connection config object
+      if (config.dialectOptions.domain) {
+        connectionConfig.domain = config.dialectOptions.domain;
+      }
+
+      for (const key of Object.keys(config.dialectOptions)) {
+        connectionConfig.options[key] = config.dialectOptions[key];
+      }
+    }
+
+    return new Promise((resolve, reject) => {
       const connection = new this.lib.Connection(connectionConfig);
-      const connectionLock = new ResourceLock(connection);
       connection.lib = this.lib;
+      const resourceLock = new ResourceLock(connection);
+
+      connection.on('end', () => {
+        reject(new sequelizeErrors.ConnectionError('Connection was closed by remote server'));
+      });
 
       connection.on('connect', err => {
         if (!err) {
           debug('connection acquired');
-          resolve(connectionLock);
-          return;
+          return resolve(resourceLock);
         }
 
         if (!err.code) {
@@ -98,15 +104,15 @@ export class MssqlConnectionManager extends AbstractConnectionManager {
 
         switch (err.code) {
           case 'ESOCKET':
-            if (_.includes(err.message, 'connect EHOSTUNREACH')) {
+            if (err.message.includes('connect EHOSTUNREACH')) {
               reject(new sequelizeErrors.HostNotReachableError(err));
-            } else if (_.includes(err.message, 'connect ENETUNREACH')) {
+            } else if (err.message.includes('connect ENETUNREACH')) {
               reject(new sequelizeErrors.HostNotReachableError(err));
-            } else if (_.includes(err.message, 'connect EADDRNOTAVAIL')) {
+            } else if (err.message.includes('connect EADDRNOTAVAIL')) {
               reject(new sequelizeErrors.HostNotReachableError(err));
-            } else if (_.includes(err.message, 'getaddrinfo ENOTFOUND')) {
+            } else if (err.message.includes('getaddrinfo ENOTFOUND')) {
               reject(new sequelizeErrors.HostNotFoundError(err));
-            } else if (_.includes(err.message, 'connect ECONNREFUSED')) {
+            } else if (err.message.includes('connect ECONNREFUSED')) {
               reject(new sequelizeErrors.ConnectionRefusedError(err));
             } else {
               reject(new sequelizeErrors.ConnectionError(err));
@@ -134,12 +140,11 @@ export class MssqlConnectionManager extends AbstractConnectionManager {
           switch (err.code) {
             case 'ESOCKET':
             case 'ECONNRESET':
-              this.pool.destroy(connectionLock)
+              this.pool.destroy(resourceLock)
                 .catch(/Resource not currently part of this pool/, () => {});
           }
         });
       }
-
     });
   }
 
@@ -147,7 +152,10 @@ export class MssqlConnectionManager extends AbstractConnectionManager {
    * disconnect of the database
    */
   public disconnect(connectionLock : { unwrap? }) : Promise<any> {
-    const connection = connectionLock.unwrap();
+    /**
+     * Abstract connection may try to disconnect raw connection used for fetching version
+     */
+    const connection = connectionLock.unwrap ? connectionLock.unwrap() : connectionLock;
 
     // Dont disconnect a connection that is already disconnected
     if (connection.closed) {
@@ -165,11 +173,13 @@ export class MssqlConnectionManager extends AbstractConnectionManager {
    * validate the connection
    */
   public validate(connectionLock : { unwrap? }) : boolean {
-    if (connectionLock && 'unwrap' in connectionLock) {
-      const connection = connectionLock.unwrap();
-      return connection && connection.loggedIn;
-    } else {
-      return false;
-    }
+    /**
+     * Abstract connection may try to validate raw connection used for fetching version
+     */
+    const connection = connectionLock.unwrap
+      ? connectionLock.unwrap()
+      : connectionLock;
+
+    return connection && connection.loggedIn;
   }
 }

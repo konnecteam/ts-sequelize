@@ -4,7 +4,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import DataTypes from '../../lib/data-types';
 import Promise from '../../lib/promise';
-import * as Transaction from '../../lib/transaction';
+import { Transaction } from '../../lib/transaction';
 import Support from './support';
 const expect = chai.expect;
 const current = Support.sequelize;

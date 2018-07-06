@@ -180,12 +180,10 @@ export class BelongsToMany extends Association {
       }
 
       this.foreignKeyAttribute = {};
-      this.foreignKey = this.options.foreignKey || Utils.camelizeIf(
+      this.foreignKey = this.options.foreignKey || Utils.camelize(
         [
-          Utils.underscoredIf(this.source.options.name.singular, this.source.options.underscored),
-          source.primaryKeyAttribute,
-        ].join('_'),
-        !this.source.options.underscored
+          this.source.options.name.singular,
+          this.source.primaryKeyAttribute].join('_')
       );
     }
 
@@ -198,17 +196,10 @@ export class BelongsToMany extends Association {
       }
 
       this.otherKeyAttribute = {};
-      this.otherKey = this.options.otherKey || Utils.camelizeIf(
+      this.otherKey = this.options.otherKey || Utils.camelize(
         [
-          Utils.underscoredIf(
-            this.isSelfAssociation ?
-              Utils.singularize(this.as) :
-              this.target.options.name.singular,
-            this.target.options.underscored
-          ),
-          this.target.primaryKeyAttribute,
-        ].join('_'),
-        !this.target.options.underscored
+          this.isSelfAssociation ? Utils.singularize(this.as) : this.target.options.name.singular,
+          this.target.primaryKeyAttribute].join('_')
       );
     }
 
@@ -252,13 +243,13 @@ export class BelongsToMany extends Association {
         this.otherKey = this.paired.foreignKey;
       }
       if (this.paired.otherKeyDefault) {
-        // If paired otherKey was inferred we should make sure to clean it up before adding a new one that matches the foreignKey
+        // If paired otherKey was inferred we should make sure to clean it up
+        // before adding a new one that matches the foreignKey
         if (this.paired.otherKey !== this.foreignKey) {
           delete this.through.model.rawAttributes[this.paired.otherKey];
+          this.paired.otherKey = this.foreignKey;
+          (this.paired as any).injectAttributes();
         }
-        this.paired.otherKey = this.foreignKey;
-        this.paired.foreignIdentifier = this.foreignKey;
-        delete this.paired.foreignIdentifierField;
       }
     }
 
@@ -271,8 +262,8 @@ export class BelongsToMany extends Association {
     this.associationAccessor = this.as;
 
     // Get singular and plural names, trying to uppercase the first letter, unless the model forbids it
-    const plural = Utils.uppercaseFirst(this.options.name.plural);
-    const singular = Utils.uppercaseFirst(this.options.name.singular);
+    const plural = _.upperFirst(this.options.name.plural);
+    const singular = _.upperFirst(this.options.name.singular);
 
     this.accessors = {
       get: 'get' + plural,
@@ -376,14 +367,14 @@ export class BelongsToMany extends Association {
     this.through.model.rawAttributes[this.foreignKey] = _.extend(this.through.model.rawAttributes[this.foreignKey], sourceAttribute);
     this.through.model.rawAttributes[this.otherKey] = _.extend(this.through.model.rawAttributes[this.otherKey], targetAttribute);
 
+    this.through.model.refreshAttributes();
+
     this.identifierField = this.through.model.rawAttributes[this.foreignKey].field || this.foreignKey;
     this.foreignIdentifierField = this.through.model.rawAttributes[this.otherKey].field || this.otherKey;
 
     if (this.paired && !this.paired.foreignIdentifierField) {
       this.paired.foreignIdentifierField = this.through.model.rawAttributes[this.paired.otherKey].field || this.paired.otherKey;
     }
-
-    this.through.model.refreshAttributes();
 
     this.toSource = new BelongsTo(this.through.model, this.source, {
       foreignKey: this.foreignKey,

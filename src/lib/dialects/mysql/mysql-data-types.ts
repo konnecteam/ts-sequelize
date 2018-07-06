@@ -37,17 +37,6 @@ BaseTypes.DOUBLE.types.mysql = ['DOUBLE'];
 BaseTypes.GEOMETRY.types.mysql = ['GEOMETRY'];
 BaseTypes.JSONTYPE.types.mysql = ['JSON'];
 
-export class BLOB extends BaseTypes.BLOB {
-  public static parse(value, options, next) {
-    const data = next();
-
-    if (Buffer.isBuffer(data) && data.length === 0) {
-      return null;
-    }
-
-    return data;
-  }
-}
 
 export class DECIMAL extends BaseTypes.DECIMAL {
   public toSql() : string {
@@ -165,7 +154,6 @@ const exp = {
   UUID,
   GEOMETRY,
   DECIMAL,
-  BLOB,
   JSON: JSONTYPE
 };
 

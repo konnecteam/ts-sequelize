@@ -25,13 +25,11 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         limit: 10
       };
 
-      it(util.inspect(options, {depth: 2}), () => {
-        expectsql(
-          sql.deleteQuery(
+      test(util.inspect(options, {depth: 2}), () => {
+        return expectsql(
+          sql.truncateTableQuery(
             options.table,
-            options.where,
-            options,
-            User
+            options
           ), {
             postgres: 'TRUNCATE "public"."test_users" CASCADE',
             mssql: 'TRUNCATE TABLE [public].[test_users]',
@@ -53,13 +51,11 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         limit: 10
       };
 
-      it(util.inspect(options, {depth: 2}), () => {
-        expectsql(
-          sql.deleteQuery(
+      test(util.inspect(options, {depth: 2}), () => {
+        return expectsql(
+          sql.truncateTableQuery(
             options.table,
-            options.where,
-            options,
-            User
+            options
           ), {
             postgres: 'TRUNCATE "public"."test_users" RESTART IDENTITY CASCADE',
             mssql: 'TRUNCATE TABLE [public].[test_users]',
@@ -181,8 +177,8 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             postgres: 'DELETE FROM "test_user" WHERE "test_user_id" IN (SELECT "test_user_id" FROM "test_user" WHERE "test_user_id" = 100 LIMIT 1)',
             sqlite: 'DELETE FROM `test_user` WHERE rowid IN (SELECT rowid FROM `test_user` WHERE `test_user_id` = 100 LIMIT 1)',
             oracle: 'DELETE FROM test_user WHERE test_user_id = 100',
-            mssql: 'DELETE TOP(1) FROM [test_user] WHERE [test_user_id] = 100; SELECT @@ROWCOUNT AS AFFECTEDROWS;',
-            default: 'DELETE FROM [test_user] WHERE [test_user_id] = 100 LIMIT 1'
+            mssql: 'DELETE FROM [test_user] WHERE [test_user_id] = 100; SELECT @@ROWCOUNT AS AFFECTEDROWS;',
+            default: 'DELETE FROM [test_user] WHERE [test_user_id] = 100'
           }
         );
       });
