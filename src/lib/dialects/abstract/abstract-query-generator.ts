@@ -3045,6 +3045,7 @@ export abstract class AbstractQueryGenerator {
         const bindKey = (this as any).findBindKey(options.bind, 'where' + key);
         opValue = ':' + bindKey;
         const val = this.format(value, field, options, options.bindParam);
+        // we set number value of oracleDb attributes so we don't need to import oracleDb in an abstract file
         options.bind[bindKey] = {
           dir : 3001, //oracleDb.BIND_IN
           val

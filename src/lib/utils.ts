@@ -17,7 +17,9 @@ export class Utils {
 
   private static inflection = Inflection;
   private static logger = new Logger(null);
-  private static operatorsArray = Object.values(operators);
+  // Object.values is not supported for node version < 7.0.0
+  private static operatorsArray = _.values(operators);
+  // private static operatorsArray = Object.values(operators);
   private static primitives = ['string', 'number', 'boolean'];
 
   public static Promise = promise;
