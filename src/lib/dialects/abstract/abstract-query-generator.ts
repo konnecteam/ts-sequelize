@@ -2,7 +2,6 @@
 
 import * as Dottie from 'dottie';
 import * as _ from 'lodash';
-import * as oracleDb from 'oracledb';
 import * as semver from 'semver';
 import * as util from 'util';
 import * as uuid from 'uuid';
@@ -3047,11 +3046,11 @@ export abstract class AbstractQueryGenerator {
         opValue = ':' + bindKey;
         const val = this.format(value, field, options, options.bindParam);
         options.bind[bindKey] = {
-          dir : oracleDb.BIND_IN,
+          dir : 3001, //oracleDb.BIND_IN
           val
         };
         if (value === null) {
-          options.bind[bindKey]['type'] = oracleDb.STRING;
+          options.bind[bindKey]['type'] = 2001; //oracleDb.STRING
         }
       }
     } else {
