@@ -45,7 +45,17 @@ export class MssqlQuery extends AbstractQuery {
    */
   private getSQLTypeFromJsType(param : any) : { val? : any, type?, typeOptions? } {
     if (param === null || !(typeof param === 'object' && param.type)) {
-      const paramType = Buffer.isBuffer(param) ? TYPES.VarBinary : TYPES.NVarChar;
+      let paramType = TYPES.NVarChar;
+      if (typeof param === 'number') {
+        if (Number.isInteger(param)) {
+          paramType = TYPES.Int;
+        } else {
+          paramType = TYPES.Numeric;
+        }
+      }
+      if (Buffer.isBuffer(param)) {
+        paramType = TYPES.VarBinary;
+      }
       param = {
         val: param,
         type: paramType

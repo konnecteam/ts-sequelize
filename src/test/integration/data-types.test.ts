@@ -209,12 +209,18 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
   it('calls parse and stringify for BOOLEAN', () => {
     const Type = new DataTypes.BOOLEAN();
 
+    if (dialect === 'mssql') {
+      return testSuccess(Type, true, { useBindParam: true });
+    }
     return testSuccess(Type, true);
   });
 
   it('calls parse and stringify for INTEGER', () => {
     const Type = new DataTypes.INTEGER();
 
+    if (dialect === 'mssql') {
+      return testSuccess(Type, 1, { useBindParam: true });
+    }
     return testSuccess(Type, 1);
   });
 
@@ -225,6 +231,9 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
       //Oracle does not support decimal, mapping to number
       testFailure(Type);
     } else {
+      if (dialect === 'mssql') {
+        return testSuccess(Type, 1.5, { useBindParam: true });
+      }
       return testSuccess(Type, 1.5);
     }
   });
