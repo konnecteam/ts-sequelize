@@ -889,7 +889,6 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       }, {
         paranoid: true
       });
-
       let test = false;
       return User.sync({ force: true }).then(() => {
         return User.create({username: 'Peter', secretValue: '42'}).then(user => {
@@ -899,7 +898,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               if (dialect === 'mssql') {
                 expect(sql).to.not.contain('createdAt');
               } else if (dialect === 'oracle') {
-                expect(sql).to.be.equal("Executing (default): UPDATE User1s SET secretValue=:updatesecretValue1,updatedAt=TO_TIMESTAMP_TZ('1970-01-01 00:00:00.000 +00:00','YYYY-MM-DD HH24:MI:SS.FFTZH:TZM') WHERE id = :whereid1");
+                expect(sql).to.match(/UPDATE User1s SET secretValue=:updatesecretValue1,updatedAt=TO_TIMESTAMP_TZ\('([0-9-+:. ]*)','YYYY-MM-DD HH24:MI:SS.FFTZH:TZM'\) WHERE id = :whereid1/);
               } else {
                 expect(sql).to.match(/UPDATE\s+[`"]+User1s[`"]+\s+SET\s+[`"]+secretValue[`"]=(\$1|\?),[`"]+updatedAt[`"]+=(\$2|\?)\s+WHERE [`"]+id[`"]+\s=\s(\$3|\?)/);
               }

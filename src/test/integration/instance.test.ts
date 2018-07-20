@@ -1,6 +1,7 @@
 'use strict';
 
 import * as chai from 'chai';
+import * as moment from 'moment';
 import * as validateUUID from 'uuid-validate';
 import {Sequelize} from '../../index';
 import DataTypes from '../../lib/data-types';
@@ -247,12 +248,11 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         aNumber: new DataTypes.INTEGER()
       }, { timestamps: true });
 
-      let oldDate;
 
       return User.sync({ force: true })
         .then(() => User.create({ aNumber: 1 }))
         .then(user => {
-          oldDate = user.get('updatedAt');
+          const oldDate = user.get('updatedAt');
           return Promise.delay(1000).then(() => {
             return user.increment('aNumber', { by: 1 });
           })
@@ -267,12 +267,12 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       const User = this.sequelize.define('IncrementUser', {
         aNumber: new DataTypes.INTEGER()
       }, { timestamps: true });
-      let oldDate;
 
       return User.sync({ force: true }).bind(this).then(() => {
         return User.create({aNumber: 1});
       }).then(function(user) {
-        oldDate = user.updatedAt;
+        //Mysql don't support milliseconds
+        const oldDate = dialect === 'mysql' ? new Date(moment(user.updatedAt).milliseconds(0).toISOString()) : user.updatedAt;
         return Promise.delay(1000).then(() => {
           return user.increment('aNumber', {by: 1, silent: true});
         }).then(() => {
@@ -422,12 +422,11 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       const User = this.sequelize.define('IncrementUser', {
         aNumber: new DataTypes.INTEGER()
       }, { timestamps: true });
-      let oldDate;
 
       return User.sync({ force: true }).bind(this).then(() => {
         return User.create({aNumber: 1});
       }).then(function(user) {
-        oldDate = user.updatedAt;
+        const oldDate = user.updatedAt;
         return Promise.delay(1000).then(() => {
           return user.decrement('aNumber', {by: 1});
         }).then(() => {
@@ -440,12 +439,12 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       const User = this.sequelize.define('IncrementUser', {
         aNumber: new DataTypes.INTEGER()
       }, { timestamps: true });
-      let oldDate;
 
       return User.sync({ force: true }).bind(this).then(() => {
         return User.create({aNumber: 1});
       }).then(function(user) {
-        oldDate = user.updatedAt;
+        //Mysql don't support milliseconds
+        const oldDate = dialect === 'mysql' ? new Date(moment(user.updatedAt).milliseconds(0).toISOString()) : user.updatedAt;
         return Promise.delay(1000).then(() => {
           return user.decrement('aNumber', {by: 1, silent: true});
         }).then(() => {
@@ -761,9 +760,9 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       it('should store the current date in touchedAt', function() {
-        const date = new Date();
+        const date = moment().milliseconds(0).toISOString();
         const user = this.User.build({ username: 'a user'});
-        expect(user.touchedAt).to.equalTime(date);
+        expect(moment(user.touchedAt).milliseconds(0).toISOString()).to.equal(date);
       });
     });
 

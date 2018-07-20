@@ -132,7 +132,7 @@ if (current.dialect.name === 'mssql') {
 
     it('versionQuery', () => {
       expectsql(QueryGenerator.versionQuery(), {
-        mssql: "DECLARE @ms_ver NVARCHAR(20); SET @ms_ver = REVERSE(CONVERT(NVARCHAR(20), SERVERPROPERTY('ProductVersion'))); SELECT REVERSE(SUBSTRING(@ms_ver, CHARINDEX('.', @ms_ver)+1, 20)) AS 'version'"
+        mssql: "SELECT REVERSE(SUBSTRING(REVERSE(CONVERT(NVARCHAR(20), SERVERPROPERTY('ProductVersion'))), CHARINDEX('.', REVERSE(CONVERT(NVARCHAR(20), SERVERPROPERTY('ProductVersion'))))+1, 20)) AS 'version'"
       });
     });
 

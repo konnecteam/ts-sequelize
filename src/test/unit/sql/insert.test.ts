@@ -1,7 +1,10 @@
 'use strict';
 
+import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
 import Support from '../../support';
+const expect = chai.expect;
+const dialect = Support.getTestDialect();
 const expectsql = Support.expectsql;
 const current = Support.sequelize;
 const sql  = current.dialect.QueryGenerator;
@@ -25,24 +28,30 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         returning: true,
         hasTrigger: true
       };
-      expectsql(sql.insertQuery(User.tableName, {user_name: 'triggertest'}, User.rawAttributes, options),
-        {
-          query: {
-            mssql: 'declare @tmp table ([id] INTEGER,[user_name] NVARCHAR(255));INSERT INTO [users] ([user_name]) OUTPUT INSERTED.[id],INSERTED.[user_name] into @tmp VALUES ($1);select * from @tmp;',
-            postgres: 'INSERT INTO "users" ("user_name") VALUES ($1) RETURNING *;',
-            oracle: 'INSERT INTO users (user_name) VALUES (:inputuser_name1) RETURNING id INTO $:id;INTEGER$',
-            default: 'INSERT INTO `users` (`user_name`) VALUES ($1);'
-          },
-          bind: {
-            oracle: {
-              inputuser_name1: {
-                dir: 3001,
-                val: 'triggertest'
-              }
+      if (dialect === 'mssql') {
+        const insert = sql.insertQuery(User.tableName, {user_name: 'triggertest'}, User.rawAttributes, options);
+        expect(insert.query).to.be.equal('declare @tmp table ([id] INTEGER,[user_name] NVARCHAR(255));INSERT INTO [users] ([user_name]) OUTPUT INSERTED.[id],INSERTED.[user_name] into @tmp VALUES ($1);select * from @tmp;');
+        expect(insert.bind).to.have.length(1);
+        expect(insert.bind[0]).to.have.property('val', 'triggertest');
+      } else {
+        expectsql(sql.insertQuery(User.tableName, {user_name: 'triggertest'}, User.rawAttributes, options),
+          {
+            query: {
+              postgres: 'INSERT INTO "users" ("user_name") VALUES ($1) RETURNING *;',
+              oracle: 'INSERT INTO users (user_name) VALUES (:inputuser_name1) RETURNING id INTO $:id;INTEGER$',
+              default: 'INSERT INTO `users` (`user_name`) VALUES ($1);'
             },
-            default: ['triggertest']
-          }
-        });
+            bind: {
+              oracle: {
+                inputuser_name1: {
+                  dir: 3001,
+                  val: 'triggertest'
+                }
+              },
+              default: ['triggertest']
+            }
+          });
+      }
 
     });
   });

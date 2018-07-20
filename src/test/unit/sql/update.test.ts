@@ -1,7 +1,10 @@
 'use strict';
 
+import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
 import Support from '../../support';
+const expect = chai.expect;
+const dialect = Support.getTestDialect();
 const expectsql = Support.expectsql;
 const current = Support.sequelize;
 const sql  = current.dialect.QueryGenerator;
@@ -25,28 +28,35 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         returning: true,
         hasTrigger: true
       };
-      expectsql(sql.updateQuery(User.tableName, {user_name: 'triggertest'}, {id: 2}, options, User.rawAttributes),
-        {
-          query: {
-            mssql: 'declare @tmp table ([id] INTEGER,[user_name] NVARCHAR(255));UPDATE [users] SET [user_name]=$1 OUTPUT INSERTED.[id],INSERTED.[user_name] into @tmp WHERE [id] = $2;select * from @tmp',
-            postgres: 'UPDATE "users" SET "user_name"=$1 WHERE "id" = $2 RETURNING *',
-            oracle: 'UPDATE users SET user_name=:updateuser_name1 WHERE id = :whereid1',
-            default: 'UPDATE `users` SET `user_name`=$1 WHERE `id` = $2'
-          },
-          bind: {
-            oracle: {
-              updateuser_name1: {
-                dir: 3001,
-                val: 'triggertest'
-              },
-              whereid1: {
-                dir: 3001,
-                val: 2
-              }
+      if (dialect === 'mssql') {
+        const update = sql.updateQuery(User.tableName, {user_name: 'triggertest'}, {id: 2}, options, User.rawAttributes);
+        expect(update.query).to.be.equal('declare @tmp table ([id] INTEGER,[user_name] NVARCHAR(255));UPDATE [users] SET [user_name]=$1 OUTPUT INSERTED.[id],INSERTED.[user_name] into @tmp WHERE [id] = $2;select * from @tmp');
+        expect(update.bind).to.have.length(2);
+        expect(update.bind[0]).to.have.property('val', 'triggertest');
+        expect(update.bind[1]).to.be.equal(2);
+      } else {
+        expectsql(sql.updateQuery(User.tableName, {user_name: 'triggertest'}, {id: 2}, options, User.rawAttributes),
+          {
+            query: {
+              postgres: 'UPDATE "users" SET "user_name"=$1 WHERE "id" = $2 RETURNING *',
+              oracle: 'UPDATE users SET user_name=:updateuser_name1 WHERE id = :whereid1',
+              default: 'UPDATE `users` SET `user_name`=$1 WHERE `id` = $2'
             },
-            default: ['triggertest', 2]
-          }
-        });
+            bind: {
+              oracle: {
+                updateuser_name1: {
+                  dir: 3001,
+                  val: 'triggertest'
+                },
+                whereid1: {
+                  dir: 3001,
+                  val: 2
+                }
+              },
+              default: ['triggertest', 2]
+            }
+          });
+      }
     });
 
 

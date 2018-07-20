@@ -118,7 +118,6 @@ export class MssqlQuery extends AbstractQuery {
         }, this.options.transaction.name);
       } else {
         const results = [];
-        let rowsLength = 0;
         const request = new mssql.Request(connection);
         request.stream = true;
 
@@ -143,7 +142,6 @@ export class MssqlQuery extends AbstractQuery {
           } else {
             const row = {};
             const keys = Object.keys(columns);
-            rowsLength += keys.length;
             for (let i = 0; i < keys.length; i++) {
               const column = keys[i];
               if (column === 'toString') {

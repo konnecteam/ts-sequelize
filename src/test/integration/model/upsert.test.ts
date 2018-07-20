@@ -56,19 +56,21 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             expect(created).to.be.ok;
           }
 
-          return this.User.upsert({ id: 42, username: 'doe' });
-        }).then(_created => {
-          if (dialect === 'sqlite') {
-            expect(_created).to.be.undefined;
-          } else {
-            expect(_created).not.to.be.ok;
-          }
+          return Promise.delay(1000).then(() => {
+            return this.User.upsert({ id: 42, username: 'doe' });
+          }).then(_created => {
+            if (dialect === 'sqlite') {
+              expect(_created).to.be.undefined;
+            } else {
+              expect(_created).not.to.be.ok;
+            }
 
-          return this.User.findById(42);
-        }).then(user => {
-          expect(user.createdAt).to.be.ok;
-          expect(user.username).to.equal('doe');
-          expect(user.updatedAt).to.be.afterTime(user.createdAt);
+            return this.User.findById(42);
+          }).then(user => {
+            expect(user.createdAt).to.be.ok;
+            expect(user.username).to.equal('doe');
+            expect(user.updatedAt).to.be.afterTime(user.createdAt);
+          });
         });
       });
 
@@ -80,19 +82,21 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             expect(created).to.be.ok;
           }
 
-          return this.User.upsert({ foo: 'baz', bar: 19, username: 'doe' });
-        }).then(_created => {
-          if (dialect === 'sqlite') {
-            expect(_created).to.be.undefined;
-          } else {
-            expect(_created).not.to.be.ok;
-          }
+          return Promise.delay(1000).then(() => {
+            return this.User.upsert({ foo: 'baz', bar: 19, username: 'doe' });
+          }).then(_created => {
+            if (dialect === 'sqlite') {
+              expect(_created).to.be.undefined;
+            } else {
+              expect(_created).not.to.be.ok;
+            }
 
-          return this.User.find({ where: { foo: 'baz', bar: 19 }});
-        }).then(user => {
-          expect(user.createdAt).to.be.ok;
-          expect(user.username).to.equal('doe');
-          expect(user.updatedAt).to.be.afterTime(user.createdAt);
+            return this.User.find({ where: { foo: 'baz', bar: 19 }});
+          }).then(user => {
+            expect(user.createdAt).to.be.ok;
+            expect(user.username).to.equal('doe');
+            expect(user.updatedAt).to.be.afterTime(user.createdAt);
+          });
         });
       });
 
@@ -144,26 +148,28 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }
 
         // Update the first one
-          return User.upsert({ a: 'a', b: 'b', username: 'doe' });
-        }).then(created => {
-          if (dialect === 'sqlite') {
-            expect(created).to.be.undefined;
-          } else {
-            expect(created).not.to.be.ok;
-          }
+          return Promise.delay(1000).then(() => {
+            return User.upsert({ a: 'a', b: 'b', username: 'doe' });
+          }).then(created => {
+            if (dialect === 'sqlite') {
+              expect(created).to.be.undefined;
+            } else {
+              expect(created).not.to.be.ok;
+            }
 
-          return User.find({ where: { a: 'a', b: 'b' }});
-        }).then(user1 => {
-          expect(user1.createdAt).to.be.ok;
-          expect(user1.username).to.equal('doe');
-          expect(user1.updatedAt).to.be.afterTime(user1.createdAt);
+            return User.find({ where: { a: 'a', b: 'b' }});
+          }).then(user1 => {
+            expect(user1.createdAt).to.be.ok;
+            expect(user1.username).to.equal('doe');
+            expect(user1.updatedAt).to.be.afterTime(user1.createdAt);
 
-          return User.find({ where: { a: 'a', b: 'a' }});
-        }).then(user2 => {
-          // The second one should not be updated
-          expect(user2.createdAt).to.be.ok;
-          expect(user2.username).to.equal('curt');
-          expect(user2.updatedAt).to.equalTime(user2.createdAt);
+            return User.find({ where: { a: 'a', b: 'a' }});
+          }).then(user2 => {
+            // The second one should not be updated
+            expect(user2.createdAt).to.be.ok;
+            expect(user2.username).to.equal('curt');
+            expect(user2.updatedAt).to.equalTime(user2.createdAt);
+          });
         });
       });
 
@@ -211,27 +217,29 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             expect(created).to.be.ok;
           }
 
-          return this.User.upsert({ id: 42, username: 'doe', blob: new Buffer('andrea') });
-        }).then(_created => {
-          if (dialect === 'sqlite') {
-            expect(_created).to.be.undefined;
-          } else {
-            expect(_created).not.to.be.ok;
-          }
+          return Promise.delay(1000).then(() => {
+            return this.User.upsert({ id: 42, username: 'doe', blob: new Buffer('andrea') });
+          }).then(_created => {
+            if (dialect === 'sqlite') {
+              expect(_created).to.be.undefined;
+            } else {
+              expect(_created).not.to.be.ok;
+            }
 
-          return this.User.findById(42);
-        }).then(user => {
-          expect(user.createdAt).to.be.ok;
-          expect(user.username).to.equal('doe');
-          if (dialect === 'oracle') {
-            user.blob.iLob.read((err, lobData) => {
-              expect(lobData).to.be.an.instanceOf(Buffer);
-              expect(lobData.toString()).to.have.string('andrea');
-            });
-          } else {
-            expect(user.blob.toString()).to.equal('andrea');
-          }
-          expect(user.updatedAt).to.be.afterTime(user.createdAt);
+            return this.User.findById(42);
+          }).then(user => {
+            expect(user.createdAt).to.be.ok;
+            expect(user.username).to.equal('doe');
+            if (dialect === 'oracle') {
+              user.blob.iLob.read((err, lobData) => {
+                expect(lobData).to.be.an.instanceOf(Buffer);
+                expect(lobData.toString()).to.have.string('andrea');
+              });
+            } else {
+              expect(user.blob.toString()).to.equal('andrea');
+            }
+            expect(user.updatedAt).to.be.afterTime(user.createdAt);
+          });
         });
       });
 
@@ -379,19 +387,22 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               } else {
                 expect(created).to.be.ok;
               }
-              return User.upsert({ username: 'user1', email: 'user1@domain.ext', city: 'New City' });
-            }).then(created2 => {
-              if (dialect === 'sqlite') {
-                expect(created2).to.be.undefined;
-              } else {
-                expect(created2).not.to.be.ok;
-              }
-              return User.findOne({ where: { username: 'user1', email: 'user1@domain.ext' }});
-            })
-            .then(user => {
-              expect(user.createdAt).to.be.ok;
-              expect(user.city).to.equal('New City');
-              expect(user.updatedAt).to.be.afterTime(user.createdAt);
+
+              return Promise.delay(1000).then(() => {
+                return User.upsert({ username: 'user1', email: 'user1@domain.ext', city: 'New City' });
+              }).then(created2 => {
+                if (dialect === 'sqlite') {
+                  expect(created2).to.be.undefined;
+                } else {
+                  expect(created2).not.to.be.ok;
+                }
+                return User.findOne({ where: { username: 'user1', email: 'user1@domain.ext' }});
+              })
+              .then(user => {
+                expect(user.createdAt).to.be.ok;
+                expect(user.city).to.equal('New City');
+                expect(user.updatedAt).to.be.afterTime(user.createdAt);
+              });
             });
         });
       });

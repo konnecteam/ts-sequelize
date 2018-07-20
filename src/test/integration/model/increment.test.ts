@@ -1,8 +1,10 @@
 'use strict';
 
 import * as chai from 'chai';
+import * as moment from 'moment';
 import DataTypes from '../../../lib/data-types';
 import Support from '../../support';
+const dialect = Support.getTestDialect();
 const expect = chai.expect;
 const Promise = Support.sequelize.Promise;
 
@@ -150,12 +152,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         const User = this.sequelize.define('IncrementUser', {
           aNumber: DataTypes.INTEGER
         }, { timestamps: true });
-        let oldDate;
 
         return User.sync({ force: true }).bind(this).then(() => {
           return User.create({aNumber: 1});
         }).then(function(user) {
-          oldDate = user.updatedAt;
+          const oldDate = user.updatedAt;
 
           return Promise.delay(1000).then(() => {
             return User[method]('aNumber', {by: 1, where: {}});
@@ -169,12 +170,12 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         const User = this.sequelize.define('IncrementUser', {
           aNumber: DataTypes.INTEGER
         }, { timestamps: true });
-        let oldDate;
 
         return User.sync({ force: true }).bind(this).then(() => {
           return User.create({aNumber: 1});
         }).then(user => {
-          oldDate = user.updatedAt;
+          //Mysql don't support milliseconds
+          const oldDate = dialect === 'mysql' ? new Date(moment(user.updatedAt).milliseconds(0).toISOString()) : user.updatedAt;
           return Promise.delay(1000).then(() => {
             return User[method]('aNumber', {by: 1, silent: true, where: { }});
           }).then(() => {

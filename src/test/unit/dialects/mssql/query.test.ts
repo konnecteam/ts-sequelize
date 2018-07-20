@@ -10,7 +10,7 @@ const dialect = Support.getTestDialect();
 const sequelize = Support.sequelize;
 const tediousIsolationLevel = tedious.ISOLATION_LEVEL;
 const connectionStub = {
-  beginTransaction: () => {},
+  begin: () => {},
   lib: tedious
 };
 
@@ -27,7 +27,7 @@ if (dialect === 'mssql') {
           isolationLevel: 'REPEATABLE_READ',
           logging: false
         };
-        sandbox.stub(connectionStub, 'beginTransaction').callsFake(cb => {
+        sandbox.stub(connectionStub, 'begin').callsFake(cb => {
           cb();
         });
         query = new MssqlQuery(connectionStub, sequelize, options);
@@ -36,9 +36,9 @@ if (dialect === 'mssql') {
       it('should call beginTransaction with correct arguments', () => {
         return query._run(connectionStub, 'BEGIN TRANSACTION')
           .then(() => {
-            expect((connectionStub.beginTransaction as any).called).to.equal(true);
-            expect((connectionStub.beginTransaction as any).args[0][1]).to.equal('transactionName');
-            expect((connectionStub.beginTransaction as any).args[0][2]).to.equal(tediousIsolationLevel.REPEATABLE_READ);
+            expect((connectionStub.begin as any).called).to.equal(true);
+            expect((connectionStub.begin as any).args[0][1]).to.equal('transactionName');
+            expect((connectionStub.begin as any).args[0][2]).to.equal(tediousIsolationLevel.REPEATABLE_READ);
           });
       });
 
