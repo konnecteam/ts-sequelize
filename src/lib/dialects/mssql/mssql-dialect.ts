@@ -28,7 +28,7 @@ export class MssqlDialect extends AbstractDialect {
     this.TICK_CHAR = '"';
     this.TICK_CHAR_LEFT = '[';
     this.TICK_CHAR_RIGHT = ']';
-    if ( !('mssql' in GlobalOptions.Instance.dialectOptions)) {
+    if ( !('mssql' in GlobalOptions.Instance.dialectOptions) && sequelize.options.dialectOptions) {
       const noTimezone = sequelize.options.dialectOptions.noTimezone || false;
       GlobalOptions.Instance.dialectOptions['mssql'] = {
         noTimezone
