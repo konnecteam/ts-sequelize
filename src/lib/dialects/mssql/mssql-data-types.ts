@@ -2,11 +2,11 @@
 
 import * as _ from 'lodash';
 import * as moment from 'moment';
-import * as Tedious from 'tedious';
+import * as mssql from 'mssql';
 import * as BaseTypes from '../../data-types';
 import { GlobalOptions } from '../../global-options';
 
-const TYPES = Tedious.TYPES;
+const TYPES = mssql;
 const warn = BaseTypes.ABSTRACT.warn.bind(undefined, 'https://msdn.microsoft.com/en-us/library/ms187752%28v=sql.110%29.aspx');
 
 /**
@@ -76,8 +76,7 @@ export class STRING extends BaseTypes.STRING {
   public _bindParam(value, options) {
     return options.bindParam({
       val: this._binary ? Buffer.from(value) : value,
-      type: this._binary ? TYPES.VarBinary : TYPES.NVarChar,
-      typeOptions: { length: this._length || 255 }
+      type: this._binary ? TYPES.VarBinary(this._length) : TYPES.NVarChar(this._length)
     });
   }
 }
@@ -152,11 +151,25 @@ export class DATE extends BaseTypes.DATE {
     }
     return super._stringify(date, options);
   }
+
+  public static verifTimeZone(date : Date) {
+    const noTimezone = 'mssql' in GlobalOptions.Instance.dialectOptions && 'noTimezone' in GlobalOptions.Instance.dialectOptions['mssql'] ? GlobalOptions.Instance.dialectOptions['mssql']['noTimezone'] : false;
+    if (noTimezone) {
+      const actualTime = date.getTime();
+      if (actualTime > 0) {
+        date = new Date(actualTime + date.getTimezoneOffset() * 60000);
+      }
+    }
+    return date;
+  }
 }
 
 export class DATEONLY extends BaseTypes.DATEONLY {
   public static parse(value) : string {
     return moment(value).format('YYYY-MM-DD');
+  }
+  public _sanitize(value : any, options : { raw? }) : Date {
+    return value !== null ? DATEONLY.prototype.stringify(value) : value;
   }
 }
 
@@ -304,8 +317,7 @@ export class DECIMAL extends BaseTypes.DECIMAL {
   public _bindParam(value, options) {
     return options.bindParam({
       val: value,
-      type: TYPES.Decimal,
-      typeOptions: {precision: 30, scale: 15}
+      type: TYPES.Decimal(30, 15)
     });
   }
 }

@@ -8,7 +8,7 @@ const expect = chai.expect;
 const dialect = Support.getTestDialect();
 
 describe(Support.getTestDialectTeaser('Replication'), function() {
-  if (dialect === 'sqlite') {
+  if (dialect === 'sqlite' || dialect === 'mssql') {
     return;
   }
 

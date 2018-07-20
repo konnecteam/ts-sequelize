@@ -1,20 +1,12 @@
 'use strict';
 
 import * as chai from 'chai';
-import * as sinon from 'sinon';
 import DataTypes from '../../../lib/data-types';
 import Support from '../../support';
 const expect = chai.expect;
+const Promise = Support.sequelize.Promise;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
-  before(function() {
-    this.clock = sinon.useFakeTimers();
-  });
-
-  after(function() {
-    this.clock.restore();
-  });
-
   beforeEach(function() {
     this.User = this.sequelize.define('User', {
       id: { type: DataTypes.INTEGER, primaryKey: true },
@@ -165,10 +157,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         }).then(function(user) {
           oldDate = user.updatedAt;
 
-          this.clock.tick(1000);
-          return User[method]('aNumber', {by: 1, where: {}});
-        }).then(() => {
-          return expect(User.findById(1)).to.eventually.have.property('updatedAt').afterTime(oldDate);
+          return Promise.delay(1000).then(() => {
+            return User[method]('aNumber', {by: 1, where: {}});
+          }).then(() => {
+            return expect(User.findById(1)).to.eventually.have.property('updatedAt').afterTime(oldDate);
+          });
         });
       });
 
@@ -180,12 +173,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
         return User.sync({ force: true }).bind(this).then(() => {
           return User.create({aNumber: 1});
-        }).then(function(user) {
+        }).then(user => {
           oldDate = user.updatedAt;
-          this.clock.tick(1000);
-          return User[method]('aNumber', {by: 1, silent: true, where: { }});
-        }).then(() => {
-          return expect(User.findById(1)).to.eventually.have.property('updatedAt').equalTime(oldDate);
+          return Promise.delay(1000).then(() => {
+            return User[method]('aNumber', {by: 1, silent: true, where: { }});
+          }).then(() => {
+            return expect(User.findById(1)).to.eventually.have.property('updatedAt').equalTime(oldDate);
+          });
         });
       });
 

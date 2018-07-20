@@ -1,7 +1,6 @@
 'use strict';
 
 import * as chai from 'chai';
-import * as sinon from 'sinon';
 import * as validateUUID from 'uuid-validate';
 import {Sequelize} from '../../index';
 import DataTypes from '../../lib/data-types';
@@ -10,19 +9,9 @@ import Support from './support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
 const current = Support.sequelize;
+const Promise = current.Promise;
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
-  before(function() {
-    this.clock = sinon.useFakeTimers();
-  });
-
-  afterEach(function() {
-    this.clock.reset();
-  });
-
-  after(function() {
-    this.clock.restore();
-  });
 
   beforeEach(function() {
     this.User = this.sequelize.define('User', {
@@ -264,13 +253,13 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         .then(() => User.create({ aNumber: 1 }))
         .then(user => {
           oldDate = user.get('updatedAt');
-
-          this.clock.tick(1000);
-          return user.increment('aNumber', { by: 1 });
-        })
-        .then(user => user.reload())
-        .then(user => {
-          return expect(user).to.have.property('updatedAt').afterTime(oldDate);
+          return Promise.delay(1000).then(() => {
+            return user.increment('aNumber', { by: 1 });
+          })
+          .then(user2 => user2.reload())
+          .then(user3 => {
+            return expect(user3).to.have.property('updatedAt').afterTime(oldDate);
+          });
         });
     });
 
@@ -284,10 +273,11 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         return User.create({aNumber: 1});
       }).then(function(user) {
         oldDate = user.updatedAt;
-        this.clock.tick(1000);
-        return user.increment('aNumber', {by: 1, silent: true});
-      }).then(() => {
-        return (expect(User.findById(1)).to.eventually.have.property('updatedAt') as any).equalTime(oldDate);
+        return Promise.delay(1000).then(() => {
+          return user.increment('aNumber', {by: 1, silent: true});
+        }).then(() => {
+          return expect(User.findById(1)).to.eventually.have.property('updatedAt').to.equalTime(oldDate);
+        });
       });
     });
   });
@@ -438,10 +428,11 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         return User.create({aNumber: 1});
       }).then(function(user) {
         oldDate = user.updatedAt;
-        this.clock.tick(1000);
-        return user.decrement('aNumber', {by: 1});
-      }).then(() => {
-        return (expect(User.findById(1)).to.eventually.have.property('updatedAt') as any).afterTime(oldDate);
+        return Promise.delay(1000).then(() => {
+          return user.decrement('aNumber', {by: 1});
+        }).then(() => {
+          return expect(User.findById(1)).to.eventually.have.property('updatedAt').afterTime(oldDate);
+        });
       });
     });
 
@@ -455,10 +446,11 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         return User.create({aNumber: 1});
       }).then(function(user) {
         oldDate = user.updatedAt;
-        this.clock.tick(1000);
-        return user.decrement('aNumber', {by: 1, silent: true});
-      }).then(() => {
-        return (expect(User.findById(1)).to.eventually.have.property('updatedAt') as any).equalTime(oldDate);
+        return Promise.delay(1000).then(() => {
+          return user.decrement('aNumber', {by: 1, silent: true});
+        }).then(() => {
+          return expect(User.findById(1)).to.eventually.have.property('updatedAt').equalTime(oldDate);
+        });
       });
     });
   });
@@ -542,16 +534,17 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         this.originalUser = originalUser;
 
         // Wait for a second, so updatedAt will actually be different
-        this.clock.tick(1000);
-        return this.User.findById(originalUser.id);
-      }).then(updater => {
-        return updater.updateAttributes({username: 'Doe John'});
-      }).then(function(updatedUser) {
-        this.updatedUser = updatedUser;
-        return this.originalUser.reload();
-      }).then(function() {
-        expect(this.originalUser.updatedAt).to.be.above(this.originallyUpdatedAt);
-        expect(this.updatedUser.updatedAt).to.be.above(this.originallyUpdatedAt);
+        return Promise.delay(1000).then(() => {
+          return this.User.findById(originalUser.id);
+        }).then(updater => {
+          return updater.updateAttributes({username: 'Doe John'});
+        }).then(updatedUser => {
+          this.updatedUser = updatedUser;
+          return this.originalUser.reload();
+        }).then(() => {
+          expect(this.originalUser.updatedAt).to.be.above(this.originallyUpdatedAt);
+          expect(this.updatedUser.updatedAt).to.be.above(this.originallyUpdatedAt);
+        });
       });
     });
 
@@ -768,11 +761,9 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       it('should store the current date in touchedAt', function() {
-        const clock = sinon.useFakeTimers();
-        clock.tick(5000);
+        const date = new Date();
         const user = this.User.build({ username: 'a user'});
-        clock.restore();
-        expect(+user.touchedAt).to.be.equal(5000);
+        expect(user.touchedAt).to.equalTime(date);
       });
     });
 
@@ -1180,15 +1171,17 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       now.setMilliseconds(0);
 
       const user = this.User.build({ username: 'user' });
-      this.clock.tick(1000);
+      return Promise.delay(1000).then(() => {
 
-      return user.save().then(savedUser => {
-        expect(savedUser).have.property('updatedAt').afterTime(now);
+        return user.save().then(savedUser => {
+          expect(savedUser).have.property('updatedAt').afterTime(now);
 
-        this.clock.tick(1000);
-        return savedUser.save();
-      }).then(updatedUser => {
-        expect(updatedUser).have.property('updatedAt').afterTime(now);
+          return Promise.delay(1000).then(() => {
+            return savedUser.save();
+          }).then(updatedUser => {
+            expect(updatedUser).have.property('updatedAt').afterTime(now);
+          });
+        });
       });
     });
 
@@ -1196,12 +1189,13 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       return this.User.create({ username: 'user' }).bind(this).then(function(user) {
         const updatedAt = user.updatedAt;
 
-        this.clock.tick(1000);
-        return (expect(user.update({
-          username: 'userman'
-        }, {
-          silent: true
-        })).to.eventually.have.property('updatedAt') as any).equalTime(updatedAt);
+        return Promise.delay(1000).then(() => {
+          return expect(user.update({
+            username: 'userman'
+          }, {
+            silent: true
+          })).to.eventually.have.property('updatedAt').equalTime(updatedAt);
+        });
       });
     });
 
@@ -1221,16 +1215,17 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         updatedAtPeter = users[1].updatedAt;
       })
         .then(function() {
-          this.clock.tick(150);
-          return this.User.update(
-            { aNumber: 1 },
-            { where: {}, silent: true }
-          );
-        }).then(() => {
-          return self.User.findAll();
-        }).then(users => {
-          expect(users[0].updatedAt).to.equalTime(updatedAtPeter);
-          expect(users[1].updatedAt).to.equalTime(updatedAtPaul);
+          return Promise.delay(150).then(() => {
+            return this.User.update(
+              { aNumber: 1 },
+              { where: {}, silent: true }
+            );
+          }).then(() => {
+            return self.User.findAll();
+          }).then(users => {
+            expect(users[0].updatedAt).to.equalTime(updatedAtPeter);
+            expect(users[1].updatedAt).to.equalTime(updatedAtPaul);
+          });
         });
     });
 
@@ -1240,11 +1235,12 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         return self.User.create({ username: 'John' }).then(() => {
           return self.User.findOne({ where: { username: 'John' } }).then(user => {
             const updatedAt = user.updatedAt;
-            self.clock.tick(2000);
-            return user.save().then(newlySavedUser => {
-              expect(newlySavedUser.updatedAt).to.equalTime(updatedAt);
-              return self.User.findOne({ where: { username: 'John' } }).then(_newlySavedUser => {
-                expect(_newlySavedUser.updatedAt).to.equalTime(updatedAt);
+            return Promise.delay(2000).then(() => {
+              return user.save().then(newlySavedUser => {
+                expect(newlySavedUser.updatedAt).to.equalTime(updatedAt);
+                return self.User.findOne({ where: { username: 'John' } }).then(_newlySavedUser => {
+                  expect(_newlySavedUser.updatedAt).to.equalTime(updatedAt);
+                });
               });
             });
           });
@@ -1302,32 +1298,32 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     describe('with custom timestamp options', () => {
       it('updates the createdAt column if updatedAt is disabled', function() {
         const now = new Date();
-        this.clock.tick(1000);
+        return Promise.delay(1000).then(() => {
+          const User2 = this.sequelize.define('User2', {
+            username: new DataTypes.STRING()
+          }, { updatedAt: false });
 
-        const User2 = this.sequelize.define('User2', {
-          username: new DataTypes.STRING()
-        }, { updatedAt: false });
-
-        return User2.sync().then(() => {
-          return User2.create({ username: 'john doe' }).then(johnDoe => {
-            expect(johnDoe.updatedAt).to.be.undefined;
-            expect(now).to.be.beforeTime(johnDoe.createdAt);
+          return User2.sync().then(() => {
+            return User2.create({ username: 'john doe' }).then(johnDoe => {
+              expect(johnDoe.updatedAt).to.be.undefined;
+              expect(now).to.be.beforeTime(johnDoe.createdAt);
+            });
           });
         });
       });
 
       it('updates the updatedAt column if createdAt is disabled', function() {
         const now = new Date();
-        this.clock.tick(1000);
+        return Promise.delay(1000).then(() => {
+          const User2 = this.sequelize.define('User2', {
+            username: new DataTypes.STRING()
+          }, { createdAt: false });
 
-        const User2 = this.sequelize.define('User2', {
-          username: new DataTypes.STRING()
-        }, { createdAt: false });
-
-        return User2.sync().then(() => {
-          return User2.create({ username: 'john doe' }).then(johnDoe => {
-            expect(johnDoe.createdAt).to.be.undefined;
-            expect(now).to.be.beforeTime(johnDoe.updatedAt);
+          return User2.sync().then(() => {
+            return User2.create({ username: 'john doe' }).then(johnDoe => {
+              expect(johnDoe.createdAt).to.be.undefined;
+              expect(now).to.be.beforeTime(johnDoe.updatedAt);
+            });
           });
         });
       });

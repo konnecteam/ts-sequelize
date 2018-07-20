@@ -2,19 +2,11 @@
 
 import * as Promise from 'bluebird';
 import * as chai from 'chai';
-import * as sinon from 'sinon';
 import DataTypes from '../../../lib/data-types';
 import Support from '../support';
 const expect = chai.expect;
 
 describe(Support.getTestDialectTeaser('Include'), () => {
-  before(function() {
-    this.clock = sinon.useFakeTimers();
-  });
-
-  after(function() {
-    this.clock.restore();
-  });
 
   describe('findAndCountAll', () => {
     it('should be able to include two required models with a limit. Result rows should match limit.', function() {
@@ -82,8 +74,6 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       const A = this.sequelize.define('A', { name: new DataTypes.STRING(40) }, { paranoid: true });
       const B = this.sequelize.define('B', { name: new DataTypes.STRING(40) }, { paranoid: true });
       const C = this.sequelize.define('C', { name: new DataTypes.STRING(40) }, { paranoid: true });
-
-      const self = this;
 
       // Associate them
       User.hasMany(SomeConnection, { foreignKey: 'u', constraints: false });
@@ -156,7 +146,6 @@ describe(Support.getTestDialectTeaser('Include'), () => {
             u: 1,
             fk: [1, 2]
           }}).then(() => {
-            self.clock.tick(1000);
             // Last and most important queries ( we connected 4, but deleted 2, witch means we must get 2 only )
             return A.findAndCountAll({
               include: [{

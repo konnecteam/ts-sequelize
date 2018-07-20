@@ -2,7 +2,6 @@
 
 import * as chai from 'chai';
 import * as _ from 'lodash';
-import * as sinon from 'sinon';
 import DataTypes from '../../../../lib/data-types';
 import Support from '../../support';
 const expect = chai.expect;
@@ -14,17 +13,6 @@ if (current.dialect.supports['UNION ALL']) {
   describe(Support.getTestDialectTeaser('Model'), () => {
     describe('findAll', () => {
       describe('groupedLimit', () => {
-        before(function() {
-          this.clock = sinon.useFakeTimers();
-        });
-
-        afterEach(function() {
-          this.clock.reset();
-        });
-
-        after(function() {
-          this.clock.restore();
-        });
 
         beforeEach(function() {
           this.User = this.sequelize.define('user', {

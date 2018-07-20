@@ -92,11 +92,7 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
 
   public versionQuery() : string {
     // Uses string manipulation to convert the MS Maj.Min.Patch.Build to semver Maj.Min.Patch
-    return [
-      'DECLARE @ms_ver NVARCHAR(20);',
-      "SET @ms_ver = REVERSE(CONVERT(NVARCHAR(20), SERVERPROPERTY('ProductVersion')));",
-      "SELECT REVERSE(SUBSTRING(@ms_ver, CHARINDEX('.', @ms_ver)+1, 20)) AS 'version'",
-    ].join(' ');
+    return `SELECT REVERSE(SUBSTRING(REVERSE(CONVERT(NVARCHAR(20), SERVERPROPERTY('ProductVersion'))), CHARINDEX('.', REVERSE(CONVERT(NVARCHAR(20), SERVERPROPERTY('ProductVersion'))))+1, 20)) AS 'version'`;
   }
 
   /**

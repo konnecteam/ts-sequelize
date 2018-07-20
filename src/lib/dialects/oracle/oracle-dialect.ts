@@ -26,7 +26,7 @@ export class OracleDialect extends AbstractDialect {
     });
     this.connectionManager.defaultVersion = '12.1.0.2.0';
     this.Query = OracleQuery;
-    if ( !('oracle' in GlobalOptions.Instance.dialectOptions)) {
+    if ( !('oracle' in GlobalOptions.Instance.dialectOptions) && sequelize.options.dialectOptions) {
       const noTimezone = sequelize.options.dialectOptions.noTimezone || false;
       GlobalOptions.Instance.dialectOptions['oracle'] = {
         noTimezone

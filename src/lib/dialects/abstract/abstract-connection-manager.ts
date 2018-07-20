@@ -52,7 +52,16 @@ export abstract class AbstractConnectionManager {
     }
 
     config.pool = _.defaults(config.pool || {}, defaultPoolingConfig, {
-      validate: this._validate.bind(this),
+      validate: () => {
+        return new Promise((resolve, reject) => {
+
+          try {
+            resolve(this._validate(this));
+          } catch (err) {
+            reject(err);
+          }
+        });
+      },
       Promise
     });
 
@@ -81,15 +90,15 @@ export abstract class AbstractConnectionManager {
    * Handler which executes on process exit or connection manager shutdown
    * @hidden
    */
-  private _onProcessExit() : Promise<any> {
+  protected _onProcessExit() : Promise<any> {
     if (!this.pool) {
       return Promise.resolve();
     }
 
-    return this.pool.drain().then(() => {
+    return (this.pool.drain().then(() => {
       debug('connection drain due to process exit');
       return this.pool.clear();
-    });
+    }) as Promise<any>);
   }
 
   /**
@@ -112,8 +121,23 @@ export abstract class AbstractConnectionManager {
     const config = this.config;
 
     if (!config.replication) {
+      const poolConf = {
+        testOnBorrow: true,
+        // fifo: false,
+        autostart: false,
+        max: config.pool.max || 5,
+        min: config.pool.min,
+        acquireTimeoutMillis: config.pool.acquire || 15000,
+        idleTimeoutMillis: config.pool.idle || 30000,
+        evictionRunIntervalMillis: config.pool.evict || 1000
+      };
+
+      poolConf['Promise'] = config.pool.Promise;
+
       this.pool = Pooling.createPool({
-        create: () => this._connect(config).catch(err => err),
+        create: () => {
+          return this._connect(config);
+        },
         destroy: mayBeConnection => {
           if (mayBeConnection instanceof Error) {
             return Promise.resolve();
@@ -123,17 +147,7 @@ export abstract class AbstractConnectionManager {
             .tap(() => { debug('connection destroy'); });
         },
         validate: config.pool.validate
-      }, {
-        Promise: config.pool.Promise,
-        testOnBorrow: true,
-        returnToHead: true,
-        autostart: false,
-        max: config.pool.max,
-        min: config.pool.min,
-        acquireTimeoutMillis: config.pool.acquire,
-        idleTimeoutMillis: config.pool.idle,
-        evictionRunIntervalMillis: config.pool.evict
-      });
+      }, poolConf);
 
       debug(`pool created with max/min: ${config.pool.max}/${config.pool.min}, no replication`);
 
@@ -215,7 +229,7 @@ export abstract class AbstractConnectionManager {
         acquireTimeoutMillis: config.pool.acquire,
         idleTimeoutMillis: config.pool.idle,
         evictionRunIntervalMillis: config.pool.evict
-      }),
+      } as any),
       write: Pooling.createPool({
         create: () => {
           return this
@@ -237,7 +251,7 @@ export abstract class AbstractConnectionManager {
         acquireTimeoutMillis: config.pool.acquire,
         idleTimeoutMillis: config.pool.idle,
         evictionRunIntervalMillis: config.pool.evict
-      })
+      } as any)
     };
 
     debug(`pool created with max/min: ${config.pool.max}/${config.pool.min}, with replication`);
@@ -261,7 +275,8 @@ export abstract class AbstractConnectionManager {
     /** Set which replica to use. Available options are `read` and `write` */
     type? : string,
     /** = false, Force master or write replica to get connection from */
-    useMaster? : boolean
+    useMaster? : boolean,
+    uuid? : string
   }) : Promise<any> {
     options = options || {};
 

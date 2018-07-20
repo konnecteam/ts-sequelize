@@ -8,14 +8,9 @@ import config from '../../config/config';
 import Support from '../support';
 const expect = chai.expect;
 const current = Support.sequelize;
+const Promise = current.Promise;
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
-  before(function() {
-    this.clock = sinon.useFakeTimers();
-  });
-  after(function() {
-    this.clock.restore();
-  });
 
   describe('update', () => {
     beforeEach(function() {
@@ -149,8 +144,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       }, {
         timestamps: true
       });
-
-      this.clock.tick(2100); //move the clock forward 2100 ms.
+      const testDate = new Date();
 
       return User.sync({force: true}).then(() => {
         return User.create({
@@ -161,9 +155,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         }).then(user => {
           expect(user.get('name')).to.equal('snafu');
           expect(user.get('email')).to.equal('email');
-          const testDate = new Date();
-          testDate.setTime(2100);
-          expect(user.get('createdAt')).to.equalTime(testDate);
+          expect(user.get('createdAt')).to.be.above(testDate);
         });
       });
     });
@@ -391,15 +383,16 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         const oldUpdatedAt = user.updatedAt;
         const oldIdentifier = user.identifier;
 
-        this.clock.tick(1000);
-        return user.update({
-          name: 'foobar',
-          createdAt: new Date(2000, 1, 1),
-          identifier: 'another identifier'
-        }).then(_user => {
-          expect(new Date(_user.createdAt)).to.equalDate(new Date(oldCreatedAt));
-          expect(new Date(_user.updatedAt)).to.not.equalTime(new Date(oldUpdatedAt));
-          expect(_user.identifier).to.equal(oldIdentifier);
+        return Promise.delay(1000).then(() => {
+          return user.update({
+            name: 'foobar',
+            createdAt: new Date(2000, 1, 1),
+            identifier: 'another identifier'
+          }).then(_user => {
+            expect(new Date(_user.createdAt)).to.equalDate(new Date(oldCreatedAt));
+            expect(new Date(_user.updatedAt)).to.not.equalTime(new Date(oldUpdatedAt));
+            expect(_user.identifier).to.equal(oldIdentifier);
+          });
         });
       });
     });

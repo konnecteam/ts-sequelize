@@ -1,22 +1,20 @@
 'use strict';
 
 import * as _ from 'lodash';
+import * as mssql from 'mssql';
 import * as Tedious from 'tedious';
 import { Sequelize } from '../../..';
 import * as sequelizeErrors from '../../errors/index';
 import Promise from '../../promise';
 import { Utils } from '../../utils';
 import { AbstractQuery } from '../abstract/abstract-query';
-import * as connectionManager from './mssql-connection-manager';
+import DataTypes from './mssql-data-types';
 
 
 const debug = Utils.getLogger().debugContext('sql:mssql');
-const store = connectionManager.store;
-const TYPES = Tedious.TYPES;
+const TYPES = mssql;
 
 export class MssqlQuery extends AbstractQuery {
-
-  public static query = {};
 
   constructor(connection : {}, sequelize : Sequelize, options : { transaction?, isolationLevel? : string, logging? : boolean, instance?, model? }) {
     super();
@@ -50,7 +48,7 @@ export class MssqlQuery extends AbstractQuery {
         if (Number.isInteger(param)) {
           paramType = TYPES.Int;
         } else {
-          paramType = TYPES.Numeric;
+          paramType = TYPES.Numeric(30, 15);
         }
       }
       if (Buffer.isBuffer(param)) {
@@ -58,14 +56,13 @@ export class MssqlQuery extends AbstractQuery {
       }
       param = {
         val: param,
-        type: paramType
+        type: paramType,
       };
     }
-    param['typeOptions'] = param['typeOptions'] || {};
     return param;
   }
 
-  public _run(connection : any, sql : string, parameters : {}) : Promise<any> {
+  private _run(connection : any, sql : string, parameters : {}) : Promise<any> {
     this.sql = sql;
     const maxRows = this.sequelize.options && this.sequelize.options.dialectOptions ? this.sequelize.options.dialectOptions.maxRows : 0;
     let reachMaxRowsDone = false;
@@ -84,7 +81,7 @@ export class MssqlQuery extends AbstractQuery {
     return new Promise((resolve, reject) => {
       // TRANSACTION SUPPORT
       if (_.startsWith(this.sql, 'BEGIN TRANSACTION')) {
-        connection.beginTransaction(err => {
+        connection.begin(err => {
           if (err) {
             reject(this.formatError(err));
           } else {
@@ -94,9 +91,9 @@ export class MssqlQuery extends AbstractQuery {
               reject(formatErr);
             }
           }
-        }, this.options.transaction.name, MssqlQuery.mapIsolationLevelStringToTedious(this.options.isolationLevel, connection.lib));
+        }, this.options.transaction.name, MssqlQuery.mapIsolationLevelStringToTedious(this.options.isolationLevel, Tedious));
       } else if (_.startsWith(this.sql, 'COMMIT TRANSACTION')) {
-        connection.commitTransaction(err => {
+        connection.commit(err => {
           if (err) {
             reject(this.formatError(err));
           } else {
@@ -107,20 +104,8 @@ export class MssqlQuery extends AbstractQuery {
             }
           }
         });
-      } else if (_.startsWith(this.sql, 'ROLLBACK TRANSACTION')) {
-        connection.rollbackTransaction(err => {
-          if (err) {
-            reject(this.formatError(err));
-          } else {
-            try {
-              resolve(this.formatResults());
-            } catch (formatErr) {
-              reject(formatErr);
-            }
-          }
-        }, this.options.transaction.name);
-      } else if (_.startsWith(this.sql, 'SAVE TRANSACTION')) {
-        connection.saveTransaction(err => {
+      } else if (_.startsWith(this.sql, 'ROLLBACK TRANSACTION;')) {
+        connection.rollback(err => {
           if (err) {
             reject(this.formatError(err));
           } else {
@@ -133,26 +118,9 @@ export class MssqlQuery extends AbstractQuery {
         }, this.options.transaction.name);
       } else {
         const results = [];
-        const request = new connection.lib.Request(this.sql, (err, rowCount) => {
-
-          debug(`executed(${this.connection.uuid || 'default'}) : ${this.sql}`);
-
-          if (benchmark) {
-            this.sequelize.log('Executed (' + (this.connection.uuid || 'default') + '): ' + this.sql, Date.now() - queryBegin, this.options);
-          }
-
-
-          if (err) {
-            err.sql = sql;
-            reject(this.formatError(err));
-          } else {
-            try {
-              resolve(this.formatResults(results, rowCount));
-            } catch (formatErr) {
-              reject(formatErr);
-            }
-          }
-        });
+        let rowsLength = 0;
+        const request = new mssql.Request(connection);
+        request.stream = true;
 
         if (parameters) {
 
@@ -160,7 +128,7 @@ export class MssqlQuery extends AbstractQuery {
           for (let i = 0; i < keys.length; i++) {
             const key = keys[i];
             const param = this.getSQLTypeFromJsType(parameters[key]);
-            request.addParameter(key, param.type, param.val, param.typeOptions);
+            request.input(key, param.type, param.val);
           }
 
         }
@@ -169,47 +137,57 @@ export class MssqlQuery extends AbstractQuery {
           if (maxRows && results.length + 1 > maxRows) {
             // No more please
             if (!reachMaxRowsDone) {
-              // We need this flag for Tedious 1.X, we can't stop 'row' event, thus we ignore it.
               reachMaxRowsDone = true;
-              if (request.pause) {
-                // Tedious 2.X
-                // no more row event
-                request.pause();
-                // free connection
-                connection.cancel();
-              }
-
-              // call as if finish
-              request.callback();
-              /**
-               * HACK : as we call the callback manually, we go through 2 times; so after the manual call, we set it to empty function
-               */
-              request.userCallback = () => {};
+              request.cancel();
             }
           } else {
-
             const row = {};
-            for (const column of columns) {
-              const typeid = column.metadata.type.id;
-              const parse = store.get(typeid);
-              let value = column.value;
-
-              if (value !== null && !!parse) {
-                value = parse(value);
+            const keys = Object.keys(columns);
+            rowsLength += keys.length;
+            for (let i = 0; i < keys.length; i++) {
+              const column = keys[i];
+              if (column === 'toString') {
+                columns[keys[i]] = columns[keys[i]][1];
               }
-              row[column.metadata.colName] = value;
+              let value = columns[keys[i]];
+              if (value instanceof Date) {
+                value = DataTypes.DATE.verifTimeZone(value);
+              }
+              row[column] = value;
             }
             results.push(row);
           }
         });
+        request.on('error', err => {
+          if (!reachMaxRowsDone) {
+            err.sql = sql;
+            reject(this.formatError(err));
+          }
+        });
+        request.on('done', rowCount => {
+          debug(`executed(${this.connection.uuid || 'default'}) : ${this.sql}`);
 
-        connection.execSql(request);
+          if (benchmark) {
+            this.sequelize.log('Executed (' + (this.connection.uuid || 'default') + '): ' + this.sql, Date.now() - queryBegin, this.options);
+          }
+
+          try {
+            resolve(this.formatResults(results, rowCount.rowsAffected[0]));
+          } catch (formatErr) {
+            reject(formatErr);
+          }
+        });
+
+        request.query(sql);
       }
     });
   }
 
   public run(sql : string, parameters : {}) : Promise<any> {
-    return Promise.using(this.connection.lock(), connection => this._run(connection, sql, parameters));
+    if (this.connection.lock) {
+      return Promise.using(this.connection.lock(), connection => this._run(connection, sql, parameters));
+    }
+    return this._run(this.connection, sql, parameters);
   }
 
   /**
@@ -386,7 +364,7 @@ export class MssqlQuery extends AbstractQuery {
       });
     }
 
-    match = err.message.match(/Could not drop constraint. See previous errors./);
+    match = err.message.match(/Could not drop constraint. See previous errors./) || err.message.match(/is not a constraint./);
 
     if (match && match.length > 0) {
       return new sequelizeErrors.UnknownConstraintError(match[1]);

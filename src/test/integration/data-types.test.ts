@@ -20,46 +20,49 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
     this.sequelize.connectionManager.refreshTypeParser(DataTypes[dialect]); // Reload custom parsers
   });
 
-  it('allows me to return values from a custom parse function', () => {
+  // mssql data are parsed by node mssql
+  if (dialect !== 'mssql') {
+    it('allows me to return values from a custom parse function', () => {
 
-    const parse = (DataTypes.DATE as any).parse = sinon.spy(value => {
-      return moment(value, 'YYYY-MM-DD HH:mm:ss');
-    });
-
-    const stringify = DataTypes.DATE.prototype.stringify = sinon.spy(function(value, options) {
-      if (!moment.isMoment(value)) {
-        value = this._applyTimezone(value, options);
-      }
-
-      if (dialect === 'oracle') {
-        return `TO_TIMESTAMP('${value.format('YYYY-MM-DD HH:mm:ss')}','YYYY-MM-DD HH24:MI:SS.FFTZH')`;
-      }
-      return value.format('YYYY-MM-DD HH:mm:ss');
-    });
-
-    current.refreshTypes();
-
-    const User = current.define('user', {
-      dateField: new DataTypes.DATE()
-    }, {
-      timestamps: false
-    });
-
-    return current.sync({ force: true }).then(() => {
-      return User.create({
-        dateField: moment('2011 10 31', 'YYYY MM DD')
+      const parse = (DataTypes.DATE as any).parse = sinon.spy(value => {
+        return moment(value, 'YYYY-MM-DD HH:mm:ss');
       });
-    }).then(() => {
-      return User.findAll().get(0);
-    }).then(user => {
-      expect(parse).to.have.been.called;
-      expect(stringify).to.have.been.called;
 
-      expect(moment.isMoment(user.dateField)).to.be.ok;
+      const stringify = DataTypes.DATE.prototype.stringify = sinon.spy(function(value, options) {
+        if (!moment.isMoment(value)) {
+          value = this._applyTimezone(value, options);
+        }
 
-      delete (DataTypes.DATE as any).parse;
+        if (dialect === 'oracle') {
+          return `TO_TIMESTAMP('${value.format('YYYY-MM-DD HH:mm:ss')}','YYYY-MM-DD HH24:MI:SS.FFTZH')`;
+        }
+        return value.format('YYYY-MM-DD HH:mm:ss');
+      });
+
+      current.refreshTypes();
+
+      const User = current.define('user', {
+        dateField: new DataTypes.DATE()
+      }, {
+        timestamps: false
+      });
+
+      return current.sync({ force: true }).then(() => {
+        return User.create({
+          dateField: moment('2011 10 31', 'YYYY MM DD')
+        });
+      }).then(() => {
+        return User.findAll().get(0);
+      }).then(user => {
+        expect(parse).to.have.been.called;
+        expect(stringify).to.have.been.called;
+
+        expect(moment.isMoment(user.dateField)).to.be.ok;
+
+        delete (DataTypes.DATE as any).parse;
+      });
     });
-  });
+  }
 
 
   const testSuccess = function(Type, value, options?) {
@@ -93,7 +96,10 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
     }).then(() => {
       return User.findAll().get(0);
     }).then(() => {
-      expect(parse).to.have.been.called;
+      // node mssql parse data so we don't need to do it
+      if (dialect !== 'mssql') {
+        expect(parse).to.have.been.called;
+      }
       if (options && options.useBindParam) {
         expect(bindParam).to.have.been.called;
       } else {

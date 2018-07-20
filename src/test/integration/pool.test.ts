@@ -8,7 +8,8 @@ const dialect = Support.getTestDialect();
 const Sequelize = Support.Sequelize;
 
 describe(Support.getTestDialectTeaser('Pooling'), function() {
-  if (dialect === 'sqlite') {
+  // mssql pool is not the same as other pool
+  if (dialect === 'sqlite' || dialect === 'mssql') {
     return;
   }
 

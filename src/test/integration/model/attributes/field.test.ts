@@ -1,7 +1,6 @@
 'use strict';
 
 import * as chai from 'chai';
-import * as sinon from 'sinon';
 import {Sequelize} from '../../../../index';
 import DataTypes from '../../../../lib/data-types';
 import Support from '../../support';
@@ -10,15 +9,6 @@ const dialect = Support.getTestDialect();
 const Promise = Sequelize.Promise;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
-
-  before(function() {
-    this.clock = sinon.useFakeTimers();
-  });
-
-  after(function() {
-    this.clock.restore();
-  });
-
   describe('attributes', () => {
     describe('field', () => {
       beforeEach(function() {
@@ -595,7 +585,6 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             return user.destroy();
           })
           .then(function() {
-            this.clock.tick(1000);
             return User.findAll();
           })
           .then(users => {

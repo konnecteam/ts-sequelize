@@ -1,10 +1,10 @@
 'use strict';
 
 import * as chai from 'chai';
-import * as sinon from 'sinon';
 import DataTypes from '../../../lib/data-types';
 import Support from '../support';
 const expect = chai.expect;
+const Promise = Support.sequelize.Promise;
 
 describe(Support.getTestDialectTeaser('Paranoid'), () => {
 
@@ -29,14 +29,6 @@ describe(Support.getTestDialectTeaser('Paranoid'), () => {
     D.belongsToMany(A, {through: 'a_d'});
 
     return S.sync({ force: true });
-  });
-
-  before(function() {
-    this.clock = sinon.useFakeTimers();
-  });
-
-  after(function() {
-    this.clock.restore();
   });
 
   it('paranoid with timestamps: false should be ignored / not crash', function() {
@@ -117,13 +109,13 @@ describe(Support.getTestDialectTeaser('Paranoid'), () => {
       return this.y.destroy();
     }).then(function() {
       //prevent CURRENT_TIMESTAMP to be same
-      this.clock.tick(1000);
-
-      return X.findAll({
-        include: [Y]
-      }).get(0);
-    }).then(x => {
-      expect(x.ys).to.have.length(0);
+      return Promise.delay(1000).then(() => {
+        return X.findAll({
+          include: [Y]
+        }).get(0);
+      }).then(x => {
+        expect(x.ys).to.have.length(0);
+      });
     });
   });
 });

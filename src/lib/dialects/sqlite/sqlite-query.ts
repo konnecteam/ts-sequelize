@@ -103,8 +103,6 @@ export class SqliteQuery extends AbstractQuery {
       sql = AbstractQuery.formatBindParameters(sql, this.options.bind, this.options.dialect || 'sqlite', { skipUnescape: true })[0];
       this.sql = sql;
     }
-
-    console.log('Executing (' + (this.database.uuid || 'default') + '): ' + this.sql);
     //do we need benchmark for this query execution
     const benchmark = this.sequelize.options.benchmark || this.options.benchmark;
     let queryBegin;

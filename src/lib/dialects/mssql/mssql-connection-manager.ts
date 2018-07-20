@@ -1,17 +1,15 @@
 'use strict';
 
+import * as mssql from 'mssql';
 import AllDataTypes from '../../data-types';
 import * as sequelizeErrors from '../../errors/index';
 import { IConfig } from '../../model/iconfig';
 import Promise from '../../promise';
-import { Utils } from '../../utils';
 import { AbstractConnectionManager } from '../abstract/abstract-connection-manager';
 import { ParserStore } from '../parserStore';
 import { ResourceLock } from './resource-lock';
 
 const DataTypes = AllDataTypes.mssql;
-const debug = Utils.getLogger().debugContext('connection:mssql');
-const debugTedious = Utils.getLogger().debugContext('connection:mssql:tedious');
 export const store = new ParserStore('mssql');
 
 export class MssqlConnectionManager extends AbstractConnectionManager {
@@ -52,120 +50,110 @@ export class MssqlConnectionManager extends AbstractConnectionManager {
   }
 
   /**
-   * connect to the database
+   * Handler which executes on process exit or connection manager shutdown
+   * @hidden
    */
-  public connect(config : IConfig) : Promise<any> {
-    const connectionConfig = {
-      userName: config.username,
-      password: config.password,
-      server: config.host,
-      options: {
-        port: config.port,
-        database: config.database
-      },
-      domain: undefined
-    };
-
-    if (config.dialectOptions) {
-      // only set port if no instance name was provided
-      if (config.dialectOptions.instanceName) {
-        delete connectionConfig.options.port;
-      }
-
-      // The 'tedious' driver needs domain property to be in the main Connection config object
-      if (config.dialectOptions.domain) {
-        connectionConfig.domain = config.dialectOptions.domain;
-      }
-
-      for (const key of Object.keys(config.dialectOptions)) {
-        connectionConfig.options[key] = config.dialectOptions[key];
-      }
-    }
-
-    return new Promise((resolve, reject) => {
-      const connection = new this.lib.Connection(connectionConfig);
-      connection.lib = this.lib;
-      const resourceLock = new ResourceLock(connection);
-
-      connection.on('end', () => {
-        reject(new sequelizeErrors.ConnectionError('Connection was closed by remote server'));
-      });
-
-      connection.on('connect', err => {
-        if (!err) {
-          debug('connection acquired');
-          return resolve(resourceLock);
-        }
-
-        if (!err.code) {
-          reject(new sequelizeErrors.ConnectionError(err));
-          return;
-        }
-
-        switch (err.code) {
-          case 'ESOCKET':
-            if (err.message.includes('connect EHOSTUNREACH')) {
-              reject(new sequelizeErrors.HostNotReachableError(err));
-            } else if (err.message.includes('connect ENETUNREACH')) {
-              reject(new sequelizeErrors.HostNotReachableError(err));
-            } else if (err.message.includes('connect EADDRNOTAVAIL')) {
-              reject(new sequelizeErrors.HostNotReachableError(err));
-            } else if (err.message.includes('getaddrinfo ENOTFOUND')) {
-              reject(new sequelizeErrors.HostNotFoundError(err));
-            } else if (err.message.includes('connect ECONNREFUSED')) {
-              reject(new sequelizeErrors.ConnectionRefusedError(err));
-            } else {
-              reject(new sequelizeErrors.ConnectionError(err));
-            }
-            break;
-          case 'ER_ACCESS_DENIED_ERROR':
-          case 'ELOGIN':
-            reject(new sequelizeErrors.AccessDeniedError(err));
-            break;
-          case 'EINVAL':
-            reject(new sequelizeErrors.InvalidConnectionError(err));
-            break;
-          default:
-            reject(new sequelizeErrors.ConnectionError(err));
-            break;
-        }
-      });
-
-      if (config.dialectOptions && config.dialectOptions.debug) {
-        connection.on('debug', debugTedious);
-      }
-
-      if (config.pool.handleDisconnects) {
-        connection.on('error', err => {
-          switch (err.code) {
-            case 'ESOCKET':
-            case 'ECONNRESET':
-              this.pool.destroy(resourceLock)
-                .catch(/Resource not currently part of this pool/, () => {});
-          }
-        });
-      }
-    });
-  }
-
-  /**
-   * disconnect of the database
-   */
-  public disconnect(connectionLock : { unwrap? }) : Promise<any> {
-    /**
-     * Abstract connection may try to disconnect raw connection used for fetching version
-     */
-    const connection = connectionLock.unwrap ? connectionLock.unwrap() : connectionLock;
-
-    // Dont disconnect a connection that is already disconnected
-    if (connection.closed) {
+  protected _onProcessExit() : Promise<any> {
+    if (!this.pool) {
       return Promise.resolve();
     }
 
+    return this.pool.close();
+  }
+
+  public initPools() {
+    // Nous ne faisons rien à l'init hormis bien mettre à null le pool
+    this.pool = null;
+  }
+
+  private _initPoolsAsync(options : {
+    /**
+     * if there is uuid, we need to return a transaction
+     */
+    uuid? : string
+  }) {
+    if (!this.pool) {
+      const config = this.config;
+
+      config['server'] = config['host'];
+      config['user'] = config['username'];
+      config.pool['idleTimeoutMillis'] = config['idle'];
+
+
+      return new Promise((resolve, reject) => {
+        this.pool = new mssql.ConnectionPool(config, err => {
+          if (err != null) {
+            if (!err.code) {
+              reject(new sequelizeErrors.ConnectionError(err));
+            } else {
+              switch (err.code) {
+                case 'ESOCKET':
+                  if (err.message.includes('connect EHOSTUNREACH')) {
+                    reject(new sequelizeErrors.HostNotReachableError(err));
+                  } else if (err.message.includes('connect ENETUNREACH')) {
+                    reject(new sequelizeErrors.HostNotReachableError(err));
+                  } else if (err.message.includes('connect EADDRNOTAVAIL')) {
+                    reject(new sequelizeErrors.HostNotReachableError(err));
+                  } else if (err.message.includes('getaddrinfo ENOTFOUND')) {
+                    reject(new sequelizeErrors.HostNotFoundError(err));
+                  } else if (err.message.includes('connect ECONNREFUSED')) {
+                    reject(new sequelizeErrors.ConnectionRefusedError(err));
+                  } else {
+                    reject(new sequelizeErrors.ConnectionError(err));
+                  }
+                  break;
+                case 'ER_ACCESS_DENIED_ERROR':
+                case 'ELOGIN':
+                  reject(new sequelizeErrors.AccessDeniedError(err));
+                  break;
+                case 'EINVAL':
+                  reject(new sequelizeErrors.InvalidConnectionError(err));
+                  break;
+                default:
+                  reject(new sequelizeErrors.ConnectionError(err));
+                  break;
+              }
+            }
+          } else {
+            if (options && options.uuid) {
+              resolve(new ResourceLock(new mssql.Transaction(this.pool)));
+            } else {
+              resolve(this.pool);
+            }
+          }
+        });
+      });
+    } else {
+      if (options && options.uuid) {
+        return Promise.resolve(new ResourceLock(new mssql.Transaction(this.pool)));
+      } else {
+        return Promise.resolve(this.pool);
+      }
+    }
+  }
+
+  public getConnection(options : {
+    /**
+     * if there is uuid, we need to return a transaction
+     */
+    uuid? : string
+  }) : Promise<any> {
+    return this._initPoolsAsync(options);
+  }
+
+  public connect(config : IConfig) : Promise<any> {
+    return Promise.resolve(this.pool);
+  }
+
+  public disconnect(connectionLock : { unwrap? }) : Promise<any> {
     return new Promise(resolve => {
-      connection.on('end', resolve);
-      connection.close();
-      debug('connection closed');
+      resolve(this.pool);
+    });
+  }
+
+  public releaseConnection(connection, force? : boolean) : Promise<any> {
+    return new Promise(resolve => {
+      resolve(this.pool);
     });
   }
 

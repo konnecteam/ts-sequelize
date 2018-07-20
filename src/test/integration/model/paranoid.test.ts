@@ -1,7 +1,6 @@
 'use strict';
 
 import * as chai from 'chai';
-import * as sinon from 'sinon';
 import DataTypes from '../../../lib/data-types';
 import Support from '../support';
 const expect = chai.expect;
@@ -9,14 +8,6 @@ const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('paranoid', () => {
-    before(function() {
-      this.clock = sinon.useFakeTimers();
-    });
-
-    after(function() {
-      this.clock.restore();
-    });
-
     it('should be able to soft delete with timestamps', function() {
       const Account = this.sequelize.define('Account', {
         ownerId: {

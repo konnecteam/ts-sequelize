@@ -14,14 +14,6 @@ const current = Support.sequelize;
 const Sequelize = Support.Sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
-  before(function() {
-    this.clock = sinon.useFakeTimers();
-  });
-
-  after(function() {
-    this.clock.restore();
-  });
-
   beforeEach(function() {
     this.User = this.sequelize.define('User', {
       username: new DataTypes.STRING(),
@@ -1136,17 +1128,18 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         expect(this.updatedAt).to.equalTime(users[2].updatedAt); // All users should have the same updatedAt
 
         // Pass the time so we can actually see a change
-        this.clock.tick(1000);
-        return this.User.update({username: 'Bill'}, {where: {secretValue: '42'}});
-      }).then(function() {
-        return this.User.findAll({order: ['id']});
-      }).then(function(users) {
-        expect(users[0].username).to.equal('Bill');
-        expect(users[1].username).to.equal('Bill');
-        expect(users[2].username).to.equal('Bob');
+        return Promise.delay(1000).then(() => {
+          return this.User.update({username: 'Bill'}, {where: {secretValue: '42'}});
+        }).then(() => {
+          return this.User.findAll({order: ['id']});
+        }).then(users2 => {
+          expect(users2[0].username).to.equal('Bill');
+          expect(users2[1].username).to.equal('Bill');
+          expect(users2[2].username).to.equal('Bob');
 
-        expect(users[0].updatedAt).to.be.afterTime(this.updatedAt);
-        expect(users[2].updatedAt).to.equalTime(this.updatedAt);
+          expect(users2[0].updatedAt).to.be.afterTime(this.updatedAt);
+          expect(users2[2].updatedAt).to.equalTime(this.updatedAt);
+        });
       });
     });
 
@@ -2556,7 +2549,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         } else if (dialect === 'postgres') {
           expect(err.message).to.match(/relation "4uth0r5" does not exist/);
         } else if (dialect === 'mssql') {
-          expect(err.message).to.match(/Could not create constraint/);
+          expect(err.message).to.match(/references invalid table/);
         } else if (dialect === 'oracle') {
           expect(err.message).to.match(/ORA-00903: invalid table name/);
         } else {
@@ -2789,7 +2782,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       const self = this;
       return Support.prepareTransactionTest(this.sequelize).bind({}).then(sequelize => {
         const User = sequelize.define('User', { username: new DataTypes.STRING() });
-        const testAsync = function() {
+        const testAsync = () => {
           return sequelize.transaction().then(t => {
             return User.create({
               username: 'foo'
@@ -2802,21 +2795,17 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 },
               }).then(users => {
                 expect(users).to.have.length(0);
+                return User.findAll({
+                  where: {
+                    username: 'foo'
+                  },
+                  transaction: t
+                }).then(users2 => {
+                  expect(users2).to.have.length(1);
+                  return t.rollback();
+                });
               });
-            }).then(() => {
-              return User.findAll({
-                where: {
-                  username: 'foo'
-                },
-                transaction: t
-              }).then(users => {
-                expect(users).to.have.length(1);
-              });
-            }).then(() => {
-              return t;
             });
-          }).then(t => {
-            return t.rollback();
           });
         };
         return User.sync({ force: true }).then(function() {
@@ -2829,6 +2818,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }, {
             // Needs to be one less than ??? else the non transaction query won't ever get a connection
             concurrency: (sequelize.config.pool && sequelize.config.pool.max || 5) - 1
+          })
+          .catch(err => {
+            throw err;
           });
         });
       });
