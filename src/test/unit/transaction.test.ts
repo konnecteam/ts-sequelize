@@ -1,9 +1,9 @@
 'use strict';
 
 import * as chai from 'chai';
-const expect = chai.expect;
 import * as sinon from 'sinon';
 import Support from '../support';
+const expect = chai.expect;
 const Sequelize = Support.sequelize;
 const dialect = Support.getTestDialect();
 const current = Support.sequelize;
