@@ -3,6 +3,7 @@ site
 esdoc
 examples
 src
+build/test
 README.md
 .watchr.js
 changelog.md
@@ -28,4 +29,3 @@ mkdocs.yml
 .editorconfig
 .travis.yml
 package-lock.json
-
