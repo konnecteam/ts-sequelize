@@ -3,6 +3,7 @@ site
 esdoc
 examples
 src
+build/test
 README.md
 .watchr.js
 changelog.md

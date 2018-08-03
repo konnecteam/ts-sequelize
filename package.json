@@ -159,5 +159,6 @@
       "@semantic-release/npm",
       "@semantic-release/github"
     ]
-  }
+  },
+  "typings": "build/index.d.ts"
 }
