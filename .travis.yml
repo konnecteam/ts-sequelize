@@ -66,6 +66,7 @@ before_script:
       sleep 20
     fi
 script:
+  - tsc -v
   - npm run build
   - npm run lint
   - "if [ $COVERAGE ]; then npm run cover && bash <(curl -s https://codecov.io/bash) -f coverage/lcov.info; else npm run test; fi"

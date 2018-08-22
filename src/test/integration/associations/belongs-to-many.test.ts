@@ -91,7 +91,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
         }).then(function() {
           return Article.all({ transaction: _t });
         }).then(articles => {
-          return (articles as ItestInstance[])[0].getManyLinkedData<ItestInstance, ItestAttribute>('Label');
+          return articles[0].getManyLinkedData<ItestInstance, ItestAttribute>('Label');
         }).then(function(labels) {
           expect(labels).to.have.length(0);
           return Article.all({ transaction: _t });
