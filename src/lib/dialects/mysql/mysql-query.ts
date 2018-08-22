@@ -1,5 +1,6 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as uuid from 'uuid';
 import { Sequelize } from '../../..';
@@ -83,7 +84,7 @@ export class MysqlQuery extends AbstractQuery {
     })
     // Log warnings if we've got them.
       .then(results => {
-        if (showWarnings && results && results.warningStatus > 0) {
+        if (showWarnings && results && (results as any).warningStatus > 0) {
           return this.logWarnings(results);
         }
         return results;

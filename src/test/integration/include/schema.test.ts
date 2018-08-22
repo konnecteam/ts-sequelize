@@ -1,47 +1,51 @@
 'use strict';
 
 import * as chai from 'chai';
-import {Sequelize} from '../../../index';
+import { Model, Sequelize } from '../../../index';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
 const Promise = Sequelize.Promise;
 const dialect = Support.getTestDialect();
+const current = Support.sequelize;
 
 const sortById = function(a, b) {
   return a.id < b.id ? -1 : 1;
 };
 
 describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
+  let models : {
+    [key : string] : Model<ItestInstance, ItestAttribute>;
+  };
   describe('findAll', () => {
     beforeEach(function() {
-      const self = this;
       this.fixtureA = function() {
-        return self.sequelize.dropAllSchemas().then(() => {
-          return self.sequelize.createSchema('account').then(() => {
-            const AccUser = self.sequelize.define('AccUser', {}, {schema: 'account'});
-            const Company = self.sequelize.define('Company', {
+        return current.dropAllSchemas().then(() => {
+          return current.createSchema('account').then(() => {
+            const AccUser = current.define<ItestInstance, ItestAttribute>('AccUser', {}, {schema: 'account'});
+            const Company = current.define<ItestInstance, ItestAttribute>('Company', {
               name: new DataTypes.STRING()
             }, {schema: 'account'});
-            const Product = self.sequelize.define('Product', {
+            const Product = current.define<ItestInstance, ItestAttribute>('Product', {
               title: new DataTypes.STRING()
             }, {schema: 'account'});
-            const Tag = self.sequelize.define('Tag', {
+            const Tag = current.define<ItestInstance, ItestAttribute>('Tag', {
               name: new DataTypes.STRING()
             }, {schema: 'account'});
-            const Price = self.sequelize.define('Price', {
+            const Price = current.define<ItestInstance, ItestAttribute>('Price', {
               value: new DataTypes.FLOAT()
             }, {schema: 'account'});
-            const Customer = self.sequelize.define('Customer', {
+            const Customer = current.define<ItestInstance, ItestAttribute>('Customer', {
               name: new DataTypes.STRING()
             }, {schema: 'account'});
-            const Group = self.sequelize.define('Group', {
+            const Group = current.define<ItestInstance, ItestAttribute>('Group', {
               name: new DataTypes.STRING()
             }, {schema: 'account'});
-            const GroupMember = self.sequelize.define('GroupMember', {
+            const GroupMember = current.define<ItestInstance, ItestAttribute>('GroupMember', {
 
             }, {schema: 'account'});
-            const Rank = self.sequelize.define('Rank', {
+            const Rank = current.define<ItestInstance, ItestAttribute>('Rank', {
               name: new DataTypes.STRING(),
               canInvite: {
                 type: new DataTypes.INTEGER(),
@@ -57,7 +61,7 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
               }
             }, {schema: 'account'});
 
-            self.models = {
+            models = {
               AccUser,
               Company,
               Product,
@@ -86,7 +90,7 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
             GroupMember.belongsTo(Group);
             Group.hasMany(GroupMember, {as: 'Memberships'});
 
-            return self.sequelize.sync({force: true}).then(() => {
+            return current.sync({force: true}).then(() => {
               return Promise.all([
                 Group.bulkCreate([
                   {name: 'Developers'},
@@ -132,7 +136,7 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
                     ]).then(() => {
                       return Product.findAll({order : ['id']});
                     }),
-                  ]).spread((user, products) => {
+                  ]).spread((user : ItestInstance, products) => {
                     const groupMembers = [
                       {AccUserId: user.id, GroupId: groups[0].id, RankId: ranks[0].id},
                       {AccUserId: user.id, GroupId: groups[1].id, RankId: ranks[2].id},
@@ -143,33 +147,33 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
 
                     return Promise.join(
                       GroupMember.bulkCreate(groupMembers),
-                      user.setProducts([
+                      user.setLinkedData('Product', [
                         products[i * 5 + 0],
                         products[i * 5 + 1],
                         products[i * 5 + 3],
-                      ]),
+                      ]) as any,
                       Promise.join(
-                        products[i * 5 + 0].setTags([
+                        products[i * 5 + 0].setLinkedData('Tag', [
                           tags[0],
                           tags[2],
                         ]),
-                        products[i * 5 + 1].setTags([
+                        products[i * 5 + 1].setLinkedData('Tag', [
                           tags[1],
                         ]),
-                        products[i * 5 + 0].setCategory(tags[1]),
-                        products[i * 5 + 2].setTags([
+                        products[i * 5 + 0].setLinkedData({ model : 'Tag', associationAlias : 'Category' }, tags[1]),
+                        products[i * 5 + 2].setLinkedData('Tag', [
                           tags[0],
                         ]),
-                        products[i * 5 + 3].setTags([
+                        products[i * 5 + 3].setLinkedData('Tag', [
                           tags[0],
                         ])
                       ),
                       Promise.join(
-                        products[i * 5 + 0].setCompany(companies[4]),
-                        products[i * 5 + 1].setCompany(companies[3]),
-                        products[i * 5 + 2].setCompany(companies[2]),
-                        products[i * 5 + 3].setCompany(companies[1]),
-                        products[i * 5 + 4].setCompany(companies[0])
+                        products[i * 5 + 0].setLinkedData('Company', companies[4]),
+                        products[i * 5 + 1].setLinkedData('Company', companies[3]),
+                        products[i * 5 + 2].setLinkedData('Company', companies[2]),
+                        products[i * 5 + 3].setLinkedData('Company', companies[1]),
+                        products[i * 5 + 4].setLinkedData('Company', companies[0])
                       ),
                       Price.bulkCreate([
                         {ProductId: products[i * 5 + 0].id, value: 5},
@@ -192,27 +196,25 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
     });
 
     it('should support an include with multiple different association types', function() {
-      const self = this;
-
-      return self.sequelize.dropAllSchemas().then(() => {
-        return self.sequelize.createSchema('account').then(() => {
-          const AccUser = self.sequelize.define('AccUser', {}, {schema: 'account'});
-          const Product = self.sequelize.define('Product', {
+      return current.dropAllSchemas().then(() => {
+        return current.createSchema('account').then(() => {
+          const AccUser = current.define<ItestInstance, ItestAttribute>('AccUser', {}, {schema: 'account'});
+          const Product = current.define<ItestInstance, ItestAttribute>('Product', {
             title: new DataTypes.STRING()
           }, {schema: 'account'});
-          const Tag = self.sequelize.define('Tag', {
+          const Tag = current.define<ItestInstance, ItestAttribute>('Tag', {
             name: new DataTypes.STRING()
           }, {schema: 'account'});
-          const Price = self.sequelize.define('Price', {
+          const Price = current.define<ItestInstance, ItestAttribute>('Price', {
             value: new DataTypes.FLOAT()
           }, {schema: 'account'});
-          const Group = self.sequelize.define('Group', {
+          const Group = current.define<ItestInstance, ItestAttribute>('Group', {
             name: new DataTypes.STRING()
           }, {schema: 'account'});
-          const GroupMember = self.sequelize.define('GroupMember', {
+          const GroupMember = current.define<ItestInstance, ItestAttribute>('GroupMember', {
 
           }, {schema: 'account'});
-          const Rank = self.sequelize.define('Rank', {
+          const Rank = current.define<ItestInstance, ItestAttribute>('Rank', {
             name: new DataTypes.STRING(),
             canInvite: {
               type: new DataTypes.INTEGER(),
@@ -240,7 +242,7 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
           GroupMember.belongsTo(Group);
           Group.hasMany(GroupMember, {as: 'Memberships'});
 
-          return self.sequelize.sync({force: true}).then(() => {
+          return current.sync({force: true}).then(() => {
             return Promise.all([
               Group.bulkCreate([
                 {name: 'Developers'},
@@ -271,24 +273,24 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
                   ]).then(() => {
                     return Product.findAll({order : ['id']});
                   }),
-                ]).spread((user, products) => {
+                ]).spread((user : ItestInstance, products) => {
                   return Promise.all([
                     GroupMember.bulkCreate([
                       {AccUserId: user.id, GroupId: groups[0].id, RankId: ranks[0].id},
                       {AccUserId: user.id, GroupId: groups[1].id, RankId: ranks[1].id},
                     ]),
-                    user.setProducts([
+                    user.setLinkedData('Product', [
                       products[i * 2 + 0],
                       products[i * 2 + 1],
                     ]),
-                    products[i * 2 + 0].setTags([
+                    products[i * 2 + 0].setLinkedData('Tag', [
                       tags[0],
                       tags[2],
                     ]),
-                    products[i * 2 + 1].setTags([
+                    products[i * 2 + 1].setLinkedData('Tag', [
                       tags[1],
                     ]),
-                    products[i * 2 + 0].setCategory(tags[1]),
+                    products[i * 2 + 0].setLinkedData({ model : 'Tag', associationAlias : 'Category' }, tags[1]),
                     Price.bulkCreate([
                       {ProductId: products[i * 2 + 0].id, value: 5},
                       {ProductId: products[i * 2 + 0].id, value: 10},
@@ -345,14 +347,14 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
     });
 
     it('should support many levels of belongsTo', function() {
-      const A = this.sequelize.define('a', {}, {schema: 'account'});
-      const B = this.sequelize.define('b', {}, {schema: 'account'});
-      const C = this.sequelize.define('c', {}, {schema: 'account'});
-      const D = this.sequelize.define('d', {}, {schema: 'account'});
-      const E = this.sequelize.define('e', {}, {schema: 'account'});
-      const F = this.sequelize.define('f', {}, {schema: 'account'});
-      const G = this.sequelize.define('g', {}, {schema: 'account'});
-      const H = this.sequelize.define('h', {}, {schema: 'account'});
+      const A = current.define<ItestInstance, ItestAttribute>('a', {}, {schema: 'account'});
+      const B = current.define<ItestInstance, ItestAttribute>('b', {}, {schema: 'account'});
+      const C = current.define<ItestInstance, ItestAttribute>('c', {}, {schema: 'account'});
+      const D = current.define<ItestInstance, ItestAttribute>('d', {}, {schema: 'account'});
+      const E = current.define<ItestInstance, ItestAttribute>('e', {}, {schema: 'account'});
+      const F = current.define<ItestInstance, ItestAttribute>('f', {}, {schema: 'account'});
+      const G = current.define<ItestInstance, ItestAttribute>('g', {}, {schema: 'account'});
+      const H = current.define<ItestInstance, ItestAttribute>('h', {}, {schema: 'account'});
 
       A.belongsTo(B);
       B.belongsTo(C);
@@ -373,15 +375,15 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
         H,
       ];
 
-      return this.sequelize.sync().then(() => {
+      return current.sync().then(() => {
         return A.bulkCreate([
           {}, {}, {}, {}, {}, {}, {}, {},
         ]).then(() => {
-          let previousInstance;
+          let previousInstance : ItestInstance;
           return Promise.each(singles, model => {
             return model.create({}).then(instance => {
               if (previousInstance) {
-                return previousInstance['set' + Sequelize.Utils.uppercaseFirst(model.name)](instance).then(() => {
+                return previousInstance.setLinkedData(model, instance).then(() => {
                   previousInstance = instance;
                 });
               }
@@ -394,7 +396,7 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
         }).then(as => {
           const promises = [];
           as.forEach(a => {
-            promises.push(a.setB(b));
+            promises.push(a.setLinkedData('b',  b));
           });
           return Promise.all(promises);
         }).then(() => {
@@ -425,15 +427,15 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
     });
 
     it('should support ordering with only belongsTo includes', function() {
-      const User = this.sequelize.define('SpecialUser', {}, {schema: 'account'});
-      const Item = this.sequelize.define('Item', {test: new DataTypes.STRING()}, {schema: 'account'});
-      const Order = this.sequelize.define('Order', {position: new DataTypes.INTEGER()}, {schema: 'account'});
+      const User = current.define<ItestInstance, ItestAttribute>('SpecialUser', {}, {schema: 'account'});
+      const Item = current.define<ItestInstance, ItestAttribute>('Item', {test: new DataTypes.STRING()}, {schema: 'account'});
+      const Order = current.define<ItestInstance, ItestAttribute>('Order', {position: new DataTypes.INTEGER()}, {schema: 'account'});
 
       User.belongsTo(Item, {as: 'itemA', foreignKey: 'itemA_id'});
       User.belongsTo(Item, {as: 'itemB', foreignKey: 'itemB_id'});
       User.belongsTo(Order);
 
-      return this.sequelize.sync().then(() => {
+      return current.sync().then(() => {
         return Promise.all([
           User.bulkCreate([{}, {}, {}]),
           Item.bulkCreate([
@@ -455,15 +457,15 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
           ]);
         }).spread((users, items, orders) => {
           return Promise.all([
-            users[0].setItemA(items[0]),
-            users[0].setItemB(items[1]),
-            users[0].setOrder(orders[2]),
-            users[1].setItemA(items[2]),
-            users[1].setItemB(items[3]),
-            users[1].setOrder(orders[1]),
-            users[2].setItemA(items[0]),
-            users[2].setItemB(items[3]),
-            users[2].setOrder(orders[0]),
+            users[0].setLinkedData({ model : 'Item', associationAlias : 'itemA' }, items[0]),
+            users[0].setLinkedData({ model : 'Item', associationAlias : 'itemB' }, items[1]),
+            users[0].setLinkedData('Order', orders[2]),
+            users[1].setLinkedData({ model : 'Item', associationAlias : 'itemA' }, items[2]),
+            users[1].setLinkedData({ model : 'Item', associationAlias : 'itemB' }, items[3]),
+            users[1].setLinkedData('Order', orders[1]),
+            users[2].setLinkedData({ model : 'Item', associationAlias : 'itemA' }, items[0]),
+            users[2].setLinkedData({ model : 'Item', associationAlias : 'itemB' }, items[3]),
+            users[2].setLinkedData('Order', orders[0]),
           ]);
         }).spread(() => {
           return User.findAll({
@@ -487,20 +489,20 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
 
 
     it('should include attributes from through models', function() {
-      const Product = this.sequelize.define('Product', {
+      const Product = current.define<ItestInstance, ItestAttribute>('Product', {
         title: new DataTypes.STRING()
       }, {schema: 'account'});
-      const Tag = this.sequelize.define('Tag', {
+      const Tag = current.define<ItestInstance, ItestAttribute>('Tag', {
         name: new DataTypes.STRING()
       }, {schema: 'account'});
-      const ProductTag = this.sequelize.define('ProductTag', {
+      const ProductTag = current.define<ItestInstance, ItestAttribute>('ProductTag', {
         priority: new DataTypes.INTEGER()
       }, {schema: 'account'});
 
       Product.belongsToMany(Tag, {through: ProductTag});
       Tag.belongsToMany(Product, {through: ProductTag});
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Promise.all([
           Product.bulkCreate([
             {title: 'Chair'},
@@ -519,12 +521,12 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
           ]);
         }).spread((products, tags) => {
           return Promise.all([
-            products[0].addTag(tags[0], { through: {priority: 1}}),
-            products[0].addTag(tags[1], { through: {priority: 2}}),
-            products[1].addTag(tags[1], { through: {priority: 1}}),
-            products[2].addTag(tags[0], { through: {priority: 3}}),
-            products[2].addTag(tags[1], { through: {priority: 1}}),
-            products[2].addTag(tags[2], { through: {priority: 2}}),
+            products[0].addLinkedData('Tag', tags[0], { through: {priority: 1}}),
+            products[0].addLinkedData('Tag', tags[1], { through: {priority: 2}}),
+            products[1].addLinkedData('Tag', tags[1], { through: {priority: 1}}),
+            products[2].addLinkedData('Tag', tags[0], { through: {priority: 3}}),
+            products[2].addLinkedData('Tag', tags[1], { through: {priority: 1}}),
+            products[2].addLinkedData('Tag', tags[2], { through: {priority: 2}}),
           ]);
         }).spread(() => {
           return Product.findAll({
@@ -548,12 +550,12 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
     });
 
     it('should support a required belongsTo include', function() {
-      const User = this.sequelize.define('User', {}, {schema: 'account'});
-      const Group = this.sequelize.define('Group', {}, {schema: 'account'});
+      const User = current.define<ItestInstance, ItestAttribute>('User', {}, {schema: 'account'});
+      const Group = current.define<ItestInstance, ItestAttribute>('Group', {}, {schema: 'account'});
 
       User.belongsTo(Group);
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Promise.all([
           Group.bulkCreate([{}, {}]),
           User.bulkCreate([{}, {}, {}]),
@@ -563,7 +565,7 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
             User.findAll(),
           ]);
         }).spread((groups, users) => {
-          return users[2].setGroup(groups[1]);
+          return users[2].setLinkedData('Group', groups[1]);
         }).then(() => {
           return User.findAll({
             include: [
@@ -578,14 +580,14 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
     });
 
     it('should be possible to extend the on clause with a where option on a belongsTo include', function() {
-      const User = this.sequelize.define('User', {}, {schema: 'account'});
-      const Group = this.sequelize.define('Group', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {}, {schema: 'account'});
+      const Group = current.define<ItestInstance, ItestAttribute>('Group', {
         name: new DataTypes.STRING()
       }, {schema: 'account'});
 
       User.belongsTo(Group);
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Promise.all([
           Group.bulkCreate([
             {name: 'A'},
@@ -599,8 +601,8 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
           ]);
         }).spread((groups, users) => {
           return Promise.all([
-            users[0].setGroup(groups[1]),
-            users[1].setGroup(groups[0]),
+            users[0].setLinkedData('Group', groups[1]),
+            users[1].setLinkedData('Group', groups[0]),
           ]);
         }).then(() => {
           return User.findAll({
@@ -617,14 +619,14 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
     });
 
     it('should be possible to extend the on clause with a where option on a belongsTo include', function() {
-      const User = this.sequelize.define('User', {}, {schema: 'account'});
-      const Group = this.sequelize.define('Group', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {}, {schema: 'account'});
+      const Group = current.define<ItestInstance, ItestAttribute>('Group', {
         name: new DataTypes.STRING()
       }, {schema: 'account'});
 
       User.belongsTo(Group);
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Promise.all([
           Group.bulkCreate([
             {name: 'A'},
@@ -638,8 +640,8 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
           ]);
         }).spread((groups, users) => {
           return Promise.all([
-            users[0].setGroup(groups[1]),
-            users[1].setGroup(groups[0]),
+            users[0].setLinkedData('Group', groups[1]),
+            users[1].setLinkedData('Group', groups[0]),
           ]);
         }).then(() => {
           return User.findAll({
@@ -656,18 +658,18 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
     });
 
     it('should be possible to define a belongsTo include as required with child hasMany with limit', function() {
-      const User = this.sequelize.define('User', {}, {schema: 'account'});
-      const Group = this.sequelize.define('Group', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {}, {schema: 'account'});
+      const Group = current.define<ItestInstance, ItestAttribute>('Group', {
         name: new DataTypes.STRING()
       }, {schema: 'account'});
-      const Category = this.sequelize.define('Category', {
+      const Category = current.define<ItestInstance, ItestAttribute>('Category', {
         category: new DataTypes.STRING()
       }, {schema: 'account'});
 
       User.belongsTo(Group);
       Group.hasMany(Category);
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Promise.all([
           Group.bulkCreate([
             {name: 'A'},
@@ -683,11 +685,11 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
           ]);
         }).spread((groups, users, categories) => {
           const promises = [
-            users[0].setGroup(groups[1]),
-            users[1].setGroup(groups[0]),
+            users[0].setLinkedData('Group', groups[1]),
+            users[1].setLinkedData('Group', groups[0]),
           ];
           groups.forEach(group => {
-            promises.push(group.setCategories(categories));
+            promises.push(group.setLinkedData('Category', categories));
           });
           return Promise.all(promises);
         }).then(() => {
@@ -710,18 +712,18 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
     });
 
     it('should be possible to define a belongsTo include as required with child hasMany with limit and aliases', function() {
-      const User = this.sequelize.define('User', {}, {schema: 'account'});
-      const Group = this.sequelize.define('Group', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {}, {schema: 'account'});
+      const Group = current.define<ItestInstance, ItestAttribute>('Group', {
         name: new DataTypes.STRING()
       }, {schema: 'account'});
-      const Category = this.sequelize.define('Category', {
+      const Category = current.define<ItestInstance, ItestAttribute>('Category', {
         category: new DataTypes.STRING()
       }, {schema: 'account'});
 
       User.belongsTo(Group, {as: 'Team'});
       Group.hasMany(Category, {as: 'Tags'});
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Promise.all([
           Group.bulkCreate([
             {name: 'A'},
@@ -737,11 +739,11 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
           ]);
         }).spread((groups, users, categories) => {
           const promises = [
-            users[0].setTeam(groups[1]),
-            users[1].setTeam(groups[0]),
+            users[0].setLinkedData({ model : 'Group', associationAlias : 'Team' }, groups[1]),
+            users[1].setLinkedData({ model : 'Group', associationAlias : 'Team' }, groups[0]),
           ];
           groups.forEach(group => {
-            promises.push(group.setTags(categories));
+            promises.push(group.setLinkedData({ model : 'Category', associationAlias : 'Tags' }, categories));
           });
           return Promise.all(promises);
         }).then(() => {
@@ -764,18 +766,18 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
     });
 
     it('should be possible to define a belongsTo include as required with child hasMany which is not required with limit', function() {
-      const User = this.sequelize.define('User', {}, {schema: 'account'});
-      const Group = this.sequelize.define('Group', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {}, {schema: 'account'});
+      const Group = current.define<ItestInstance, ItestAttribute>('Group', {
         name: new DataTypes.STRING()
       }, {schema: 'account'});
-      const Category = this.sequelize.define('Category', {
+      const Category = current.define<ItestInstance, ItestAttribute>('Category', {
         category: new DataTypes.STRING()
       }, {schema: 'account'});
 
       User.belongsTo(Group);
       Group.hasMany(Category);
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Promise.all([
           Group.bulkCreate([
             {name: 'A'},
@@ -791,11 +793,11 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
           ]);
         }).spread((groups, users, categories) => {
           const promises = [
-            users[0].setGroup(groups[1]),
-            users[1].setGroup(groups[0]),
+            users[0].setLinkedData('Group', groups[1]),
+            users[1].setLinkedData('Group', groups[0]),
           ];
           groups.forEach(group => {
-            promises.push(group.setCategories(categories));
+            promises.push(group.setLinkedData('Category', categories));
           });
           return Promise.all(promises);
         }).then(() => {
@@ -818,14 +820,14 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
     });
 
     it('should be possible to extend the on clause with a where option on a hasOne include', function() {
-      const User = this.sequelize.define('User', {}, {schema: 'account'});
-      const Project = this.sequelize.define('Project', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {}, {schema: 'account'});
+      const Project = current.define<ItestInstance, ItestAttribute>('Project', {
         title: new DataTypes.STRING()
       }, {schema: 'account'});
 
       User.hasOne(Project, {as: 'LeaderOf'});
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Promise.all([
           Project.bulkCreate([
             {title: 'Alpha'},
@@ -839,8 +841,8 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
           ]);
         }).spread((projects, users) => {
           return Promise.all([
-            users[1].setLeaderOf(projects[1]),
-            users[0].setLeaderOf(projects[0]),
+            users[1].setLinkedData({ model : 'Project', associationAlias : 'LeaderOf' }, projects[1]),
+            users[0].setLinkedData({ model : 'Project', associationAlias : 'LeaderOf' }, projects[0]),
           ]);
         }).then(() => {
           return User.findAll({
@@ -857,20 +859,20 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
     });
 
     it('should be possible to extend the on clause with a where option on a hasMany include with a through model', function() {
-      const Product = this.sequelize.define('Product', {
+      const Product = current.define<ItestInstance, ItestAttribute>('Product', {
         title: new DataTypes.STRING()
       }, {schema: 'account'});
-      const Tag = this.sequelize.define('Tag', {
+      const Tag = current.define<ItestInstance, ItestAttribute>('Tag', {
         name: new DataTypes.STRING()
       }, {schema: 'account'});
-      const ProductTag = this.sequelize.define('ProductTag', {
+      const ProductTag = current.define<ItestInstance, ItestAttribute>('ProductTag', {
         priority: new DataTypes.INTEGER()
       }, {schema: 'account'});
 
       Product.belongsToMany(Tag, {through: ProductTag});
       Tag.belongsToMany(Product, {through: ProductTag});
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Promise.all([
           Product.bulkCreate([
             {title: 'Chair'},
@@ -889,12 +891,12 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
           ]);
         }).spread((products, tags) => {
           return Promise.all([
-            products[0].addTag(tags[0], {priority: 1}),
-            products[0].addTag(tags[1], {priority: 2}),
-            products[1].addTag(tags[1], {priority: 1}),
-            products[2].addTag(tags[0], {priority: 3}),
-            products[2].addTag(tags[1], {priority: 1}),
-            products[2].addTag(tags[2], {priority: 2}),
+            products[0].addLinkedData('Tag', tags[0], {priority: 1}),
+            products[0].addLinkedData('Tag', tags[1], {priority: 2}),
+            products[1].addLinkedData('Tag', tags[1], {priority: 1}),
+            products[2].addLinkedData('Tag', tags[0], {priority: 3}),
+            products[2].addLinkedData('Tag', tags[1], {priority: 1}),
+            products[2].addLinkedData('Tag', tags[2], {priority: 2}),
           ]);
         }).then(() => {
           return Product.findAll({
@@ -910,25 +912,25 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
     });
 
     it('should be possible to extend the on clause with a where option on nested includes', function() {
-      const User = this.sequelize.define('User', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {
         name: new DataTypes.STRING()
       }, {schema: 'account'});
-      const Product = this.sequelize.define('Product', {
+      const Product = current.define<ItestInstance, ItestAttribute>('Product', {
         title: new DataTypes.STRING()
       }, {schema: 'account'});
-      const Tag = this.sequelize.define('Tag', {
+      const Tag = current.define<ItestInstance, ItestAttribute>('Tag', {
         name: new DataTypes.STRING()
       }, {schema: 'account'});
-      const Price = this.sequelize.define('Price', {
+      const Price = current.define<ItestInstance, ItestAttribute>('Price', {
         value: new DataTypes.FLOAT()
       }, {schema: 'account'});
-      const Group = this.sequelize.define('Group', {
+      const Group = current.define<ItestInstance, ItestAttribute>('Group', {
         name: new DataTypes.STRING()
       }, {schema: 'account'});
-      const GroupMember = this.sequelize.define('GroupMember', {
+      const GroupMember = current.define<ItestInstance, ItestAttribute>('GroupMember', {
 
       }, {schema: 'account'});
-      const Rank = this.sequelize.define('Rank', {
+      const Rank = current.define<ItestInstance, ItestAttribute>('Rank', {
         name: new DataTypes.STRING(),
         canInvite: {
           type: new DataTypes.INTEGER(),
@@ -956,7 +958,7 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
       GroupMember.belongsTo(Group);
       Group.hasMany(GroupMember, {as: 'Memberships'});
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Promise.all([
           Group.bulkCreate([
             {name: 'Developers'},
@@ -987,24 +989,24 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
               ]).then(() => {
                 return Product.findAll({order  : ['id']});
               }),
-            ]).spread((user, products) => {
+            ]).spread((user : ItestInstance, products) => {
               return Promise.all([
                 GroupMember.bulkCreate([
                   {UserId: user.id, GroupId: groups[0].id, RankId: ranks[0].id},
                   {UserId: user.id, GroupId: groups[1].id, RankId: ranks[1].id},
                 ]),
-                user.setProducts([
+                user.setLinkedData('Product', [
                   products[i * 2 + 0],
                   products[i * 2 + 1],
                 ]),
-                products[i * 2 + 0].setTags([
+                products[i * 2 + 0].setLinkedData('Tag', [
                   tags[0],
                   tags[2],
                 ]),
-                products[i * 2 + 1].setTags([
+                products[i * 2 + 1].setLinkedData('Tag', [
                   tags[1],
                 ]),
-                products[i * 2 + 0].setCategory(tags[1]),
+                products[i * 2 + 0].setLinkedData({ model : 'Tag', associationAlias : 'Category' }, tags[1]),
                 Price.bulkCreate([
                   {ProductId: products[i * 2 + 0].id, value: 5},
                   {ProductId: products[i * 2 + 0].id, value: 10},
@@ -1049,14 +1051,14 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
     });
 
     it('should be possible to use limit and a where with a belongsTo include', function() {
-      const User = this.sequelize.define('User', {}, {schema: 'account'});
-      const Group = this.sequelize.define('Group', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {}, {schema: 'account'});
+      const Group = current.define<ItestInstance, ItestAttribute>('Group', {
         name: new DataTypes.STRING()
       }, {schema: 'account'});
 
       User.belongsTo(Group);
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Promise.props({
           groups: Group.bulkCreate([
             {name: 'A'},
@@ -1069,10 +1071,10 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
           })
         }).then(results => {
           return Promise.join(
-            results.users[1].setGroup(results.groups[0]),
-            results.users[2].setGroup(results.groups[0]),
-            results.users[3].setGroup(results.groups[1]),
-            results.users[0].setGroup(results.groups[0])
+            results.users[1].setLinkedData('Group', results.groups[0]),
+            results.users[2].setLinkedData('Group', results.groups[0]),
+            results.users[3].setLinkedData('Group', results.groups[1]),
+            results.users[0].setLinkedData('Group', results.groups[0])
           );
         }).then(() => {
           return User.findAll({
@@ -1092,18 +1094,17 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
     });
 
     it('should be possible use limit, attributes and a where on a belongsTo with additional hasMany includes', function() {
-      const self = this;
       return this.fixtureA().then(() => {
-        return self.models.Product.findAll({
+        return models.Product.findAll({
           attributes: ['title'],
           include: [
-            {model: self.models.Company, where: {name: 'NYSE'}},
-            {model: self.models.Tag},
-            {model: self.models.Price},
+            {model: models.Company, where: {name: 'NYSE'}},
+            {model: models.Tag},
+            {model: models.Price},
           ],
           limit: 3,
           order: [
-            [self.sequelize.col(self.models.Product.name + '.title'), 'ASC'],
+            [current.col(models.Product.name + '.title'), 'ASC'],
           ]
         }).then(products => {
           expect(products.length).to.equal(3);
@@ -1118,13 +1119,12 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
     });
 
     it('should be possible to use limit and a where on a hasMany with additional includes', function() {
-      const self = this;
       return this.fixtureA().then(() => {
-        return self.models.Product.findAll({
+        return models.Product.findAll({
           include: [
-            {model: self.models.Company},
-            {model: self.models.Tag},
-            {model: self.models.Price, where: {
+            {model: models.Company},
+            {model: models.Tag},
+            {model: models.Price, where: {
               value: {gt: 5}
             }},
           ],
@@ -1148,13 +1148,12 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
     });
 
     it('should be possible to use limit and a where on a hasMany with a through model with additional includes', function() {
-      const self = this;
       return this.fixtureA().then(() => {
-        return self.models.Product.findAll({
+        return models.Product.findAll({
           include: [
-            {model: self.models.Company},
-            {model: self.models.Tag, where: {name: ['A', 'B', 'C']}},
-            {model: self.models.Price},
+            {model: models.Company},
+            {model: models.Tag, where: {name: ['A', 'B', 'C']}},
+            {model: models.Price},
           ],
           limit: 10,
           order: [
@@ -1176,20 +1175,20 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
     });
 
     it('should support including date fields, with the correct timeszone', function() {
-      const User = this.sequelize.define('user', {
+      const User = current.define<ItestInstance, ItestAttribute>('user', {
         dateField: new DataTypes.DATE()
       }, {timestamps: false, schema: 'account'});
-      const Group = this.sequelize.define('group', {
+      const Group = current.define<ItestInstance, ItestAttribute>('group', {
         dateField: new DataTypes.DATE()
       }, {timestamps: false, schema: 'account'});
 
       User.belongsToMany(Group, {through: 'group_user'});
       Group.belongsToMany(User, {through: 'group_user'});
 
-      return this.sequelize.sync().then(() => {
+      return current.sync().then(() => {
         return User.create({ dateField: Date.UTC(2014, 1, 20) }).then(user => {
           return Group.create({ dateField: Date.UTC(2014, 1, 20) }).then(group => {
-            return user.addGroup(group).then(() => {
+            return user.addLinkedData('group', group).then(() => {
               return User.findAll({
                 where: {
                   id: user.id
@@ -1214,8 +1213,7 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
 
   describe('findOne', () => {
     it('should work with schemas', function() {
-      const self = this;
-      const UserModel = this.sequelize.define('User', {
+      const UserModel = current.define<ItestInstance, ItestAttribute>('User', {
         Id: {
           type: new DataTypes.INTEGER(),
           primaryKey: true
@@ -1237,7 +1235,7 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
 
       const UserIdColumn = { type: new DataTypes.INTEGER(), references: { model: UserModel, key: 'Id' } };
 
-      const ResumeModel = this.sequelize.define('Resume', {
+      const ResumeModel = current.define<ItestInstance, ItestAttribute>('Resume', {
         Id: {
           type: new DataTypes.INTEGER(),
           primaryKey: true
@@ -1266,10 +1264,10 @@ describe(Support.getTestDialectTeaser('Includes with schemas'), () => {
         foreignKey: 'UserId'
       });
 
-      return self.sequelize.dropAllSchemas().then(() => {
-        return self.sequelize.createSchema('hero');
+      return current.dropAllSchemas().then(() => {
+        return current.createSchema('hero');
       }).then(() => {
-        return self.sequelize.sync({force: true}).then(() => {
+        return current.sync({force: true}).then(() => {
           return UserModel.find({
             where: {
               Id: 1

@@ -3,17 +3,19 @@
 import * as chai from 'chai';
 import {Sequelize} from '../../../index';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
 const Promise = Sequelize.Promise;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Include'), () => {
   describe('find', () => {
     it('should include a non required model, with conditions and two includes N:M 1:M', function( ) {
-      const A = this.sequelize.define('A', { name: new DataTypes.STRING(40) }, { paranoid: true });
-      const B = this.sequelize.define('B', { name: new DataTypes.STRING(40) }, { paranoid: true });
-      const C = this.sequelize.define('C', { name: new DataTypes.STRING(40) }, { paranoid: true });
-      const D = this.sequelize.define('D', { name: new DataTypes.STRING(40) }, { paranoid: true });
+      const A = current.define<ItestInstance, ItestAttribute>('A', { name: new DataTypes.STRING(40) }, { paranoid: true });
+      const B = current.define<ItestInstance, ItestAttribute>('B', { name: new DataTypes.STRING(40) }, { paranoid: true });
+      const C = current.define<ItestInstance, ItestAttribute>('C', { name: new DataTypes.STRING(40) }, { paranoid: true });
+      const D = current.define<ItestInstance, ItestAttribute>('D', { name: new DataTypes.STRING(40) }, { paranoid: true });
 
       // Associations
       A.hasMany(B);
@@ -29,7 +31,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
 
       D.hasMany(B);
 
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         return A.find({
           include: [
             { model: B, required: false, include: [
@@ -42,9 +44,9 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should work with a 1:M to M:1 relation with a where on the last include', function()  {
-      const Model = this.sequelize.define('Model', {});
-      const Model2 = this.sequelize.define('Model2', {});
-      const Model4 = this.sequelize.define('Model4', {something: { type: new DataTypes.INTEGER() }});
+      const Model = current.define<ItestInstance, ItestAttribute>('Model', {});
+      const Model2 = current.define<ItestInstance, ItestAttribute>('Model2', {});
+      const Model4 = current.define<ItestInstance, ItestAttribute>('Model4', {something: { type: new DataTypes.INTEGER() }});
 
       Model.belongsTo(Model2);
       Model2.hasMany(Model);
@@ -52,7 +54,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       Model2.hasMany(Model4);
       Model4.belongsTo(Model2);
 
-      return this.sequelize.sync({force: true}).bind(this).then(() => {
+      return current.sync({force: true}).bind(this).then(() => {
         return Model.find({
           include: [
             {model: Model2, include: [
@@ -64,8 +66,8 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should include a model with a where condition but no required', function() {
-      const User = this.sequelize.define('User', {}, { paranoid: false });
-      const Task = this.sequelize.define('Task', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {}, { paranoid: false });
+      const Task = current.define<ItestInstance, ItestAttribute>('Task', {
         deletedAt: {
           type: new DataTypes.DATE()
         }
@@ -74,7 +76,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       User.hasMany(Task, {foreignKey: 'userId'});
       Task.belongsTo(User, {foreignKey: 'userId'});
 
-      return this.sequelize.sync({
+      return current.sync({
         force: true
       }).then(() => {
         return User.create();
@@ -97,7 +99,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should include a model with a where clause when the PK field name and attribute name are different', function() {
-      const User = this.sequelize.define('User', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {
         id: {
           type: new DataTypes.UUID(),
           defaultValue: new DataTypes.UUIDV4(),
@@ -105,14 +107,14 @@ describe(Support.getTestDialectTeaser('Include'), () => {
           primaryKey: true
         }
       });
-      const Task = this.sequelize.define('Task', {
+      const Task = current.define<ItestInstance, ItestAttribute>('Task', {
         searchString: { type: new DataTypes.STRING() }
       });
 
       User.hasMany(Task, {foreignKey: 'userId'});
       Task.belongsTo(User, {foreignKey: 'userId'});
 
-      return this.sequelize.sync({
+      return current.sync({
         force: true
       }).then(() => {
         return User.create();
@@ -135,9 +137,9 @@ describe(Support.getTestDialectTeaser('Include'), () => {
 
     // je sais pas
     it('should include a model with a through.where and required true clause when the PK field name and attribute name are different', function() {
-      const A = this.sequelize.define('a', {});
-      const B = this.sequelize.define('b', {});
-      const AB = this.sequelize.define('a_b', {
+      const A = current.define<ItestInstance, ItestAttribute>('a', {});
+      const B = current.define<ItestInstance, ItestAttribute>('b', {});
+      const AB = current.define<ItestInstance, ItestAttribute>('a_b', {
         name: {
           type: new DataTypes.STRING(40),
           field: 'name_id',
@@ -148,7 +150,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       A.belongsToMany(B, { through: AB });
       B.belongsToMany(A, { through: AB });
 
-      return this.sequelize
+      return current
         .sync({force: true})
         .then(() => {
           return Promise.join(
@@ -157,7 +159,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
           );
         })
         .spread((a, b) => {
-          return a.addB(b, { through: {name: 'Foobar'}});
+          return a.addLinkedData('b', b, { through: {name: 'Foobar'}});
         })
         .then(() => {
           return A.find({
@@ -174,17 +176,17 @@ describe(Support.getTestDialectTeaser('Include'), () => {
 
 
     it('should still pull the main record when an included model is not required and has where restrictions without matches', function() {
-      const A = this.sequelize.define('a', {
+      const A = current.define<ItestInstance, ItestAttribute>('a', {
         name: new DataTypes.STRING(40)
       });
-      const B = this.sequelize.define('b', {
+      const B = current.define<ItestInstance, ItestAttribute>('b', {
         name: new DataTypes.STRING(40)
       });
 
       A.belongsToMany(B, {through: 'a_b'});
       B.belongsToMany(A, {through: 'a_b'});
 
-      return this.sequelize
+      return current
         .sync({force: true})
         .then(() => {
           return A.create({
@@ -206,15 +208,15 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support a nested include (with a where)', function() {
-      const A = this.sequelize.define('A', {
+      const A = current.define<ItestInstance, ItestAttribute>('A', {
         name: new DataTypes.STRING()
       });
 
-      const B = this.sequelize.define('B', {
+      const B = current.define<ItestInstance, ItestAttribute>('B', {
         flag: new DataTypes.BOOLEAN()
       });
 
-      const C = this.sequelize.define('C', {
+      const C = current.define<ItestInstance, ItestAttribute>('C', {
         name: new DataTypes.STRING()
       });
 
@@ -224,7 +226,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       B.hasMany(C);
       C.belongsTo(B);
 
-      return this.sequelize
+      return current
         .sync({ force: true })
         .then(() => {
           return A.find({
@@ -247,15 +249,15 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support a belongsTo with the targetKey option', function() {
-      const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
-      const Task = this.sequelize.define('Task', { title: new DataTypes.STRING() });
+      const User = current.define<ItestInstance, ItestAttribute>('User', { username: new DataTypes.STRING() });
+      const Task = current.define<ItestInstance, ItestAttribute>('Task', { title: new DataTypes.STRING() });
       User.removeAttribute('id');
       Task.belongsTo(User, { foreignKey: 'user_name', targetKey: 'username'});
 
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         return User.create({ username: 'bob' }).then(newUser => {
           return Task.create({ title: 'some task' }).then(newTask => {
-            return newTask.setUser(newUser).then(() => {
+            return newTask.setLinkedData('User', newUser).then(() => {
               return Task.find({
                 where: { title: 'some task' },
                 include: [{ model: User }]
@@ -271,16 +273,16 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support many levels of belongsTo (with a lower level having a where)', function() {
-      const A = this.sequelize.define('a', {});
-      const B = this.sequelize.define('b', {});
-      const C = this.sequelize.define('c', {});
-      const D = this.sequelize.define('d', {});
-      const E = this.sequelize.define('e', {});
-      const F = this.sequelize.define('f', {});
-      const G = this.sequelize.define('g', {
+      const A = current.define<ItestInstance, ItestAttribute>('a', {});
+      const B = current.define<ItestInstance, ItestAttribute>('b', {});
+      const C = current.define<ItestInstance, ItestAttribute>('c', {});
+      const D = current.define<ItestInstance, ItestAttribute>('d', {});
+      const E = current.define<ItestInstance, ItestAttribute>('e', {});
+      const F = current.define<ItestInstance, ItestAttribute>('f', {});
+      const G = current.define<ItestInstance, ItestAttribute>('g', {
         name: new DataTypes.STRING()
       });
-      const H = this.sequelize.define('h', {
+      const H = current.define<ItestInstance, ItestAttribute>('h', {
         name: new DataTypes.STRING()
       });
 
@@ -292,12 +294,12 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       F.belongsTo(G);
       G.belongsTo(H);
 
-      return this.sequelize.sync({force: true}).then(() => {
-        return Promise.join(
+      return current.sync({force: true}).then(() => {
+        return (Promise as any).join(
           A.create({}),
           (function(singles) {
             let promise = Promise.resolve();
-            let previousInstance;
+            let previousInstance : ItestInstance;
             let b;
 
             singles.forEach(model => {
@@ -312,7 +314,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
               promise = promise.then(() => {
                 return model.create(values).then(instance => {
                   if (previousInstance) {
-                    return previousInstance['set' + Sequelize.Utils.uppercaseFirst(model.name)](instance).then(() => {
+                    return previousInstance.setLinkedData(model, instance).then(() => {
                       previousInstance = instance;
                     });
                   } else {
@@ -329,7 +331,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
             return promise;
           })([B, C, D, E, F, G, H])
         ).spread((a, b) => {
-          return a.setB(b);
+          return a.setLinkedData('b',  b);
         }).then(() => {
           return A.find({
             include: [
@@ -357,12 +359,12 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should work with combinding a where and a scope', function() {
-      const User = this.sequelize.define('User', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {
         id: { type: new DataTypes.INTEGER(), primaryKey: true, autoIncrement: true },
         name: new DataTypes.STRING()
       }, { underscored: true });
 
-      const Post = this.sequelize.define('Post', {
+      const Post = current.define<ItestInstance, ItestAttribute>('Post', {
         id: { type: new DataTypes.INTEGER(), primaryKey: true, autoIncrement: true, unique: true },
         owner_id: { type: new DataTypes.INTEGER(), unique: 'combiIndex' },
         owner_type: { type: new DataTypes.ENUM(), values: ['user', 'org'], defaultValue: 'user', unique: 'combiIndex' },
@@ -372,7 +374,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       User.hasMany(Post, { foreignKey: 'owner_id', scope: { owner_type: 'user'  }, as: 'UserPosts', constraints: false });
       Post.belongsTo(User, { foreignKey: 'owner_id', as: 'Owner', constraints: false });
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return User.find({
           where: { id: 2 },
           include: [

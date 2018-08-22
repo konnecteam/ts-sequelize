@@ -1,30 +1,26 @@
 'use strict';
 
 import * as assert from 'assert';
-import * as Dottie from 'dottie';
+import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import { Sequelize } from '..';
 import { Association } from './associations/base';
-import { BelongsTo } from './associations/belongs-to';
 import { BelongsToMany } from './associations/belongs-to-many';
 import { HasMany } from './associations/has-many';
 import { Mixin } from './associations/mixin';
+import { DataSet } from './data-set';
 import DataTypes from './data-types';
 import { AbstractQueryGenerator } from './dialects/abstract/abstract-query-generator';
 import * as sequelizeErrors from './errors/index';
-import * as Hooks from './hooks';
-import { InstanceValidator } from './instance-validator';
-import { IInclude } from './model/iinclude';
-import { IModelOptions } from './model/imodel-options';
+import { IInclude } from './interfaces/iinclude';
+import { IModelOptions } from './interfaces/imodel-options';
 import Op from './operators';
-import Promise from './promise';
 import { AbstractQueryInterface } from './query-interface';
 import { QueryTypes } from './query-types';
 import { Transaction } from './transaction';
 import * as AllUtils from './utils';
 
 const Utils = AllUtils.Utils;
-const defaultsOptions = { raw: true };
 
 /**
  * A Model represents a table in the database. Instances of this class represent a database row.
@@ -45,99 +41,99 @@ const defaultsOptions = { raw: true };
  * @class Model
  * @mixes Hooks
  */
-export class Model extends Mixin {
+export class Model <TInstance extends DataSet<TAttributes>, TAttributes> extends Mixin<TInstance, TAttributes> {
 
-  public __eagerlyLoadedAssociations : any[];
-  public _changed : {};
-  public _customGetters : {};
-  public _customSetters : {};
-  public _hasCustomGetters : number;
-  public _hasCustomSetters : number;
-  public _isAttribute;
-  public _modelOptions : { hasTrigger? : boolean, whereCollection?, validate? };
-  public _options : { include?, includeNames?, includeMap? };
-  public _previousDataValues : {};
+  public dataSetsMethods : {
+    _customGetters? : {};
+    _customSetters? : {};
+    _hasCustomGetters? : number;
+    _hasCustomSetters? : number;
+    validators? : {};
+    [key : string] : any;
+  };
+
+  public attributeManipulation;
+
+  public scoped;
+  public _booleanAttributes : any[];
+  public _dataTypeChanges : {};
+  public _dataTypeSanitizers : {};
+  public _dateAttributes : string[];
+  public _defaultValues : {};
+  public _geometryAttributes : any[];
+  public _hasBooleanAttributes : boolean;
+  public _hasDateAttributes : boolean;
+  public _hasDefaultValues : boolean;
+  public _hasGeometryAttributes : boolean;
+  public _hasHstoreAttributes : boolean;
+  public _hasJsonAttributes : boolean;
+  public _hasPrimaryKeys : boolean;
+  public _hasRangeAttributes : boolean;
+  public _hasReadOnlyAttributes : number;
+  public _hstoreAttributes : any[];
+  public _isBooleanAttribute;
+  public _isDateAttribute;
+  public _isGeometryAttribute;
+  public _isHstoreAttribute;
+  public _isJsonAttribute;
+  public _isPrimaryKey;
+  public _isRangeAttribute;
+  public _isReadOnlyAttribute;
+  public _jsonAttributes : any[];
+  public _rangeAttributes : any[];
+  public _readOnlyAttributes : any[];
   public _schema : string;
   public _schemaDelimiter : string;
   public _scope;
-  public _scopeNames : string;
-  public attributes : string[];
-  public dataValues : {};
-  public isNewRecord : boolean;
-  public options : {};
-  public rawAttributes : {};
-  public scoped;
+  public _scopeNames : string[];
+  public _timestampAttributes : { createdAt?, updatedAt?, deletedAt? };
+  public _versionAttribute;
+  public associations;
+  public autoIncrementAttribute : string;
+  public fieldAttributeMap : {};
+  public fieldRawAttributesMap : {};
+  public hasVirtualAttributes : boolean;
+  public isVirtualAttribute;
+  public options : IModelOptions;
+  public primaryKeyAttribute : string;
+  public primaryKeyAttributes : string[];
+  public primaryKeyField : string;
+  public primaryKeys;
+  public rawAttributes;
+  public sequelize : Sequelize;
+  public tableAttributes : TAttributes;
+  public tableName : any;
+  public underscored : boolean;
+  public underscoredAll : boolean;
+  public uniqueKeys : {};
   public updateAttributes;
-  public validators : {};
-  /**
-   * trick in order to use this.constructor to call static attributes and functions from instances of Model extended classes
-   */
-  public ['constructor'] : typeof Model;
+  public virtualAttributes : any[];
+  public attributes : {};
+  public find : (options?) => Promise<TInstance>;
+  public findAndCountAll;
+  public findByPrimary;
+  public findOrInitialize;
+  public insertOrUpdate;
 
-  public static _booleanAttributes : any[];
-  public static _dataTypeChanges : {};
-  public static _dataTypeSanitizers : {};
-  public static _dateAttributes : string[];
-  public static _defaultValues : {};
-  public static _geometryAttributes : any[];
-  public static _hasBooleanAttributes : boolean;
-  public static _hasDateAttributes : boolean;
-  public static _hasDefaultValues : boolean;
-  public static _hasGeometryAttributes : boolean;
-  public static _hasHstoreAttributes : boolean;
-  public static _hasJsonAttributes : boolean;
-  public static _hasPrimaryKeys : boolean;
-  public static _hasRangeAttributes : boolean;
-  public static _hasReadOnlyAttributes : number;
-  public static _hstoreAttributes : any[];
-  public static _isBooleanAttribute;
-  public static _isDateAttribute;
-  public static _isGeometryAttribute;
-  public static _isHstoreAttribute;
-  public static _isJsonAttribute;
-  public static _isPrimaryKey;
-  public static _isRangeAttribute;
-  public static _isReadOnlyAttribute;
-  public static _jsonAttributes : any[];
-  public static _rangeAttributes : any[];
-  public static _readOnlyAttributes : any[];
-  public static _schema : string;
-  public static _schemaDelimiter : string;
-  public static _scope : {};
-  public static _scopeNames : string[];
-  public static _timestampAttributes : { createdAt?, updatedAt?, deletedAt? };
-  public static _versionAttribute;
-  public static associations : {};
-  public static autoIncrementAttribute : string;
-  public static fieldAttributeMap : {};
-  public static fieldRawAttributesMap : {};
-  public static hasVirtualAttributes : boolean;
-  public static isVirtualAttribute;
-  public static options : IModelOptions;
-  public static primaryKeyAttribute : string;
-  public static primaryKeyAttributes : string[];
-  public static primaryKeyField : string;
-  public static primaryKeys : { id? };
-  public static rawAttributes : { id? };
-  public static sequelize : Sequelize;
-  public static tableAttributes : {};
-  public static tableName : any;
-  public static underscored : boolean;
-  public static underscoredAll : boolean;
-  public static uniqueKeys : {};
-  public static virtualAttributes : any[];
-  public static attributes : {};
-  public static find;
-  public static findAndCountAll;
-  public static findByPrimary;
-  public static findOrInitialize;
-  public static insertOrUpdate;
+  constructor() {
+    super();
+    this.dataSetsMethods = {};
+    this.attributeManipulation = {};
+    this.tableAttributes = {} as TAttributes;
 
-  public static get QueryInterface() : AbstractQueryInterface {
+    // Aliases
+    this.findByPrimary = this.findById;
+    this.find = this.findOne;
+    this.findAndCountAll = this.findAndCount;
+    this.findOrInitialize = this.findOrBuild;
+    this.insertOrUpdate = this.upsert;
+  }
+
+  public get QueryInterface() : AbstractQueryInterface {
     return this.sequelize.getQueryInterface();
   }
 
-  public static get QueryGenerator() : AbstractQueryGenerator {
+  public get QueryGenerator() : AbstractQueryGenerator {
     return this.QueryInterface.QueryGenerator;
   }
 
@@ -145,10 +141,10 @@ export class Model extends Mixin {
    * validateIncludedElements should have been called before this method
    * @hidden
    */
-  private static _paranoidClause(model : typeof Model, options : {
+  private _paranoidClause(model : Model<any, any>, options : {
     /** : string | {}, assocation alias */
     as? : string;
-    association? : Association;
+    association? : Association<TInstance, TAttributes, any, any>;
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any;
     duplicating? : boolean;
@@ -177,7 +173,7 @@ export class Model extends Mixin {
     includeMap? : {};
     /** Internal array of attributes - auto-completed */
     includeNames? : string[];
-    model? : typeof Model;
+    model? : Model<any, any>;
     /** = false, Calling `destroy` will not delete the model, but instead set a `deletedAt` timestamp if this is true. Needs `timestamps=true` to work */
     paranoid? : boolean;
     parent? : {};
@@ -190,7 +186,7 @@ export class Model extends Mixin {
     subQuery? : boolean;
     subQueryFilter? : boolean;
     topLimit? : any;
-    topModel? : typeof Model;
+    topModel? : Model<any, any>;
     /** A hash of search attributes. */
     where? : {};
   }) : {} {
@@ -248,7 +244,7 @@ export class Model extends Mixin {
    * @internal
    * @hidden
    */
-  private static _addDefaultAttributes() {
+  private _addDefaultAttributes() {
     const tail = {};
     let head = {};
 
@@ -329,7 +325,7 @@ export class Model extends Mixin {
    * find the auto increment attribute in rawAttributes
    * @hidden
    */
-  private static _findAutoIncrementAttribute() {
+  public _findAutoIncrementAttribute() {
     this.autoIncrementAttribute = null;
 
     Object.keys(this.rawAttributes).forEach(name => {
@@ -348,7 +344,7 @@ export class Model extends Mixin {
    * check if options provided is valid
    * @hidden
    */
-  private static _conformOptions(options : {
+  public _conformOptions(options : {
     /** The schema that the tables should be created in. This can be overriden for each table in sequelize.define */
     _schema? : string,
     _schemaDelimiter? : string,
@@ -365,7 +361,7 @@ export class Model extends Mixin {
      */
     include? : IInclude[],
     isNewRecord? : boolean,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** Specify if we want only one row without using an array */
     plain? : boolean,
     /** = false, If set to true, values will ignore field and virtual setters. */
@@ -375,7 +371,7 @@ export class Model extends Mixin {
     silent? : boolean,
     /** A hash of search attributes. */
     where? : {}
-  }, self? : typeof Model) {
+  }, self? : Model<any, any>) {
     if (self) {
       self._expandAttributes(options);
     }
@@ -398,7 +394,7 @@ export class Model extends Mixin {
   /**
    * @hidden
    */
-  public static conformOptions(options : {
+  public conformOptions(options : {
     /** The schema that the tables should be created in. This can be overriden for each table in sequelize.define */
     _schema? : string,
     _schemaDelimiter? : string,
@@ -415,7 +411,7 @@ export class Model extends Mixin {
      */
     include? : any[],
     isNewRecord? : boolean,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** Specify if we want only one row without using an array */
     plain? : boolean,
     /** = false, If set to true, values will ignore field and virtual setters. */
@@ -425,7 +421,7 @@ export class Model extends Mixin {
     silent? : boolean,
     /** A hash of search attributes. */
     where? : {}
-  }, self? : typeof Model) {
+  }, self? : Model<any, any>) {
     this._conformOptions(options, self);
   }
 
@@ -433,7 +429,7 @@ export class Model extends Mixin {
    * returns the association specified by include
    * @hidden
    */
-  private static _transformStringAssociation(include : IInclude | string, self : typeof Model) {
+  public _transformStringAssociation(include : IInclude | string, self : Model<any, any>) {
     if (self && typeof include === 'string') {
       if (!self.associations.hasOwnProperty(include)) {
         throw new Error('Association with alias "' + include + '" does not exists');
@@ -446,7 +442,7 @@ export class Model extends Mixin {
   /**
    * @hidden
    */
-  private static _conformInclude(include?, self? : typeof Model) {
+  public _conformInclude(include?, self? : Model<any, any>) {
     let model;
 
     if (include._pseudo) {
@@ -463,7 +459,7 @@ export class Model extends Mixin {
       }
 
       include = { model, association: include, as: include.as };
-    } else if (include.prototype && include.prototype instanceof Model) {
+    } else if (include instanceof Model) {
       include = { model: include };
     } else if (_.isPlainObject(include)) {
       if (include.association) {
@@ -498,7 +494,7 @@ export class Model extends Mixin {
    * check 'all' attribute provided is valid
    * @hidden
    */
-  private static _expandIncludeAllElement(includes : IInclude[], include : { all?, nested?, include? }) {
+  public _expandIncludeAllElement(includes : IInclude[], include : { all?, nested?, include? }) {
     let all = include.all;
     delete include.all;
 
@@ -610,7 +606,7 @@ export class Model extends Mixin {
   /**
    * check if the included options provided is valid
    */
-  public static _validateIncludedElements(options : {
+  public _validateIncludedElements(options : {
     /** : string | {}, assocation alias */
     as? : any,
     hasDuplicating? : boolean;
@@ -639,7 +635,7 @@ export class Model extends Mixin {
     includeNames? : string[];
     /** The maximum count you want to get. */
     limit? : number;
-    model? : typeof Model;
+    model? : Model<any, any>;
     parent? : {};
     /** Throws an error when no records found */
     rejectOnEmpty? : boolean | any;
@@ -647,7 +643,7 @@ export class Model extends Mixin {
     /** Passes by sub-query ? */
     subQuery? : boolean;
     topLimit? : any;
-    topModel? : typeof Model;
+    topModel? : Model<any, any>;
     /** A hash of search attributes. */
     where? : {};
   }, tableNames? : {}) : {
@@ -682,7 +678,7 @@ export class Model extends Mixin {
       this._validateIncludedElement.call(options.model, include, tableNames, options);
 
       if (include.duplicating === undefined) {
-        include.duplicating = include.association.isMultiAssociation || (include.required && include.parent.association && include.parent.association instanceof HasMany && Model.hasParentLimit(include)) ? true : false;
+        include.duplicating = include.association.isMultiAssociation || (include.required && include.parent.association && include.parent.association instanceof HasMany && this.hasParentLimit(include)) ? true : false;
       }
 
       include.hasDuplicating = include.hasDuplicating || include.duplicating;
@@ -714,7 +710,7 @@ export class Model extends Mixin {
           include.subQuery = false;
         } else {
           include.subQueryFilter = false;
-          include.subQuery = include.subQuery || (include.hasParentRequired && include.hasRequired && Model.hasReqOrParentRequired(include, false));
+          include.subQuery = include.subQuery || (include.hasParentRequired && include.hasRequired && this.hasReqOrParentRequired(include, false));
         }
       }
 
@@ -752,7 +748,7 @@ export class Model extends Mixin {
    * return true if this model has a parent limit
    * @hidden
    */
-  private static hasParentLimit(include : IInclude) : boolean {
+  public hasParentLimit(include : IInclude) : boolean {
     let parent = include.parent;
 
     while (parent) {
@@ -769,7 +765,7 @@ export class Model extends Mixin {
   /**
    * @unused
    */
-  // private static hasParentHMOrBTM(include : IInclude, checkSelf : boolean = false) : boolean {
+  // public hasParentHMOrBTM(include : IInclude, checkSelf : boolean = false) : boolean {
   //   let parent = include.parent;
 
   //   if (checkSelf) {
@@ -792,7 +788,7 @@ export class Model extends Mixin {
   /**
    * return true if this model and his parents are required
    */
-  public static hasReqOrParentRequired(include : IInclude, ignoreSelf : boolean = false) : boolean {
+  public hasReqOrParentRequired(include : IInclude, ignoreSelf : boolean = false) : boolean {
     if (ignoreSelf === false && !include.required) {
       return false;
     }
@@ -810,7 +806,7 @@ export class Model extends Mixin {
     return true;
   }
 
-  public static hasParentMismatchOrRequired(include : IInclude, ignoreSelf : boolean = false) : boolean {
+  public hasParentMismatchOrRequired(include : IInclude, ignoreSelf : boolean = false) : boolean {
     if (ignoreSelf === false && (!(include.required) && !(include.mismatch))) {
       return false;
     }
@@ -846,7 +842,7 @@ export class Model extends Mixin {
   /**
    * return true if a parent of this model exist in limit query
    */
-  public static parentExistInLimitQuery(include : IInclude) : boolean {
+  public parentExistInLimitQuery(include : IInclude) : boolean {
     let parent = include.parent;
 
     while (parent) {
@@ -863,7 +859,7 @@ export class Model extends Mixin {
   /**
    * return true if a parent of this model has a HasMany association
    */
-  public static hasParentHasMany(include : IInclude) : boolean {
+  public hasParentHasMany(include : IInclude) : boolean {
     let parent = include.parent;
 
     while (parent) {
@@ -880,7 +876,7 @@ export class Model extends Mixin {
   /**
    * return true if a parent of this model has a BelongsToMany association
    */
-  public static hasParentBelongsToMany(include : IInclude, testSelf : boolean = false) : boolean {
+  public hasParentBelongsToMany(include : IInclude, testSelf : boolean = false) : boolean {
     if (testSelf && include.association instanceof BelongsToMany || (include.association && include.association.options && include.association.options.createByBTM)) {
       return true;
     }
@@ -900,7 +896,7 @@ export class Model extends Mixin {
   /**
    * return the full as path
    */
-  public static getFullAsPath(include : IInclude) : string {
+  public getFullAsPath(include : IInclude) : string {
     const pathArray = [include.as];
     let parent = include.parent;
 
@@ -916,7 +912,7 @@ export class Model extends Mixin {
   /**
    * check if the include option provided is valid
    */
-  public static _validateIncludedElement(include : any, tableNames, options : {
+  public _validateIncludedElement(include : any, tableNames, options : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any;
     hasJoin? : boolean;
@@ -934,7 +930,7 @@ export class Model extends Mixin {
     includeMap? : {};
     /** Internal array of attributes - auto-completed */
     includeNames? : string[];
-    model? : typeof Model;
+    model? : Model<any, any>;
     /** Specify if we want only one row without using an array */
     plain? : boolean;
     preventAddPK? : any;
@@ -943,7 +939,7 @@ export class Model extends Mixin {
     /** Throws an error when no records found */
     rejectOnEmpty? : boolean | any;
     topLimit? : any;
-    topModel? : typeof Model;
+    topModel? : Model<any, any>;
     /** A hash of search attributes. */
     where? : {};
   }) : boolean | {} {
@@ -1079,7 +1075,7 @@ export class Model extends Mixin {
    * return the association between this model and the target model with the targetAlias
    * @hidden
    */
-  private static _getIncludedAssociation(targetModel : typeof Model, targetAlias : string) : Association {
+  public _getIncludedAssociation(targetModel : Model<any, any>, targetAlias? : string) : Association<TInstance, TAttributes, any, any> {
     const associations = this.getAssociations(targetModel);
     let association = null;
     if (associations.length === 0) {
@@ -1109,7 +1105,7 @@ export class Model extends Mixin {
    * @internal
    * @hidden
    */
-  public static getIncludedAssociation(targetModel : typeof Model, targetAlias : string) : Association {
+  public getIncludedAssociation(targetModel : Model<any, any>, targetAlias : string) : Association<TInstance, TAttributes, any, any> {
     return this._getIncludedAssociation(targetModel, targetAlias);
   }
 
@@ -1118,7 +1114,7 @@ export class Model extends Mixin {
    * expand include.all
    * @hidden
    */
-  private static _expandIncludeAll(options : {
+  public _expandIncludeAll(options : {
     /** An object of hook function that are called before and after certain lifecycle events */
     hooks? : boolean,
     /**
@@ -1159,7 +1155,7 @@ export class Model extends Mixin {
    * @internal
    * @hidden
    */
-  public static expandIncludeAll(options : {
+  public expandIncludeAll(options : {
     /** An object of hook function that are called before and after certain lifecycle events */
     hooks? : boolean,
     /**
@@ -1227,7 +1223,7 @@ export class Model extends Mixin {
    * or an object with the following attributes: `attribute` (field name), `length` (create a prefix index of length chars), `order` (the direction the column should be sorted in),
    * `collate` (the collation (sort order) for the column)
    */
-  public static init(attributes : {
+  public init(attributes : {
     /** : String|DataTypes|Object, The description of a database column */
     column? : {
       /** = true, If false, the column will have a NOT NULL constraint, and a not null validation will be run before an instance is saved. */
@@ -1251,7 +1247,7 @@ export class Model extends Mixin {
       /** = null, An object with reference configurations */
       references? : {
         /** If this column references another table, provide it here as a Model, or a string */
-        model? : typeof Model | string,
+        model? : Model<any, any> | string,
         /** = 'id', The column of the foreign table that this column references */
         key? : string;
       };
@@ -1310,9 +1306,9 @@ export class Model extends Mixin {
     paranoid? : boolean,
     /** = 'public' The schema that the tables should be created in. This can be overriden for each table in sequelize.define */
     schema? : string,
-    /** More scopes, defined in the same way as defaultScope above. See `Model.scope` for more information about how scopes are defined, and what you can do with them */
+    /** More scopes, defined in the same way as defaultScope above. See `this.scope` for more information about how scopes are defined, and what you can do with them */
     scopes? : any[],
-    /** Define the sequelize instance to attach to the new Model. Throw error if none is provided. */
+    /** Define the sequelize instance to attach to the new this. Throw error if none is provided. */
     sequelize? : Sequelize,
     /** Defaults to pluralized model name, unless freezeTableName is true, in which case it uses model name verbatim */
     tableName? : string,
@@ -1329,7 +1325,7 @@ export class Model extends Mixin {
      * If the validator function takes an argument, it is assumed to be async,and is called with a callback that accepts an optional error.
      */
     validate? : {}
-  } = {}) : typeof Model { // testhint options:none
+  } = {}) : this { // testhint options:none
     if (!options.sequelize) {
       throw new Error('No Sequelize instance passed');
     }
@@ -1372,7 +1368,7 @@ export class Model extends Mixin {
       schema: null,
       schemaDelimiter: '',
       defaultScope: {},
-      scopes: {},
+      scopes: [],
       indexes: []
     }, options);
 
@@ -1382,7 +1378,7 @@ export class Model extends Mixin {
     }
 
     this.associations = {};
-    (this as any)._setupHooks(options.hooks);
+    this._setupHooks(options.hooks);
 
     this.underscored = this.options.underscored;
 
@@ -1417,7 +1413,7 @@ export class Model extends Mixin {
         throw new Error('Unrecognized data type for field ' + name);
       }
 
-      if (_.get(attribute, 'references.model.prototype') instanceof Model) {
+      if (_.get(attribute, 'references.model') instanceof Model) {
         attribute.references.model = attribute.references.model.getTableName();
       }
 
@@ -1480,7 +1476,7 @@ export class Model extends Mixin {
   /**
    * conform the index
    */
-  public static _conformIndex(index : { type? : string, unique? : boolean }) : { type? : string, unique? : boolean } {
+  public _conformIndex(index : { type? : string, unique? : boolean }) : { type? : string, unique? : boolean } {
     index = _.defaults(index, {
       type: '',
       parser: null
@@ -1496,16 +1492,16 @@ export class Model extends Mixin {
   /**
    * refresh the attributes of the model
    */
-  public static refreshAttributes() {
-    const attributeManipulation = {};
+  public refreshAttributes() {
+    this.attributeManipulation = {};
 
-    this.prototype._customGetters = {};
-    this.prototype._customSetters = {};
+    this.dataSetsMethods._customGetters = {};
+    this.dataSetsMethods._customSetters = {};
 
     for (const type of ['get', 'set']) {
       const opt = type + 'terMethods';
       const funcs = _.clone(_.isObject(this.options[opt]) ? this.options[opt] : {});
-      const _custom = type === 'get' ? this.prototype._customGetters : this.prototype._customSetters;
+      const _custom = type === 'get' ? this.dataSetsMethods._customGetters : this.dataSetsMethods._customSetters;
 
       Object.keys(funcs).forEach(attribute => {
         const method = funcs[attribute];
@@ -1543,12 +1539,12 @@ export class Model extends Mixin {
 
       Object.keys(funcs).forEach(name => {
         const fct = funcs[name];
-        if (!attributeManipulation[name]) {
-          attributeManipulation[name] = {
+        if (!this.attributeManipulation[name]) {
+          this.attributeManipulation[name] = {
             configurable: true
           };
         }
-        attributeManipulation[name][type] = fct;
+        this.attributeManipulation[name][type] = fct;
       });
     }
 
@@ -1563,7 +1559,7 @@ export class Model extends Mixin {
     this._geometryAttributes = [];
     this.virtualAttributes = [];
     this._defaultValues = {};
-    this.prototype.validators = {};
+    this.dataSetsMethods.validators = {};
 
     this.fieldRawAttributesMap = {};
 
@@ -1603,7 +1599,7 @@ export class Model extends Mixin {
         this._dateAttributes.push(name);
       } else if (definition.type instanceof DataTypes.HSTORE || DataTypes.ARRAY.is(definition.type, DataTypes.HSTORE)) {
         this._hstoreAttributes.push(name);
-      } else if (definition.type instanceof DataTypes.RANGE || (DataTypes.ARRAY as any).is(definition.type, DataTypes.RANGE)) {
+      } else if (definition.type instanceof DataTypes.RANGE || DataTypes.ARRAY.is(definition.type, DataTypes.RANGE)) {
         this._rangeAttributes.push(name);
       } else if (definition.type instanceof DataTypes.JSON) {
         this._jsonAttributes.push(name);
@@ -1641,7 +1637,7 @@ export class Model extends Mixin {
       }
 
       if (definition.hasOwnProperty('validate')) {
-        this.prototype.validators[name] = definition.validate;
+        this.dataSetsMethods.validators[name] = definition.validate;
       }
 
       if (definition.index === true && definition.type instanceof DataTypes.JSONB) {
@@ -1686,21 +1682,18 @@ export class Model extends Mixin {
 
     this._hasDefaultValues = !_.isEmpty(this._defaultValues);
 
-    this.tableAttributes = _.omit(this.rawAttributes, this.virtualAttributes);
-
-    this.prototype._hasCustomGetters = Object.keys(this.prototype._customGetters).length;
-    this.prototype._hasCustomSetters = Object.keys(this.prototype._customSetters).length;
-
-    for (const key of Object.keys(attributeManipulation)) {
-      if (Model.prototype.hasOwnProperty(key)) {
-        this.sequelize.log('Not overriding built-in method from model attribute: ' + key);
-        continue;
+    const keysAttributes = Object.keys(this.tableAttributes);
+    for (let i = 0; i < keysAttributes.length; i++) {
+      delete this.tableAttributes[keysAttributes[i]];
+    }
+    for (const key of Object.keys(this.rawAttributes)) {
+      if (!this.virtualAttributes.includes(key)) {
+        this.tableAttributes[key] = this.rawAttributes[key];
       }
-      Object.defineProperty(this.prototype, key, attributeManipulation[key]);
     }
 
-    this.prototype.rawAttributes = this.rawAttributes;
-    this.prototype._isAttribute = key => this.prototype.rawAttributes.hasOwnProperty(key);
+    this.dataSetsMethods._hasCustomGetters = Object.keys(this.dataSetsMethods._customGetters).length;
+    this.dataSetsMethods._hasCustomSetters = Object.keys(this.dataSetsMethods._customSetters).length;
 
     // Primary key convenience constiables
     this.primaryKeyAttributes = Object.keys(this.primaryKeys);
@@ -1716,7 +1709,7 @@ export class Model extends Mixin {
   /**
    * Remove attribute from model definition
    */
-  public static removeAttribute(attribute : string) {
+  public removeAttribute(attribute : string) : void {
     delete this.rawAttributes[attribute];
     this.refreshAttributes();
   }
@@ -1725,7 +1718,7 @@ export class Model extends Mixin {
    * Sync this Model to the DB, that is create the table. Upon success, the callback will be called with the model instance (this)
    * @returns Promise<this>
    */
-  public static sync(options : {
+  public sync(options? : {
     /** = false Alters tables to fit models. Not recommended for production use. Deletes data in columns that were removed or had their type changed in the model. */
     alter? : any,
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
@@ -1782,11 +1775,12 @@ export class Model extends Mixin {
     rejectOnEmpty? : boolean,
     /** = false, Use read / write replication. To enable replication, pass an object, with two properties, read and write. */
     replication? : boolean,
-    retry : {},
+    retry? : {},
     /** = 'public' The schema that the tables should be created in. This can be overriden for each table in sequelize.define */
     schema? : string,
     schemaDelimiter? : string,
     scopes? : any[],
+    searchPath? : string,
     sequelize? : Sequelize,
     ssl? : boolean,
     /** = {}, Default options for sequelize.sync */
@@ -1806,7 +1800,7 @@ export class Model extends Mixin {
     uniqueKeys? : {},
     validate? : {},
     whereCollection? : {}
-  }) {
+  }) : Promise<this> {
     options = _.extend({}, this.options, options);
     options.hooks = options.hooks === undefined ? true : !!options.hooks;
 
@@ -1916,7 +1910,7 @@ export class Model extends Mixin {
    * Drop the table represented by this Model
    * @returns : Promise
    */
-  public static drop(options : {
+  public drop(options? : {
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
     benchmark? : boolean,
     /** = false, Also drop all objects depending on this table, such as views. Only works in postgres */
@@ -1963,14 +1957,14 @@ export class Model extends Mixin {
     timezone? : string,
     transactionTypes? : string,
     typeValidation? : boolean
-  }) {
+  }) : Promise<void> {
     return this.QueryInterface.dropTable(this.getTableName(options), options);
   }
 
   /**
    * drop a schema
    */
-  public static dropSchema(schema? : string) {
+  public dropSchema(schema? : string) {
     return this.QueryInterface.dropSchema(schema);
   }
 
@@ -1987,18 +1981,18 @@ export class Model extends Mixin {
    * @param schema The name of the schema
    * @see {@link Sequelize#define} for more information about setting a default schema.
    */
-  public static schema(schema : string, options : {
+  public schema(schema : string, options? : {
     /** = '.', The character(s) that separates the schema name from the table name */
     schemaDelimiter? : string,
     /** = false, A function that gets executed while running the query to log the sql. */
     logging? : boolean | any,
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
     benchmark? : boolean
-  } | string) : typeof Model { // testhint options:none
+  } | string) : this { // testhint options:none
 
-    const clone = (class extends this {}) as any;
-    Object.defineProperty(clone, 'name', {value: this.name});
-
+    const clone = new Model() as this;
+    Object.assign(clone, this);
+    clone.name = this.name;
     clone._schema = schema;
 
     if (options) {
@@ -2011,7 +2005,6 @@ export class Model extends Mixin {
       }
     }
 
-    // return { scopeObj : clone};
     return clone;
   }
 
@@ -2021,11 +2014,11 @@ export class Model extends Mixin {
    *
    * @returns : String|Object
    */
-  public static getTableName(options? : string | {}) : any { // testhint options:none
+  public getTableName(options? : string | {}) : any { // testhint options:none
     return this.QueryGenerator.addSchema(this);
   }
 
-  public static unscoped() : typeof Model {
+  public unscoped() : this {
     return this.scope(null);
     // return 'scopeObj' in scopeObj ? scopeObj['scopeObj'] : scopeObj;
   }
@@ -2039,7 +2032,7 @@ export class Model extends Mixin {
    * @param name The name of the scope. Use `defaultScope` to override the default scope
    * @param scope : Object|Function
    */
-  public static addScope(name : string, scope : any, options : { override? : boolean }) {
+  public addScope(name : string, scope : any, options? : { override? : boolean }) : void {
     options = _.assign({
       override: false
     }, options);
@@ -2088,15 +2081,15 @@ export class Model extends Mixin {
    *   }
    * })
    * ```
-   * Now, since you defined a default scope, every time you do Model.find, the default scope is appended to your query. Here's a couple of examples:
+   * Now, since you defined a default scope, every time you do this.find, the default scope is appended to your query. Here's a couple of examples:
    * ```js
-   * Model.findAll() // WHERE username = 'dan'
-   * Model.findAll({ where: { age: { [Op.gt]: 12 } } }) // WHERE age > 12 AND username = 'dan'
+   * this.findAll() // WHERE username = 'dan'
+   * this.findAll({ where: { age: { [Op.gt]: 12 } } }) // WHERE age > 12 AND username = 'dan'
    * ```
    *
    * To invoke scope functions you can do:
    * ```js
-   * Model.scope({ method: ['complexFunction', 'dan@sequelize.com', 42]}).findAll()
+   * this.scope({ method: ['complexFunction', 'dan@sequelize.com', 42]}).findAll()
    * // WHERE email like 'dan@sequelize.com%' AND access_level >= 42
    * ```
    *
@@ -2106,13 +2099,13 @@ export class Model extends Mixin {
    * Pass null to remove all scopes, including the default.
    * @returns A reference to the model, with the scope(s) applied. Calling scope again on the returned model will clear the previous scope.
    */
-  public static scope(options : any) : typeof Model {
+  public scope(options : any, ...args) : this {
 
-    const self = class extends this {} as any;
+    const self = new Model() as this;
     let scope;
     let scopeName;
-    Object.defineProperty(self, 'name', {value: this.name});
     Object.assign(self, this);
+    Object.defineProperty(self, 'name', {value: this.name});
 
     self._scope = {};
     self._scopeNames = [];
@@ -2196,7 +2189,7 @@ export class Model extends Mixin {
   /**
    * alias of findAll
    */
-  public static all(options : {}) : any {
+  public all(options? : {}) : Promise<TInstance[]> {
     return this.findAll(options);
   }
 
@@ -2205,7 +2198,7 @@ export class Model extends Mixin {
    *
    * __Simple search using AND and =__
    * ```js
-   * Model.findAll({
+   * this.findAll({
    *   where: {
    *     attr1: 42,
    *     attr2: 'cake'
@@ -2219,7 +2212,7 @@ export class Model extends Mixin {
    * __Using greater than, less than etc.__
    * ```js
    * const {gt, lte, ne, in: opIn} = Sequelize.Op;
-   * Model.findAll({
+   * this.findAll({
    *   where: {
    *     attr1: {
    *       [gt]: 50
@@ -2244,7 +2237,7 @@ export class Model extends Mixin {
    * __Queries using OR__
    * ```js
    * const {or, and, gt, lt} = Sequelize.Op;
-   * Model.findAll({
+   * this.findAll({
    *   where: {
    *     name: 'a project',
    *     [or]: [
@@ -2275,7 +2268,7 @@ export class Model extends Mixin {
    * @link   {@link Sequelize.query}
    * @returns : Promise<Array<Model>>
    */
-  public static findAll(options : {
+  public findAll(options? : {
     /**
      * Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys.
      * To rename an attribute, you can pass an array, with two elements - the first is the name of the attribute in the DB (or some kind of expression such as `Sequelize.literal`,
@@ -2286,6 +2279,7 @@ export class Model extends Mixin {
     benchmark? : boolean;
     /** Group by clause */
     group? : {};
+    groupedLimit? : {};
     hasDuplicating? : boolean;
     hasIncludeRequired? : boolean;
     hasIncludeWhere? : boolean,
@@ -2303,7 +2297,7 @@ export class Model extends Mixin {
      * Supported is either `{ include: [ Model1, Model2, ...]}` or `{ include: [{ model: Model1, as: 'Alias' }]}` or `{ include: ['Alias']}`.
      * If your association are set up with an `as` (eg. `X.hasMany(Y, { as: 'Z }`, you need to specify Z in the as attribute when eager loading Y).
      */
-    include? : IInclude[];
+    include? : IInclude[] | any;
     /** Internal map of includes - auto-completed */
     includeMap? : {};
     /** Internal array of attributes - auto-completed */
@@ -2317,7 +2311,7 @@ export class Model extends Mixin {
     lock? : string | any;
     /** = false, A function that gets executed while running the query to log the sql. */
     logging? : boolean | any;
-    model? : typeof Model;
+    model? : Model<any, any>;
     /** An offset value to start from. Only useable with limit! */
     offset? : number;
     /**
@@ -2325,7 +2319,7 @@ export class Model extends Mixin {
      * The first element is the column / function to order by, the second is the direction. For example: `order: [['name', 'DESC']]`.
      * In this way the column will be escaped, but the direction will not.
      */
-    order? : any[];
+    order? : any[] | string;
     originalAttributes? : any;
     /**
      * = true, If true, only non-deleted records will be returned. If false, both deleted and non-deleted records will be returned.
@@ -2341,16 +2335,17 @@ export class Model extends Mixin {
     rejectOnEmpty? : boolean | any;
     /** = DEFAULT, An optional parameter to specify the schema search_path (Postgres only) */
     searchPath? : string;
+    skipLocked? : boolean;
     /** Passes by sub-query ? */
     subQuery? : boolean;
     tableNames? : string[];
     topLimit? : any;
-    topModel? : typeof Model;
+    topModel? : Model<any, any>;
     /** Transaction to run query under */
     transaction? : Transaction;
     /** A hash of attributes to describe your search. */
     where? : {};
-  }) {
+  }) : Promise<TInstance[]> {
     if (options !== undefined && !_.isPlainObject(options)) {
       throw new sequelizeErrors.QueryError('The argument passed to findAll must be an options object, use findById if you wish to pass a single primary key value');
     }
@@ -2436,7 +2431,7 @@ export class Model extends Mixin {
         }
       }
 
-      return Model._findSeparate(results, originalOptions);
+      return this._findSeparate(results, originalOptions);
     });
   }
 
@@ -2444,7 +2439,7 @@ export class Model extends Mixin {
    * write warning message if invalid options
    * @hidden
    */
-  private static _warnOnInvalidOptions(options : {
+  private _warnOnInvalidOptions(options : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any;
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
@@ -2514,15 +2509,15 @@ export class Model extends Mixin {
    * @internal
    * @hidden
    */
-  public static warnOnInvalidOptions(options : {}, validColumnNames : string[]) {
+  public warnOnInvalidOptions(options : {}, validColumnNames? : string[]) {
     this._warnOnInvalidOptions(options, validColumnNames);
   }
 
   /**
-   * @param results : Model | Model[]
+   * @param results : Model<any, any> | Array<Model<any, any>>
    * @hidden
    */
-  private static _findSeparate(results : any, options : {
+  private _findSeparate(results : any, options : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any;
     hasDuplicating? : boolean;
@@ -2544,7 +2539,7 @@ export class Model extends Mixin {
     includeMap? : {};
     /** Internal array of attributes - auto-completed */
     includeNames? : string[];
-    model? : typeof Model;
+    model? : Model<any, any>;
     /** Specify if we want only one row without using an array */
     plain? : boolean;
     /** = false, If set to true, values will ignore field and virtual setters. */
@@ -2554,7 +2549,7 @@ export class Model extends Mixin {
     /** Passes by sub-query ? */
     subQuery? : boolean;
     topLimit? : any;
-    topModel? : typeof Model;
+    topModel? : Model<any, any>;
     /** A hash of search attributes. */
     where? : {};
   }) : any {
@@ -2573,7 +2568,7 @@ export class Model extends Mixin {
 
     return Promise.map(options.include, include => {
       if (!include.separate) {
-        return Model._findSeparate(
+        return this._findSeparate(
           results.reduce((memo, result) => {
             let associations = result.get(include.association.as);
 
@@ -2600,7 +2595,7 @@ export class Model extends Mixin {
         );
       }
 
-      return include.association.get(results, _.assign(
+      return (include.association as any).get(results, _.assign(
         {},
         _.omit(options, ['include', 'attributes', 'originalAttributes', 'order', 'where', 'limit', 'offset', 'plain', 'group']),
         _.omit(include, ['parent', 'association', 'as', 'originalAttributes'])
@@ -2624,22 +2619,25 @@ export class Model extends Mixin {
    * __Alias__: _findByPrimary_
    *
    * @param  id : Number|String|Buffer, The value of the desired instance's primary key.
-   * @see {@link Model.findAll} for a full explanation of options
+   * @see {@link this.findAll} for a full explanation of options
    */
-  public static findById(param : any, options : {
+  public findById(param : any, options? : {
     /**
      * Array<Object|Model|String>, A list of associations to eagerly load using a left join.
      * Supported is either `{ include: [ Model1, Model2, ...]}` or `{ include: [{ model: Model1, as: 'Alias' }]}` or `{ include: ['Alias']}`.
      * If your association are set up with an `as` (eg. `X.hasMany(Y, { as: 'Z }`, you need to specify Z in the as attribute when eager loading Y).
      */
-    include? : IInclude[]
+    include? : IInclude[],
+    logging? : any,
+    paranoid? : boolean,
+    rejectOnEmpty? : boolean,
     /** = DEFAULT, An optional parameter to specify the schema search_path (Postgres only) */
     searchPath? : string,
     /** Transaction to run query under */
     transaction? : Transaction,
     /** A hash of search attributes. */
     where? : {},
-  }) : Promise<Model> {
+  }) : Promise<TInstance> {
     // return Promise resolved with null if no arguments are passed
     if ([null, undefined].indexOf(param) !== -1) {
       return Promise.resolve(null);
@@ -2664,9 +2662,10 @@ export class Model extends Mixin {
    * __Alias__: _find_
    *
    * @param options A hash of options to describe the scope of the search
-   * @see {@link Model.findAll} for an explanation of options
+   * @see {@link this.findAll} for an explanation of options
    */
-  public static findOne(options : {
+  public findOne(options? : {
+    attributes? : any[],
     dataType? : any,
     /** An object of hook function that are called before and after certain lifecycle events */
     hooks? : boolean,
@@ -2675,23 +2674,26 @@ export class Model extends Mixin {
      * Supported is either `{ include: [ Model1, Model2, ...]}` or `{ include: [{ model: Model1, as: 'Alias' }]}` or `{ include: ['Alias']}`.
      * If your association are set up with an `as` (eg. `X.hasMany(Y, { as: 'Z }`, you need to specify Z in the as attribute when eager loading Y).
      */
-    include? : IInclude[],
+    include? : any[],
     includeIgnoreAttributs? : boolean,
     /** The maximum count you want to get. */
     limit? : number,
+    logging? : any,
     /** An offset value to start from. Only useable with limit! */
     offset? : number,
     /** OrderBy clause */
     order? : any,
     /** Specify if we want only one row without using an array */
     plain? : boolean,
+    raw? : boolean,
+    rejectOnEmpty? : boolean,
     /** = DEFAULT, An optional parameter to specify the schema search_path (Postgres only) */
     searchPath? : string,
     /** Transaction to run query under */
     transaction? : Transaction,
     /** A hash of search attributes. */
     where? : {},
-  }) : Promise<Model> {
+  }) : Promise<TInstance> {
     if (options !== undefined && !_.isPlainObject(options)) {
       throw new Error('The argument passed to findOne must be an options object, use findById if you wish to pass a single primary key value');
     }
@@ -2713,7 +2715,7 @@ export class Model extends Mixin {
     return this.findAll(_.defaults(options, {
       plain: true,
       rejectOnEmpty: false
-    }));
+    })) as any;
   }
 
   /**
@@ -2724,7 +2726,7 @@ export class Model extends Mixin {
    * @param options Query options. See sequelize.query for full options
    * @returns : Promise<DataTypes|object>, Returns the aggregate result cast to `options.dataType`, unless `options.plain` is false, in which case the complete data result is returned.
    */
-  public static aggregate(attribute : string, aggregateFunction : string, options : {
+  public aggregate(attribute : string, aggregateFunction : string, options? : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any,
     /** = false Pass query execution time in milliseconds as second argument to logging function (options.logging). */
@@ -2761,7 +2763,7 @@ export class Model extends Mixin {
     transaction? : Transaction,
     /** A hash of search attributes. */
     where? : {},
-  }) : Promise<any> {
+  }) : Promise<number> {
     options = Utils.cloneDeep(options);
     options = _.defaults(options, { attributes: [] });
 
@@ -2805,7 +2807,7 @@ export class Model extends Mixin {
    * Count the number of records matching the provided where clause.
    * If you provide an `include` option, the number of matching associations will be counted instead.
    */
-  public static count(options : {
+  public count(options? : {
     /** Used in conjunction with `group` */
     attributes? : any,
     /** = false Pass query execution time in milliseconds as second argument to logging function (options.logging). */
@@ -2877,7 +2879,7 @@ export class Model extends Mixin {
    * Find all the rows matching your query, within a specified offset / limit, and get the total number of rows matching your query. This is very useful for paging
    *
    * ```js
-   * Model.findAndCountAll({
+   * this.findAndCountAll({
    *   where: ...,
    *   limit: 12,
    *   offset: 12
@@ -2904,10 +2906,11 @@ export class Model extends Mixin {
    *
    * @param findOptions See findAll
    *
-   * @see {@link Model.findAll} for a specification of find and query options
-   * @return {Promise<{count: Integer, rows: Model[]}>}
+   * @see {@link this.findAll} for a specification of find and query options
+   * @return {Promise<{count: Integer, rows: Array<Model<any, any>>}>}
    */
-  public static findAndCount(options : {
+  public findAndCount(options? : {
+    attributes? : string[],
     distinct? : boolean,
     /**
      * Array<Object|Model|String>, A list of associations to eagerly load using a left join.
@@ -2919,9 +2922,13 @@ export class Model extends Mixin {
     limit? : number,
     /** An offset value to start from. Only useable with limit! */
     offset? : number,
+    order? : string[][],
     /** A hash of search attributes. */
     where? : {}
-  }) : Promise<any> {
+  }) : Promise< {
+    count : number,
+    rows : TInstance[]
+  }> {
     if (options !== undefined && !_.isPlainObject(options)) {
       throw new Error('The argument passed to findAndCount must be an options object, use findById if you wish to pass a single primary key value');
     }
@@ -2935,7 +2942,7 @@ export class Model extends Mixin {
     return Promise.all([
       this.count(countOptions),
       this.findAll(options),
-    ]).spread((count, rows) => ({
+    ]).spread((count : number, rows : TInstance[]) => ({
       count,
       rows: count === 0 ? [] : rows
     }));
@@ -2948,7 +2955,7 @@ export class Model extends Mixin {
    * @param options See aggregate
    * @see {@link Model#aggregate} for options
    */
-  public static max(field : string, options : {}) : Promise<any> {
+  public max(field : string, options? : {}) : Promise<number> {
     return this.aggregate(field, 'max', options);
   }
 
@@ -2959,7 +2966,7 @@ export class Model extends Mixin {
    * @param options See aggregate
    * @see {@link Model#aggregate} for options
    */
-  public static min(field : string, options : {}) : Promise<any> {
+  public min(field : string, options? : {}) : Promise<number> {
     return this.aggregate(field, 'min', options);
   }
 
@@ -2970,7 +2977,7 @@ export class Model extends Mixin {
    * @param options See aggregate
    * @see {@link Model#aggregate} for options
    */
-  public static sum(field : string, options : {}) : Promise<number> {
+  public sum(field : string, options? : {}) : Promise<number> {
     return this.aggregate(field, 'sum', options);
   }
 
@@ -2978,9 +2985,8 @@ export class Model extends Mixin {
    * Builds a new model instance.
    * class extends Model {}
    * @param values = {} An object of key value pairs or an array of such. If an array, the function will return an array of instances.
-   * @returns : Model|Model[]
    */
-  public static build(values : {}, options? : {
+  public build(values? : TAttributes, options? : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any,
     /**
@@ -2988,22 +2994,19 @@ export class Model extends Mixin {
      * Supported is either `{ include: [ Model1, Model2, ...]}` or `{ include: [{ model: Model1, as: 'Alias' }]}` or `{ include: ['Alias']}`.
      * If your association are set up with an `as` (eg. `X.hasMany(Y, { as: 'Z }`, you need to specify Z in the as attribute when eager loading Y).
      */
-    include? : any[],
+    include? : any,
     /** = true */
     isNewRecord? : boolean,
     /** = false, If set to true, values will ignore field and virtual setters. */
     raw? : boolean,
     silent? : boolean,
     where? : {}
-  }) : any { // testhint options:none
-    if (Array.isArray(values)) {
-      return this.bulkBuild(values, options);
-    }
-
-    return new this(values, options);
+  }) : TInstance {
+    const newDataSet = new DataSet<TAttributes>(this, values, options) as TInstance;
+    return newDataSet;
   }
 
-  public static bulkBuild(valueSets : any, options : {
+  public bulkBuild(valueSets : TAttributes[], options : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any
     /**
@@ -3020,7 +3023,7 @@ export class Model extends Mixin {
     isNewRecord? : boolean,
     /** = false, If set to true, values will ignore field and virtual setters. */
     raw? : boolean
-  }) { // testhint options:none
+  }) : TInstance[] { // testhint options:none
     options = _.extend({
       isNewRecord: true
     }, options || {});
@@ -3037,16 +3040,15 @@ export class Model extends Mixin {
       options.attributes = options.attributes.map(attribute => Array.isArray(attribute) ? attribute[1] : attribute);
     }
 
-    return valueSets.map(values => this.build(values, options));
+    return valueSets.map(values =>
+      this.build(values, options)
+    );
   }
 
   /**
    * Builds a new model instance and calls save on it.
-   * @see {@link Model#build}
-   * @see {@link Model#save}
-   * @returns : Promise<Model>
    */
-  public static create(values : {}, options : {
+  public create(values? : TAttributes, options? : {
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
     benchmark? : boolean;
     /**
@@ -3061,7 +3063,7 @@ export class Model extends Mixin {
      * Supported is either `{ include: [ Model1, Model2, ...]}` or `{ include: [{ model: Model1, as: 'Alias' }]}` or `{ include: ['Alias']}`.
      * If your association are set up with an `as` (eg. `X.hasMany(Y, { as: 'Z }`, you need to specify Z in the as attribute when eager loading Y).
      */
-    include? : IInclude[];
+    include? : IInclude[] | IInclude | string[];
     /** = true */
     isNewRecord? : boolean;
     /** = false, A function that gets executed while running the query to log the sql */
@@ -3075,12 +3077,12 @@ export class Model extends Mixin {
     /** = false, If true, the updatedAt timestamp will not be updated. */
     silent? : boolean;
     /** Transaction to run query under */
-    transaction? : Transaction;
+    transaction? : Transaction | {};
     /** = true, If false, validations won't be run. */
     validate? : boolean;
     /** A hash of search attributes. */
     where? : {}
-  }) : any {
+  }) : Promise<TInstance> {
     options = Utils.cloneDeep(options || {});
 
     return this.build(values, {
@@ -3099,18 +3101,19 @@ export class Model extends Mixin {
    * __Alias__: _findOrInitialize_
    * @return {Promise<Model,initialized>}
    */
-  public static findOrBuild(options : {
+  public findOrBuild(options : {
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
     benchmark? : boolean,
     /** Default values to use if building a new instance */
     defaults? : {},
     /** = false, A function that gets executed while running the query to log the sql. */
     logging? : boolean | any,
+    include? : any[],
     /** Transaction to run query under */
     transaction? : Transaction,
     /** A hash of search attributes. */
     where? : {}
-  }) {
+  }) : Promise<Array<TInstance | boolean>> {
     if (!options || !options.where || arguments.length > 1) {
       throw new Error(
         'Missing where attribute in the options parameter passed to findOrInitialize. ' +
@@ -3147,15 +3150,17 @@ export class Model extends Mixin {
    *
    * @returns : Promise<Model,created>
    */
-  public static findOrCreate(options : {
+  public findOrCreate(options : {
     /** Default values to use if creating a new instance */
     defaults? : {},
     exception? : boolean,
+    lock?,
+    logging? : any,
     /** Transaction to run query under */
-    transaction? : Transaction,
+    transaction? : Transaction | {},
     /** where A hash of search attributes. */
     where? : {}
-  }) {
+  }) : Promise<TInstance> {
     if (!options || !options.where || arguments.length > 1) {
       throw new Error(
         'Missing where attribute in the options parameter passed to findOrCreate. ' +
@@ -3257,24 +3262,24 @@ export class Model extends Mixin {
   /**
    * A more performant findOrCreate that will not work under a transaction (at least not in postgres)
    * Will execute a find call, if empty then attempt to create, if unique constraint then attempt to find again
-   * @see {@link Model.findAll} for a full specification of find and options
+   * @see {@link this.findAll} for a full specification of find and options
    * @returns : Promise<Model,created>
    */
-  public static findCreateFind(options : {
+  public findCreateFind(options : {
     /** Default values to use if creating a new instance */
-    defaults? : {},
+    defaults? : TAttributes,
     /** where A hash of search attributes. */
     where? : {}
-  }) {
+  }) : Promise<Array<TInstance | boolean>> {
     if (!options || !options.where) {
       throw new Error(
         'Missing where attribute in the options parameter passed to findOrCreate.'
       );
     }
 
-    let values = _.clone(options.defaults) || {};
+    let values = _.clone(options.defaults) || {} as TAttributes;
     if (_.isPlainObject(options.where)) {
-      values = Utils.defaults(values, options.where);
+      values = Utils.defaults(values, options.where) as TAttributes;
     }
 
 
@@ -3305,7 +3310,7 @@ export class Model extends Mixin {
    *
    * @returns : Promise<created>, Returns a boolean indicating whether the row was created or updated.
    */
-  public static upsert(values : {}, options : {
+  public upsert(values : TAttributes, options? : {
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
     benchmark? : boolean,
     /** = Object.keys(this.attributes)], The fields to insert / update. Defaults to all changed fields */
@@ -3314,7 +3319,7 @@ export class Model extends Mixin {
     hooks? : boolean,
     /** = false, A function that gets executed while running the query to log the sql. */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** = DEFAULT, An optional parameter to specify the schema search_path (Postgres only) */
     searchPath? : string,
     returning? : boolean,
@@ -3322,7 +3327,7 @@ export class Model extends Mixin {
     transaction? : Transaction,
     /** = true, Run validations before the row is inserted */
     validate? : boolean
-  }) {
+  }) : Promise<boolean | TInstance> {
     options = Object.assign({
       hooks: true,
       returning: false,
@@ -3398,7 +3403,7 @@ export class Model extends Mixin {
    *
    * @param  records List of objects (key/value pairs) to create instances from
    */
-  public static bulkCreate(records : any[], options : {
+  public bulkCreate(records : TAttributes[], options : {
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
     benchmark? : boolean,
     /** Fields to insert (defaults to all fields) */
@@ -3407,23 +3412,24 @@ export class Model extends Mixin {
     hooks? : boolean,
     /** = false, Ignore duplicate values for primary keys? (not supported by postgres) */
     ignoreDuplicates? : boolean,
-    /** = false, Run before / after create hooks for each individual Instance? BulkCreate hooks will still be run if options.hooks is true. */
+    /** = false, Run before / after create hooks for each individual row? BulkCreate hooks will still be run if options.hooks is true. */
     individualHooks? : boolean,
     /** = false, A function that gets executed while running the query to log the sql. */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** = false, Append RETURNING * to get back auto generated values (Postgres only) */
     returning? : boolean,
     /** = DEFAULT, An optional parameter to specify the schema search_path (Postgres only) */
     searchPath? : string,
+    silent? : boolean,
     skip? : any,
     /** Transaction to run query under */
     transaction? : Transaction,
     /** Fields to update if row key already exists (on duplicate key update)? (only supported by mysql). By default, all fields are updated. */
-    updateOnDuplicate? : any[],
+    updateOnDuplicate? : any[] | boolean,
     /** = false, Should each row be subject to validation before it is inserted. The whole insert will fail if one row fails validation */
     validate? : boolean
-  } = {}) : Promise<Model[]> {
+  } = {}) : Promise<TInstance[]> {
     if (!records.length) {
       return Promise.resolve([]);
     }
@@ -3526,8 +3532,8 @@ export class Model extends Mixin {
         // Create all in one query
         // Recreate records from instances to represent any changes made in hooks or validation
         records = instances.map(instance => {
-          return _.omit(instance.dataValues, this.virtualAttributes);
-        });
+          return _.omit(instance.dataValues as any, this.virtualAttributes);
+        }) as TAttributes[];
 
         // Map attributes for serial identification
         const fieldMappedAttributes = {};
@@ -3536,7 +3542,7 @@ export class Model extends Mixin {
         });
         // Map updateOnDuplicate attributes to fields
         if (options.updateOnDuplicate) {
-          options.updateOnDuplicate = options.updateOnDuplicate.map(attr => this.rawAttributes[attr].field || attr);
+          options.updateOnDuplicate = (options.updateOnDuplicate as any[]).map(attr => this.rawAttributes[attr].field || attr);
         }
 
         return this.QueryInterface.bulkInsert(this.getTableName(options), records, options, fieldMappedAttributes).then(results => {
@@ -3577,11 +3583,11 @@ export class Model extends Mixin {
 
 
   /**
-   * Truncate all instances of the model. This is a convenient method for Model.destroy({ truncate: true }).
-   * @param options The options passed to Model.destroy in addition to truncate
+   * Truncate all instances of the model. This is a convenient method for this.destroy({ truncate: true }).
+   * @param options The options passed to this.destroy in addition to truncate
    * @see {@link Model#destroy} for more information
    */
-  public static truncate(options : {
+  public truncate(options? : {
     /** = false Pass query execution time in milliseconds as second argument to logging function (options.logging). */
     benchmark? : boolean,
     /** = false : Boolean|function, Only used in conjunction with TRUNCATE. Truncates  all tables that have foreign-key references to the named table, or to any tables added to the group due to CASCADE. */
@@ -3594,7 +3600,7 @@ export class Model extends Mixin {
     transaction? : Transaction,
     /** = false, If set to true, dialects that support it will use TRUNCATE instead of DELETE FROM. If a table is truncated the where and limit options are ignored */
     truncate? : boolean
-  }) : Promise<any> {
+  }) : Promise<TInstance> {
     options = Utils.cloneDeep(options) || {};
     options.truncate = true;
     return this.destroy(options);
@@ -3604,7 +3610,7 @@ export class Model extends Mixin {
    * Delete multiple instances, or set their deletedAt timestamp to the current time if `paranoid` is enabled.
    * @returns The number of destroyed rows
    */
-  public static destroy(options : {
+  public destroy(options? : {
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
     benchmark? : boolean,
     /** = false, Only used in conjunction with TRUNCATE. Truncates  all tables that have foreign-key references to the named table, or to any tables added to the group due to CASCADE. */
@@ -3619,7 +3625,7 @@ export class Model extends Mixin {
     limit? : number,
     /** A function that gets executed while running the query to log the sql. */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** = false, Only used in conjunction with TRUNCATE. Automatically restart sequences owned by columns of the truncated table. */
     restartIdentity? : boolean,
     /** An optional parameter to specify the schema search_path (Postgres only) */
@@ -3635,7 +3641,7 @@ export class Model extends Mixin {
     type? : string,
     /** Filter the destroy */
     where? : {}
-  }) : Promise<number> {
+  }) : Promise<TInstance> {
     options = Utils.cloneDeep(options);
 
     this._injectScope(options);
@@ -3711,7 +3717,7 @@ export class Model extends Mixin {
   /**
    * Restore multiple instances if `paranoid` is enabled.
    */
-  public static restore(options : {
+  public restore(options? : {
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
     benchmark? : boolean,
     /** = true, Run before / after bulk restore hooks? */
@@ -3722,7 +3728,7 @@ export class Model extends Mixin {
     limit? : number,
     /** = false, A function that gets executed while running the query to log the sql. */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** = false, A flag that defines if null values should be passed to SQL queries or not. */
     omitNull? : boolean,
     /** Transaction to run query under */
@@ -3734,7 +3740,7 @@ export class Model extends Mixin {
     type? : string,
     /** Filter the restore */
     where? : {}
-  }) : Promise<undefined> {
+  }) : Promise<void> {
     if (!this._timestampAttributes.deletedAt) {
       throw new Error('Model is not paranoid');
     }
@@ -3793,7 +3799,7 @@ export class Model extends Mixin {
    * of affected rows, while the second element is the actual affected rows (only supported in postgres with `options.returning` true.)
    * @returns : Promise<Array<affectedCount,affectedRows>>
    */
-  public static update(values, options : {
+  public update(values? : TAttributes, options? : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any,
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
@@ -3809,7 +3815,7 @@ export class Model extends Mixin {
     limit? : number,
     /** = false, A function that gets executed while running the query to log the sql. */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** = false, A flag that defines if null values should be passed to SQL queries or not. */
     omitNull? : boolean,
     /** = true, If true, only non-deleted records will be updated. If false, both deleted and non-deleted records will be updated. Only applies if `options.paranoid` is true for the model. */
@@ -3832,7 +3838,7 @@ export class Model extends Mixin {
     validate? : boolean,
     /** Options to describe the scope of the search. */
     where? : {}
-  }) : Promise<any> {
+  }) : Promise<number | TInstance[]> {
     options = Utils.cloneDeep(options);
 
     this._injectScope(options);
@@ -3873,8 +3879,8 @@ export class Model extends Mixin {
 
     options.model = this;
 
-    let instances;
-    let valuesUse;
+    let instances : TInstance[];
+    let valuesUse : TAttributes;
 
     return Promise.try(() => {
       // Validate
@@ -3892,7 +3898,7 @@ export class Model extends Mixin {
         return build.validate(options).then(attributes => {
           options.skip = undefined;
           if (attributes && attributes.dataValues) {
-            values = _.pick(attributes.dataValues, Object.keys(values));
+            values = _.pick(attributes.dataValues, Object.keys(values)) as TAttributes;
           }
         });
       }
@@ -3927,7 +3933,7 @@ export class Model extends Mixin {
             // Record updates in instances dataValues
             _.extend(instance.dataValues, values);
             // Set the changed fields on the instance
-            _.forIn(valuesUse, (newValue, attr) => {
+            _.forIn(valuesUse, (newValue, attr : keyof TAttributes) => {
               if (newValue !== instance._previousDataValues[attr]) {
                 instance.setDataValue(attr, newValue);
               }
@@ -4022,7 +4028,7 @@ export class Model extends Mixin {
   /**
    * Run a describe query on the table. The result will be return to the listener as a hash of attributes and their types.
    */
-  public static describe(schema, options) : Promise<any> {
+  public describe(schema?, options?) : Promise<any> {
     return this.QueryInterface.describeTable(this.tableName, _.assign({schema: schema || this._schema || undefined}, options));
   }
 
@@ -4030,7 +4036,7 @@ export class Model extends Mixin {
    * return the defaultTimestamp or undefined
    * @hidden
    */
-  private static _getDefaultTimestamp(attr : string) {
+  public _getDefaultTimestamp(attr : string) {
     if (!!this.rawAttributes[attr] && !!this.rawAttributes[attr].defaultValue) {
       return Utils.toDefaultValue(this.rawAttributes[attr].defaultValue, this.sequelize.options.dialect);
     }
@@ -4041,7 +4047,7 @@ export class Model extends Mixin {
    * expand attributes option
    * @hidden
    */
-  private static _expandAttributes(options : { attributes? : any }) {
+  private _expandAttributes(options : { attributes? : any }) {
     if (_.isPlainObject(options.attributes)) {
       let attributes = Object.keys(this.rawAttributes);
 
@@ -4061,7 +4067,7 @@ export class Model extends Mixin {
   /**
    * Compare 2 éléments en profondeur
    */
-  private static deepEquals(elem1 : any, elem2 : any) : boolean {
+  public deepEquals(elem1 : any, elem2 : any) : boolean {
     // si les 2 élements ne sont pas de même type retourne faux
     if (typeof elem1 !== typeof elem2) {
       return false;
@@ -4113,14 +4119,14 @@ export class Model extends Mixin {
    *  Inject _scope into options. Includes should have been conformed (conformOptions) before calling this
    * @hidden
    */
-  private static _injectScope(options : {
+  public _injectScope(options : {
     hooks? : boolean,
     /**
      * Array<Object|Model|String>, A list of associations to eagerly load using a left join.
      * Supported is either `{ include: [ Model1, Model2, ...]}` or `{ include: [{ model: Model1, as: 'Alias' }]}` or `{ include: ['Alias']}`.
      * If your association are set up with an `as` (eg. `X.hasMany(Y, { as: 'Z }`, you need to specify Z in the as attribute when eager loading Y).
      */
-    include? : IInclude[]
+    include? : IInclude[],
     /** Throws an error when no records found */
     rejectOnEmpty? : boolean,
     /** A hash of search attributes. */
@@ -4149,7 +4155,7 @@ export class Model extends Mixin {
             }
           }
           if (!isAlreadyInWhereOption) {
-            (options.where as any).push(filteredScope.where[i]);
+            options.where.push(filteredScope.where[i]);
           }
         }
       } else {
@@ -4193,11 +4199,11 @@ export class Model extends Mixin {
   }
 
 
-  public static inspect() : string {
+  public inspect() : string {
     return this.name;
   }
 
-  public static hasAlias(alias) : boolean {
+  public hasAlias(alias) : boolean {
     return this.associations.hasOwnProperty(alias);
   }
 
@@ -4209,9 +4215,9 @@ export class Model extends Mixin {
   * query. To get the correct value after an increment into the Instance you should do a reload.
   *
   * ```js
-  * Model.increment('number', { where: { foo: 'bar' }) // increment number by 1
-  * Model.increment(['number', 'count'], { by: 2, where: { foo: 'bar' } }) // increment number and count by 2
-  * Model.increment({ answer: 42, tries: -1}, { by: 2, where: { foo: 'bar' } }) // increment answer by 42, and decrement tries by 1.
+  * this.increment('number', { where: { foo: 'bar' }) // increment number by 1
+  * this.increment(['number', 'count'], { by: 2, where: { foo: 'bar' } }) // increment number and count by 2
+  * this.increment({ answer: 42, tries: -1}, { by: 2, where: { foo: 'bar' } }) // increment answer by 42, and decrement tries by 1.
   *                                                        // `by` is ignored, since each column has its own value
   * ```
   *
@@ -4220,13 +4226,13 @@ export class Model extends Mixin {
   * If an array is provided, the same is true for each column. If and object is provided, each column is incremented by the value given.
   * @returns : Promise<this>
   */
-  public static increment(fields : string | any[] | {}, options : {
+  public increment(fields : string | any[] | {}, options? : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any,
     /** = 1, The number to increment by */
     by? : number,
     increment? : boolean,
-    instance? : Model,
+    dataSet? : DataSet<any>,
     /** = false A function that gets executed while running the query to log the sql. */
     logging? : boolean | any,
     /** Return the affected rows (only for postgres) */
@@ -4307,25 +4313,25 @@ export class Model extends Mixin {
    * ```sql SET column = column - X WHERE foo = 'bar'``` query. To get the correct value after a decrement into the Instance you should do a reload.
    *
    * ```js
-   * Model.decrement('number', { where: { foo: 'bar' });
+   * this.decrement('number', { where: { foo: 'bar' });
    *
    * // decrement number and count by 2
-   * Model.decrement(['number', 'count'], { by: 2, where: { foo: 'bar' } });
+   * this.decrement(['number', 'count'], { by: 2, where: { foo: 'bar' } });
    *
    * // decrement answer by 42, and decrement tries by -1.
    * // `by` is ignored, since each column has its own value
-   * Model.decrement({ answer: 42, tries: -1}, { by: 2, where: { foo: 'bar' } });
+   * this.decrement({ answer: 42, tries: -1}, { by: 2, where: { foo: 'bar' } });
    * ```
    *
    * @returns : Promise<this>
    */
-  public static decrement(fields : string | any[] | {}, options : {
+  public decrement(fields : string | any[] | {}, options : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any,
     /** = 1, The number to increment by */
     by? : number,
     increment? : boolean,
-    instance? : Model,
+    dataSet? : DataSet<any>,
     /** = false A function that gets executed while running the query to log the sql. */
     logging? : boolean | any,
     /** Return the affected rows (only for postgres) */
@@ -4349,1168 +4355,12 @@ export class Model extends Mixin {
   /**
    * @hidden
    */
-  private static _optionsMustContainWhere(options : { where? }) {
+  private _optionsMustContainWhere(options : { where? }) {
     assert(options && options.where, 'Missing where attribute in the options parameter');
     assert(_.isPlainObject(options.where) || _.isArray(options.where) || options.where instanceof AllUtils.SequelizeMethod,
       'Expected plain object, array or sequelize method in the options.where parameter');
   }
 
-  /**
-   * Builds a new model instance.
-   * @param values an object of key value pairs
-   */
-  constructor(values? : {}, options? : {
-    /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
-    attributes? : any,
-    /**
-     * Array<Object|Model|String>, A list of associations to eagerly load using a left join.
-     * Supported is either `{ include: [ Model1, Model2, ...]}` or `{ include: [{ model: Model1, as: 'Alias' }]}` or `{ include: ['Alias']}`.
-     * If your association are set up with an `as` (eg. `X.hasMany(Y, { as: 'Z }`, you need to specify Z in the as attribute when eager loading Y).
-     */
-    include? : IInclude[],
-    includeValidated? : boolean,
-    /** = true */
-    isNewRecord? : boolean,
-    /** = false If set to true, values will ignore field and virtual setters. */
-    raw? : boolean
-  }) {
-    super();
-    values = values || {};
-    options = _.extend({
-      isNewRecord: true,
-      _schema: this.constructor._schema,
-      _schemaDelimiter: this.constructor._schemaDelimiter
-    }, options || {});
-
-    if (options.attributes) {
-      options.attributes = options.attributes.map(attribute => Array.isArray(attribute) ? attribute[1] : attribute);
-    }
-
-    if (!options.includeValidated) {
-      this.constructor._conformOptions(options, this.constructor);
-      if (options.include) {
-        this.constructor._expandIncludeAll(options);
-        this.constructor._validateIncludedElements(options);
-      }
-    }
-
-    this.dataValues = {};
-    this._previousDataValues = {};
-    this._changed = {};
-    this._modelOptions = this.constructor.options;
-    this._options = options || {};
-    this.__eagerlyLoadedAssociations = [];
-    /**
-     * Returns true if this instance has not yet been persisted to the database
-     * @property isNewRecord
-     * @returns Boolean,
-     */
-    this.isNewRecord = options.isNewRecord;
-
-    /**
-     * Returns the Model the instance was created from.
-     * @see {@link Model}
-     * @property Model
-     * @returns Model,
-     */
-
-    if (values === {}) {
-      return;
-    }
-
-    this._initValues(values, options);
-  }
-
-  /**
-   * init the instance values
-   */
-  public _initValues(values : {}, options : {
-    /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
-    attributes? : any,
-    /**
-     * Array<Object|Model|String>, A list of associations to eagerly load using a left join.
-     * Supported is either `{ include: [ Model1, Model2, ...]}` or `{ include: [{ model: Model1, as: 'Alias' }]}` or `{ include: ['Alias']}`.
-     * If your association are set up with an `as` (eg. `X.hasMany(Y, { as: 'Z }`, you need to specify Z in the as attribute when eager loading Y).
-     */
-    include? : IInclude[],
-    includeValidated? : boolean,
-    /** = true */
-    isNewRecord? : boolean,
-    /** = false If set to true, values will ignore field and virtual setters. */
-    raw? : boolean
-  }) {
-    let defaults;
-
-    values = values && _.clone(values) || {};
-
-    if (options.isNewRecord) {
-      defaults = {};
-
-      if (this.constructor._hasDefaultValues) {
-        defaults = _.mapValues((this.constructor._defaultValues as any), valueFn => {
-          const value = valueFn();
-          return value && value instanceof AllUtils.SequelizeMethod ? value : _.cloneDeep(value);
-        });
-      }
-
-      // set id to null if not passed as value, a newly created dao has no id
-      // removing this breaks bulkCreate
-      // do after default values since it might have UUID as a default value
-      if (this.constructor.primaryKeyAttribute && !defaults.hasOwnProperty(this.constructor.primaryKeyAttribute)) {
-        defaults[this.constructor.primaryKeyAttribute] = null;
-      }
-
-      if (this.constructor._timestampAttributes.createdAt && defaults[this.constructor._timestampAttributes.createdAt]) {
-        this.dataValues[this.constructor._timestampAttributes.createdAt] = Utils.toDefaultValue(defaults[this.constructor._timestampAttributes.createdAt], this.sequelize.options.dialect);
-        delete defaults[this.constructor._timestampAttributes.createdAt];
-      }
-
-      if (this.constructor._timestampAttributes.updatedAt && defaults[this.constructor._timestampAttributes.updatedAt]) {
-        this.dataValues[this.constructor._timestampAttributes.updatedAt] = Utils.toDefaultValue(defaults[this.constructor._timestampAttributes.updatedAt], this.sequelize.options.dialect);
-        delete defaults[this.constructor._timestampAttributes.updatedAt];
-      }
-
-      if (this.constructor._timestampAttributes.deletedAt && defaults[this.constructor._timestampAttributes.deletedAt]) {
-        this.dataValues[this.constructor._timestampAttributes.deletedAt] = Utils.toDefaultValue(defaults[this.constructor._timestampAttributes.deletedAt], this.sequelize.options.dialect);
-        delete defaults[this.constructor._timestampAttributes.deletedAt];
-      }
-
-      Object.keys(defaults).forEach(key => {
-        if (values[key] === undefined) {
-          this.set(key, Utils.toDefaultValue(defaults[key], this.sequelize.options.dialect), defaultsOptions);
-          delete values[key];
-        }
-      });
-    }
-
-    this.set(values, options);
-  }
-
-  /**
-   * A reference to the sequelize instance
-   * @see {@link Sequelize}
-   * @property sequelize
-   */
-  get sequelize() : Sequelize {
-    return this.constructor.sequelize;
-  }
-
-  /**
-   * Get an object representing the query for this instance, use with `options.where`
-   * @property where
-   */
-  public where(checkVersion? : boolean) : {} {
-    const where = this.constructor.primaryKeyAttributes.reduce((result, attribute) => {
-      result[attribute] = this.get(attribute, {raw: true});
-      return result;
-    }, {});
-
-    if (_.size(where) === 0) {
-      return this._modelOptions.whereCollection;
-    }
-    const versionAttr = this.constructor._versionAttribute;
-    if (checkVersion && versionAttr) {
-      where[versionAttr] = this.get(versionAttr, {raw: true});
-    }
-    return Utils.mapWhereFieldNames(where, this.constructor);
-  }
-
-  public toString() : string {
-    return '[object SequelizeInstance:' + this.constructor.name + ']';
-  }
-
-  /**
-   * Get the value of the underlying data value
-   */
-  public getDataValue(key : string) : any {
-    return this.dataValues[key];
-  }
-
-  /**
-   * Update the underlying data value
-   */
-  public setDataValue(key : string, value : any) {
-    const originalValue = this._previousDataValues[key];
-    if ((!Utils.isPrimitive(value) && value !== null) || value !== originalValue) {
-      this.changed(key, true);
-    }
-
-    this.dataValues[key] = value;
-  }
-
-  /**
-   * If no key is given, returns all values of the instance, also invoking virtual getters.
-   * If key is given and a field or virtual getter is present for the key it will call that getter - else it will return the value for key.
-   */
-  public get(key? : string | any, options? : {
-    clone? : any,
-    /** = false If set to true, included instances will be returned as plain objects */
-    plain? : boolean,
-    /** = false If set to true, field and virtual setters will be ignored */
-    raw? : boolean
-  }) : {} | any { // testhint options:none
-    if (options === undefined && typeof key === 'object') {
-      options = key;
-      key = undefined;
-    }
-
-    options = options || {};
-
-    if (key) {
-      if (this._customGetters.hasOwnProperty(key) && !options.raw) {
-        return this._customGetters[key].call(this, key, options);
-      }
-      if (options.plain && this._options.include && this._options.includeNames.indexOf(key) !== -1) {
-        if (Array.isArray(this.dataValues[key])) {
-          return this.dataValues[key].map(instance => instance.get(options));
-        } else if (this.dataValues[key] instanceof Model) {
-          return this.dataValues[key].get(options);
-        } else {
-          return this.dataValues[key];
-        }
-      }
-      return this.dataValues[key];
-    }
-
-    if (this._hasCustomGetters || options.plain && this._options.include || options.clone) {
-      const values = {};
-
-      if (this._hasCustomGetters) {
-        Object.keys(this._customGetters).forEach(_key => {
-          values[_key] = this.get(_key, options);
-        });
-      }
-
-      Object.keys(this.dataValues).forEach(_key => {
-        values[_key] = this.get(_key, options);
-      });
-      return values;
-    }
-    return this.dataValues;
-  }
-
-  /**
-   * Set is used to update values on the instance (the sequelize representation of the instance that is, remember that nothing will be persisted before you actually call `save`).
-   * In its most basic form `set` will update a value stored in the underlying `dataValues` object. However, if a custom setter function is defined for the key, that function
-   * will be called instead. To bypass the setter, you can pass `raw: true` in the options object.
-   *
-   * If set is called with an object, it will loop over the object, and call set recursively for each key, value pair. If you set raw to true, the underlying dataValues will either be
-   * set directly to the object passed, or used to extend dataValues, if dataValues already contain values.
-   *
-   * When set is called, the previous value of the field is stored and sets a changed flag(see `changed`).
-   *
-   * Set can also be used to build instances for associations, if you have values for those.
-   * When using set with associations you need to make sure the property key matches the alias of the association
-   * while also making sure that the proper include options have been set (from .build() or .find())
-   *
-   * If called with a dot.separated key on a JSON/JSONB attribute it will set the value nested and flag the entire object as changed.
-   *
-   * @see {@link Model.findAll} for more information about includes
-   * @param key : String|Object
-   */
-  public set(key? : string | any, value? : any, options? : {
-    /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
-    attributes? : any,
-    /** = false If set to true, field and virtual setters will be ignored */
-    raw? : boolean,
-    /** = false Clear all previously set data values */
-    reset? : boolean
-  }) : Model { // testhint options:none
-    let values;
-    let originalValue;
-
-    if (typeof key === 'object' && key !== null) {
-      values = key;
-      options = value || {};
-
-      if (options.reset) {
-        this.dataValues = {};
-      }
-
-      // If raw, and we're not dealing with includes or special attributes, just set it straight on the dataValues object
-      if (options.raw && !(this._options && this._options.include) && !(options && options.attributes) && !this.constructor._hasBooleanAttributes && !this.constructor._hasDateAttributes) {
-        if (Object.keys(this.dataValues).length) {
-          this.dataValues = _.extend(this.dataValues, values);
-        } else {
-          this.dataValues = values;
-        }
-        // If raw, .changed() shouldn't be true
-        this._previousDataValues = _.clone(this.dataValues);
-      } else {
-        // Loop and call set
-        if (options.attributes) {
-          let keys = options.attributes;
-          if (this.constructor.hasVirtualAttributes) {
-            keys = keys.concat(this.constructor.virtualAttributes);
-          }
-
-          if (this._options.includeNames) {
-            keys = keys.concat(this._options.includeNames);
-          }
-
-          for (let i = 0, length = keys.length; i < length; i++) {
-            if (values[keys[i]] !== undefined) {
-              this.set(keys[i], values[keys[i]], options);
-            }
-          }
-        } else {
-          Object.keys(values).forEach(valuesKey => {
-            this.set(valuesKey, values[valuesKey], options);
-          });
-        }
-
-        if (options.raw) {
-          // If raw, .changed() shouldn't be true
-          this._previousDataValues = _.clone(this.dataValues);
-        }
-      }
-    } else {
-      if (!options) {
-        options = {};
-      }
-      if (!options.raw) {
-        originalValue = this.dataValues[key];
-      }
-
-      // If not raw, and there's a custom setter
-      if (!options.raw && this._customSetters[key]) {
-        this._customSetters[key].call(this, value, key);
-        // custom setter should have changed value, get that changed value
-        // TODO: v5 make setters return new value instead of changing internal store
-        const newValue = this.dataValues[key];
-        if (!Utils.isPrimitive(newValue) && newValue !== null || newValue !== originalValue) {
-          this._previousDataValues[key] = originalValue;
-          this.changed(key, true);
-        }
-      } else {
-        // Check if we have included models, and if this key matches the include model names/aliases
-        if (this._options && this._options.include && this._options.includeNames.indexOf(key) !== -1) {
-          // Pass it on to the include handler
-          this._setInclude(key, value, options);
-          return this;
-        } else {
-          // Bunch of stuff we won't do when it's raw
-          if (!options.raw) {
-            // If attribute is not in model definition, return
-            if (!this._isAttribute(key)) {
-              if (key.indexOf('.') > -1 && this.constructor._isJsonAttribute(key.split('.')[0])) {
-                const previousDottieValue = Dottie.get(this.dataValues, key);
-                if (!_.isEqual(previousDottieValue, value)) {
-                  Dottie.set(this.dataValues, key, value);
-                  this.changed(key.split('.')[0], true);
-                }
-              }
-              return this;
-            }
-
-            // If attempting to set primary key and primary key is already defined, return
-            if (this.constructor._hasPrimaryKeys && originalValue && this.constructor._isPrimaryKey(key)) {
-              return this;
-            }
-
-            // If attempting to set read only attributes, return
-            if (!this.isNewRecord && this.constructor._hasReadOnlyAttributes && this.constructor._isReadOnlyAttribute(key)) {
-              return this;
-            }
-          }
-
-          // If there's a data type sanitizer
-          if (!(value instanceof AllUtils.SequelizeMethod) && this.constructor._dataTypeSanitizers.hasOwnProperty(key)) {
-            value = this.constructor._dataTypeSanitizers[key].call(this, value, options);
-          }
-
-          // Set when the value has changed and not raw
-          if (
-            !options.raw &&
-            (
-              // True when sequelize method
-              value instanceof AllUtils.SequelizeMethod ||
-              // Check for data type type comparators
-              !(value instanceof AllUtils.SequelizeMethod) && this.constructor._dataTypeChanges[key] && this.constructor._dataTypeChanges[key].call(this, value, originalValue, options) ||
-              // Check default
-              !this.constructor._dataTypeChanges[key] && (!Utils.isPrimitive(value) && value !== null || value !== originalValue)
-            )
-          ) {
-            this._previousDataValues[key] = originalValue;
-            this.changed(key, true);
-          }
-
-          // set data value
-          this.dataValues[key] = value;
-        }
-      }
-    }
-
-    return this;
-  }
-
-  public setAttributes(updates : any) : Model {
-    return this.set(updates);
-  }
-
-  /**
-   * If changed is called with a string it will return a boolean indicating whether the value of that key in `dataValues` is different from the value in `_previousDataValues`.
-   * If changed is called without an argument, it will return an array of keys that have changed.
-   * If changed is called without an argument and no keys have changed, it will return `false`.
-   *
-   * @returns : Boolean|Array
-   */
-  public changed(key? : string, value? : boolean | any[]) : any {
-    if (key) {
-      if (value !== undefined) {
-        this._changed[key] = value;
-        return this;
-      }
-      return this._changed[key] || false;
-    }
-
-    const changed = Object.keys(this.dataValues).filter(datavaluesKey => this.changed(datavaluesKey));
-
-    return changed.length ? changed : false;
-  }
-
-  /**
-   * Returns the previous value for key from `_previousDataValues`.
-   * If called without a key, returns the previous values for all values which have changed
-   */
-  public previous(key : string) : any | any[] {
-    if (key) {
-      return this._previousDataValues[key];
-    }
-
-    return _.pickBy(this._previousDataValues, (value, valueKey) => this.changed(valueKey));
-  }
-
-  /**
-   * @hidden
-   */
-  private _setInclude(key : string, value : any, options : {
-    /** The schema that the tables should be created in. This can be overriden for each table in sequelize.define */
-    _schema? : string,
-    _schemaDelimiter? : string,
-    /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
-    attributes? : any,
-    /**
-     * Array<Object|Model|String>, A list of associations to eagerly load using a left join.
-     * Supported is either `{ include: [ Model1, Model2, ...]}` or `{ include: [{ model: Model1, as: 'Alias' }]}` or `{ include: ['Alias']}`.
-     * If your association are set up with an `as` (eg. `X.hasMany(Y, { as: 'Z }`, you need to specify Z in the as attribute when eager loading Y).
-     */
-    include? : IInclude[],
-    /** Internal map of includes - auto-completed */
-    includeMap? : {},
-    /** Internal array of attributes - auto-completed */
-    includeNames? : string[],
-    includeValidated? : boolean,
-    isNewRecord? : boolean,
-    /** = false, If set to true, values will ignore field and virtual setters. */
-    raw? : boolean
-  }) {
-    if (!Array.isArray(value)) {
-      value = [value];
-    }
-    if (value[0] instanceof Model) {
-      value = value.map(instance => instance.dataValues);
-    }
-
-    const include = this._options.includeMap[key];
-    const association = include.association;
-    const accessor = key;
-    const primaryKeyAttribute  = include.model.primaryKeyAttribute;
-    let childOptions;
-    let isEmpty;
-
-    if (!isEmpty) {
-      childOptions = {
-        isNewRecord: this.isNewRecord,
-        include: include.include,
-        includeNames: include.includeNames,
-        includeMap: include.includeMap,
-        includeValidated: true,
-        raw: options.raw,
-        attributes: include.originalAttributes
-      };
-    }
-    if (include.originalAttributes === undefined || include.originalAttributes.length) {
-      if (association.isSingleAssociation) {
-        if (Array.isArray(value)) {
-          value = value[0];
-        }
-
-        isEmpty = value && value[primaryKeyAttribute] === null || value === null;
-        this[accessor] = this.dataValues[accessor] = isEmpty ? null : include.model.build(value, childOptions);
-      } else {
-        isEmpty = value[0] && value[0][primaryKeyAttribute] === null;
-        this[accessor] = this.dataValues[accessor] = isEmpty ? [] : include.model.bulkBuild(value, childOptions);
-      }
-    }
-  }
-
-  /**
-   * Validate this instance, and if the validation passes, persist it to the database. It will only save changed fields, and do nothing if no fields have changed.
-   * On success, the callback will be called with this instance. On validation error, the callback will be called with an instance of `Sequelize.ValidationError`.
-   * This error will have a property for each of the fields for which validation failed, with the error message for that field.
-   *
-   * @returns : Promise<this|Errors.ValidationError>
-   */
-  public save(options : {
-    association? : Association,
-    defaultFields? : string[],
-    /** An optional array of strings, representing database columns. If fields is provided, only those columns will be validated and saved. */
-    fields? : string[],
-    /** = true, Run before and after create / update + validate hooks */
-    hooks? : boolean,
-    /** Do not change the updatedAt value passed as parameter to the instance */
-    preventTimestamps? : boolean,
-    /** = false, A function that gets executed while running the query to log the sql. */
-    logging? : boolean | any,
-    /** = DEFAULT, An optional parameter to specify the schema search_path (Postgres only) */
-    searchPath? : string,
-    /** = false, If true, the updatedAt timestamp will not be updated. */
-    silent? : boolean,
-    skip? : string[],
-    /** Append RETURNING * to get back auto generated values (Postgres only) */
-    returning? : boolean,
-    /** Transaction to run query under */
-    transaction? : Transaction,
-    /** = true, If false, validations won't be run. */
-    validate? : boolean
-  }) : Promise<any> {
-    if (arguments.length > 1) {
-      throw new Error('The second argument was removed in favor of the options object.');
-    }
-
-    options = Utils.cloneDeep(options);
-    options = _.defaults(options, {
-      hooks: true,
-      validate: true
-    });
-
-    if (!options.fields) {
-      if (this.isNewRecord) {
-        options.fields = Object.keys(this.constructor.rawAttributes);
-      } else {
-        options.fields = _.intersection(this.changed(), Object.keys(this.constructor.rawAttributes));
-      }
-
-      options.defaultFields = options.fields;
-    }
-
-    if (options.returning === undefined) {
-      if (options.association) {
-        options.returning = false;
-      } else if (this.isNewRecord) {
-        options.returning = true;
-      }
-    }
-
-    const primaryKeyName = this.constructor.primaryKeyAttribute;
-    const primaryKeyAttribute = primaryKeyName && this.constructor.rawAttributes[primaryKeyName];
-    const createdAtAttr = this.constructor._timestampAttributes.createdAt;
-    const versionAttr = this.constructor._versionAttribute;
-    const hook = this.isNewRecord ? 'Create' : 'Update';
-    const wasNewRecord = this.isNewRecord;
-    const now = Utils.now(this.sequelize.options.dialect);
-    let updatedAtAttr = this.constructor._timestampAttributes.updatedAt;
-
-    if (updatedAtAttr && options.fields.length >= 1 && options.fields.indexOf(updatedAtAttr) === -1) {
-      options.fields.push(updatedAtAttr);
-    }
-    if (versionAttr && options.fields.length >= 1 && options.fields.indexOf(versionAttr) === -1) {
-      options.fields.push(versionAttr);
-    }
-
-    if (options.silent === true && !(this.isNewRecord && this.get(updatedAtAttr, {raw: true}))) {
-      // UpdateAtAttr might have been added as a result of Object.keys(Model.attributes). In that case we have to remove it again
-      _.remove(options.fields, val => val === updatedAtAttr);
-      updatedAtAttr = false;
-    }
-
-    if (this.isNewRecord === true) {
-      if (createdAtAttr && options.fields.indexOf(createdAtAttr) === -1) {
-        options.fields.push(createdAtAttr);
-      }
-
-      if (primaryKeyAttribute && primaryKeyAttribute.defaultValue && options.fields.indexOf(primaryKeyName) < 0) {
-        options.fields.unshift(primaryKeyName);
-      }
-    }
-
-    if (this.isNewRecord === false) {
-      if (primaryKeyName && this.get(primaryKeyName, {raw: true}) === undefined) {
-        throw new Error('You attempted to save an instance with no primary key, this is not allowed since it would result in a global update');
-      }
-    }
-
-    if (updatedAtAttr && !options.silent && options.fields.indexOf(updatedAtAttr) !== -1 && !options.preventTimestamps) {
-      this.dataValues[updatedAtAttr] = this.constructor._getDefaultTimestamp(updatedAtAttr) || now;
-    }
-
-    if (this.isNewRecord && createdAtAttr && !this.dataValues[createdAtAttr]) {
-      this.dataValues[createdAtAttr] = this.constructor._getDefaultTimestamp(createdAtAttr) || now;
-    }
-
-    return Promise.try(() => {
-      // Validate
-      if (options.validate) {
-        return this.validate(options);
-      }
-    }).then(() => {
-      // Run before hook
-      if (options.hooks) {
-        const beforeHookValues = _.pick(this.dataValues, options.fields);
-        let ignoreChanged = _.difference(this.changed(), options.fields); // In case of update where it's only supposed to update the passed values and the hook values
-        let hookChanged;
-        let afterHookValues;
-
-        if (updatedAtAttr && options.fields.indexOf(updatedAtAttr) !== -1) {
-          ignoreChanged = _.without(ignoreChanged, updatedAtAttr);
-        }
-
-        return this.constructor.runHooks('before' + hook, this, options)
-          .then(() => {
-            if (options.defaultFields && !this.isNewRecord) {
-              afterHookValues = _.pick(this.dataValues, _.difference(this.changed(), ignoreChanged));
-
-              hookChanged = [];
-              for (const key of Object.keys(afterHookValues)) {
-                if (afterHookValues[key] !== beforeHookValues[key]) {
-                  hookChanged.push(key);
-                }
-              }
-
-              options.fields = _.uniq(options.fields.concat(hookChanged));
-            }
-
-            if (hookChanged) {
-              if (options.validate) {
-              // Validate again
-
-                options.skip = _.difference(Object.keys(this.constructor.rawAttributes), hookChanged);
-                return this.validate(options).then(() => {
-                  delete options.skip;
-                });
-              }
-            }
-          });
-      }
-    }).then(() => {
-      if (!options.fields.length) {
-        return this;
-      }
-      if (!this.isNewRecord) {
-        return this;
-      }
-      if (!this._options.include || !this._options.include.length) {
-        return this;
-      }
-
-      // Nested creation for BelongsTo relations
-      return Promise.map(this._options.include.filter(include => include.association instanceof BelongsTo), include => {
-        const instance = this.get(include.as);
-        if (!instance) {
-          return Promise.resolve();
-        }
-
-        const includeOptions =  _(Utils.cloneDeep(include))
-          .omit(['association'])
-          .defaults({
-            transaction: options.transaction,
-            logging: options.logging,
-            parentRecord: this
-          }).value();
-
-        return instance.save(includeOptions).then(() => this[include.association.accessors.set](instance, {save: false, logging: options.logging}));
-      });
-    }).then(() => {
-      const realFields = options.fields.filter(field => !this.constructor.isVirtualAttribute(field));
-      if (!realFields.length) {
-        return this;
-      }
-      if (!this.changed() && !this.isNewRecord) {
-        return this;
-      }
-
-      const versionFieldName = _.get(this.constructor.rawAttributes[versionAttr], 'field') || versionAttr;
-      let values = Utils.mapValueFieldNames(this.dataValues, options.fields, this.constructor);
-      let query = null;
-      let args = [];
-      let where;
-
-      if (this.isNewRecord) {
-        query = 'insert';
-        args = [this, this.constructor.getTableName(options), values, options];
-      } else {
-        where = this.where(true);
-        where = Utils.mapValueFieldNames(where, Object.keys(where), this.constructor);
-        if (versionAttr) {
-          values[versionFieldName] += 1;
-        }
-        query = 'update';
-        args = [this, this.constructor.getTableName(options), values, where, options];
-      }
-
-      return this.sequelize.getQueryInterface()[query].apply(this.sequelize.getQueryInterface(), args)
-        .then(results => {
-          const result : { dataValues? } = _.head(results);
-          const rowsUpdated = results[1];
-
-          if (versionAttr) {
-            // Check to see that a row was updated, otherwise it's an optimistic locking error.
-            if (rowsUpdated < 1) {
-              throw new sequelizeErrors.OptimisticLockError({
-                modelName: this.constructor.name,
-                values,
-                where
-              });
-            } else {
-              result.dataValues[versionAttr] = values[versionFieldName];
-            }
-          }
-
-          // Transfer database generated values (defaults, autoincrement, etc)
-          for (const attr of Object.keys(this.constructor.rawAttributes)) {
-            if (this.constructor.rawAttributes[attr].field &&
-                values[this.constructor.rawAttributes[attr].field] !== undefined &&
-                this.constructor.rawAttributes[attr].field !== attr
-            ) {
-              values[attr] = values[this.constructor.rawAttributes[attr].field];
-              delete values[this.constructor.rawAttributes[attr].field];
-            }
-          }
-          values = _.extend(values, result.dataValues);
-
-          result.dataValues = _.extend(result.dataValues, values);
-          return result;
-        })
-        .tap(() => {
-          if (!wasNewRecord) {
-            return this;
-          }
-          if (!this._options.include || !this._options.include.length) {
-            return this;
-          }
-
-          // Nested creation for HasOne/HasMany/BelongsToMany relations
-          return Promise.map(this._options.include.filter(include => !(include.association instanceof BelongsTo)), include => {
-            let instances = this.get(include.as);
-
-            if (!instances) {
-              return Promise.resolve();
-            }
-            if (!Array.isArray(instances)) {
-              instances = [instances];
-            }
-            if (!instances.length) {
-              return Promise.resolve();
-            }
-
-            const includeOptions =  _(Utils.cloneDeep(include))
-              .omit(['association'])
-              .defaults({
-                transaction: options.transaction,
-                logging: options.logging,
-                parentRecord: this
-              }).value();
-
-            // Instances will be updated in place so we can safely treat HasOne like a HasMany
-            return Promise.map(instances, instance => {
-              if (include.association instanceof BelongsToMany) {
-                return instance.save(includeOptions).then(() => {
-                  const _values = {};
-                  _values[include.association.foreignKey] = this.get(this.constructor.primaryKeyAttribute, {raw: true});
-                  _values[include.association.otherKey] = instance.get(instance.constructor.primaryKeyAttribute, {raw: true});
-                  // Include values defined in the scope of the association
-                  _.assign(_values, include.association.through.scope);
-                  return include.association.throughModel.create(_values, includeOptions);
-                });
-              } else {
-                instance.set(include.association.foreignKey, this.get(include.association.sourceKey || this.constructor.primaryKeyAttribute, {raw: true}));
-                _.assign(instance, include.association.scope);
-                return instance.save(includeOptions);
-              }
-            });
-          });
-        })
-        .tap(result => {
-          // Run after hook
-          if (options.hooks) {
-            return this.constructor.runHooks('after' + hook, result, options);
-          }
-        })
-        .then(result => {
-          for (const field of options.fields) {
-            result._previousDataValues[field] = result.dataValues[field];
-            this.changed(field, false);
-          }
-          this.isNewRecord = false;
-          return result;
-        });
-    });
-  }
-
- /**
-  * Refresh the current instance in-place, i.e. update the object with current data from the DB and return the same object.
-  * This is different from doing a `find(Instance.id)`, because that would create and return a new instance. With this method,
-  * all references to the Instance are updated with the new data and no new objects are created.
-  *
-  * @see {@link Model.findAll}
-  * @param options Options that are passed on to `Model.find`
-  */
-  public reload(options : {
-    attributes : any[],
-    /**
-     * Array<Object|Model|String>, A list of associations to eagerly load using a left join.
-     * Supported is either `{ include: [ Model1, Model2, ...]}` or `{ include: [{ model: Model1, as: 'Alias' }]}` or `{ include: ['Alias']}`.
-     * If your association are set up with an `as` (eg. `X.hasMany(Y, { as: 'Z }`, you need to specify Z in the as attribute when eager loading Y).
-     */
-    include? : IInclude[],
-    /** = false, A function that gets executed while running the query to log the sql. */
-    logging? : boolean | any,
-    /** A hash of search attributes. */
-    where? : {}
-  }) : Promise<Model> {
-    options = _.defaults({}, options, {
-      where: this.where(),
-      include: this._options.include || null
-    });
-
-    return this.constructor.findOne(options)
-    .then(reload => {
-      if (!reload) {
-        throw new sequelizeErrors.InstanceError(
-          'Instance could not be reloaded because it does not exist anymore (find call returned null)'
-        );
-      } else {
-        // update the internal options of the instance
-        this._options = reload._options;
-        // re-set instance values
-        this.set(reload.dataValues, {
-          raw: true,
-          reset: true && !options.attributes
-        });
-        return this;
-      }
-    });
-  }
-
- /**
-  * Validate the attributes of this instance according to validation rules set in the model definition.
-  * The promise fulfills if and only if validation successful; otherwise it rejects an Error instance containing { field name : [error msgs] } entries.
-  * @param options Options that are passed to the validator
-  */
-  public validate(options : {
-    defaultFields? : string[],
-    /** An array of strings. Only the properties that are in this array will be validated */
-    fields? : string[],
-    /** = true Run before and after validate hooks */
-    hooks? : boolean,
-    ruterning? : boolean,
-    /** An array of strings. All properties that are in this array will not be validated */
-    skip? : string[],
-    validate? : boolean
-  }) : Promise<undefined> {
-    return new InstanceValidator(this, options).validate();
-  }
-
-  /**
-   * This is the same as calling `set` and then calling `save` but it only saves the
-   * exact values passed to it, making it more atomic and safer.
-   *
-   * @see {@link Model#set}
-   * @see {@link Model#save}
-   * @param updates See `set`
-   * @param options See `save`
-   */
-  public update(values : {}, options : {
-    defaultFields? : string[],
-    fields? : string[],
-  }) : Promise<Model> {
-    const changedBefore = this.changed() || [];
-
-    options = options || {};
-    if (Array.isArray(options)) {
-      options = {fields: options};
-    }
-
-    options = Utils.cloneDeep(options);
-    const setOptions = Utils.cloneDeep(options);
-    setOptions.attributes = options.fields;
-    this.set(values, setOptions);
-
-    // Now we need to figure out which fields were actually affected by the setter.
-    const sideEffects = _.without.apply(this, [this.changed() || []].concat(changedBefore));
-    const fields = _.union(Object.keys(values), sideEffects);
-
-    if (!options.fields) {
-      options.fields = _.intersection(fields, this.changed());
-      options.defaultFields = options.fields;
-    }
-
-    return this.save(options);
-  }
-
-  /**
-   * Destroy the row corresponding to this instance. Depending on your setting for paranoid, the row will either be completely deleted, or have its deletedAt timestamp set to the current time.
-   */
-  public destroy(options : {
-    /** = false, If set to true, paranoid models will actually be deleted */
-    force? : boolean,
-    /** An object of hook function that are called before and after certain lifecycle events */
-    hooks? : boolean,
-    /** = false, A function that gets executed while running the query to log the sql. */
-    logging? : boolean | any,
-    /** = DEFAULT, An optional parameter to specify the schema search_path (Postgres only) */
-    searchPath? : string,
-    /** Transaction to run query under */
-    transaction? : Transaction
-  }) : Promise<undefined> {
-    options = _.extend({
-      hooks: true,
-      force: false
-    }, options);
-
-    return Promise.try(() => {
-      // Run before hook
-      if (options.hooks) {
-        return this.constructor.runHooks('beforeDestroy', this, options);
-      }
-    }).then(() => {
-      const where = this.where(true);
-
-      if (this.constructor._timestampAttributes.deletedAt && options.force === false) {
-        const attribute = this.constructor.rawAttributes[this.constructor._timestampAttributes.deletedAt];
-        const field = attribute.field || this.constructor._timestampAttributes.deletedAt;
-        const values = {};
-
-        values[field] = new Date();
-        where[field] = attribute.hasOwnProperty('defaultValue') ? attribute.defaultValue : null;
-
-        this.setDataValue(field, values[field]);
-
-        return this.sequelize.getQueryInterface().update(
-          this, this.constructor.getTableName(options), values, where, _.defaults({ hooks: false, model: this.constructor }, options)
-        ).then(results => {
-          const rowsUpdated = results[1];
-          if (this.constructor._versionAttribute && rowsUpdated < 1) {
-            throw new sequelizeErrors.OptimisticLockError({
-              modelName: this.constructor.name,
-              values,
-              where
-            });
-          }
-          return _.head(results);
-        });
-      } else {
-        return this.sequelize.getQueryInterface().delete(this, this.constructor.getTableName(options), where, _.assign({ type: QueryTypes.DELETE, limit: null }, options));
-      }
-    }).tap(() => {
-      // Run after hook
-      if (options.hooks) {
-        return this.constructor.runHooks('afterDestroy', this, options);
-      }
-    });
-  }
-
-  /**
-   * Helper method to determine if a instance is "soft deleted".  This is
-   * particularly useful if the implementer renamed the `deletedAt` attribute
-   * to something different.  This method requires `paranoid` to be enabled.
-   */
-  public isSoftDeleted() : boolean {
-    if (!this.constructor._timestampAttributes.deletedAt) {
-      throw new Error('Model is not paranoid');
-    }
-
-    const deletedAtAttribute = this.constructor.rawAttributes[this.constructor._timestampAttributes.deletedAt];
-    const defaultValue = deletedAtAttribute.hasOwnProperty('defaultValue') ? deletedAtAttribute.defaultValue : null;
-    const deletedAt = this.get(this.constructor._timestampAttributes.deletedAt);
-    const isSet = deletedAt !== defaultValue;
-    return isSet;
-  }
-
-  /**
-   * Restore the row corresponding to this instance. Only available for paranoid models.
-   */
-  public restore(options : {
-    force? : boolean,
-    /** An object of hook function that are called before and after certain lifecycle events */
-    hooks? : boolean,
-    /** = false, A function that gets executed while running the query to log the sql. */
-    logging? : boolean | any,
-    /** Transaction to run query under */
-    transaction? : Transaction
-  }) : Promise<undefined> {
-    if (!this.constructor._timestampAttributes.deletedAt) {
-      throw new Error('Model is not paranoid');
-    }
-    options = _.extend({
-      hooks: true,
-      force: false
-    }, options);
-
-    return Promise.try(() => {
-      // Run before hook
-      if (options.hooks) {
-        return this.constructor.runHooks('beforeRestore', this, options);
-      }
-    }).then(() => {
-      const deletedAtCol = this.constructor._timestampAttributes.deletedAt;
-      const deletedAtAttribute = this.constructor.rawAttributes[deletedAtCol];
-      const deletedAtDefaultValue = deletedAtAttribute.hasOwnProperty('defaultValue') ? deletedAtAttribute.defaultValue : null;
-
-      this.setDataValue(deletedAtCol, deletedAtDefaultValue);
-      return this.save(_.extend({}, options, {hooks: false, omitNull: false}));
-    }).tap(() => {
-      // Run after hook
-      if (options.hooks) {
-        return this.constructor.runHooks('afterRestore', this, options);
-      }
-    });
-  }
-
- /**
-  * Increment the value of one or more columns. This is done in the database, which means it does not use the values currently stored on the Instance. The increment is done using a
-  * ```sql
-  * SET column = column + X
-  * ```
-  * query. The updated instance will be returned by default in Postgres. However, in other dialects, you will need to do a reload to get the new values.
-  *
-  * ```js
-  * instance.increment('number') // increment number by 1
-  * instance.increment(['number', 'count'], { by: 2 }) // increment number and count by 2
-  * instance.increment({ answer: 42, tries: 1}, { by: 2 }) // increment answer by 42, and tries by 1.
-  *                                                        // `by` is ignored, since each column has its own value
-  * ```
-  *
-  * @see {@link Model#reload}
-  * @param fields : String|Array|Object, If a string is provided, that column is incremented by the value of `by` given in options.
-  * If an array is provided, the same is true for each column. If and object is provided, each column is incremented by the value given.
-  *
-  * @since 4.0.0
-  */
-  public increment(fields : string[], options : {
-    /** = 1, The number to increment by */
-    by? : number,
-    /** = false, If true, the updatedAt timestamp will not be updated. */
-    instance? : Model,
-    /**  = false, A function that gets executed while running the query to log the sql. */
-    logging? : boolean | any,
-    /** = true, Append RETURNING * to get back auto generated values (Postgres only) */
-    returning? : boolean,
-    /** = DEFAULT, An optional parameter to specify the schema search_path (Postgres only) */
-    searchPath? : string,
-    /** = false, If true, the updatedAt timestamp will not be updated. */
-    silent? : boolean,
-    /** Transaction to run query under */
-    transaction? : Transaction,
-    /** A hash of search attributes. */
-    where? : {}
-  }) : Promise<Model> {
-    const identifier = this.where();
-
-    options = Utils.cloneDeep(options);
-    options.where = _.extend({}, options.where, identifier);
-    options.instance = this;
-
-    return this.constructor.increment(fields, options).return(this);
-  }
-
-  /**
-   * Decrement the value of one or more columns. This is done in the database, which means it does not use the values currently stored on the Instance. The decrement is done using a
-   * ```sql
-   * SET column = column - X
-   * ```
-   * query. The updated instance will be returned by default in Postgres. However, in other dialects, you will need to do a reload to get the new values.
-   *
-   * ```js
-   * instance.decrement('number') // decrement number by 1
-   * instance.decrement(['number', 'count'], { by: 2 }) // decrement number and count by 2
-   * instance.decrement({ answer: 42, tries: 1}, { by: 2 }) // decrement answer by 42, and tries by 1.
-   *                                                        // `by` is ignored, since each column has its own value
-   * ```
-   *
-   * @see {@link Model#reload}
-   * @param fields : String|Array|Object, If a string is provided, that column is decremented by the value of `by` given in options. If an array is provided, the same is true for each column.
-   * If and object is provided, each column is decremented by the value given
-   * @return : Promise
-   */
-  public decrement(fields : string[], options : {
-    /** = 1, The number to decrement by */
-    by? : number,
-    instance? : Model,
-    /** = false, A function that gets executed while running the query to log the sql. */
-    logging? : boolean | any,
-    /** = true, Append RETURNING * to get back auto generated values (Postgres only) */
-    returning? : boolean,
-    /** = DEFAULT, An optional parameter to specify the schema search_path (Postgres only) */
-    searchPath? : string,
-    /** = false, If true, the updatedAt timestamp will not be updated. */
-    silent? : boolean,
-    /** Transaction to run query under */
-    transaction? : Transaction,
-    /** A hash of search attributes. */
-    where? : {}
-  }) {
-    options = _.defaults({ increment: false }, options, {
-      by: 1
-    });
-
-    return this.increment(fields, options);
-  }
-
-  /**
-   * Check whether this and `other` Instance refer to the same row
-   */
-  public equals(other : Model) : boolean {
-
-    if (!other || !other.constructor) {
-      return false;
-    }
-
-    if (!(other instanceof this.constructor)) {
-      return false;
-    }
-
-    return _.every(this.constructor.primaryKeyAttributes, attribute => this.get(attribute, {raw: true}) === other.get(attribute, {raw: true}));
-  }
-
-  /**
-   * Check if this is equal to one of `others` by calling equals
-   */
-  public equalsOneOf(others : any[]) : boolean {
-    return _.some(others, other => this.equals(other));
-  }
-
-  public setValidators(attribute : string, validators : any) {
-    this.validators[attribute] = validators;
-  }
-
-  /**
-   * Convert the instance to a JSON representation. Proxies to calling `get` with no keys. This means get all values gotten from the DB, and apply all custom getters.
-   * @see {@link Model#get}
-   */
-  public toJSON() : {} {
-    return _.clone(
-      this.get({
-        plain: true
-      })
-    );
-  }
-
-  public static runHooks(hooks, instance? : Model | Model[] | {}, options? : {}) : Promise<any> {
-    throw new Error('runHooks not implemented');
-  }
-
+  // models will be ignore by JSON.stringify
+  public toJSON() {}
 }
-
-// Aliases
-Model.prototype.updateAttributes = Model.prototype.update;
-
-Model.findByPrimary = Model.findById;
-Model.find = Model.findOne;
-Model.findAndCountAll = Model.findAndCount;
-Model.findOrInitialize = Model.findOrBuild;
-Model.insertOrUpdate = Model.upsert;
-
-// _.extend(Model, associationsMixin.Mixin);
-Hooks.applyTo(Model);

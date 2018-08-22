@@ -5,7 +5,7 @@ import TableHints from '../../../../lib/dialects/mssql/table-hints';
 import Support from '../../../support';
 const expectsql = Support.expectsql;
 const current = Support.sequelize;
-const QueryGenerator = current.dialect.QueryGenerator;
+const QueryGenerator : any = current.dialect.QueryGenerator;
 
 if (current.dialect.name === 'mssql') {
   describe('[MSSQL Specific] QueryGenerator', () => {
@@ -51,7 +51,7 @@ if (current.dialect.name === 'mssql') {
       // Test newer versions first
       // Should be all the same since handling is done in addLimitAndOffset
       // for SQL Server 2012 and higher (>= v11.0.0)
-      (modifiedGen as any).sequelize = {
+      modifiedGen.sequelize = {
         options: {
           databaseVersion: '11.0.0'
         }
@@ -88,7 +88,7 @@ if (current.dialect.name === 'mssql') {
       });
 
       // Test older version (< v11.0.0)
-      (modifiedGen as any).sequelize.options.databaseVersion = '10.0.0';
+      modifiedGen.sequelize.options.databaseVersion = '10.0.0';
 
       // Base case
       expectsql(modifiedGen.selectFromTableFragment({}, { primaryKeyField: 'id' }, ['id', 'name'], 'myTable', 'myOtherName', 'WHERE id=1'), {

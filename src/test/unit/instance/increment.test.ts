@@ -3,6 +3,7 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
@@ -13,7 +14,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     describe('options tests', () => {
       let stub;
       let instance;
-      const Model = current.define('User', {
+      const Model = current.define<ItestInstance, ItestAttribute>('User', {
         id: {
           type: new DataTypes.BIGINT(),
           primaryKey: true,

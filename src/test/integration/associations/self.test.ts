@@ -4,13 +4,15 @@ import * as chai from 'chai';
 import * as _ from 'lodash';
 import {Sequelize} from '../../../index';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
 const Promise = Sequelize.Promise;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Self'), () => {
   it('supports freezeTableName', function() {
-    const Group = this.sequelize.define('Group', {}, {
+    const Group = current.define<ItestInstance, ItestAttribute>('Group', {}, {
       tableName: 'user_group',
       timestamps: false,
       underscored: true,
@@ -29,33 +31,32 @@ describe(Support.getTestDialectTeaser('Self'), () => {
   });
 
   it('can handle 1:m associations', function() {
-    const Person = this.sequelize.define('Person', { name: new DataTypes.STRING() });
+    const Person = current.define<ItestInstance, ItestAttribute>('Person', { name: new DataTypes.STRING() });
 
     Person.hasMany(Person, { as: 'Children', foreignKey: 'parent_id'});
 
     expect(Person.rawAttributes.parent_id).to.be.ok;
 
-    return this.sequelize.sync({force: true}).then(() => {
+    return current.sync({force: true}).then(() => {
       return Promise.all([
         Person.create({ name: 'Mary' }),
         Person.create({ name: 'John' }),
         Person.create({ name: 'Chris' }),
       ]);
     }).spread((mary, john, chris) => {
-      return mary.setChildren([john, chris]);
+      return mary.setLinkedData({ model : 'Person', associationAlias : 'Children' }, [john, chris]);
     });
   });
 
   it('can handle n:m associations', function() {
-    const self = this;
 
-    const Person = this.sequelize.define('Person', { name: new DataTypes.STRING() });
+    const Person = current.define<ItestInstance, ItestAttribute>('Person', { name: new DataTypes.STRING() });
 
     Person.belongsToMany(Person, { as: 'Parents', through: 'Family', foreignKey: 'ChildId', otherKey: 'PersonId' });
     Person.belongsToMany(Person, { as: 'Childs', through: 'Family', foreignKey: 'PersonId', otherKey: 'ChildId' });
 
     const foreignIdentifiers = _.map(_.values(Person.associations), 'foreignIdentifier');
-    const rawAttributes = _.keys(this.sequelize.models.Family.rawAttributes);
+    const rawAttributes = _.keys(current.models.Family.rawAttributes);
 
     expect(foreignIdentifiers.length).to.equal(2);
     expect(rawAttributes.length).to.equal(4);
@@ -63,16 +64,16 @@ describe(Support.getTestDialectTeaser('Self'), () => {
     expect(foreignIdentifiers).to.have.members(['PersonId', 'ChildId']);
     expect(rawAttributes).to.have.members(['createdAt', 'updatedAt', 'PersonId', 'ChildId']);
 
-    return this.sequelize.sync({ force: true }).then(() => {
-      return self.sequelize.Promise.all([
+    return current.sync({ force: true }).then(() => {
+      return current.Promise.all([
         Person.create({ name: 'Mary' }),
         Person.create({ name: 'John' }),
         Person.create({ name: 'Chris' }),
       ]).spread((mary, john, chris) => {
-        return mary.setParents([john]).then(() => {
-          return chris.addParent(john);
+        return mary.setLinkedData({ model : 'Person', associationAlias : 'Parents' }, [john]).then(() => {
+          return chris.addLinkedData({ model : 'Person', associationAlias : 'Parents' }, john);
         }).then(() => {
-          return john.getChilds();
+          return john.getLinkedData<ItestInstance, ItestAttribute>({ model : 'Person', associationAlias : 'Childs' });
         }).then(children => {
           expect(_.map(children, 'id')).to.have.members([mary.id, chris.id]);
         });
@@ -81,8 +82,8 @@ describe(Support.getTestDialectTeaser('Self'), () => {
   });
 
   it('can handle n:m associations with pre-defined through table', function() {
-    const Person = this.sequelize.define('Person', { name: new DataTypes.STRING() });
-    const Family = this.sequelize.define('Family', {
+    const Person = current.define<ItestInstance, ItestAttribute>('Person', { name: new DataTypes.STRING() });
+    const Family = current.define<ItestInstance, ItestAttribute>('Family', {
       preexisting_child: {
         type: new DataTypes.INTEGER(),
         primaryKey: true
@@ -96,6 +97,10 @@ describe(Support.getTestDialectTeaser('Self'), () => {
     Person.belongsToMany(Person, { as: 'Parents', through: Family, foreignKey: 'preexisting_child', otherKey: 'preexisting_parent' });
     Person.belongsToMany(Person, { as: 'Children', through: Family, foreignKey: 'preexisting_parent', otherKey: 'preexisting_child' });
 
+    let mary : ItestInstance;
+    let john : ItestInstance;
+    let chris : ItestInstance;
+
     const foreignIdentifiers = _.map(_.values(Person.associations), 'foreignIdentifier');
     const rawAttributes = _.keys(Family.rawAttributes);
 
@@ -106,17 +111,17 @@ describe(Support.getTestDialectTeaser('Self'), () => {
     expect(rawAttributes).to.have.members(['preexisting_parent', 'preexisting_child']);
 
     let count = 0;
-    return this.sequelize.sync({ force: true }).bind(this).then(() => {
+    return current.sync({ force: true }).bind(this).then(() => {
       return Promise.all([
         Person.create({ name: 'Mary' }),
         Person.create({ name: 'John' }),
         Person.create({ name: 'Chris' }),
       ]);
-    }).spread(function(mary, john, chris) {
-      this.mary = mary;
-      this.chris = chris;
-      this.john = john;
-      return mary.setParents([john], {
+    }).spread(function(_mary, _john, _chris) {
+      mary = _mary;
+      chris = _chris;
+      john = _john;
+      return mary.setLinkedData({ model : 'Person', associationAlias : 'Parents' }, [john], {
         logging(sql) {
           if (sql.match(/INSERT/)) {
             count++;
@@ -126,7 +131,7 @@ describe(Support.getTestDialectTeaser('Self'), () => {
         }
       });
     }).then(function() {
-      return this.mary.addParent(this.chris, {
+      return mary.addLinkedData({ model : 'Person', associationAlias : 'Parents' }, chris, {
         logging(sql) {
           if (sql.match(/INSERT/)) {
             count++;
@@ -136,7 +141,7 @@ describe(Support.getTestDialectTeaser('Self'), () => {
         }
       });
     }).then(function() {
-      return this.john.getChildren({
+      return john.getLinkedData<ItestInstance, ItestAttribute>({ model : 'Person', associationAlias : 'Children' }, {
         logging(sql) {
           count++;
           const whereClause = sql.split('FROM')[1]; // look only in the whereClause
@@ -146,7 +151,7 @@ describe(Support.getTestDialectTeaser('Self'), () => {
       });
     }).then(function(children) {
       expect(count).to.be.equal(3);
-      expect(_.map(children, 'id')).to.have.members([this.mary.id]);
+      expect(_.map(children, 'id')).to.have.members([mary.id]);
     });
   });
 });

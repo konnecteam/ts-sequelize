@@ -8,6 +8,7 @@ import * as sinon from 'sinon';
 import * as uuid from 'uuid';
 import {Sequelize} from '../../index';
 import DataTypes from '../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../dummy/dummy-data-set';
 import Support from './support';
 const expect = chai.expect;
 const current = Support.sequelize;
@@ -16,15 +17,15 @@ const dialect = Support.getTestDialect();
 describe(Support.getTestDialectTeaser('DataTypes'), () => {
   afterEach(function() {
     // Restore some sanity by resetting all parsers
-    this.sequelize.connectionManager._clearTypeParser();
-    this.sequelize.connectionManager.refreshTypeParser(DataTypes[dialect]); // Reload custom parsers
+    current.connectionManager._clearTypeParser();
+    current.connectionManager.refreshTypeParser(DataTypes[dialect]); // Reload custom parsers
   });
 
   // mssql data are parsed by node mssql
   if (dialect !== 'mssql') {
     it('allows me to return values from a custom parse function', () => {
 
-      const parse = (DataTypes.DATE as any).parse = sinon.spy(value => {
+      const parse = DataTypes.DATE.parse = sinon.spy(value => {
         return moment(value, 'YYYY-MM-DD HH:mm:ss');
       });
 
@@ -41,7 +42,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
 
       current.refreshTypes();
 
-      const User = current.define('user', {
+      const User = current.define<ItestInstance, ItestAttribute>('user', {
         dateField: new DataTypes.DATE()
       }, {
         timestamps: false
@@ -52,14 +53,14 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
           dateField: moment('2011 10 31', 'YYYY MM DD')
         });
       }).then(() => {
-        return User.findAll().get(0);
+        return User.findAll().get(0 as any);
       }).then(user => {
         expect(parse).to.have.been.called;
         expect(stringify).to.have.been.called;
 
         expect(moment.isMoment(user.dateField)).to.be.ok;
 
-        delete (DataTypes.DATE as any).parse;
+        delete DataTypes.DATE.parse;
       });
     });
   }
@@ -80,7 +81,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
       });
     }
 
-    const User = current.define('user', {
+    const User = current.define<ItestInstance, ItestAttribute>('user', {
       field: Type
     }, {
       timestamps: false
@@ -94,7 +95,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
         field: value
       });
     }).then(() => {
-      return User.findAll().get(0);
+      return User.findAll().get(0 as any);
     }).then(() => {
       // node mssql parse data so we don't need to do it
       if (dialect !== 'mssql') {
@@ -301,7 +302,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
   });
 
   it('calls parse and stringify for ENUM', () => {
-    const Type = new (DataTypes as any).ENUM('hat', 'cat');
+    const Type = new DataTypes.ENUM('hat', 'cat');
 
     if (['postgres'].indexOf(dialect) !== -1) {
       return testSuccess(Type, 'hat');
@@ -342,7 +343,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
         if (current.dialect.supports.GEOMETRY && runTests) {
           current.refreshTypes();
 
-          const User = current.define('user', { field: Type }, { timestamps: false });
+          const User = current.define<ItestInstance, ItestAttribute>('user', { field: Type }, { timestamps: false });
           const point = { type: 'Point', coordinates: [] };
 
           return current.sync({ force: true }).then(() => {
@@ -373,7 +374,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
 
       current.refreshTypes();
 
-      const User = current.define('user', { field: Type }, { timestamps: false });
+      const User = current.define<ItestInstance, ItestAttribute>('user', { field: Type }, { timestamps: false });
       const point = null;
 
       return current.sync({ force: true }).then(() => {
@@ -393,7 +394,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
   if (dialect === 'postgres' || dialect === 'sqlite') {
     // postgres actively supports IEEE floating point literals, and sqlite doesn't care what we throw at it
     it('should store and parse IEEE floating point literals (NaN and Infinity)', function() {
-      const Model = this.sequelize.define('model', {
+      const Model = current.define<ItestInstance, ItestAttribute>('model', {
         float: new DataTypes.FLOAT(),
         double: new DataTypes.DOUBLE(),
         real: new DataTypes.REAL()
@@ -418,7 +419,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
 
   if (dialect === 'postgres' || dialect === 'mysql') {
     it('should parse DECIMAL as string', function() {
-      const Model = this.sequelize.define('model', {
+      const Model = current.define<ItestInstance, ItestAttribute>('model', {
         decimal: new DataTypes.DECIMAL(),
         decimalPre: new DataTypes.DECIMAL(10, 4),
         decimalWithParser: new DataTypes.DECIMAL(32, 15),
@@ -460,7 +461,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
 
   if (dialect === 'postgres' || dialect === 'mysql' || dialect === 'mssql') {
     it('should parse BIGINT as string', function() {
-      const Model = this.sequelize.define('model', {
+      const Model = current.define<ItestInstance, ItestAttribute>('model', {
         jewelPurity: new DataTypes.BIGINT()
       });
 
@@ -482,7 +483,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
 
   if (dialect === 'postgres') {
     it('should return Int4 range properly #5747', function() {
-      const Model = this.sequelize.define('M', {
+      const Model = current.define<ItestInstance, ItestAttribute>('M', {
         interval: {
           type: new DataTypes.RANGE(new DataTypes.INTEGER()),
           allowNull: false,
@@ -503,7 +504,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
   if (current.dialect.supports.RANGE) {
 
     it('should allow date ranges to be generated with default bounds inclusion #8176', function() {
-      const Model = this.sequelize.define('M', {
+      const Model = current.define<ItestInstance, ItestAttribute>('M', {
         interval: {
           type: new DataTypes.RANGE(new DataTypes.DATE()),
           allowNull: false,
@@ -527,7 +528,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
     });
 
     it('should allow date ranges to be generated using a single range expression to define bounds inclusion #8176', function() {
-      const Model = this.sequelize.define('M', {
+      const Model = current.define<ItestInstance, ItestAttribute>('M', {
         interval: {
           type: new DataTypes.RANGE(new DataTypes.DATE()),
           allowNull: false,
@@ -551,7 +552,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
     });
 
     it('should allow date ranges to be generated using a composite range expression #8176', function() {
-      const Model = this.sequelize.define('M', {
+      const Model = current.define<ItestInstance, ItestAttribute>('M', {
         interval: {
           type: new DataTypes.RANGE(new DataTypes.DATE()),
           allowNull: false,
@@ -575,7 +576,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
     });
 
     it('should correctly return ranges when using predicates that define bounds inclusion #8176', function() {
-      const Model = this.sequelize.define('M', {
+      const Model = current.define<ItestInstance, ItestAttribute>('M', {
         interval: {
           type: new DataTypes.RANGE(new DataTypes.DATE()),
           allowNull: false,
@@ -601,7 +602,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
   }
 
   it('should allow spaces in ENUM', function() {
-    const Model = this.sequelize.define('user', {
+    const Model = current.define<ItestInstance, ItestAttribute>('user', {
       name: new DataTypes.STRING(),
       type: new DataTypes.ENUM(['action', 'mecha', 'canon', 'class s'])
     });
@@ -614,7 +615,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
   });
 
   it('should return YYYY-MM-DD format string for DATEONLY', function() {
-    const Model = this.sequelize.define('user', {
+    const Model = current.define<ItestInstance, ItestAttribute>('user', {
       stamp: new DataTypes.DATEONLY()
     });
     const testDate = moment().format('YYYY-MM-DD');
@@ -652,7 +653,7 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
   });
 
   it('should return set DATEONLY field to NULL correctly', function() {
-    const Model = this.sequelize.define('user', {
+    const Model = current.define<ItestInstance, ItestAttribute>('user', {
       stamp: new DataTypes.DATEONLY()
     });
     const testDate = moment().format('YYYY-MM-DD');
@@ -679,14 +680,14 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
   });
 
   it('should be able to cast buffer as boolean', function() {
-    const ByteModel = this.sequelize.define('Model', {
-      byteToBool: this.sequelize.Sequelize.BLOB
+    const ByteModel = current.define<ItestInstance, ItestAttribute>('Model', {
+      byteToBool: DataTypes.BLOB
     }, {
       timestamps: false
     });
 
-    const BoolModel = this.sequelize.define('Model', {
-      byteToBool: this.sequelize.Sequelize.BOOLEAN
+    const BoolModel = current.define<ItestInstance, ItestAttribute>('Model', {
+      byteToBool: DataTypes.BOOLEAN
     }, {
       timestamps: false
     });

@@ -10,7 +10,10 @@ export interface IConfig {
     fetchAsString?,
     instanceName? : string,
     maxRows?,
+    mode?,
     stmtCacheSize?,
+    bigNumberStrings? : boolean,
+    supportBigNumbers? : boolean,
   };
   /** = 'localhost', The host of the relational database. */
   host? : string;
@@ -52,19 +55,19 @@ export interface IConfig {
   /** The schema that the tables should be created in. This can be overriden for each table in sequelize.define */
   schema? : string;
   ssl? : boolean;
-  types? : {};
+  types?;
   user? : string;
   username? : string;
 
 }
 
 export interface IConfigMysql extends IConfig {
-  bigNumberStrings? : boolean;
   flags? : string;
-  supportBigNumbers? : boolean;
   /** The timezone used when converting a date from the database into a JavaScript date. */
   timezone? : string;
   typeCast? : string;
+  bigNumberStrings? : boolean;
+  supportBigNumbers? : boolean;
 }
 
 export interface IConfigOracle extends IConfig {

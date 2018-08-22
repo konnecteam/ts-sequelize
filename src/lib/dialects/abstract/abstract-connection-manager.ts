@@ -1,12 +1,12 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as Pooling from 'generic-pool';
 import * as _ from 'lodash';
 import * as semver from 'semver';
 import { Sequelize } from '../../../index';
 import { IDataTypes } from '../../data-types';
-import { IConfig } from '../../model/iconfig';
-import Promise from '../../promise';
+import { IConfig } from '../../interfaces/iconfig';
 import { Utils } from '../../utils';
 import { AbstractDialect } from './abstract-dialect';
 const debug = Utils.getLogger().debugContext('pool');
@@ -250,7 +250,7 @@ export abstract class AbstractConnectionManager {
    * @param options                 Pool options
    * @returns : Promise<Connection>
    */
-  public getConnection(options : {
+  public getConnection(options? : {
     cascade? : boolean,
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
@@ -381,4 +381,5 @@ export abstract class AbstractConnectionManager {
   public abstract connect(connection?);
   public abstract disconnect(connection?);
   public abstract validate(connection?);
+  public abstract _clearTypeParser();
 }

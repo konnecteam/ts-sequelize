@@ -4,6 +4,7 @@ import * as chai from 'chai';
 import * as util from 'util';
 import DataTypes from '../../../lib/data-types';
 import { Model } from '../../../lib/model';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const expectsql = Support.expectsql;
@@ -30,7 +31,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
     };
 
     // models
-    const User = Support.sequelize.define('User', {
+    const User = current.define<ItestInstance, ItestAttribute>('User', {
       id: {
         type: new DataTypes.INTEGER(),
         primaryKey: true,
@@ -57,7 +58,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       timestamps: true
     });
 
-    const Project = Support.sequelize.define('Project', {
+    const Project = current.define<ItestInstance, ItestAttribute>('Project', {
       id: {
         type: new DataTypes.INTEGER(),
         primaryKey: true,
@@ -84,7 +85,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       timestamps: true
     });
 
-    const ProjectUser = Support.sequelize.define('ProjectUser', {
+    const ProjectUser = current.define<ItestInstance, ItestAttribute>('ProjectUser', {
       id: {
         type: new DataTypes.INTEGER(),
         primaryKey: true,
@@ -116,7 +117,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       timestamps: true
     });
 
-    const Task = Support.sequelize.define('Task', {
+    const Task = current.define<ItestInstance, ItestAttribute>('Task', {
       id: {
         type: new DataTypes.INTEGER(),
         primaryKey: true,
@@ -148,7 +149,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       timestamps: true
     });
 
-    const Subtask = Support.sequelize.define('Subtask', {
+    const Subtask = current.define<ItestInstance, ItestAttribute>('Subtask', {
       id: {
         type: new DataTypes.INTEGER(),
         primaryKey: true,
@@ -232,7 +233,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         'name',
         'createdAt',
       ],
-      include: Model._validateIncludedElements({
+      include: Model.prototype._validateIncludedElements({
         include: [
           {
             association: Subtask.associations.Task,
@@ -361,7 +362,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       model: Subtask,
       attributes: ['id', 'name'],
       order: [
-        Support.sequelize.random(),
+        current.random(),
       ]
     }, {
       mssql: 'SELECT [id], [name] FROM [subtask] AS [Subtask] ORDER BY RAND();',

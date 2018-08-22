@@ -1,19 +1,35 @@
 'use strict';
 
 import * as chai from 'chai';
-import {Sequelize} from '../../../index';
+import { Model, Sequelize } from '../../../index';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
 const Promise = Sequelize.Promise;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('associations'), () => {
+  let Post : Model<ItestInstance, ItestAttribute>;
+  let Image : Model<ItestInstance, ItestAttribute>;
+  let Question : Model<ItestInstance, ItestAttribute>;
+  let Comment : Model<ItestInstance, ItestAttribute>;
+  let Tag : Model<ItestInstance, ItestAttribute>;
+  let ItemTag : Model<ItestInstance, ItestAttribute>;
+  let PostTag : Model<ItestInstance, ItestAttribute>;
+  let post : ItestInstance;
+  let image : ItestInstance;
+  let question : ItestInstance;
+  let mainComment : ItestInstance;
+  let postA : ItestInstance;
+  let postB : ItestInstance;
+  let postC : ItestInstance;
   describe('scope', () => {
     beforeEach(function() {
-      this.Post = this.sequelize.define('post', {});
-      this.Image = this.sequelize.define('image', {});
-      this.Question = this.sequelize.define('question', {});
-      this.Comment = this.sequelize.define('comment', {
+      Post = current.define<ItestInstance, ItestAttribute>('post', {});
+      Image = current.define<ItestInstance, ItestAttribute>('image', {});
+      Question = current.define<ItestInstance, ItestAttribute>('question', {});
+      Comment = current.define<ItestInstance, ItestAttribute>('comment', {
         title: new DataTypes.STRING(),
         type: new DataTypes.STRING(),
         commentable: new DataTypes.STRING(),
@@ -24,27 +40,27 @@ describe(Support.getTestDialectTeaser('associations'), () => {
         }
       });
 
-      this.Comment.prototype.getItem = function() {
-        return this['get' + this.get('commentable').substr(0, 1).toUpperCase() + this.get('commentable').substr(1)]();
+      Comment.dataSetsMethods.getItem = function() {
+        return this.getLinkedData(this.get('commentable').substr(0, 1) + this.get('commentable').substr(1));
       };
 
-      this.Post.addScope('withComments', {
-        include: [this.Comment]
+      Post.addScope('withComments', {
+        include: [Comment]
       });
-      this.Post.addScope('withMainComment', {
+      Post.addScope('withMainComment', {
         include: [{
-          model: this.Comment,
+          model: Comment,
           as: 'mainComment'
         }]
       });
-      this.Post.hasMany(this.Comment, {
+      Post.hasMany(Comment, {
         foreignKey: 'commentable_id',
         scope: {
           commentable: 'post'
         },
         constraints: false
       });
-      this.Post.hasMany(this.Comment, {
+      Post.hasMany(Comment, {
         foreignKey: 'commentable_id',
         as: 'coloredComments',
         scope: {
@@ -53,7 +69,7 @@ describe(Support.getTestDialectTeaser('associations'), () => {
         },
         constraints: false
       });
-      this.Post.hasOne(this.Comment, {
+      Post.hasOne(Comment, {
         foreignKey: 'commentable_id',
         as: 'mainComment',
         scope: {
@@ -62,33 +78,33 @@ describe(Support.getTestDialectTeaser('associations'), () => {
         },
         constraints: false
       });
-      this.Comment.belongsTo(this.Post, {
+      Comment.belongsTo(Post, {
         foreignKey: 'commentable_id',
         as: 'post',
         constraints: false
       });
 
-      this.Image.hasMany(this.Comment, {
+      Image.hasMany(Comment, {
         foreignKey: 'commentable_id',
         scope: {
           commentable: 'image'
         },
         constraints: false
       });
-      this.Comment.belongsTo(this.Image, {
+      Comment.belongsTo(Image, {
         foreignKey: 'commentable_id',
         as: 'image',
         constraints: false
       });
 
-      this.Question.hasMany(this.Comment, {
+      Question.hasMany(Comment, {
         foreignKey: 'commentable_id',
         scope: {
           commentable: 'question'
         },
         constraints: false
       });
-      this.Comment.belongsTo(this.Question, {
+      Comment.belongsTo(Question, {
         foreignKey: 'commentable_id',
         as: 'question',
         constraints: false
@@ -97,104 +113,102 @@ describe(Support.getTestDialectTeaser('associations'), () => {
 
     describe('1:1', () => {
       it('should create, find and include associations with scope values', function() {
-        const self = this;
-        return this.sequelize.sync({force: true}).then(() => {
+        return current.sync({force: true}).then(() => {
           return Promise.join(
-            self.Post.create(),
-            self.Comment.create({
+            Post.create(),
+            Comment.create({
               title: 'I am a comment'
             }),
-            self.Comment.create({
+            Comment.create({
               title: 'I am a main comment',
               isMain: true
             })
           );
-        }).bind(this).spread(function(post) {
-          this.post = post;
-          return post.createComment({
+        }).bind(this).spread(function(_post) {
+          post = _post;
+          return post.createLinkedData<ItestInstance, ItestAttribute>('comment', {
             title: 'I am a post comment'
           });
         }).then(function(comment) {
           expect(comment.get('commentable')).to.equal('post');
           expect(comment.get('isMain')).to.be.false;
-          return this.Post.scope('withMainComment').findById(this.post.get('id'));
-        }).then(post => {
-          expect(post.mainComment).to.be.null;
-          return post.createMainComment({
+          return Post.scope('withMainComment').findById(post.get('id'));
+        }).then(_post => {
+          expect(_post.mainComment).to.be.null;
+          return _post.createLinkedData({ model : 'comment', associationAlias : 'mainComment' }, {
             title: 'I am a main post comment'
           });
-        }).then(function(mainComment) {
-          this.mainComment = mainComment;
+        }).then(function(_mainComment) {
+          mainComment = _mainComment;
           expect(mainComment.get('commentable')).to.equal('post');
           expect(mainComment.get('isMain')).to.be.true;
-          return this.Post.scope('withMainComment').findById(this.post.id);
-        }).then(function(post) {
-          expect(post.mainComment.get('id')).to.equal(this.mainComment.get('id'));
-          return post.getMainComment();
-        }).then(function(mainComment) {
-          expect(mainComment.get('commentable')).to.equal('post');
-          expect(mainComment.get('isMain')).to.be.true;
-          return this.Comment.create({
+          return Post.scope('withMainComment').findById(post.id);
+        }).then(function(_post) {
+          expect(_post.mainComment.get('id')).to.equal(mainComment.get('id'));
+          return _post.getLinkedData({ model : 'comment', associationAlias : 'mainComment' });
+        }).then(function(_mainComment) {
+          expect(_mainComment.get('commentable')).to.equal('post');
+          expect(_mainComment.get('isMain')).to.be.true;
+          return Comment.create({
             title: 'I am a future main comment'
           });
         }).then(function(comment) {
-          return this.post.setMainComment(comment);
+          return post.setLinkedData({ model : 'comment', associationAlias : 'mainComment' }, comment);
         }).then( function() {
-          return this.post.getMainComment();
-        }).then(mainComment => {
-          expect(mainComment.get('commentable')).to.equal('post');
-          expect(mainComment.get('isMain')).to.be.true;
-          expect(mainComment.get('title')).to.equal('I am a future main comment');
+          return post.getLinkedData({ model : 'comment', associationAlias : 'mainComment' });
+        }).then(_mainComment => {
+          expect(_mainComment.get('commentable')).to.equal('post');
+          expect(_mainComment.get('isMain')).to.be.true;
+          expect(_mainComment.get('title')).to.equal('I am a future main comment');
         });
       });
       it('should create included association with scope values', function() {
-        return this.sequelize.sync({force: true}).then(() => {
-          return this.Post.create({
+        return current.sync({force: true}).then(() => {
+          return Post.create({
             mainComment: {
               title: 'I am a main comment created with a post'
             }
           }, {
-            include: [{model: this.Comment, as: 'mainComment'}]
+            include: [{model: Comment, as: 'mainComment'}]
           });
-        }).then(post => {
-          expect(post.mainComment.get('commentable')).to.equal('post');
-          expect(post.mainComment.get('isMain')).to.be.true;
-          return this.Post.scope('withMainComment').findById(post.id);
-        }).then(post => {
-          expect(post.mainComment.get('commentable')).to.equal('post');
-          expect(post.mainComment.get('isMain')).to.be.true;
+        }).then(_post => {
+          expect(_post.mainComment.get('commentable')).to.equal('post');
+          expect(_post.mainComment.get('isMain')).to.be.true;
+          return Post.scope('withMainComment').findById(_post.id);
+        }).then(_post => {
+          expect(_post.mainComment.get('commentable')).to.equal('post');
+          expect(_post.mainComment.get('isMain')).to.be.true;
         });
       });
     });
 
     describe('1:M', () => {
       it('should create, find and include associations with scope values', function() {
-        const self = this;
-        return this.sequelize.sync({force: true}).then(() => {
+        return current.sync({force: true}).then(() => {
           return Promise.join(
-            self.Post.create(),
-            self.Image.create(),
-            self.Question.create(),
-            self.Comment.create({
+            Post.create(),
+            Image.create(),
+            Question.create(),
+            Comment.create({
               title: 'I am a image comment'
             }),
-            self.Comment.create({
+            Comment.create({
               title: 'I am a question comment'
             })
           );
-        }).bind(this).spread(function(post, image, question, commentA, commentB) {
-          this.post = post;
-          this.image = image;
-          this.question = question;
+        }).bind(this).spread(function(_post, _image, _question, commentA, commentB) {
+          post = _post;
+          image = _image;
+          question = _question;
           return Promise.join(
-            post.createComment({
+            post.createLinkedData<ItestInstance, ItestAttribute>('comment', {
               title: 'I am a post comment'
             }),
-            image.addComment(commentA),
-            question.setComments([commentB])
+            image.addLinkedData('comment', commentA),
+            question.setLinkedData('comment', [commentB])
           );
         }).then(() => {
-          return self.Comment.findAll();
+          return Comment.findAll();
         }).then(comments => {
           comments.forEach(comment => {
             expect(comment.get('commentable')).to.be.ok;
@@ -204,9 +218,9 @@ describe(Support.getTestDialectTeaser('associations'), () => {
           }).sort()).to.deep.equal(['image', 'post', 'question']);
         }).then(function() {
           return Promise.join(
-            this.post.getComments(),
-            this.image.getComments(),
-            this.question.getComments()
+            post.getManyLinkedData<ItestInstance, ItestAttribute>('comment'),
+            image.getManyLinkedData<ItestInstance, ItestAttribute>('comment'),
+            question.getManyLinkedData<ItestInstance, ItestAttribute>('comment')
           );
         }).spread((postComments, imageComments, questionComments) => {
           expect(postComments.length).to.equal(1);
@@ -223,50 +237,49 @@ describe(Support.getTestDialectTeaser('associations'), () => {
             imageComment.getItem(),
             questionComment.getItem()
           );
-        }).spread((post, image, question) => {
-          expect(post).to.be.instanceof(self.Post);
-          expect(image).to.be.instanceof(self.Image);
-          expect(question).to.be.instanceof(self.Question);
+        }).spread((_post, _image, _question) => {
+          expect(_post.model).to.equal(Post);
+          expect(_image.model).to.equal(Image);
+          expect(_question.model).to.equal(Question);
         }).then(() => {
           return Promise.join(
-            self.Post.find({
-              include: [self.Comment]
+            Post.find({
+              include: [Comment]
             }),
-            self.Image.findOne({
-              include: [self.Comment]
+            Image.findOne({
+              include: [Comment]
             }),
-            self.Question.findOne({
-              include: [self.Comment]
+            Question.findOne({
+              include: [Comment]
             })
           );
-        }).spread((post, image, question) => {
-          expect(post.comments.length).to.equal(1);
-          expect(post.comments[0].get('title')).to.equal('I am a post comment');
-          expect(image.comments.length).to.equal(1);
-          expect(image.comments[0].get('title')).to.equal('I am a image comment');
-          expect(question.comments.length).to.equal(1);
-          expect(question.comments[0].get('title')).to.equal('I am a question comment');
+        }).spread((_post, _image, _question) => {
+          expect(_post.comments.length).to.equal(1);
+          expect(_post.comments[0].get('title')).to.equal('I am a post comment');
+          expect(_image.comments.length).to.equal(1);
+          expect(_image.comments[0].get('title')).to.equal('I am a image comment');
+          expect(_question.comments.length).to.equal(1);
+          expect(_question.comments[0].get('title')).to.equal('I am a question comment');
         });
       });
       it('should make the same query if called multiple time (#4470)', function() {
-        const self = this;
         const logs = [];
         const logging = function(log) {
           logs.push(log);
         };
 
-        return this.sequelize.sync({force: true}).then(() => {
-          return self.Post.create();
-        }).then(post => {
-          return post.createComment({
+        return current.sync({force: true}).then(() => {
+          return Post.create();
+        }).then(_post => {
+          return _post.createLinkedData<ItestInstance, ItestAttribute>('comment', {
             title: 'I am a post comment'
           });
         }).then(() => {
-          return self.Post.scope('withComments').findAll({
+          return Post.scope('withComments').findAll({
             logging
           });
         }).then(() => {
-          return self.Post.scope('withComments').findAll({
+          return Post.scope('withComments').findAll({
             logging
           });
         }).then(() => {
@@ -274,59 +287,59 @@ describe(Support.getTestDialectTeaser('associations'), () => {
         });
       });
       it('should created included association with scope values', function() {
-        return this.sequelize.sync({force: true}).then(() => {
-          return this.Post.create({
+        return current.sync({force: true}).then(() => {
+          return Post.create({
             comments: [{
               title: 'I am a comment created with a post'
             }, {
               title: 'I am a second comment created with a post'
             }]
           }, {
-            include: [{model: this.Comment, as: 'comments'}]
+            include: [{model: Comment, as: 'comments'}]
           });
-        }).then(post => {
-          this.post = post;
+        }).then(_post => {
+          post = _post;
           return post.comments;
         }).each(comment => {
-          expect(comment.get('commentable')).to.equal('post');
+          expect((comment as ItestInstance).get('commentable')).to.equal('post');
         }).then(() => {
-          return this.Post.scope('withComments').findById(this.post.id);
-        }).then(post => {
-          return post.getComments();
+          return Post.scope('withComments').findById(post.id);
+        }).then(_post => {
+          return _post.getLinkedData<ItestInstance, ItestAttribute>('comment');
         }).each(comment => {
-          expect(comment.get('commentable')).to.equal('post');
+          expect((comment as ItestInstance).get('commentable')).to.equal('post');
         });
       });
       it('should include associations with operator scope values', function() {
-        return this.sequelize.sync({force: true}).then(() => {
+        return current.sync({force: true}).then(() => {
           return Promise.join(
-            this.Post.create(),
-            this.Comment.create({
+            Post.create(),
+            Comment.create({
               title: 'I am a blue comment',
               type: 'blue'
             }),
-            this.Comment.create({
+            Comment.create({
               title: 'I am a red comment',
               type: 'red'
             }),
-            this.Comment.create({
+            Comment.create({
               title: 'I am a green comment',
               type: 'green'
             })
           );
-        }).spread((post, commentA, commentB, commentC) => {
-          this.post = post;
-          return post.addComments([commentA, commentB, commentC]);
+        }).spread((_post, commentA, commentB, commentC) => {
+          post = _post;
+          return post.addLinkedData('comment', [commentA, commentB, commentC]);
         }).then(() => {
-          return this.Post.findById(this.post.id, {
+          return Post.findById(post.id, {
             include: [{
-              model: this.Comment,
+              model: Comment,
               as: 'coloredComments'
             }]
           });
-        }).then(post => {
-          expect(post.coloredComments.length).to.equal(2);
-          for (const comment of post.coloredComments) {
+        }).then(_post => {
+          expect(_post.coloredComments.length).to.equal(2);
+          for (const comment of _post.coloredComments) {
             expect(comment.type).to.match(/blue|green/);
           }
         });
@@ -337,55 +350,54 @@ describe(Support.getTestDialectTeaser('associations'), () => {
       describe('N:M', () => {
         describe('on the target', () => {
           beforeEach(function() {
-            this.Post = this.sequelize.define('post', {});
-            this.Tag = this.sequelize.define('tag', {
+            Post = current.define<ItestInstance, ItestAttribute>('post', {});
+            Tag = current.define<ItestInstance, ItestAttribute>('tag', {
               type: new DataTypes.STRING()
             });
-            this.PostTag = this.sequelize.define('post_tag');
+            PostTag = current.define<ItestInstance, ItestAttribute>('post_tag');
 
-            this.Tag.belongsToMany(this.Post, {through: this.PostTag});
-            this.Post.belongsToMany(this.Tag, {as: 'categories', through: this.PostTag, scope: { type: 'category' }});
-            this.Post.belongsToMany(this.Tag, {as: 'tags', through: this.PostTag, scope: { type: 'tag' }});
+            Tag.belongsToMany(Post, {through: PostTag});
+            Post.belongsToMany(Tag, {as: 'categories', through: PostTag, scope: { type: 'category' }});
+            Post.belongsToMany(Tag, {as: 'tags', through: PostTag, scope: { type: 'tag' }});
           });
 
           it('should create, find and include associations with scope values', function() {
-            const self = this;
             return Promise.join(
-              self.Post.sync({force: true}),
-              self.Tag.sync({force: true})
+              Post.sync({force: true}),
+              Tag.sync({force: true})
             ).bind(this).then(() => {
-              return self.PostTag.sync({force: true});
+              return PostTag.sync({force: true});
             }).then(() => {
               return Promise.join(
-                self.Post.create(),
-                self.Post.create(),
-                self.Post.create(),
-                self.Tag.create({type: 'category'}),
-                self.Tag.create({type: 'category'}),
-                self.Tag.create({type: 'tag'}),
-                self.Tag.create({type: 'tag'})
+                Post.create(),
+                Post.create(),
+                Post.create(),
+                Tag.create({type: 'category'}),
+                Tag.create({type: 'category'}),
+                Tag.create({type: 'tag'}),
+                Tag.create({type: 'tag'})
               );
-            }).spread(function(postA, postB, postC, categoryA, categoryB, tagA, tagB) {
-              this.postA = postA;
-              this.postB = postB;
-              this.postC = postC;
+            }).spread(function(_postA, _postB, _postC, categoryA, categoryB, tagA, tagB) {
+              postA = _postA;
+              postB = _postB;
+              postC = _postC;
 
               return Promise.join(
-                postA.addCategory(categoryA),
-                postB.setCategories([categoryB]),
-                postC.createCategory(),
-                postA.createTag(),
-                postB.addTag(tagA),
-                postC.setTags([tagB])
+                postA.addLinkedData({ model : 'tag', associationAlias : 'categories' }, categoryA),
+                postB.setLinkedData({ model : 'tag', associationAlias : 'categories' }, [categoryB]),
+                postC.createLinkedData<ItestInstance, ItestAttribute>({ model : 'tag', associationAlias : 'categories' }),
+                postA.createLinkedData<ItestInstance, ItestAttribute>({ model : 'tag', associationAlias : 'tags' }),
+                postB.addLinkedData({ model : 'tag', associationAlias : 'tags' }, tagA),
+                postC.setLinkedData({ model : 'tag', associationAlias : 'tags' }, [tagB])
               );
             }).then(function() {
               return Promise.join(
-                this.postA.getCategories(),
-                this.postA.getTags(),
-                this.postB.getCategories(),
-                this.postB.getTags(),
-                this.postC.getCategories(),
-                this.postC.getTags()
+                postA.getManyLinkedData<ItestInstance, ItestAttribute>({ model : 'tag', associationAlias : 'categories' }),
+                postA.getManyLinkedData<ItestInstance, ItestAttribute>({ model : 'tag', associationAlias : 'tags' }),
+                postB.getManyLinkedData<ItestInstance, ItestAttribute>({ model : 'tag', associationAlias : 'categories' }),
+                postB.getManyLinkedData<ItestInstance, ItestAttribute>({ model : 'tag', associationAlias : 'tags' }),
+                postC.getManyLinkedData<ItestInstance, ItestAttribute>({ model : 'tag', associationAlias : 'categories' }),
+                postC.getManyLinkedData<ItestInstance, ItestAttribute>({ model : 'tag', associationAlias : 'tags' })
               );
             }).spread((postACategories, postATags, postBCategories, postBTags, postCCategories, postCTags) => {
               expect(postACategories.length).to.equal(1);
@@ -403,59 +415,59 @@ describe(Support.getTestDialectTeaser('associations'), () => {
               expect(postCTags[0].get('type')).to.equal('tag');
             }).then(() => {
               return Promise.join(
-                self.Post.findOne({
+                Post.findOne({
                   where: {
-                    id: self.postA.get('id')
+                    id: postA.get('id')
                   },
                   include: [
-                    {model: self.Tag, as: 'tags'},
-                    {model: self.Tag, as: 'categories'},
+                    {model: Tag, as: 'tags'},
+                    {model: Tag, as: 'categories'},
                   ]
                 }),
-                self.Post.findOne({
+                Post.findOne({
                   where: {
-                    id: self.postB.get('id')
+                    id: postB.get('id')
                   },
                   include: [
-                    {model: self.Tag, as: 'tags'},
-                    {model: self.Tag, as: 'categories'},
+                    {model: Tag, as: 'tags'},
+                    {model: Tag, as: 'categories'},
                   ]
                 }),
-                self.Post.findOne({
+                Post.findOne({
                   where: {
-                    id: self.postC.get('id')
+                    id: postC.get('id')
                   },
                   include: [
-                    {model: self.Tag, as: 'tags'},
-                    {model: self.Tag, as: 'categories'},
+                    {model: Tag, as: 'tags'},
+                    {model: Tag, as: 'categories'},
                   ]
                 })
               );
-            }).spread((postA, postB, postC) => {
-              expect(postA.get('categories').length).to.equal(1);
-              expect(postA.get('tags').length).to.equal(1);
-              expect(postB.get('categories').length).to.equal(1);
-              expect(postB.get('tags').length).to.equal(1);
-              expect(postC.get('categories').length).to.equal(1);
-              expect(postC.get('tags').length).to.equal(1);
+            }).spread((_postA, _postB, _postC) => {
+              expect(_postA.get('categories').length).to.equal(1);
+              expect(_postA.get('tags').length).to.equal(1);
+              expect(_postB.get('categories').length).to.equal(1);
+              expect(_postB.get('tags').length).to.equal(1);
+              expect(_postC.get('categories').length).to.equal(1);
+              expect(_postC.get('tags').length).to.equal(1);
 
-              expect(postA.get('categories')[0].get('type')).to.equal('category');
-              expect(postA.get('tags')[0].get('type')).to.equal('tag');
-              expect(postB.get('categories')[0].get('type')).to.equal('category');
-              expect(postB.get('tags')[0].get('type')).to.equal('tag');
-              expect(postC.get('categories')[0].get('type')).to.equal('category');
-              expect(postC.get('tags')[0].get('type')).to.equal('tag');
+              expect(_postA.get('categories')[0].get('type')).to.equal('category');
+              expect(_postA.get('tags')[0].get('type')).to.equal('tag');
+              expect(_postB.get('categories')[0].get('type')).to.equal('category');
+              expect(_postB.get('tags')[0].get('type')).to.equal('tag');
+              expect(_postC.get('categories')[0].get('type')).to.equal('category');
+              expect(_postC.get('tags')[0].get('type')).to.equal('tag');
             });
           });
         });
 
         describe('on the through model', () => {
           beforeEach(function() {
-            this.Post = this.sequelize.define('post', {});
-            this.Image = this.sequelize.define('image', {});
-            this.Question = this.sequelize.define('question', {});
+            Post = current.define<ItestInstance, ItestAttribute>('post', {});
+            Image = current.define<ItestInstance, ItestAttribute>('image', {});
+            Question = current.define<ItestInstance, ItestAttribute>('question', {});
 
-            this.ItemTag = this.sequelize.define('item_tag', {
+            ItemTag = current.define<ItestInstance, ItestAttribute>('item_tag', {
               id: {
                 type: new DataTypes.INTEGER(),
                 primaryKey: true,
@@ -475,13 +487,13 @@ describe(Support.getTestDialectTeaser('associations'), () => {
                 references: null
               }
             });
-            this.Tag = this.sequelize.define('tag', {
+            Tag = current.define<ItestInstance, ItestAttribute>('tag', {
               name: new DataTypes.STRING()
             });
 
-            this.Post.belongsToMany(this.Tag, {
+            Post.belongsToMany(Tag, {
               through: {
-                model: this.ItemTag,
+                model: ItemTag,
                 unique: false,
                 scope: {
                   taggable: 'post'
@@ -490,17 +502,17 @@ describe(Support.getTestDialectTeaser('associations'), () => {
               foreignKey: 'taggable_id',
               constraints: false
             });
-            this.Tag.belongsToMany(this.Post, {
+            Tag.belongsToMany(Post, {
               through: {
-                model: this.ItemTag,
+                model: ItemTag,
                 unique: false
               },
               foreignKey: 'tag_id'
             });
 
-            this.Image.belongsToMany(this.Tag, {
+            Image.belongsToMany(Tag, {
               through: {
-                model: this.ItemTag,
+                model: ItemTag,
                 unique: false,
                 scope: {
                   taggable: 'image'
@@ -509,17 +521,17 @@ describe(Support.getTestDialectTeaser('associations'), () => {
               foreignKey: 'taggable_id',
               constraints: false
             });
-            this.Tag.belongsToMany(this.Image, {
+            Tag.belongsToMany(Image, {
               through: {
-                model: this.ItemTag,
+                model: ItemTag,
                 unique: false
               },
               foreignKey: 'tag_id'
             });
 
-            this.Question.belongsToMany(this.Tag, {
+            Question.belongsToMany(Tag, {
               through: {
-                model: this.ItemTag,
+                model: ItemTag,
                 unique: false,
                 scope: {
                   taggable: 'question'
@@ -528,9 +540,9 @@ describe(Support.getTestDialectTeaser('associations'), () => {
               foreignKey: 'taggable_id',
               constraints: false
             });
-            this.Tag.belongsToMany(this.Question, {
+            Tag.belongsToMany(Question, {
               through: {
-                model: this.ItemTag,
+                model: ItemTag,
                 unique: false
               },
               foreignKey: 'tag_id'
@@ -538,52 +550,51 @@ describe(Support.getTestDialectTeaser('associations'), () => {
           });
 
           it('should create, find and include associations with scope values', function() {
-            const self = this;
             return Promise.join(
-              this.Post.sync({force: true}),
-              this.Image.sync({force: true}),
-              this.Question.sync({force: true}),
-              this.Tag.sync({force: true})
+              Post.sync({force: true}),
+              Image.sync({force: true}),
+              Question.sync({force: true}),
+              Tag.sync({force: true})
             ).bind(this).then(function() {
-              return this.ItemTag.sync({force: true});
+              return ItemTag.sync({force: true});
             }).then(function() {
               return Promise.join(
-                this.Post.create(),
-                this.Image.create(),
-                this.Question.create(),
-                this.Tag.create({name: 'tagA'}),
-                this.Tag.create({name: 'tagB'}),
-                this.Tag.create({name: 'tagC'})
+                Post.create(),
+                Image.create(),
+                Question.create(),
+                Tag.create({name: 'tagA'}),
+                Tag.create({name: 'tagB'}),
+                Tag.create({name: 'tagC'})
               );
-            }).spread(function(post, image, question, tagA, tagB, tagC) {
-              this.post = post;
-              this.image = image;
-              this.question = question;
+            }).spread(function(_post, _image, _question, tagA, tagB, tagC) {
+              post = _post;
+              image = _image;
+              question = _question;
               return Promise.join(
-                post.setTags([tagA]).then(() => {
+                post.setLinkedData('tag', [tagA]).then(() => {
                   return Promise.join(
-                    post.createTag({name: 'postTag'}),
-                    post.addTag(tagB)
+                    post.createLinkedData<ItestInstance, ItestAttribute>('tag', {name: 'postTag'}),
+                    post.addLinkedData('tag', tagB)
                   );
                 }),
-                image.setTags([tagB]).then(() => {
+                image.setLinkedData('tag', [tagB]).then(() => {
                   return Promise.join(
-                    image.createTag({name: 'imageTag'}),
-                    image.addTag(tagC)
+                    image.createLinkedData<ItestInstance, ItestAttribute>('tag', {name: 'imageTag'}),
+                    image.addLinkedData('tag', tagC)
                   );
                 }),
-                question.setTags([tagC]).then(() => {
+                question.setLinkedData('tag', [tagC]).then(() => {
                   return Promise.join(
-                    question.createTag({name: 'questionTag'}),
-                    question.addTag(tagA)
+                    question.createLinkedData<ItestInstance, ItestAttribute>('tag', {name: 'questionTag'}),
+                    question.addLinkedData('tag', tagA)
                   );
                 })
               );
             }).then(function() {
               return Promise.join(
-                this.post.getTags(),
-                this.image.getTags(),
-                this.question.getTags()
+                post.getManyLinkedData<ItestInstance, ItestAttribute>('tag'),
+                image.getManyLinkedData<ItestInstance, ItestAttribute>('tag'),
+                question.getManyLinkedData<ItestInstance, ItestAttribute>('tag')
               ).spread((postTags, imageTags, questionTags) => {
                 expect(postTags.length).to.equal(3);
                 expect(imageTags.length).to.equal(3);
@@ -602,32 +613,32 @@ describe(Support.getTestDialectTeaser('associations'), () => {
                 }).sort()).to.deep.equal(['questionTag', 'tagA', 'tagC']);
               }).then(() => {
                 return Promise.join(
-                  self.Post.findOne({
+                  Post.findOne({
                     where: {},
-                    include: [self.Tag]
+                    include: [Tag]
                   }),
-                  self.Image.findOne({
+                  Image.findOne({
                     where: {},
-                    include: [self.Tag]
+                    include: [Tag]
                   }),
-                  self.Question.findOne({
+                  Question.findOne({
                     where: {},
-                    include: [self.Tag]
+                    include: [Tag]
                   })
-                ).spread((post, image, question) => {
-                  expect(post.tags.length).to.equal(3);
-                  expect(image.tags.length).to.equal(3);
-                  expect(question.tags.length).to.equal(3);
+                ).spread((_post, _image, _question) => {
+                  expect(_post.tags.length).to.equal(3);
+                  expect(_image.tags.length).to.equal(3);
+                  expect(_question.tags.length).to.equal(3);
 
-                  expect(post.tags.map(tag => {
+                  expect(_post.tags.map(tag => {
                     return tag.name;
                   }).sort()).to.deep.equal(['postTag', 'tagA', 'tagB']);
 
-                  expect(image.tags.map(tag => {
+                  expect(_image.tags.map(tag => {
                     return tag.name;
                   }).sort()).to.deep.equal(['imageTag', 'tagB', 'tagC']);
 
-                  expect(question.tags.map(tag => {
+                  expect(_question.tags.map(tag => {
                     return tag.name;
                   }).sort()).to.deep.equal(['questionTag', 'tagA', 'tagC']);
                 });

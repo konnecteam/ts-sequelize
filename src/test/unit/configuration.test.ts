@@ -103,7 +103,7 @@ describe('Sequelize', () => {
 
           // empty host is treated as :memory:
           expect(options.host).to.equal('');
-          (expect(options.storage).to as any).equal();
+          expect(options.storage).to.equal();
         });
       }
     });

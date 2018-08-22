@@ -1,28 +1,30 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as chai from 'chai';
 import DataTypes from '../../../../lib/data-types';
-import Promise from '../../../../lib/promise';
+import { Model } from '../../../../lib/model';
+import { ItestAttribute, ItestInstance } from '../../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
+const current = Support.sequelize;
 
 if (dialect.match(/^mssql/)) {
   describe('[MSSQL Specific] Query Queue', () => {
+    let User : Model<ItestInstance, ItestAttribute>;
     beforeEach(function() {
-      const User = this.User = this.sequelize.define('User', {
+      User = current.define<ItestInstance, ItestAttribute>('User', {
         username: new DataTypes.STRING()
       });
 
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         return User.create({ username: 'John'});
       });
     });
 
     it('should queue concurrent requests to a connection', function() {
-      const User = this.User;
-
-      return expect(this.sequelize.transaction(t => {
+      return expect(current.transaction(t => {
         return Promise.all([
           User.findOne({
             transaction: t

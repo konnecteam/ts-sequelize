@@ -3,14 +3,17 @@
 import * as chai from 'chai';
 import * as moment from 'moment';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
+  let paranoidUser : ItestInstance;
+  let user : ItestInstance;
   describe('isSoftDeleted', () => {
     beforeEach(function() {
-      const User = current.define('User', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {
         name: new DataTypes.STRING(),
         birthdate: new DataTypes.DATE(),
         meta: new DataTypes.JSON(),
@@ -19,7 +22,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         }
       });
 
-      const ParanoidUser = current.define('User', {
+      const ParanoidUser = current.define<ItestInstance, ItestAttribute>('User', {
         name: new DataTypes.STRING(),
         birthdate: new DataTypes.DATE(),
         meta: new DataTypes.JSON(),
@@ -30,14 +33,14 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         paranoid: true
       });
 
-      this.paranoidUser = ParanoidUser.build({
+      paranoidUser = ParanoidUser.build({
         name: 'a'
       }, {
         isNewRecord: false,
         raw: true
       });
 
-      this.user = User.build({
+      user = User.build({
         name: 'a'
       }, {
         isNewRecord: false,
@@ -47,24 +50,24 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     it('should not throw if paranoid is set to true', function() {
       expect(() => {
-        this.paranoidUser.isSoftDeleted();
+        paranoidUser.isSoftDeleted();
       }).to.not.throw();
     });
 
     it('should throw if paranoid is set to false', function() {
       expect(() => {
-        this.user.isSoftDeleted();
+        user.isSoftDeleted();
       }).to.throw('Model is not paranoid');
     });
 
     it('should return false if the soft-delete property is the same as the default value', function() {
-      this.paranoidUser.setDataValue('deletedAt', null);
-      expect(this.paranoidUser.isSoftDeleted()).to.be.false;
+      paranoidUser.setDataValue('deletedAt', null);
+      expect(paranoidUser.isSoftDeleted()).to.be.false;
     });
 
     it('should return true if the soft-delete property is set', function() {
-      this.paranoidUser.setDataValue('deletedAt', moment().subtract(5, 'days').format());
-      expect(this.paranoidUser.isSoftDeleted()).to.be.true;
+      paranoidUser.setDataValue('deletedAt', moment().subtract(5, 'days').format());
+      expect(paranoidUser.isSoftDeleted()).to.be.true;
     });
   });
 });

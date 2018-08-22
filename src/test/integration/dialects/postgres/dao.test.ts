@@ -2,18 +2,26 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../../lib/data-types';
+import { Model } from '../../../../lib/model';
 import {Sequelize as sequelize} from '../../../../lib/sequelize';
+import { ItestAttribute, ItestInstance } from '../../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const Sequelize = Support.Sequelize;
 const Promise = Sequelize.Promise;
 const dialect = Support.getTestDialect();
+const current = Support.sequelize;
 
 if (dialect.match(/^postgres/)) {
   describe('[POSTGRES Specific] DAO', () => {
+    let _User : Model<ItestInstance, ItestAttribute>;
+    let _Professor : Model<ItestInstance, ItestAttribute>;
+    let _Class : Model<ItestInstance, ItestAttribute>;
+    let _Student : Model<ItestInstance, ItestAttribute>;
+    let _ClassStudent : Model<ItestInstance, ItestAttribute>;
     beforeEach(function() {
-      this.sequelize.options.quoteIdentifiers = true;
-      this.User = this.sequelize.define('User', {
+      current.options.quoteIdentifiers = true;
+      _User = current.define<ItestInstance, ItestAttribute>('User', {
         username: new DataTypes.STRING(),
         email: { type: new DataTypes.ARRAY(new DataTypes.TEXT()) },
         settings: new DataTypes.HSTORE(),
@@ -35,15 +43,15 @@ if (dialect.match(/^postgres/)) {
         holidays: new DataTypes.ARRAY(new DataTypes.RANGE(new DataTypes.DATE())),
         location: new DataTypes.GEOMETRY()
       });
-      return this.User.sync({ force: true });
+      return _User.sync({ force: true });
     });
 
     afterEach(function() {
-      this.sequelize.options.quoteIdentifiers = true;
+      current.options.quoteIdentifiers = true;
     });
 
     it('should be able to search within an array', function() {
-      return this.User.findAll({
+      return _User.findAll({
         where: {
           email: ['hello', 'world']
         },
@@ -55,7 +63,7 @@ if (dialect.match(/^postgres/)) {
     });
 
     it('should be able to update a field with type ARRAY(JSON)', function() {
-      return this.User.create({
+      return _User.create({
         username: 'bob',
         email: ['myemail@email.com'],
         friends: [{
@@ -78,11 +86,11 @@ if (dialect.match(/^postgres/)) {
     });
 
     it('should be able to find a record while searching in an array', function() {
-      return this.User.bulkCreate([
+      return _User.bulkCreate([
         { username: 'bob', email: ['myemail@email.com'] },
         { username: 'tony', email: ['wrongemail@email.com'] },
       ]).then(() => {
-        return this.User.findAll({ where: { email: ['myemail@email.com'] } }).then(user => {
+        return _User.findAll({ where: { email: ['myemail@email.com'] } }).then(user => {
           expect(user).to.be.instanceof(Array);
           expect(user).to.have.length(1);
           expect(user[0].username).to.equal('bob');
@@ -92,11 +100,11 @@ if (dialect.match(/^postgres/)) {
 
     describe('json', () => {
       it('should be able to retrieve a row with ->> operator', function() {
-        return this.sequelize.Promise.all([
-          this.User.create({ username: 'swen', emergency_contact: { name: 'kate' } }),
-          this.User.create({ username: 'anna', emergency_contact: { name: 'joe' } })])
+        return current.Promise.all([
+          _User.create({ username: 'swen', emergency_contact: { name: 'kate' } }),
+          _User.create({ username: 'anna', emergency_contact: { name: 'joe' } })])
           .then(() => {
-            return this.User.find({ where: sequelize.json("emergency_contact->>'name'", 'kate'), attributes: ['username', 'emergency_contact'] });
+            return _User.find({ where: sequelize.json("emergency_contact->>'name'", 'kate'), attributes: ['username', 'emergency_contact'] });
           })
           .then(user => {
             expect(user.emergency_contact.name).to.equal('kate');
@@ -104,11 +112,11 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should be able to query using the nested query language', function() {
-        return this.sequelize.Promise.all([
-          this.User.create({ username: 'swen', emergency_contact: { name: 'kate' } }),
-          this.User.create({ username: 'anna', emergency_contact: { name: 'joe' } })])
+        return current.Promise.all([
+          _User.create({ username: 'swen', emergency_contact: { name: 'kate' } }),
+          _User.create({ username: 'anna', emergency_contact: { name: 'joe' } })])
           .then(() => {
-            return this.User.find({
+            return _User.find({
               where: sequelize.json({ emergency_contact: { name: 'kate' } })
             });
           })
@@ -118,11 +126,11 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should be able to query using dot syntax', function() {
-        return this.sequelize.Promise.all([
-          this.User.create({ username: 'swen', emergency_contact: { name: 'kate' } }),
-          this.User.create({ username: 'anna', emergency_contact: { name: 'joe' } })])
+        return current.Promise.all([
+          _User.create({ username: 'swen', emergency_contact: { name: 'kate' } }),
+          _User.create({ username: 'anna', emergency_contact: { name: 'joe' } })])
           .then(() => {
-            return this.User.find({ where: sequelize.json('emergency_contact.name', 'joe') });
+            return _User.find({ where: sequelize.json('emergency_contact.name', 'joe') });
           })
           .then(user => {
             expect(user.emergency_contact.name).to.equal('joe');
@@ -130,11 +138,11 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should be able to query using dot syntax with uppercase name', function() {
-        return this.sequelize.Promise.all([
-          this.User.create({ username: 'swen', emergencyContact: { name: 'kate' } }),
-          this.User.create({ username: 'anna', emergencyContact: { name: 'joe' } })])
+        return current.Promise.all([
+          _User.create({ username: 'swen', emergencyContact: { name: 'kate' } }),
+          _User.create({ username: 'anna', emergencyContact: { name: 'joe' } })])
           .then(() => {
-            return this.User.find({
+            return _User.find({
               attributes: [[sequelize.json('emergencyContact.name'), 'contactName']],
               where: sequelize.json('emergencyContact.name', 'joe')
             });
@@ -147,15 +155,15 @@ if (dialect.match(/^postgres/)) {
       it('should be able to store values that require JSON escaping', function() {
         const text = "Multi-line '$string' needing \"escaping\" for $$ and $1 type values";
 
-        return this.User.create({ username: 'swen', emergency_contact: { value: text } })
+        return _User.create({ username: 'swen', emergency_contact: { value: text } })
           .then(user => {
             expect(user.isNewRecord).to.equal(false);
           })
           .then(() => {
-            return this.User.find({ where: { username: 'swen' } });
+            return _User.find({ where: { username: 'swen' } });
           })
           .then(() => {
-            return this.User.find({ where: sequelize.json('emergency_contact.value', text) });
+            return _User.find({ where: sequelize.json('emergency_contact.value', text) });
           })
           .then(user => {
             expect(user.username).to.equal('swen');
@@ -165,15 +173,15 @@ if (dialect.match(/^postgres/)) {
       it('should be able to findOrCreate with values that require JSON escaping', function() {
         const text = "Multi-line '$string' needing \"escaping\" for $$ and $1 type values";
 
-        return this.User.findOrCreate({ where: { username: 'swen' }, defaults: { emergency_contact: { value: text } } })
+        return _User.findOrCreate({ where: { username: 'swen' }, defaults: { emergency_contact: { value: text } } })
           .then(user => {
             expect(!user.isNewRecord).to.equal(true);
           })
           .then(() => {
-            return this.User.find({ where: { username: 'swen' } });
+            return _User.find({ where: { username: 'swen' } });
           })
           .then(() => {
-            return this.User.find({ where: sequelize.json('emergency_contact.value', text) });
+            return _User.find({ where: sequelize.json('emergency_contact.value', text) });
           })
           .then(user => {
             expect(user.username).to.equal('swen');
@@ -183,14 +191,14 @@ if (dialect.match(/^postgres/)) {
 
     describe('hstore', () => {
       it('should tell me that a column is hstore and not USER-DEFINED', function() {
-        return this.sequelize.queryInterface.describeTable('Users').then(table => {
+        return current.queryInterface.describeTable('Users').then(table => {
           expect(table.settings.type).to.equal('HSTORE');
           expect(table.document.type).to.equal('HSTORE');
         });
       });
 
       it('should NOT stringify hstore with insert', function() {
-        return this.User.create({
+        return _User.create({
           username: 'bob',
           email: ['myemail@email.com'],
           settings: { mailing: false, push: 'facebook', frequency: 3 }
@@ -203,7 +211,7 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should not rename hstore fields', function() {
-        const Equipment = this.sequelize.define('Equipment', {
+        const Equipment = current.define<ItestInstance, ItestAttribute>('Equipment', {
           grapplingHook: {
             type: new DataTypes.STRING(),
             field: 'grappling_hook'
@@ -228,7 +236,7 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should not rename json fields', function() {
-        const Equipment = this.sequelize.define('Equipment', {
+        const Equipment = current.define<ItestInstance, ItestAttribute>('Equipment', {
           grapplingHook: {
             type: new DataTypes.STRING(),
             field: 'grappling_hook'
@@ -257,7 +265,7 @@ if (dialect.match(/^postgres/)) {
 
     describe('range', () => {
       it('should tell me that a column is range and not USER-DEFINED', function() {
-        return this.sequelize.queryInterface.describeTable('Users').then(table => {
+        return current.queryInterface.describeTable('Users').then(table => {
           expect(table.course_period.type).to.equal('TSTZRANGE');
           expect(table.available_amount.type).to.equal('INT4RANGE');
         });
@@ -267,7 +275,7 @@ if (dialect.match(/^postgres/)) {
 
     describe('enums', () => {
       it('should be able to ignore enum types that already exist', function() {
-        const User = this.sequelize.define('UserEnums', {
+        const User = current.define<ItestInstance, ItestAttribute>('UserEnums', {
           mood: new DataTypes.ENUM('happy', 'sad', 'meh')
         });
 
@@ -277,7 +285,7 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should be able to create/drop enums multiple times', function() {
-        const User = this.sequelize.define('UserEnums', {
+        const User = current.define<ItestInstance, ItestAttribute>('UserEnums', {
           mood: new DataTypes.ENUM('happy', 'sad', 'meh')
         });
 
@@ -287,7 +295,7 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should be able to create/drop multiple enums multiple times', function() {
-        const DummyModel = this.sequelize.define('Dummy-pg', {
+        const DummyModel = current.define<ItestInstance, ItestAttribute>('Dummy-pg', {
           username: new DataTypes.STRING(),
           theEnumOne: {
             type: new DataTypes.ENUM(),
@@ -317,7 +325,7 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should be able to create/drop multiple enums multiple times with field name (#7812)', function() {
-        const DummyModel = this.sequelize.define('Dummy-pg', {
+        const DummyModel = current.define<ItestInstance, ItestAttribute>('Dummy-pg', {
           username: new DataTypes.STRING(),
           theEnumOne: {
             field: 'oh_my_this_enum_one',
@@ -349,18 +357,18 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should be able to add values to enum types', function() {
-        let User = this.sequelize.define('UserEnums', {
+        let User = current.define<ItestInstance, ItestAttribute>('UserEnums', {
           mood:  new DataTypes.ENUM('happy', 'sad', 'meh')
         });
 
         return User.sync({ force: true }).then(() => {
-          User = this.sequelize.define('UserEnums', {
+          User = current.define<ItestInstance, ItestAttribute>('UserEnums', {
             mood: new DataTypes.ENUM('neutral', 'happy', 'sad', 'ecstatic', 'meh', 'joyful')
           });
 
           return User.sync();
         }).then(() => {
-          return this.sequelize.getQueryInterface().pgListEnums(User.getTableName());
+          return current.getQueryInterface().pgListEnums(User.getTableName());
         }).then(enums => {
           expect(enums).to.have.length(1);
           expect(enums[0].enum_value).to.equal('{neutral,happy,sad,ecstatic,meh,joyful}');
@@ -369,7 +377,7 @@ if (dialect.match(/^postgres/)) {
 
       describe('ARRAY(ENUM)', () => {
         it('should be able to ignore enum types that already exist', function() {
-          const User = this.sequelize.define('UserEnums', {
+          const User = current.define<ItestInstance, ItestAttribute>('UserEnums', {
             permissions: new DataTypes.ARRAY(new DataTypes.ENUM([
               'access',
               'write',
@@ -382,7 +390,7 @@ if (dialect.match(/^postgres/)) {
         });
 
         it('should be able to create/drop enums multiple times', function() {
-          const User = this.sequelize.define('UserEnums', {
+          const User = current.define<ItestInstance, ItestAttribute>('UserEnums', {
             permissions: new DataTypes.ARRAY(new DataTypes.ENUM([
               'access',
               'write',
@@ -395,7 +403,7 @@ if (dialect.match(/^postgres/)) {
         });
 
         it('should be able to add values to enum types', function() {
-          let User = this.sequelize.define('UserEnums', {
+          let User = current.define<ItestInstance, ItestAttribute>('UserEnums', {
             permissions: new DataTypes.ARRAY(new DataTypes.ENUM([
               'access',
               'write',
@@ -405,7 +413,7 @@ if (dialect.match(/^postgres/)) {
           });
 
           return User.sync({ force: true }).then(() => {
-            User = this.sequelize.define('UserEnums', {
+            User = current.define<ItestInstance, ItestAttribute>('UserEnums', {
               permissions: new DataTypes.ARRAY(
                 new DataTypes.ENUM('view', 'access', 'edit', 'write', 'check', 'delete')
               )
@@ -413,7 +421,7 @@ if (dialect.match(/^postgres/)) {
 
             return User.sync();
           }).then(() => {
-            return this.sequelize.getQueryInterface().pgListEnums(User.getTableName());
+            return current.getQueryInterface().pgListEnums(User.getTableName());
           }).then(enums => {
             expect(enums).to.have.length(1);
             expect(enums[0].enum_value).to.equal('{view,access,edit,write,check,delete}');
@@ -421,7 +429,7 @@ if (dialect.match(/^postgres/)) {
         });
 
         it('should be able to insert new record', function() {
-          const User = this.sequelize.define('UserEnums', {
+          const User = current.define<ItestInstance, ItestAttribute>('UserEnums', {
             name: new DataTypes.STRING(),
             type: new DataTypes.ENUM('A', 'B', 'C'),
             owners: new DataTypes.ARRAY(new DataTypes.STRING()),
@@ -451,7 +459,7 @@ if (dialect.match(/^postgres/)) {
         });
 
         it('should fail when trying to insert foreign element on ARRAY(ENUM)', function() {
-          const User = this.sequelize.define('UserEnums', {
+          const User = current.define<ItestInstance, ItestAttribute>('UserEnums', {
             name: new DataTypes.STRING(),
             type: new DataTypes.ENUM('A', 'B', 'C'),
             owners: new DataTypes.ARRAY(new DataTypes.STRING()),
@@ -474,7 +482,7 @@ if (dialect.match(/^postgres/)) {
         });
 
         it('should be able to find records', function() {
-          const User = this.sequelize.define('UserEnums', {
+          const User = current.define<ItestInstance, ItestAttribute>('UserEnums', {
             name: new DataTypes.STRING(),
             type: new DataTypes.ENUM('A', 'B', 'C'),
             permissions: new DataTypes.ARRAY(new DataTypes.ENUM([
@@ -526,15 +534,15 @@ if (dialect.match(/^postgres/)) {
     describe('integers', () => {
       describe('integer', () => {
         beforeEach(function() {
-          this.User = this.sequelize.define('User', {
+          _User = current.define<ItestInstance, ItestAttribute>('User', {
             aNumber: new DataTypes.INTEGER()
           });
 
-          return this.User.sync({ force: true });
+          return _User.sync({ force: true });
         });
 
         it('positive', function() {
-          const User = this.User;
+          const User = _User;
 
           return User.create({ aNumber: 2147483647 }).then(user => {
             expect(user.aNumber).to.equal(2147483647);
@@ -545,7 +553,7 @@ if (dialect.match(/^postgres/)) {
         });
 
         it('negative', function() {
-          const User = this.User;
+          const User = _User;
 
           return User.create({ aNumber: -2147483647 }).then(user => {
             expect(user.aNumber).to.equal(-2147483647);
@@ -558,15 +566,15 @@ if (dialect.match(/^postgres/)) {
 
       describe('bigint', () => {
         beforeEach(function() {
-          this.User = this.sequelize.define('User', {
+          _User = current.define<ItestInstance, ItestAttribute>('User', {
             aNumber: new DataTypes.BIGINT()
           });
 
-          return this.User.sync({ force: true });
+          return _User.sync({ force: true });
         });
 
         it('positive', function() {
-          const User = this.User;
+          const User = _User;
 
           return User.create({ aNumber: '9223372036854775807' }).then(user => {
             expect(user.aNumber).to.equal('9223372036854775807');
@@ -577,7 +585,7 @@ if (dialect.match(/^postgres/)) {
         });
 
         it('negative', function() {
-          const User = this.User;
+          const User = _User;
 
           return User.create({ aNumber: '-9223372036854775807' }).then(user => {
             expect(user.aNumber).to.equal('-9223372036854775807');
@@ -591,14 +599,14 @@ if (dialect.match(/^postgres/)) {
 
     describe('timestamps', () => {
       beforeEach(function() {
-        this.User = this.sequelize.define('User', {
+        _User = current.define<ItestInstance, ItestAttribute>('User', {
           dates: new DataTypes.ARRAY(new DataTypes.DATE())
         });
-        return this.User.sync({ force: true });
+        return _User.sync({ force: true });
       });
 
       it('should use bind params instead of "TIMESTAMP WITH TIME ZONE"', function() {
-        return this.User.create({
+        return _User.create({
           dates: []
         }, {
           logging(sql) {
@@ -611,7 +619,7 @@ if (dialect.match(/^postgres/)) {
 
     describe('model', () => {
       it('create handles array correctly', function() {
-        return this.User
+        return _User
           .create({ username: 'user', email: ['foo@bar.com', 'bar@baz.com'] })
           .then(oldUser => {
             expect(oldUser.email).to.contain.members(['foo@bar.com', 'bar@baz.com']);
@@ -619,7 +627,7 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should save hstore correctly', function() {
-        return this.User.create({ username: 'user', email: ['foo@bar.com'], settings: { created: '"value"' } }).then(newUser => {
+        return _User.create({ username: 'user', email: ['foo@bar.com'], settings: { created: '"value"' } }).then(newUser => {
           // Check to see if the default value for an hstore field works
           expect(newUser.document).to.deep.equal({ default: "'value'" });
           expect(newUser.settings).to.deep.equal({ created: '"value"' });
@@ -633,9 +641,9 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should save hstore array correctly', function() {
-        const User = this.User;
+        const User = _User;
 
-        return this.User.create({
+        return _User.create({
           username: 'bob',
           email: ['myemail@email.com'],
           phones: [{ number: '123456789', type: 'mobile' }, { number: '987654321', type: 'landline' }, { number: '8675309', type: "Jenny's" }, { number: '5555554321', type: '"home\n"' }]
@@ -650,9 +658,9 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should bulkCreate with hstore property', function() {
-        const User = this.User;
+        const User = _User;
 
-        return this.User.bulkCreate([{
+        return _User.bulkCreate([{
           username: 'bob',
           email: ['myemail@email.com'],
           settings: { mailing: true, push: 'facebook', frequency: 3 }
@@ -664,13 +672,13 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should update hstore correctly', function() {
-        return this.User.create({ username: 'user', email: ['foo@bar.com'], settings: { test: '"value"' } }).then(newUser => {
+        return _User.create({ username: 'user', email: ['foo@bar.com'], settings: { test: '"value"' } }).then(newUser => {
           // Check to see if the default value for an hstore field works
           expect(newUser.document).to.deep.equal({ default: "'value'" });
           expect(newUser.settings).to.deep.equal({ test: '"value"' });
 
           // Check to see if updating an hstore field works
-          return this.User.update({ settings: { should: 'update', to: 'this', first: 'place' } }, { where: newUser.where() }).then(() => {
+          return _User.update({ settings: { should: 'update', to: 'this', first: 'place' } }, { where: newUser.where() }).then(() => {
             return newUser.reload().then(() => {
               // Postgres always returns keys in alphabetical order (ascending)
               expect(newUser.settings).to.deep.equal({ first: 'place', should: 'update', to: 'this' });
@@ -680,9 +688,9 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should update hstore correctly and return the affected rows', function() {
-        return this.User.create({ username: 'user', email: ['foo@bar.com'], settings: { test: '"value"' } }).then(oldUser => {
+        return _User.create({ username: 'user', email: ['foo@bar.com'], settings: { test: '"value"' } }).then(oldUser => {
           // Update the user and check that the returned object's fields have been parsed by the hstore library
-          return this.User.update({ settings: { should: 'update', to: 'this', first: 'place' } }, { where: oldUser.where(), returning: true }).spread((count, users) => {
+          return _User.update({ settings: { should: 'update', to: 'this', first: 'place' } }, { where: oldUser.where(), returning: true }).spread((count, users) => {
             expect(count).to.equal(1);
             expect(users[0].settings).to.deep.equal({ should: 'update', to: 'this', first: 'place' });
           });
@@ -692,9 +700,9 @@ if (dialect.match(/^postgres/)) {
       it('should read hstore correctly', function() {
         const data = { username: 'user', email: ['foo@bar.com'], settings: { test: '"value"' } };
 
-        return this.User.create(data)
+        return _User.create(data)
           .then(() => {
-            return this.User.find({ where: { username: 'user' } });
+            return _User.find({ where: { username: 'user' } });
           })
           .then(user => {
             // Check that the hstore fields are the same when retrieving the user
@@ -705,24 +713,24 @@ if (dialect.match(/^postgres/)) {
       it('should read an hstore array correctly', function() {
         const data = { username: 'user', email: ['foo@bar.com'], phones: [{ number: '123456789', type: 'mobile' }, { number: '987654321', type: 'landline' }] };
 
-        return this.User.create(data)
+        return _User.create(data)
           .then(() => {
             // Check that the hstore fields are the same when retrieving the user
-            return this.User.find({ where: { username: 'user' } });
+            return _User.find({ where: { username: 'user' } });
           }).then(user => {
             expect(user.phones).to.deep.equal(data.phones);
           });
       });
 
       it('should read hstore correctly from multiple rows', function() {
-        return this.User
+        return _User
           .create({ username: 'user1', email: ['foo@bar.com'], settings: { test: '"value"' } })
           .then(() => {
-            return this.User.create({ username: 'user2', email: ['foo2@bar.com'], settings: { another: '"example"' } });
+            return _User.create({ username: 'user2', email: ['foo2@bar.com'], settings: { another: '"example"' } });
           })
           .then(() => {
             // Check that the hstore fields are the same when retrieving the user
-            return this.User.findAll({ order: ['username'] });
+            return _User.findAll({ order: ['username'] });
           })
           .then(users => {
             expect(users[0].settings).to.deep.equal({ test: '"value"' });
@@ -731,26 +739,26 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should read hstore correctly from included models as well', function() {
-        const HstoreSubmodel = this.sequelize.define('hstoreSubmodel', {
+        const HstoreSubmodel = current.define<ItestInstance, ItestAttribute>('hstoreSubmodel', {
           someValue: new DataTypes.HSTORE()
         });
         const submodelValue = { testing: '"hstore"' };
 
-        this.User.hasMany(HstoreSubmodel);
+        _User.hasMany(HstoreSubmodel);
 
-        return this.sequelize
+        return current
           .sync({ force: true })
           .then(() => {
-            return this.User.create({ username: 'user1' })
+            return _User.create({ username: 'user1' })
               .then(user => {
                 return HstoreSubmodel.create({ someValue: submodelValue })
                   .then(submodel => {
-                    return user.setHstoreSubmodels([submodel]);
+                    return user.setLinkedData('hstoreSubmodel', [submodel]);
                   });
               });
           })
           .then(() => {
-            return this.User.find({ where: { username: 'user1' }, include: [HstoreSubmodel] });
+            return _User.find({ where: { username: 'user1' }, include: [HstoreSubmodel] });
           })
           .then(user => {
             expect(user.hasOwnProperty('hstoreSubmodels')).to.be.ok;
@@ -761,7 +769,7 @@ if (dialect.match(/^postgres/)) {
 
       it('should save range correctly', function() {
         const period = [new Date(2015, 0, 1), new Date(2015, 11, 31)];
-        return this.User.create({ username: 'user', email: ['foo@bar.com'], course_period: period }).then(newUser => {
+        return _User.create({ username: 'user', email: ['foo@bar.com'], course_period: period }).then(newUser => {
           // Check to see if the default value for a range field works
 
           expect(newUser.acceptable_marks.length).to.equal(2);
@@ -788,7 +796,7 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should save range array correctly', function() {
-        const User = this.User;
+        const User = _User;
         const holidays = [
           [new Date(2015, 3, 1), new Date(2015, 3, 15)],
           [new Date(2015, 8, 1), new Date(2015, 9, 15)],
@@ -816,7 +824,7 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should bulkCreate with range property', function() {
-        const User = this.User;
+        const User = _User;
         const period = [new Date(2015, 0, 1), new Date(2015, 11, 31)];
 
         return User.bulkCreate([{
@@ -836,7 +844,7 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should update range correctly', function() {
-        const User = this.User;
+        const User = _User;
         const period = [new Date(2015, 0, 1), new Date(2015, 11, 31)];
 
         return User.create({ username: 'user', email: ['foo@bar.com'], course_period: period }).then(newUser => {
@@ -871,7 +879,7 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should update range correctly and return the affected rows', function() {
-        const User = this.User;
+        const User = _User;
         const period = [new Date(2015, 1, 1), new Date(2015, 10, 30)];
 
         return User.create({
@@ -894,7 +902,7 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should read range correctly', function() {
-        const User = this.User;
+        const User = _User;
 
         const course_period = [{ value: new Date(2015, 1, 1), inclusive: false }, { value: new Date(2015, 10, 30), inclusive: false }];
 
@@ -911,7 +919,7 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should read range array correctly', function() {
-        const User = this.User;
+        const User = _User;
         const holidays = [
           [{ value: new Date(2015, 3, 1, 10), inclusive: true}, { value: new Date(2015, 3, 15), inclusive: true }],
           [{ value: new Date(2015, 8, 1), inclusive: true }, { value: new Date(2015, 9, 15), inclusive: true }]];
@@ -927,7 +935,7 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('should read range correctly from multiple rows', function() {
-        const User = this.User;
+        const User = _User;
         const periods = [
           [new Date(2015, 0, 1), new Date(2015, 11, 31)],
           [new Date(2016, 0, 1), new Date(2016, 11, 31)],
@@ -956,26 +964,26 @@ if (dialect.match(/^postgres/)) {
 
       it('should read range correctly from included models as well', function() {
         const period = [new Date(2016, 0, 1), new Date(2016, 11, 31)];
-        const HolidayDate = this.sequelize.define('holidayDate', {
+        const HolidayDate = current.define<ItestInstance, ItestAttribute>('holidayDate', {
           period: new DataTypes.RANGE(new DataTypes.DATE())
         });
 
-        this.User.hasMany(HolidayDate);
+        _User.hasMany(HolidayDate);
 
-        return this.sequelize
+        return current
           .sync({ force: true })
           .then(() => {
-            return this.User
+            return _User
               .create({ username: 'user', email: ['foo@bar.com'] })
               .then(user => {
                 return HolidayDate.create({ period })
                   .then(holidayDate => {
-                    return user.setHolidayDates([holidayDate]);
+                    return user.setLinkedData('holidayDate', [holidayDate]);
                   });
               });
           })
           .then(() => {
-            return this.User.find({ where: { username: 'user' }, include: [HolidayDate] });
+            return _User.find({ where: { username: 'user' }, include: [HolidayDate] });
           })
           .then(user => {
             expect(user.hasOwnProperty('holidayDates')).to.be.ok;
@@ -989,47 +997,47 @@ if (dialect.match(/^postgres/)) {
 
     it('should save geometry correctly', function() {
       const point = { type: 'Point', coordinates: [39.807222, -76.984722] };
-      return this.User.create({ username: 'user', email: ['foo@bar.com'], location: point }).then(newUser => {
-        (expect(newUser.location).to.deep as any).eql(point);
+      return _User.create({ username: 'user', email: ['foo@bar.com'], location: point }).then(newUser => {
+        expect(newUser.location).to.deep.eql(point);
       });
     });
 
     it('should update geometry correctly', function() {
-      const User = this.User;
+      const User = _User;
       const point1 = { type: 'Point', coordinates: [39.807222, -76.984722] };
       const point2 = { type: 'Point', coordinates: [39.828333, -77.232222] };
       return User.create({ username: 'user', email: ['foo@bar.com'], location: point1 }).then(oldUser => {
         return User.update({ location: point2 }, { where: { username: oldUser.username }, returning: true }).spread((count, updatedUsers) => {
-          (expect(updatedUsers[0].location).to.deep as any).eql(point2);
+          expect(updatedUsers[0].location).to.deep.eql(point2);
         });
       });
     });
 
     it('should read geometry correctly', function() {
-      const User = this.User;
+      const User = _User;
       const point = { type: 'Point', coordinates: [39.807222, -76.984722] };
 
       return User.create({ username: 'user', email: ['foo@bar.com'], location: point }).then(user => {
         return User.find({ where: { username: user.username } });
       }).then(user => {
-        (expect(user.location).to.deep as any).eql(point);
+        expect(user.location).to.deep.eql(point);
       });
     });
 
     describe('[POSTGRES] Unquoted identifiers', () => {
       it('can insert and select', function() {
-        this.sequelize.options.quoteIdentifiers = false;
-        this.sequelize.getQueryInterface().QueryGenerator.options.quoteIdentifiers = false;
+        current.options.quoteIdentifiers = false;
+        current.getQueryInterface().QueryGenerator.options.quoteIdentifiers = false;
 
-        this.User = this.sequelize.define('Userxs', {
+        _User = current.define<ItestInstance, ItestAttribute>('Userxs', {
           username: new DataTypes.STRING(),
           fullName: new DataTypes.STRING() // Note mixed case
         }, {
           quoteIdentifiers: false
         });
 
-        return this.User.sync({ force: true }).then(() => {
-          return this.User
+        return _User.sync({ force: true }).then(() => {
+          return _User
             .create({ username: 'user', fullName: 'John Smith' })
             .then(user => {
               // We can insert into a table with non-quoted identifiers
@@ -1039,7 +1047,7 @@ if (dialect.match(/^postgres/)) {
               expect(user.fullName).to.equal('John Smith');
 
               // We can query by non-quoted identifiers
-              return this.User.find({
+              return _User.find({
                 where: { fullName: 'John Smith' }
               }).then(user2 => {
                 // We can map values back to non-quoted identifiers
@@ -1048,14 +1056,14 @@ if (dialect.match(/^postgres/)) {
                 expect(user2.fullName).to.equal('John Smith');
 
                 // We can query and aggregate by non-quoted identifiers
-                return this.User
+                return _User
                   .count({
                     where: { fullName: 'John Smith' }
                   })
                   .then(count => {
-                    this.sequelize.options.quoteIndentifiers = true;
-                    this.sequelize.getQueryInterface().QueryGenerator.options.quoteIdentifiers = true;
-                    this.sequelize.options.logging = false;
+                    current.options.quoteIdentifiers = true;
+                    current.getQueryInterface().QueryGenerator.options.quoteIdentifiers = true;
+                    current.options.logging = false;
                     expect(count).to.equal(1);
                   });
               });
@@ -1064,44 +1072,44 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('can select nested include', function() {
-        this.sequelize.options.quoteIdentifiers = false;
-        this.sequelize.getQueryInterface().QueryGenerator.options.quoteIdentifiers = false;
-        this.Professor = this.sequelize.define('Professor', {
+        current.options.quoteIdentifiers = false;
+        current.getQueryInterface().QueryGenerator.options.quoteIdentifiers = false;
+        _Professor = current.define<ItestInstance, ItestAttribute>('Professor', {
           fullName: new DataTypes.STRING()
         }, {
           quoteIdentifiers: false
         });
-        this.Class = this.sequelize.define('Class', {
+        _Class = current.define<ItestInstance, ItestAttribute>('Class', {
           name: new DataTypes.STRING()
         }, {
           quoteIdentifiers: false
         });
-        this.Student = this.sequelize.define('Student', {
+        _Student = current.define<ItestInstance, ItestAttribute>('Student', {
           fullName: new DataTypes.STRING()
         }, {
           quoteIdentifiers: false
         });
-        this.ClassStudent = this.sequelize.define('ClassStudent', {
+        _ClassStudent = current.define<ItestInstance, ItestAttribute>('ClassStudent', {
         }, {
           quoteIdentifiers: false,
           tableName: 'class_student'
         });
-        this.Professor.hasMany(this.Class);
-        this.Class.belongsTo(this.Professor);
-        this.Class.belongsToMany(this.Student, { through: this.ClassStudent });
-        this.Student.belongsToMany(this.Class, { through: this.ClassStudent });
-        return this.Professor.sync({ force: true })
+        _Professor.hasMany(_Class);
+        _Class.belongsTo(_Professor);
+        _Class.belongsToMany(_Student, { through: _ClassStudent });
+        _Student.belongsToMany(_Class, { through: _ClassStudent });
+        return _Professor.sync({ force: true })
           .then(() => {
-            return this.Student.sync({ force: true });
+            return _Student.sync({ force: true });
           })
           .then(() => {
-            return this.Class.sync({ force: true });
+            return _Class.sync({ force: true });
           })
           .then(() => {
-            return this.ClassStudent.sync({ force: true });
+            return _ClassStudent.sync({ force: true });
           })
           .then(() => {
-            return this.Professor.bulkCreate([
+            return _Professor.bulkCreate([
               {
                 id: 1,
                 fullName: 'Albus Dumbledore'
@@ -1113,7 +1121,7 @@ if (dialect.match(/^postgres/)) {
             ]);
           })
           .then(() => {
-            return this.Class.bulkCreate([
+            return _Class.bulkCreate([
               {
                 id: 1,
                 name: 'Transfiguration',
@@ -1132,7 +1140,7 @@ if (dialect.match(/^postgres/)) {
             ]);
           })
           .then(() => {
-            return this.Student.bulkCreate([
+            return _Student.bulkCreate([
               {
                 id: 1,
                 fullName: 'Harry Potter'
@@ -1153,40 +1161,40 @@ if (dialect.match(/^postgres/)) {
           })
           .then(() => {
             return Promise.all([
-              this.Student.findById(1)
+              _Student.findById(1)
                 .then(Harry => {
-                  return Harry.setClasses([1, 2, 3]);
+                  return Harry.setLinkedData('Class', [1, 2, 3]);
                 }),
-              this.Student.findById(2)
+              _Student.findById(2)
                 .then(Ron => {
-                  return Ron.setClasses([1, 2]);
+                  return Ron.setLinkedData('Class', [1, 2]);
                 }),
-              this.Student.findById(3)
+              _Student.findById(3)
                 .then(Ginny => {
-                  return Ginny.setClasses([2, 3]);
+                  return Ginny.setLinkedData('Class', [2, 3]);
                 }),
-              this.Student.findById(4)
+              _Student.findById(4)
                 .then(Hermione => {
-                  return Hermione.setClasses([1, 2, 3]);
+                  return Hermione.setLinkedData('Class', [1, 2, 3]);
                 }),
             ]);
           })
           .then(() => {
-            return this.Professor.findAll({
+            return _Professor.findAll({
               include: [
                 {
-                  model: this.Class,
+                  model: _Class,
                   include: [
                     {
-                      model: this.Student
+                      model: _Student
                     },
                   ]
                 },
               ],
               order: [
                 ['id'],
-                [this.Class, 'id'],
-                [this.Class, this.Student, 'id'],
+                [_Class, 'id'],
+                [_Class, _Student, 'id'],
               ]
             });
           })
@@ -1197,7 +1205,7 @@ if (dialect.match(/^postgres/)) {
             expect(professors[0].Classes[0].Students.length).to.eql(3);
           })
           .finally(() => {
-            this.sequelize.getQueryInterface().QueryGenerator.options.quoteIdentifiers = true;
+            current.getQueryInterface().QueryGenerator.options.quoteIdentifiers = true;
           });
       });
     });

@@ -1,16 +1,21 @@
 'use strict';
 
 import * as chai from 'chai';
-import {Sequelize} from '../../index';
+import { Model as M, Sequelize } from '../../index';
 import DataTypes from '../../lib/data-types';
 import config from '../config/config';
+import { ItestAttribute, ItestInstance } from '../dummy/dummy-data-set';
 import Support from './support';
 const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
+  let User : M<ItestInstance, ItestAttribute>;
+  let Project : M<ItestInstance, ItestAttribute>;
+  let Task : M<ItestInstance, ItestAttribute>;
   describe('#update', () => {
     it('should allow us to update specific columns without tripping the validations', function() {
-      const User = this.sequelize.define('model', {
+      User = current.define<ItestInstance, ItestAttribute>('model', {
         username: new DataTypes.STRING(),
         email: {
           type: new DataTypes.STRING(),
@@ -37,7 +42,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
     });
 
     it('should be able to emit an error upon updating when a validation has failed from an instance', function() {
-      const Model = this.sequelize.define('model', {
+      const Model = current.define<ItestInstance, ItestAttribute>('model', {
         name: {
           type: new DataTypes.STRING(),
           allowNull: false,
@@ -58,7 +63,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
     });
 
     it('should be able to emit an error upon updating when a validation has failed from the factory', function() {
-      const Model = this.sequelize.define('model', {
+      const Model = current.define<ItestInstance, ItestAttribute>('model', {
         name: {
           type: new DataTypes.STRING(),
           allowNull: false,
@@ -79,7 +84,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
     });
 
     it('should enforce a unique constraint', function() {
-      const Model = this.sequelize.define('model', {
+      const Model = current.define<ItestInstance, ItestAttribute>('model', {
         uniqueName: { type: new DataTypes.STRING(), unique: 'uniqueName' }
       });
       const records = [
@@ -104,7 +109,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
     });
 
     it('should allow a custom unique constraint error message', function() {
-      const Model = this.sequelize.define('model', {
+      const Model = current.define<ItestInstance, ItestAttribute>('model', {
         uniqueName: {
           type: new DataTypes.STRING(),
           unique: { msg: 'custom unique error message' }
@@ -132,7 +137,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
     });
 
     it('should handle multiple unique messages correctly', function() {
-      const Model = this.sequelize.define('model', {
+      const Model = current.define<ItestInstance, ItestAttribute>('model', {
         uniqueName1: {
           type: new DataTypes.STRING(),
           unique: { msg: 'custom unique error message 1' }
@@ -172,9 +177,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   describe('#create', () => {
     describe('generic', () => {
       beforeEach(function() {
-        const self = this;
-
-        const Project = this.sequelize.define('Project', {
+        Project = current.define<ItestInstance, ItestAttribute>('Project', {
           name: {
             type: new DataTypes.STRING(),
             allowNull: false,
@@ -185,32 +188,28 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
           }
         });
 
-        const Task = this.sequelize.define('Task', {
+        Task = current.define<ItestInstance, ItestAttribute>('Task', {
           something: new DataTypes.STRING()
         });
 
         Project.hasOne(Task);
         Task.belongsTo(Project);
 
-        return this.sequelize.sync({ force: true }).then(() => {
-          self.Project = Project;
-          self.Task = Task;
-        });
+        return current.sync({ force: true });
       });
 
       it('correctly throws an error using create method ', function() {
-        return this.Project.create({name: 'nope'}).catch(err => {
+        return Project.create({name: 'nope'}).catch(err => {
           expect(err).to.have.ownProperty('name');
         });
       });
 
       it('correctly validates using create method ', function() {
-        const self = this;
-        return this.Project.create({}).then(project => {
-          return self.Task.create({something: 1}).then(task => {
-            return project.setTask(task).then(_task => {
+        return Project.create({}).then(project => {
+          return Task.create({something: 1}).then(task => {
+            return project.setLinkedData('Task', task).then(_task => {
               expect(_task.ProjectId).to.not.be.null;
-              return task.setProject(project).then(_project => {
+              return task.setLinkedData('Project', project).then(_project => {
                 expect(_project.ProjectId).to.not.be.null;
               });
             });
@@ -221,7 +220,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
 
     describe('explicitly validating primary/auto incremented columns', () => {
       it('should emit an error when we try to enter in a string for the id key without validation arguments', function() {
-        const User = this.sequelize.define('UserId', {
+        User = current.define<ItestInstance, ItestAttribute>('UserId', {
           id: {
             type: new DataTypes.INTEGER(),
             autoIncrement: true,
@@ -241,7 +240,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
       });
 
       it('should emit an error when we try to enter in a string for an auto increment key (not named id)', function() {
-        const User = this.sequelize.define('UserId', {
+        User = current.define<ItestInstance, ItestAttribute>('UserId', {
           username: {
             type: new DataTypes.INTEGER(),
             autoIncrement: true,
@@ -262,7 +261,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
 
       describe('primaryKey with the name as id with arguments for it\'s validatio', () => {
         beforeEach(function() {
-          this.User = this.sequelize.define('UserId', {
+          User = current.define<ItestInstance, ItestAttribute>('UserId', {
             id: {
               type: new DataTypes.INTEGER(),
               autoIncrement: true,
@@ -273,18 +272,18 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
             }
           });
 
-          return this.User.sync({ force: true });
+          return User.sync({ force: true });
         });
 
         it('should emit an error when we try to enter in a string for the id key with validation arguments', function() {
-          return this.User.create({id: 'helloworld'}).catch(err => {
+          return User.create({id: 'helloworld'}).catch(err => {
             expect(err).to.be.an.instanceOf(Error);
             expect(err.get('id')[0].message).to.equal('ID must be an integer!');
           });
         });
 
         it('should emit an error when we try to enter in a string for an auto increment key through .build().validate()', function() {
-          const user = this.User.build({id: 'helloworld'});
+          const user = User.build({id: 'helloworld'});
 
           return expect(user.validate()).to.be.rejected.then(err => {
             expect(err.get('id')[0].message).to.equal('ID must be an integer!');
@@ -292,7 +291,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
         });
 
         it('should emit an error when we try to .save()', function() {
-          const user = this.User.build({id: 'helloworld'});
+          const user = User.build({id: 'helloworld'});
           return user.save().catch(err => {
             expect(err).to.be.an.instanceOf(Error);
             expect(err.get('id')[0].message).to.equal('ID must be an integer!');
@@ -303,8 +302,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
 
     describe('pass all paths when validating', () => {
       beforeEach(function() {
-        const self = this;
-        const Project = this.sequelize.define('Project', {
+        Project = current.define<ItestInstance, ItestAttribute>('Project', {
           name: {
             type: new DataTypes.STRING(),
             allowNull: false,
@@ -323,7 +321,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
 
         });
 
-        const Task = this.sequelize.define('Task', {
+        Task = current.define<ItestInstance, ItestAttribute>('Task', {
           something: new DataTypes.STRING()
         });
 
@@ -332,14 +330,14 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
 
         return Project.sync({ force: true }).then(() => {
           return Task.sync({ force: true }).then(() => {
-            self.Project = Project;
-            self.Task = Task;
+            Project = Project;
+            Task = Task;
           });
         });
       });
 
       it('produce 3 errors', function() {
-        return this.Project.create({}).catch(err => {
+        return Project.create({}).catch(err => {
           expect(err).to.be.an.instanceOf(Error);
           delete err.stack; // longStackTraces
           expect(err.errors).to.have.length(3);
@@ -349,7 +347,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
 
     describe('not null schema validation', () => {
       beforeEach(function() {
-        const Project = this.sequelize.define('Project', {
+        Project = current.define<ItestInstance, ItestAttribute>('Project', {
           name: {
             type: new DataTypes.STRING(),
             allowNull: false,
@@ -359,13 +357,13 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
           }
         });
 
-        return this.sequelize.sync({ force: true }).then(() => {
-          this.Project = Project;
+        return current.sync({ force: true }).then(() => {
+          Project = Project;
         });
       });
 
       it('correctly throws an error using create method ', function() {
-        return this.Project.create({})
+        return Project.create({})
           .then(() => {
             throw new Error('Validation must be failed');
           }, () => {
@@ -374,7 +372,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
       });
 
       it('correctly throws an error using create method with default generated messages', function() {
-        return this.Project.create({}).catch(err => {
+        return Project.create({}).catch(err => {
           expect(err).to.have.property('name', 'SequelizeValidationError');
           expect(err.message).equal('notNull Violation: Project.name cannot be null');
           expect(err.errors).to.be.an('array').and.have.length(1);
@@ -385,7 +383,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   });
 
   it('correctly validates using custom validation methods', function() {
-    const User = this.sequelize.define('User' + config.rand(), {
+    User = current.define<ItestInstance, ItestAttribute>('User' + config.rand(), {
       name: {
         type: new DataTypes.STRING(),
         validate: {
@@ -412,8 +410,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   });
 
   it('supports promises with custom validation methods', function() {
-    const self = this;
-    const User = this.sequelize.define('User' + config.rand(), {
+    User = current.define<ItestInstance, ItestAttribute>('User' + config.rand(), {
       name: {
         type: new DataTypes.STRING(),
         validate: {
@@ -431,7 +428,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
 
     return User.sync().then(() => {
       return expect(User.build({ name: 'error' }).validate()).to.be.rejected.then(error => {
-        expect(error).to.be.instanceof(self.sequelize.ValidationError);
+        expect(error).to.be.instanceof(current.ValidationError);
         expect(error.get('name')[0].message).to.equal('Invalid username');
 
         return expect(User.build({ name: 'no error' }).validate()).not.to.be.rejected;
@@ -440,7 +437,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   });
 
   it('skips other validations if allowNull is true and the value is null', function() {
-    const User = this.sequelize.define('User' + config.rand(), {
+    User = current.define<ItestInstance, ItestAttribute>('User' + config.rand(), {
       age: {
         type: new DataTypes.INTEGER(),
         allowNull: true,
@@ -460,7 +457,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   });
 
   it('validates a model with custom model-wide validation methods', function() {
-    const Foo = this.sequelize.define('Foo' + config.rand(), {
+    const Foo = current.define<ItestInstance, ItestAttribute>('Foo' + config.rand(), {
       field1: {
         type: new DataTypes.INTEGER(),
         allowNull: true
@@ -494,7 +491,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   });
 
   it('validates model with a validator whose arg is an Array successfully twice in a row', function() {
-    const Foo = this.sequelize.define('Foo' + config.rand(), {
+    const Foo = current.define<ItestInstance, ItestAttribute>('Foo' + config.rand(), {
       bar: {
         type: new DataTypes.STRING(),
         validate: {
@@ -511,7 +508,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   it('validates enums', function() {
     const values = ['value1', 'value2'];
 
-    const Bar = this.sequelize.define('Bar' + config.rand(), {
+    const Bar = current.define<ItestInstance, ItestAttribute>('Bar' + config.rand(), {
       field: {
         type: new DataTypes.ENUM(),
         values,
@@ -532,7 +529,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   it('skips validations for the given fields', function() {
     const values = ['value1', 'value2'];
 
-    const Bar = this.sequelize.define('Bar' + config.rand(), {
+    const Bar = current.define<ItestInstance, ItestAttribute>('Bar' + config.rand(), {
       field: {
         type: new DataTypes.ENUM(),
         values,
@@ -548,7 +545,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   });
 
   it('raises an error if saving a different value into an immutable field', function() {
-    const User = this.sequelize.define('User', {
+    User = current.define<ItestInstance, ItestAttribute>('User', {
       name: {
         type: new DataTypes.STRING(),
         validate: {
@@ -569,7 +566,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   });
 
   it('allows setting an immutable field if the record is unsaved', function() {
-    const User = this.sequelize.define('User', {
+    User = current.define<ItestInstance, ItestAttribute>('User', {
       name: {
         type: new DataTypes.STRING(),
         validate: {
@@ -586,7 +583,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   });
 
   it('raises an error for array on a STRING', function() {
-    const User = this.sequelize.define('User', {
+    User = current.define<ItestInstance, ItestAttribute>('User', {
       email: {
         type: new DataTypes.STRING()
       }
@@ -598,7 +595,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   });
 
   it('raises an error for array on a STRING(20)', function() {
-    const User = this.sequelize.define('User', {
+    User = current.define<ItestInstance, ItestAttribute>('User', {
       email: {
         type: new DataTypes.STRING(20)
       }
@@ -610,7 +607,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   });
 
   it('raises an error for array on a TEXT', function() {
-    const User = this.sequelize.define('User', {
+    User = current.define<ItestInstance, ItestAttribute>('User', {
       email: {
         type: new DataTypes.TEXT()
       }
@@ -622,7 +619,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   });
 
   it('raises an error for {} on a STRING', function() {
-    const User = this.sequelize.define('User', {
+    User = current.define<ItestInstance, ItestAttribute>('User', {
       email: {
         type: new DataTypes.STRING()
       }
@@ -634,7 +631,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   });
 
   it('raises an error for {} on a STRING(20)', function() {
-    const User = this.sequelize.define('User', {
+    User = current.define<ItestInstance, ItestAttribute>('User', {
       email: {
         type: new DataTypes.STRING(20)
       }
@@ -646,7 +643,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   });
 
   it('raises an error for {} on a TEXT', function() {
-    const User = this.sequelize.define('User', {
+    User = current.define<ItestInstance, ItestAttribute>('User', {
       email: {
         type: new DataTypes.TEXT()
       }
@@ -658,7 +655,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   });
 
   it('does not raise an error for null on a STRING (where null is allowed)', function() {
-    const User = this.sequelize.define('User', {
+    User = current.define<ItestInstance, ItestAttribute>('User', {
       email: {
         type: new DataTypes.STRING()
       }
@@ -670,7 +667,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   });
 
   it('validates VIRTUAL fields', function() {
-    const User = this.sequelize.define('user', {
+    User = current.define<ItestInstance, ItestAttribute>('user', {
       password_hash: new DataTypes.STRING(),
       salt: new DataTypes.STRING(),
       password: {
@@ -704,11 +701,11 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
   });
 
   it('allows me to add custom validation functions to validator.js', function() {
-    this.sequelize.Validator.extend('isExactly7Characters', val => {
+    current.Validator.extend('isExactly7Characters', val => {
       return val.length === 7;
     });
 
-    const User = this.sequelize.define('User', {
+    User = current.define<ItestInstance, ItestAttribute>('User', {
       name: {
         type: new DataTypes.STRING(),
         validate: {
@@ -724,7 +721,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
         name: 'a'
       }).validate()).to.be.rejected;
     }).then(errors => {
-      expect((errors as any).get('name')[0].message).to.equal('Validation isExactly7Characters on name failed');
+      expect(errors.get('name')[0].message).to.equal('Validation isExactly7Characters on name failed');
     });
   });
 });

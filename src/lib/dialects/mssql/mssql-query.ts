@@ -1,11 +1,11 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as mssql from 'mssql';
 import * as Tedious from 'tedious';
 import { Sequelize } from '../../..';
 import * as sequelizeErrors from '../../errors/index';
-import Promise from '../../promise';
 import { Utils } from '../../utils';
 import { AbstractQuery } from '../abstract/abstract-query';
 import DataTypes from './mssql-data-types';

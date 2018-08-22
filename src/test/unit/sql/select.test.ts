@@ -3,6 +3,7 @@
 import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
 import { Model } from '../../../lib/model';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect         = chai.expect;
 const expectsql      = Support.expectsql;
@@ -99,7 +100,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
     });
 
     (function() {
-      const User = Support.sequelize.define('user', {
+      const User = Support.sequelize.define<ItestInstance, ItestAttribute>('user', {
         id: {
           type: new DataTypes.INTEGER(),
           primaryKey: true,
@@ -107,11 +108,11 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           field: 'id_user'
         }
       });
-      const Project = Support.sequelize.define('project', {
+      const Project = Support.sequelize.define<ItestInstance, ItestAttribute>('project', {
         title: new DataTypes.STRING()
       });
 
-      const ProjectUser = Support.sequelize.define('project_user', {
+      const ProjectUser = Support.sequelize.define<ItestInstance, ItestAttribute>('project_user', {
         userId: {
           type: new DataTypes.INTEGER(),
           field: 'user_id'
@@ -122,7 +123,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         }
       }, { timestamps: false });
 
-      User.Projects = User.belongsToMany(Project, { through: ProjectUser });
+      const User_Projects = User.belongsToMany(Project, { through: ProjectUser });
       Project.belongsToMany(User, { through: ProjectUser });
 
       it('attr + order + groupedLimit', () => {
@@ -137,7 +138,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           ],
           groupedLimit: {
             limit: 3,
-            on: User.Projects,
+            on: User_Projects,
             values: [
               1,
               5,
@@ -192,7 +193,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
                 status: 1
               }
             },
-            on: User.Projects,
+            on: User_Projects,
             values: [
               1,
               5,
@@ -249,7 +250,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           },
           groupedLimit: {
             limit: 3,
-            on: User.Projects,
+            on: User_Projects,
             values: [
               1,
               5,
@@ -290,7 +291,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
     }());
 
     (function() {
-      const User = Support.sequelize.define('user', {
+      const User = Support.sequelize.define<ItestInstance, ItestAttribute>('user', {
         id: {
           type: new DataTypes.INTEGER(),
           primaryKey: true,
@@ -310,7 +311,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         {
           tableName: 'users'
         });
-      const Post = Support.sequelize.define('Post', {
+      const Post = Support.sequelize.define<ItestInstance, ItestAttribute>('Post', {
         title: new DataTypes.STRING(),
         userId: {
           type: new DataTypes.INTEGER(),
@@ -321,9 +322,9 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           tableName: 'post'
         });
 
-      User.Posts = User.hasMany(Post, {foreignKey: 'userId', as: 'POSTS'});
+      const User_Posts = User.hasMany(Post, {foreignKey: 'userId', as: 'POSTS'});
 
-      const Comment = Support.sequelize.define('Comment', {
+      const Comment = Support.sequelize.define<ItestInstance, ItestAttribute>('Comment', {
         title: new DataTypes.STRING(),
         postId: {
           type: new DataTypes.INTEGER(),
@@ -334,12 +335,12 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           tableName: 'comment'
         });
 
-      Post.Comments = Post.hasMany(Comment, {foreignKey: 'postId', as: 'COMMENTS'});
+      const Post_Comments = Post.hasMany(Comment, {foreignKey: 'postId', as: 'COMMENTS'});
 
-      const include = Model._validateIncludedElements({
+      const include = Model.prototype._validateIncludedElements({
         include: [{
           attributes: ['title'],
-          association: User.Posts
+          association: User_Posts
         }],
         model: User
       }).include;
@@ -436,13 +437,13 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         );
       });
 
-      const nestedInclude = Model._validateIncludedElements({
+      const nestedInclude = Model.prototype._validateIncludedElements({
         include: [{
           attributes: ['title'],
-          association: User.Posts,
+          association: User_Posts,
           include: [{
             attributes: ['title'],
-            association: Post.Comments
+            association: Post_Comments
           }]
         }],
         model: User
@@ -503,28 +504,28 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
     })();
 
     it('include (left outer join)', () => {
-      const User = Support.sequelize.define('User', {
+      const User = Support.sequelize.define<ItestInstance, ItestAttribute>('User', {
         name: new DataTypes.STRING(),
         age: new DataTypes.INTEGER()
       },
         {
           freezeTableName: true
         });
-      const Post = Support.sequelize.define('Post', {
+      const Post = Support.sequelize.define<ItestInstance, ItestAttribute>('Post', {
         title: new DataTypes.STRING()
       },
         {
           freezeTableName: true
         });
 
-      User.Posts = User.hasMany(Post, {foreignKey: 'user_id'});
+      const User_Posts = User.hasMany(Post, {foreignKey: 'user_id'});
 
       expectsql(queryGenerator.selectQuery('User', {
         attributes: ['name', 'age'],
-        include: Model._validateIncludedElements({
+        include: Model.prototype._validateIncludedElements({
           include: [{
             attributes: ['title'],
-            association: User.Posts
+            association: User_Posts
           }],
           model: User
         }).include,
@@ -536,30 +537,30 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
     });
 
     it('include (subQuery alias)', () => {
-      const User = Support.sequelize.define('User', {
+      const User = Support.sequelize.define<ItestInstance, ItestAttribute>('User', {
         name: new DataTypes.STRING(),
         age: new DataTypes.INTEGER()
       },
         {
           freezeTableName: true
         });
-      const Post = Support.sequelize.define('Post', {
+      const Post = Support.sequelize.define<ItestInstance, ItestAttribute>('Post', {
         title: new DataTypes.STRING()
       },
         {
           freezeTableName: true
         });
 
-      User.Posts = User.hasMany(Post, {foreignKey: 'user_id', as: 'postaliasname'});
+      const User_Posts = User.hasMany(Post, {foreignKey: 'user_id', as: 'postaliasname'});
 
       expectsql(queryGenerator.selectQuery('User', {
         table: User.getTableName(),
         model: User,
         attributes: ['name', 'age'],
-        include: Model._validateIncludedElements({
+        include: Model.prototype._validateIncludedElements({
           include: [{
             attributes: ['title'],
-            association: User.Posts,
+            association: User_Posts,
             subQuery: true,
             required: true
           }],
@@ -582,7 +583,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
     });
 
     it('properly stringify IN values as per field definition', () => {
-      const User = Support.sequelize.define('User', {
+      const User = Support.sequelize.define<ItestInstance, ItestAttribute>('User', {
         name: new DataTypes.STRING(),
         age: new DataTypes.INTEGER(),
         data: new DataTypes.BLOB()
@@ -632,28 +633,28 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
     });
 
     it('include (left outer join)', () => {
-      const User = Support.sequelize.define('User', {
+      const User = Support.sequelize.define<ItestInstance, ItestAttribute>('User', {
         name: new DataTypes.STRING(),
         age: new DataTypes.INTEGER()
       },
         {
           freezeTableName: true
         });
-      const Post = Support.sequelize.define('Post', {
+      const Post = Support.sequelize.define<ItestInstance, ItestAttribute>('Post', {
         title: new DataTypes.STRING()
       },
         {
           freezeTableName: true
         });
 
-      User.Posts = User.hasMany(Post, {foreignKey: 'user_id'});
+      const User_Posts = User.hasMany(Post, {foreignKey: 'user_id'});
 
       expectsql(queryGenerator.selectQuery('User', {
         attributes: ['name', 'age'],
-        include: Model._validateIncludedElements({
+        include: Model.prototype._validateIncludedElements({
           include: [{
             attributes: ['title'],
-            association: User.Posts
+            association: User_Posts
           }],
           model: User
         }).include,
@@ -667,35 +668,35 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
 
 
     it('nested include (left outer join)', () => {
-      const User = Support.sequelize.define('User', {
+      const User = Support.sequelize.define<ItestInstance, ItestAttribute>('User', {
         name: new DataTypes.STRING(),
         age: new DataTypes.INTEGER()
       },
         {
           freezeTableName: true
         });
-      const Post = Support.sequelize.define('Post', {
+      const Post = Support.sequelize.define<ItestInstance, ItestAttribute>('Post', {
         title: new DataTypes.STRING()
       },
         {
           freezeTableName: true
         });
-      const Comment = Support.sequelize.define('Comment', {
+      const Comment = Support.sequelize.define<ItestInstance, ItestAttribute>('Comment', {
         title: new DataTypes.STRING()
       },
         {
           freezeTableName: true
         });
 
-      User.Posts = User.hasMany(Post, {foreignKey: 'user_id'});
-      Post.Comments = Post.hasMany(Comment, {foreignKey: 'post_id'});
+      const User_Posts = User.hasMany(Post, {foreignKey: 'user_id'});
+      Post.hasMany(Comment, {foreignKey: 'post_id'});
 
       expectsql(queryGenerator.selectQuery('User', {
         attributes: ['name', 'age'],
-        include: Model._validateIncludedElements({
+        include: Model.prototype._validateIncludedElements({
           include: [{
             attributes: ['title'],
-            association: User.Posts,
+            association: User_Posts,
             include: [
               {
                 model: Comment

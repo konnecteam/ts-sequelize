@@ -1,5 +1,6 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import { Sequelize } from '../../..';
 import { AbstractQueryInterface } from '../../query-interface';
 import { MssqlQueryGenerator } from './mssql-query-generator';
@@ -30,7 +31,7 @@ export class MssqlQueryInterface extends AbstractQueryInterface {
     const findConstraintSql = (this.QueryGenerator as MssqlQueryGenerator).getDefaultConstraintQuery(tableName, attributeName);
     return this.sequelize.query(findConstraintSql, options)
     .spread(results => {
-      if (!results.length) {
+      if (!(results as any).length) {
         // No default constraint found -- we can cleanly remove the column
         return;
       }
@@ -42,7 +43,7 @@ export class MssqlQueryInterface extends AbstractQueryInterface {
       return this.sequelize.query(findForeignKeySql, options);
     })
     .spread(results => {
-      if (!results.length) {
+      if (!(results as any).length) {
         // No foreign key constraints found, so we can remove the column
         return;
       }
@@ -55,7 +56,7 @@ export class MssqlQueryInterface extends AbstractQueryInterface {
       return this.sequelize.query(primaryKeyConstraintSql, options);
     })
     .spread(result => {
-      if (!result.length) {
+      if (!(result as any).length) {
         return;
       }
       const dropConstraintSql = (this.QueryGenerator as MssqlQueryGenerator).dropConstraintQuery(tableName, result[0].constraintName);

@@ -1,16 +1,16 @@
 'use strict';
 
-// import { MssqlQuery } from '../../lib/dialects/mssql/mssql-query';
 import Support from '../support';
+const current = Support.sequelize;
 
 beforeEach(function() {
-  this.sequelize.test.trackRunningQueries();
-  return Support.clearDatabase(this.sequelize);
+  current.test.trackRunningQueries();
+  return Support.clearDatabase(current);
 });
 
 afterEach(function() {
   try {
-    this.sequelize.test.verifyNoRunningQueries();
+    current.test.verifyNoRunningQueries();
   } catch (err) {
     err.message += ' in ' + this.currentTest.fullTitle();
     throw err;

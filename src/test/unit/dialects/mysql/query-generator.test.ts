@@ -2,10 +2,13 @@
 
 import * as chai from 'chai';
 import * as _ from 'lodash';
+import { Sequelize } from '../../../..';
+import { ItestAttribute, ItestInstance } from '../../../dummy/dummy-data-set';
 import Support from '../../../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
 const QueryGenerator = Support.sequelize.dialect.QueryGenerator;
+const current = Support.sequelize;
 
 if (dialect === 'mysql') {
   describe('[MYSQL Specific] QueryGenerator', () => {
@@ -222,12 +225,12 @@ if (dialect === 'mysql') {
           expectation: 'SELECT * FROM `myTable` ORDER BY `myTable`.`id` DESC;',
           context: QueryGenerator
         }, {
-          arguments: ['myTable', {order: [['id', 'DESC']]}, function(sequelize) {return sequelize.define('myTable', {}); }],
+          arguments: ['myTable', {order: [['id', 'DESC']]}, function(sequelize) {return (sequelize as Sequelize).define<ItestInstance, ItestAttribute>('myTable', {}); }],
           expectation: 'SELECT * FROM `myTable` AS `myTable` ORDER BY `myTable`.`id` DESC;',
           context: QueryGenerator,
           needsSequelize: true
         }, {
-          arguments: ['myTable', {order: [['id', 'DESC'], ['name']]}, function(sequelize) {return sequelize.define('myTable', {}); }],
+          arguments: ['myTable', {order: [['id', 'DESC'], ['name']]}, function(sequelize) {return (sequelize as Sequelize).define<ItestInstance, ItestAttribute>('myTable', {}); }],
           expectation: 'SELECT * FROM `myTable` AS `myTable` ORDER BY `myTable`.`id` DESC, `myTable`.`name`;',
           context: QueryGenerator,
           needsSequelize: true
@@ -684,10 +687,10 @@ if (dialect === 'mysql') {
           it(title, function() {
             if (test.needsSequelize) {
               if (_.isFunction(test.arguments[1])) {
-                test.arguments[1] = test.arguments[1](this.sequelize);
+                test.arguments[1] = test.arguments[1](current);
               }
               if (_.isFunction(test.arguments[2])) {
-                test.arguments[2] = test.arguments[2](this.sequelize);
+                test.arguments[2] = test.arguments[2](current);
               }
             }
 

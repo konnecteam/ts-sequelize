@@ -2,9 +2,11 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
+import { AbstractQueryInterface } from '../../../lib/query-interface';
 import Support from '../../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
+const current = Support.sequelize;
 
 let count = 0;
 function log() {
@@ -15,19 +17,20 @@ function log() {
 }
 
 describe(Support.getTestDialectTeaser('QueryInterface'), () => {
+  let queryInterface : AbstractQueryInterface;
   beforeEach(function() {
-    this.sequelize.options.quoteIdenifiers = true;
-    this.queryInterface = this.sequelize.getQueryInterface();
+    current.options.quoteIdentifiers = true;
+    queryInterface = current.getQueryInterface();
   });
 
   afterEach(function() {
-    return this.sequelize.dropAllSchemas();
+    return current.dropAllSchemas();
   });
 
   describe('changeColumn', () => {
     it('should support schemas', function() {
-      return this.sequelize.createSchema('archive').bind(this).then(function() {
-        return this.queryInterface.createTable({
+      return current.createSchema('archive').bind(this).then(function() {
+        return queryInterface.createTable({
           tableName: 'users',
           schema: 'archive'
         }, {
@@ -38,14 +41,14 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
           },
           currency: new DataTypes.INTEGER()
         }).bind(this).then(function() {
-          return this.queryInterface.changeColumn({
+          return queryInterface.changeColumn({
             tableName: 'users',
             schema: 'archive'
           }, 'currency', {
             type: new DataTypes.FLOAT()
           });
         }).then(function() {
-          return this.queryInterface.describeTable({
+          return queryInterface.describeTable({
             tableName: 'users',
             schema: 'archive'
           });
@@ -60,7 +63,7 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
     });
 
     it('should change columns', function() {
-      return this.queryInterface.createTable({
+      return queryInterface.createTable({
         tableName: 'users'
       }, {
         id: {
@@ -70,12 +73,12 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
         },
         currency: new DataTypes.INTEGER()
       }).bind(this).then(function() {
-        return this.queryInterface.changeColumn('users', 'currency', {
+        return queryInterface.changeColumn('users', 'currency', {
           type: new DataTypes.FLOAT(),
           allowNull: true
         });
       }).then(function() {
-        return this.queryInterface.describeTable({
+        return queryInterface.describeTable({
           tableName: 'users'
         });
       }).then(table => {
@@ -91,27 +94,27 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
     // https://docs.microsoft.com/en-us/sql/t-sql/statements/alter-table-transact-sql
     if (dialect !== 'mssql') {
       it('should work with enums', function() {
-        return this.queryInterface.createTable({
+        return queryInterface.createTable({
           tableName: 'users'
         }, {
           firstName: new DataTypes.STRING()
         }).bind(this).then(function() {
-          return this.queryInterface.changeColumn('users', 'firstName', {
+          return queryInterface.changeColumn('users', 'firstName', {
             type: new DataTypes.ENUM(['value1', 'value2', 'value3'])
           });
         });
       });
 
       it('should work with enums with schemas', function() {
-        return this.sequelize.createSchema('archive').bind(this).then(function() {
-          return this.queryInterface.createTable({
+        return current.createSchema('archive').bind(this).then(function() {
+          return queryInterface.createTable({
             tableName: 'users',
             schema: 'archive'
           }, {
             firstName: new DataTypes.STRING()
           });
         }).bind(this).then(function() {
-          return this.queryInterface.changeColumn({
+          return queryInterface.changeColumn({
             tableName: 'users',
             schema: 'archive'
           }, 'firstName', {
@@ -125,7 +128,7 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
     if (dialect !== 'sqlite') {
       describe('should support foreign keys', () => {
         beforeEach(function() {
-          return this.queryInterface.createTable('users', {
+          return queryInterface.createTable('users', {
             id: {
               type: new DataTypes.INTEGER(),
               primaryKey: true,
@@ -137,7 +140,7 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
             }
           })
             .bind(this).then(function() {
-              return this.queryInterface.createTable('level', {
+              return queryInterface.createTable('level', {
                 id: {
                   type: new DataTypes.INTEGER(),
                   primaryKey: true,
@@ -148,7 +151,7 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
         });
 
         it('able to change column to foreign key', function() {
-          return this.queryInterface.changeColumn('users', 'level_id', {
+          return queryInterface.changeColumn('users', 'level_id', {
             type: new DataTypes.INTEGER(),
             references: {
               model: 'level',

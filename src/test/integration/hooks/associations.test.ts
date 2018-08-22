@@ -3,14 +3,20 @@
 import * as Promise from 'bluebird';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Hooks'), () => {
+  let Projects : Model<ItestInstance, ItestAttribute>;
+  let Tasks : Model<ItestInstance, ItestAttribute>;
+  let MiniTasks : Model<ItestInstance, ItestAttribute>;
   beforeEach(function() {
-    this.User = this.sequelize.define('User', {
+    current.define<ItestInstance, ItestAttribute>('User', {
       username: {
         type: new DataTypes.STRING(),
         allowNull: false
@@ -21,7 +27,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       }
     });
 
-    this.ParanoidUser = this.sequelize.define('ParanoidUser', {
+    current.define<ItestInstance, ItestAttribute>('ParanoidUser', {
       username: new DataTypes.STRING(),
       mood: {
         type: new DataTypes.ENUM(),
@@ -31,7 +37,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       paranoid: true
     });
 
-    return this.sequelize.sync({ force: true });
+    return current.sync({ force: true });
   });
 
 
@@ -39,42 +45,40 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
     describe('1:1', () => {
       describe('cascade onUpdate', () => {
         beforeEach(function() {
-          const self = this;
 
-          this.Projects = this.sequelize.define('Project', {
+          Projects = current.define<ItestInstance, ItestAttribute>('Project', {
             title: new DataTypes.STRING()
           });
 
-          this.Tasks = this.sequelize.define('Task', {
+          Tasks = current.define<ItestInstance, ItestAttribute>('Task', {
             title: new DataTypes.STRING()
           });
 
-          this.Projects.hasOne(this.Tasks, {onUpdate: 'cascade', hooks: true});
-          this.Tasks.belongsTo(this.Projects);
+          Projects.hasOne(Tasks, {onUpdate: 'cascade', hooks: true});
+          Tasks.belongsTo(Projects);
 
-          return this.Projects.sync({ force: true }).then(() => {
-            return self.Tasks.sync({ force: true });
+          return Projects.sync({ force: true }).then(() => {
+            return Tasks.sync({ force: true });
           });
         });
 
         it('on success', function() {
-          const self = this;
           let beforeHook = false;
           let afterHook = false;
 
-          this.Tasks.beforeUpdate(() => {
+          Tasks.beforeUpdate(() => {
             beforeHook = true;
             return Promise.resolve();
           });
 
-          this.Tasks.afterUpdate(() => {
+          Tasks.afterUpdate(() => {
             afterHook = true;
             return Promise.resolve();
           });
 
-          return this.Projects.create({title: 'New Project'}).then(project => {
-            return self.Tasks.create({title: 'New Task'}).then(task => {
-              return project.setTask(task).then(() => {
+          return Projects.create({title: 'New Project'}).then(project => {
+            return Tasks.create({title: 'New Task'}).then(task => {
+              return project.setLinkedData('Task', task).then(() => {
                 return project.updateAttributes({id: 2}).then(() => {
                   expect(beforeHook).to.be.true;
                   expect(afterHook).to.be.true;
@@ -85,15 +89,14 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         });
 
         it('on error', function() {
-          const self = this;
 
-          this.Tasks.afterUpdate(() => {
+          Tasks.afterUpdate(() => {
             return Promise.reject(new Error('Whoops!'));
           });
 
-          return this.Projects.create({title: 'New Project'}).then(project => {
-            return self.Tasks.create({title: 'New Task'}).then(task => {
-              return project.setTask(task).catch(err => {
+          return Projects.create({title: 'New Project'}).then(project => {
+            return Tasks.create({title: 'New Task'}).then(task => {
+              return project.setLinkedData('Task', task).catch(err => {
                 expect(err).to.be.instanceOf(Error);
               });
             });
@@ -103,36 +106,35 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
       describe('cascade onDelete', () => {
         beforeEach(function() {
-          this.Projects = this.sequelize.define('Project', {
+          Projects = current.define<ItestInstance, ItestAttribute>('Project', {
             title: new DataTypes.STRING()
           });
 
-          this.Tasks = this.sequelize.define('Task', {
+          Tasks = current.define<ItestInstance, ItestAttribute>('Task', {
             title: new DataTypes.STRING()
           });
 
-          this.Projects.hasOne(this.Tasks, {onDelete: 'CASCADE', hooks: true});
-          this.Tasks.belongsTo(this.Projects);
+          Projects.hasOne(Tasks, {onDelete: 'CASCADE', hooks: true});
+          Tasks.belongsTo(Projects);
 
-          return this.sequelize.sync({ force: true });
+          return current.sync({ force: true });
         });
 
         describe('#remove', () => {
           it('with no errors', function() {
-            const self = this;
             const beforeProject = sinon.spy();
             const afterProject = sinon.spy();
             const beforeTask = sinon.spy();
             const afterTask = sinon.spy();
 
-            this.Projects.beforeCreate(beforeProject);
-            this.Projects.afterCreate(afterProject);
-            this.Tasks.beforeDestroy(beforeTask);
-            this.Tasks.afterDestroy(afterTask);
+            Projects.beforeCreate(beforeProject);
+            Projects.afterCreate(afterProject);
+            Tasks.beforeDestroy(beforeTask);
+            Tasks.afterDestroy(afterTask);
 
-            return this.Projects.create({title: 'New Project'}).then(project => {
-              return self.Tasks.create({title: 'New Task'}).then(task => {
-                return project.setTask(task).then(() => {
+            return Projects.create({title: 'New Project'}).then(project => {
+              return Tasks.create({title: 'New Task'}).then(task => {
+                return project.setLinkedData('Task', task).then(() => {
                   return project.destroy().then(() => {
                     expect(beforeProject).to.have.been.calledOnce;
                     expect(afterProject).to.have.been.calledOnce;
@@ -145,36 +147,35 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
           });
 
           it('with errors', function() {
-            const self = this;
             const CustomErrorText = 'Whoops!';
             let beforeProject = false;
             let afterProject = false;
             let beforeTask = false;
             let afterTask = false;
 
-            this.Projects.beforeCreate(() => {
+            Projects.beforeCreate(() => {
               beforeProject = true;
               return Promise.resolve();
             });
 
-            this.Projects.afterCreate(() => {
+            Projects.afterCreate(() => {
               afterProject = true;
               return Promise.resolve();
             });
 
-            this.Tasks.beforeDestroy(() => {
+            Tasks.beforeDestroy(() => {
               beforeTask = true;
               return Promise.reject(new Error(CustomErrorText));
             });
 
-            this.Tasks.afterDestroy(() => {
+            Tasks.afterDestroy(() => {
               afterTask = true;
               return Promise.resolve();
             });
 
-            return this.Projects.create({title: 'New Project'}).then(project => {
-              return self.Tasks.create({title: 'New Task'}).then(task => {
-                return project.setTask(task).then(() => {
+            return Projects.create({title: 'New Project'}).then(project => {
+              return Tasks.create({title: 'New Task'}).then(task => {
+                return project.setLinkedData('Task', task).then(() => {
                   return expect(project.destroy()).to.eventually.be.rejectedWith(CustomErrorText).then(() => {
                     expect(beforeProject).to.be.true;
                     expect(afterProject).to.be.true;
@@ -190,35 +191,33 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
       describe('no cascade update', () => {
         beforeEach(function() {
-          const self = this;
 
-          this.Projects = this.sequelize.define('Project', {
+          Projects = current.define<ItestInstance, ItestAttribute>('Project', {
             title: new DataTypes.STRING()
           });
 
-          this.Tasks = this.sequelize.define('Task', {
+          Tasks = current.define<ItestInstance, ItestAttribute>('Task', {
             title: new DataTypes.STRING()
           });
 
-          this.Projects.hasOne(this.Tasks);
-          this.Tasks.belongsTo(this.Projects);
+          Projects.hasOne(Tasks);
+          Tasks.belongsTo(Projects);
 
-          return this.Projects.sync({ force: true }).then(() => {
-            return self.Tasks.sync({ force: true });
+          return Projects.sync({ force: true }).then(() => {
+            return Tasks.sync({ force: true });
           });
         });
 
         it('on success', function() {
-          const self = this;
           const beforeHook = sinon.spy();
           const afterHook = sinon.spy();
 
-          this.Tasks.beforeUpdate(beforeHook);
-          this.Tasks.afterUpdate(afterHook);
+          Tasks.beforeUpdate(beforeHook);
+          Tasks.afterUpdate(afterHook);
 
-          return this.Projects.create({title: 'New Project'}).then(project => {
-            return self.Tasks.create({title: 'New Task'}).then(task => {
-              return project.setTask(task).then(() => {
+          return Projects.create({title: 'New Project'}).then(project => {
+            return Tasks.create({title: 'New Task'}).then(task => {
+              return project.setLinkedData('Task', task).then(() => {
                 return project.updateAttributes({id: 2}).then(() => {
                   expect(beforeHook).to.have.been.calledOnce;
                   expect(afterHook).to.have.been.calledOnce;
@@ -229,15 +228,14 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         });
 
         it('on error', function() {
-          const self = this;
 
-          this.Tasks.afterUpdate(() => {
+          Tasks.afterUpdate(() => {
             throw new Error('Whoops!');
           });
 
-          return this.Projects.create({title: 'New Project'}).then(project => {
-            return self.Tasks.create({title: 'New Task'}).then(task => {
-              return expect(project.setTask(task)).to.be.rejected;
+          return Projects.create({title: 'New Project'}).then(project => {
+            return Tasks.create({title: 'New Task'}).then(task => {
+              return expect(project.setLinkedData('Task', task)).to.be.rejected;
             });
           });
         });
@@ -245,41 +243,39 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
       describe('no cascade delete', () => {
         beforeEach(function() {
-          const self = this;
 
-          this.Projects = this.sequelize.define('Project', {
+          Projects = current.define<ItestInstance, ItestAttribute>('Project', {
             title: new DataTypes.STRING()
           });
 
-          this.Tasks = this.sequelize.define('Task', {
+          Tasks = current.define<ItestInstance, ItestAttribute>('Task', {
             title: new DataTypes.STRING()
           });
 
-          this.Projects.hasMany(this.Tasks);
-          this.Tasks.belongsTo(this.Projects);
+          Projects.hasMany(Tasks);
+          Tasks.belongsTo(Projects);
 
-          return this.Projects.sync({ force: true }).then(() => {
-            return self.Tasks.sync({ force: true });
+          return Projects.sync({ force: true }).then(() => {
+            return Tasks.sync({ force: true });
           });
         });
 
         describe('#remove', () => {
           it('with no errors', function() {
-            const self = this;
             const beforeProject = sinon.spy();
             const afterProject = sinon.spy();
             const beforeTask = sinon.spy();
             const afterTask = sinon.spy();
 
-            this.Projects.beforeCreate(beforeProject);
-            this.Projects.afterCreate(afterProject);
-            this.Tasks.beforeUpdate(beforeTask);
-            this.Tasks.afterUpdate(afterTask);
+            Projects.beforeCreate(beforeProject);
+            Projects.afterCreate(afterProject);
+            Tasks.beforeUpdate(beforeTask);
+            Tasks.afterUpdate(afterTask);
 
-            return this.Projects.create({title: 'New Project'}).then(project => {
-              return self.Tasks.create({title: 'New Task'}).then(task => {
-                return project.addTask(task).then(() => {
-                  return project.removeTask(task).then(() => {
+            return Projects.create({title: 'New Project'}).then(project => {
+              return Tasks.create({title: 'New Task'}).then(task => {
+                return project.addLinkedData('Task', task).then(() => {
+                  return project.removeLinkedData('Task', task).then(() => {
                     expect(beforeProject).to.have.been.called;
                     expect(afterProject).to.have.been.called;
                     expect(beforeTask).not.to.have.been.called;
@@ -291,23 +287,22 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
           });
 
           it('with errors', function() {
-            const self = this;
             const beforeProject = sinon.spy();
             const afterProject = sinon.spy();
             const beforeTask = sinon.spy();
             const afterTask = sinon.spy();
 
-            this.Projects.beforeCreate(beforeProject);
-            this.Projects.afterCreate(afterProject);
-            this.Tasks.beforeUpdate(() => {
+            Projects.beforeCreate(beforeProject);
+            Projects.afterCreate(afterProject);
+            Tasks.beforeUpdate(() => {
               beforeTask();
               throw new Error('Whoops!');
             });
-            this.Tasks.afterUpdate(afterTask);
+            Tasks.afterUpdate(afterTask);
 
-            return this.Projects.create({title: 'New Project'}).then(project => {
-              return self.Tasks.create({title: 'New Task'}).then(task => {
-                return project.addTask(task).catch(err => {
+            return Projects.create({title: 'New Project'}).then(project => {
+              return Tasks.create({title: 'New Task'}).then(task => {
+                return project.addLinkedData('Task', task).catch(err => {
                   expect(err).to.be.instanceOf(Error);
                   expect(beforeProject).to.have.been.calledOnce;
                   expect(afterProject).to.have.been.calledOnce;
@@ -324,39 +319,37 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
     describe('1:M', () => {
       describe('cascade', () => {
         beforeEach(function() {
-          const self = this;
-          this.Projects = this.sequelize.define('Project', {
+          Projects = current.define<ItestInstance, ItestAttribute>('Project', {
             title: new DataTypes.STRING()
           });
 
-          this.Tasks = this.sequelize.define('Task', {
+          Tasks = current.define<ItestInstance, ItestAttribute>('Task', {
             title: new DataTypes.STRING()
           });
 
-          this.Projects.hasMany(this.Tasks, {onDelete: 'cascade', hooks: true});
-          this.Tasks.belongsTo(this.Projects, {hooks: true});
+          Projects.hasMany(Tasks, {onDelete: 'cascade', hooks: true});
+          Tasks.belongsTo(Projects, {hooks: true});
 
-          return this.Projects.sync({ force: true }).then(() => {
-            return self.Tasks.sync({ force: true });
+          return Projects.sync({ force: true }).then(() => {
+            return Tasks.sync({ force: true });
           });
         });
 
         describe('#remove', () => {
           it('with no errors', function() {
-            const self = this;
             const beforeProject = sinon.spy();
             const afterProject = sinon.spy();
             const beforeTask = sinon.spy();
             const afterTask = sinon.spy();
 
-            this.Projects.beforeCreate(beforeProject);
-            this.Projects.afterCreate(afterProject);
-            this.Tasks.beforeDestroy(beforeTask);
-            this.Tasks.afterDestroy(afterTask);
+            Projects.beforeCreate(beforeProject);
+            Projects.afterCreate(afterProject);
+            Tasks.beforeDestroy(beforeTask);
+            Tasks.afterDestroy(afterTask);
 
-            return this.Projects.create({title: 'New Project'}).then(project => {
-              return self.Tasks.create({title: 'New Task'}).then(task => {
-                return project.addTask(task).then(() => {
+            return Projects.create({title: 'New Project'}).then(project => {
+              return Tasks.create({title: 'New Task'}).then(task => {
+                return project.addLinkedData('Task', task).then(() => {
                   return project.destroy().then(() => {
                     expect(beforeProject).to.have.been.calledOnce;
                     expect(afterProject).to.have.been.calledOnce;
@@ -369,35 +362,34 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
           });
 
           it('with errors', function() {
-            const self = this;
             let beforeProject = false;
             let afterProject = false;
             let beforeTask = false;
             let afterTask = false;
 
-            this.Projects.beforeCreate(() => {
+            Projects.beforeCreate(() => {
               beforeProject = true;
               return Promise.resolve();
             });
 
-            this.Projects.afterCreate(() => {
+            Projects.afterCreate(() => {
               afterProject = true;
               return Promise.resolve();
             });
 
-            this.Tasks.beforeDestroy(() => {
+            Tasks.beforeDestroy(() => {
               beforeTask = true;
               return Promise.reject(new Error('Whoops!'));
             });
 
-            this.Tasks.afterDestroy(() => {
+            Tasks.afterDestroy(() => {
               afterTask = true;
               return Promise.resolve();
             });
 
-            return this.Projects.create({title: 'New Project'}).then(project => {
-              return self.Tasks.create({title: 'New Task'}).then(task => {
-                return project.addTask(task).then(() => {
+            return Projects.create({title: 'New Project'}).then(project => {
+              return Tasks.create({title: 'New Task'}).then(task => {
+                return project.addLinkedData('Task', task).then(() => {
                   return project.destroy().catch(err => {
                     expect(err).to.be.instanceOf(Error);
                     expect(beforeProject).to.be.true;
@@ -414,37 +406,36 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
       describe('no cascade', () => {
         beforeEach(function() {
-          this.Projects = this.sequelize.define('Project', {
+          Projects = current.define<ItestInstance, ItestAttribute>('Project', {
             title: new DataTypes.STRING()
           });
 
-          this.Tasks = this.sequelize.define('Task', {
+          Tasks = current.define<ItestInstance, ItestAttribute>('Task', {
             title: new DataTypes.STRING()
           });
 
-          this.Projects.hasMany(this.Tasks);
-          this.Tasks.belongsTo(this.Projects);
+          Projects.hasMany(Tasks);
+          Tasks.belongsTo(Projects);
 
-          return this.sequelize.sync({ force: true });
+          return current.sync({ force: true });
         });
 
         describe('#remove', () => {
           it('with no errors', function() {
-            const self = this;
             const beforeProject = sinon.spy();
             const afterProject = sinon.spy();
             const beforeTask = sinon.spy();
             const afterTask = sinon.spy();
 
-            this.Projects.beforeCreate(beforeProject);
-            this.Projects.afterCreate(afterProject);
-            this.Tasks.beforeUpdate(beforeTask);
-            this.Tasks.afterUpdate(afterTask);
+            Projects.beforeCreate(beforeProject);
+            Projects.afterCreate(afterProject);
+            Tasks.beforeUpdate(beforeTask);
+            Tasks.afterUpdate(afterTask);
 
-            return this.Projects.create({title: 'New Project'}).then(project => {
-              return self.Tasks.create({title: 'New Task'}).then(task => {
-                return project.addTask(task).then(() => {
-                  return project.removeTask(task).then(() => {
+            return Projects.create({title: 'New Project'}).then(project => {
+              return Tasks.create({title: 'New Task'}).then(task => {
+                return project.addLinkedData('Task', task).then(() => {
+                  return project.removeLinkedData('Task', task).then(() => {
                     expect(beforeProject).to.have.been.called;
                     expect(afterProject).to.have.been.called;
                     expect(beforeTask).not.to.have.been.called;
@@ -456,35 +447,34 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
           });
 
           it('with errors', function() {
-            const self = this;
             let beforeProject = false;
             let afterProject = false;
             let beforeTask = false;
             let afterTask = false;
 
-            this.Projects.beforeCreate(() => {
+            Projects.beforeCreate(() => {
               beforeProject = true;
               return Promise.resolve();
             });
 
-            this.Projects.afterCreate(() => {
+            Projects.afterCreate(() => {
               afterProject = true;
               return Promise.resolve();
             });
 
-            this.Tasks.beforeUpdate(() => {
+            Tasks.beforeUpdate(() => {
               beforeTask = true;
               return Promise.reject(new Error('Whoops!'));
             });
 
-            this.Tasks.afterUpdate(() => {
+            Tasks.afterUpdate(() => {
               afterTask = true;
               return Promise.resolve();
             });
 
-            return this.Projects.create({title: 'New Project'}).then(project => {
-              return self.Tasks.create({title: 'New Task'}).then(task => {
-                return project.addTask(task).catch(err => {
+            return Projects.create({title: 'New Project'}).then(project => {
+              return Tasks.create({title: 'New Task'}).then(task => {
+                return project.addLinkedData('Task', task).catch(err => {
                   expect(err).to.be.instanceOf(Error);
                   expect(beforeProject).to.be.true;
                   expect(afterProject).to.be.true;
@@ -501,36 +491,35 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
     describe('M:M', () => {
       describe('cascade', () => {
         beforeEach(function() {
-          this.Projects = this.sequelize.define('Project', {
+          Projects = current.define<ItestInstance, ItestAttribute>('Project', {
             title: new DataTypes.STRING()
           });
 
-          this.Tasks = this.sequelize.define('Task', {
+          Tasks = current.define<ItestInstance, ItestAttribute>('Task', {
             title: new DataTypes.STRING()
           });
 
-          this.Projects.belongsToMany(this.Tasks, {cascade: 'onDelete', through: 'projects_and_tasks', hooks: true});
-          this.Tasks.belongsToMany(this.Projects, {cascade: 'onDelete', through: 'projects_and_tasks', hooks: true});
+          Projects.belongsToMany(Tasks, {cascade: 'onDelete', through: 'projects_and_tasks', hooks: true});
+          Tasks.belongsToMany(Projects, {cascade: 'onDelete', through: 'projects_and_tasks', hooks: true});
 
-          return this.sequelize.sync({ force: true });
+          return current.sync({ force: true });
         });
 
         describe('#remove', () => {
           it('with no errors', function() {
-            const self = this;
             const beforeProject = sinon.spy();
             const afterProject = sinon.spy();
             const beforeTask = sinon.spy();
             const afterTask = sinon.spy();
 
-            this.Projects.beforeCreate(beforeProject);
-            this.Projects.afterCreate(afterProject);
-            this.Tasks.beforeDestroy(beforeTask);
-            this.Tasks.afterDestroy(afterTask);
+            Projects.beforeCreate(beforeProject);
+            Projects.afterCreate(afterProject);
+            Tasks.beforeDestroy(beforeTask);
+            Tasks.afterDestroy(afterTask);
 
-            return this.Projects.create({title: 'New Project'}).then(project => {
-              return self.Tasks.create({title: 'New Task'}).then(task => {
-                return project.addTask(task).then(() => {
+            return Projects.create({title: 'New Project'}).then(project => {
+              return Tasks.create({title: 'New Task'}).then(task => {
+                return project.addLinkedData('Task', task).then(() => {
                   return project.destroy().then(() => {
                     expect(beforeProject).to.have.been.calledOnce;
                     expect(afterProject).to.have.been.calledOnce;
@@ -544,35 +533,34 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
           });
 
           it('with errors', function() {
-            const self = this;
             let beforeProject = false;
             let afterProject = false;
             let beforeTask = false;
             let afterTask = false;
 
-            this.Projects.beforeCreate(() => {
+            Projects.beforeCreate(() => {
               beforeProject = true;
               return Promise.resolve();
             });
 
-            this.Projects.afterCreate(() => {
+            Projects.afterCreate(() => {
               afterProject = true;
               return Promise.resolve();
             });
 
-            this.Tasks.beforeDestroy(() => {
+            Tasks.beforeDestroy(() => {
               beforeTask = true;
               return Promise.reject(new Error('Whoops!'));
             });
 
-            this.Tasks.afterDestroy(() => {
+            Tasks.afterDestroy(() => {
               afterTask = true;
               return Promise.resolve();
             });
 
-            return this.Projects.create({title: 'New Project'}).then(project => {
-              return self.Tasks.create({title: 'New Task'}).then(task => {
-                return project.addTask(task).then(() => {
+            return Projects.create({title: 'New Project'}).then(project => {
+              return Tasks.create({title: 'New Task'}).then(task => {
+                return project.addLinkedData('Task', task).then(() => {
                   return project.destroy().then(() => {
                     expect(beforeProject).to.be.true;
                     expect(afterProject).to.be.true;
@@ -588,37 +576,36 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
       describe('no cascade', () => {
         beforeEach(function() {
-          this.Projects = this.sequelize.define('Project', {
+          Projects = current.define<ItestInstance, ItestAttribute>('Project', {
             title: new DataTypes.STRING()
           });
 
-          this.Tasks = this.sequelize.define('Task', {
+          Tasks = current.define<ItestInstance, ItestAttribute>('Task', {
             title: new DataTypes.STRING()
           });
 
-          this.Projects.belongsToMany(this.Tasks, {hooks: true, through: 'project_tasks'});
-          this.Tasks.belongsToMany(this.Projects, {hooks: true, through: 'project_tasks'});
+          Projects.belongsToMany(Tasks, {hooks: true, through: 'project_tasks'});
+          Tasks.belongsToMany(Projects, {hooks: true, through: 'project_tasks'});
 
-          return this.sequelize.sync({ force: true });
+          return current.sync({ force: true });
         });
 
         describe('#remove', () => {
           it('with no errors', function() {
-            const self = this;
             const beforeProject = sinon.spy();
             const afterProject = sinon.spy();
             const beforeTask = sinon.spy();
             const afterTask = sinon.spy();
 
-            this.Projects.beforeCreate(beforeProject);
-            this.Projects.afterCreate(afterProject);
-            this.Tasks.beforeUpdate(beforeTask);
-            this.Tasks.afterUpdate(afterTask);
+            Projects.beforeCreate(beforeProject);
+            Projects.afterCreate(afterProject);
+            Tasks.beforeUpdate(beforeTask);
+            Tasks.afterUpdate(afterTask);
 
-            return this.Projects.create({title: 'New Project'}).then(project => {
-              return self.Tasks.create({title: 'New Task'}).then(task => {
-                return project.addTask(task).then(() => {
-                  return project.removeTask(task).then(() => {
+            return Projects.create({title: 'New Project'}).then(project => {
+              return Tasks.create({title: 'New Task'}).then(task => {
+                return project.addLinkedData('Task', task).then(() => {
+                  return project.removeLinkedData('Task', task).then(() => {
                     expect(beforeProject).to.have.been.calledOnce;
                     expect(afterProject).to.have.been.calledOnce;
                     expect(beforeTask).not.to.have.been.called;
@@ -630,35 +617,34 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
           });
 
           it('with errors', function() {
-            const self = this;
             let beforeProject = false;
             let afterProject = false;
             let beforeTask = false;
             let afterTask = false;
 
-            this.Projects.beforeCreate(() => {
+            Projects.beforeCreate(() => {
               beforeProject = true;
               return Promise.resolve();
             });
 
-            this.Projects.afterCreate(() => {
+            Projects.afterCreate(() => {
               afterProject = true;
               return Promise.resolve();
             });
 
-            this.Tasks.beforeUpdate(() => {
+            Tasks.beforeUpdate(() => {
               beforeTask = true;
               return Promise.reject(new Error('Whoops!'));
             });
 
-            this.Tasks.afterUpdate(() => {
+            Tasks.afterUpdate(() => {
               afterTask = true;
               return Promise.resolve();
             });
 
-            return this.Projects.create({title: 'New Project'}).then(project => {
-              return self.Tasks.create({title: 'New Task'}).then(task => {
-                return project.addTask(task).then(() => {
+            return Projects.create({title: 'New Project'}).then(project => {
+              return Tasks.create({title: 'New Task'}).then(task => {
+                return project.addLinkedData('Task', task).then(() => {
                   expect(beforeProject).to.be.true;
                   expect(afterProject).to.be.true;
                   expect(beforeTask).to.be.false;
@@ -677,28 +663,28 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
         describe('cascade', () => {
           beforeEach(function() {
-            this.Projects = this.sequelize.define('Project', {
+            Projects = current.define<ItestInstance, ItestAttribute>('Project', {
               title: new DataTypes.STRING()
             });
 
-            this.Tasks = this.sequelize.define('Task', {
+            Tasks = current.define<ItestInstance, ItestAttribute>('Task', {
               title: new DataTypes.STRING()
             });
 
-            this.MiniTasks = this.sequelize.define('MiniTask', {
+            MiniTasks = current.define<ItestInstance, ItestAttribute>('MiniTask', {
               mini_title: new DataTypes.STRING()
             });
 
-            this.Projects.hasMany(this.Tasks, {onDelete: 'cascade', hooks: true});
-            this.Projects.hasMany(this.MiniTasks, {onDelete: 'cascade', hooks: true});
+            Projects.hasMany(Tasks, {onDelete: 'cascade', hooks: true});
+            Projects.hasMany(MiniTasks, {onDelete: 'cascade', hooks: true});
 
-            this.Tasks.belongsTo(this.Projects, {hooks: true});
-            this.Tasks.hasMany(this.MiniTasks, {onDelete: 'cascade', hooks: true});
+            Tasks.belongsTo(Projects, {hooks: true});
+            Tasks.hasMany(MiniTasks, {onDelete: 'cascade', hooks: true});
 
-            this.MiniTasks.belongsTo(this.Projects, {hooks: true});
-            this.MiniTasks.belongsTo(this.Tasks, {hooks: true});
+            MiniTasks.belongsTo(Projects, {hooks: true});
+            MiniTasks.belongsTo(Tasks, {hooks: true});
 
-            return this.sequelize.sync({force: true});
+            return current.sync({force: true});
           });
 
           describe('#remove', () => {
@@ -710,41 +696,41 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
               let beforeMiniTask = false;
               let afterMiniTask = false;
 
-              this.Projects.beforeCreate(() => {
+              Projects.beforeCreate(() => {
                 beforeProject = true;
                 return Promise.resolve();
               });
 
-              this.Projects.afterCreate(() => {
+              Projects.afterCreate(() => {
                 afterProject = true;
                 return Promise.resolve();
               });
 
-              this.Tasks.beforeDestroy(() => {
+              Tasks.beforeDestroy(() => {
                 beforeTask = true;
                 return Promise.resolve();
               });
 
-              this.Tasks.afterDestroy(() => {
+              Tasks.afterDestroy(() => {
                 afterTask = true;
                 return Promise.resolve();
               });
 
-              this.MiniTasks.beforeDestroy(() => {
+              MiniTasks.beforeDestroy(() => {
                 beforeMiniTask = true;
                 return Promise.resolve();
               });
 
-              this.MiniTasks.afterDestroy(() => {
+              MiniTasks.afterDestroy(() => {
                 afterMiniTask = true;
                 return Promise.resolve();
               });
 
-              return this.sequelize.Promise.all([
-                this.Projects.create({title: 'New Project'}),
-                this.MiniTasks.create({mini_title: 'New MiniTask'}),
+              return current.Promise.all([
+                Projects.create({title: 'New Project'}),
+                MiniTasks.create({mini_title: 'New MiniTask'}),
               ]).bind(this).spread((project, minitask) => {
-                return project.addMiniTask(minitask);
+                return project.addLinkedData('MiniTask', minitask);
               }).then(project => {
                 return project.destroy();
               }).then(() => {
@@ -766,41 +752,41 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
               let beforeMiniTask = false;
               let afterMiniTask = false;
 
-              this.Projects.beforeCreate(() => {
+              Projects.beforeCreate(() => {
                 beforeProject = true;
                 return Promise.resolve();
               });
 
-              this.Projects.afterCreate(() => {
+              Projects.afterCreate(() => {
                 afterProject = true;
                 return Promise.resolve();
               });
 
-              this.Tasks.beforeDestroy(() => {
+              Tasks.beforeDestroy(() => {
                 beforeTask = true;
                 return Promise.resolve();
               });
 
-              this.Tasks.afterDestroy(() => {
+              Tasks.afterDestroy(() => {
                 afterTask = true;
                 return Promise.resolve();
               });
 
-              this.MiniTasks.beforeDestroy(() => {
+              MiniTasks.beforeDestroy(() => {
                 beforeMiniTask = true;
                 return Promise.reject(new Error('Whoops!'));
               });
 
-              this.MiniTasks.afterDestroy(() => {
+              MiniTasks.afterDestroy(() => {
                 afterMiniTask = true;
                 return Promise.resolve();
               });
 
-              return this.sequelize.Promise.all([
-                this.Projects.create({title: 'New Project'}),
-                this.MiniTasks.create({mini_title: 'New MiniTask'}),
+              return current.Promise.all([
+                Projects.create({title: 'New Project'}),
+                MiniTasks.create({mini_title: 'New MiniTask'}),
               ]).bind(this).spread((project, minitask) => {
-                return project.addMiniTask(minitask);
+                return project.addLinkedData('MiniTask', minitask);
               }).then(project => {
                 return project.destroy();
               }).catch(() => {
@@ -819,28 +805,28 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       describe('multiple 1:M sequential hooks', () => {
         describe('cascade', () => {
           beforeEach(function() {
-            this.Projects = this.sequelize.define('Project', {
+            Projects = current.define<ItestInstance, ItestAttribute>('Project', {
               title: new DataTypes.STRING()
             });
 
-            this.Tasks = this.sequelize.define('Task', {
+            Tasks = current.define<ItestInstance, ItestAttribute>('Task', {
               title: new DataTypes.STRING()
             });
 
-            this.MiniTasks = this.sequelize.define('MiniTask', {
+            MiniTasks = current.define<ItestInstance, ItestAttribute>('MiniTask', {
               mini_title: new DataTypes.STRING()
             });
 
-            this.Projects.hasMany(this.Tasks, {onDelete: 'cascade', hooks: true});
-            this.Projects.hasMany(this.MiniTasks, {onDelete: 'cascade', hooks: true});
+            Projects.hasMany(Tasks, {onDelete: 'cascade', hooks: true});
+            Projects.hasMany(MiniTasks, {onDelete: 'cascade', hooks: true});
 
-            this.Tasks.belongsTo(this.Projects, {hooks: true});
-            this.Tasks.hasMany(this.MiniTasks, {onDelete: 'cascade', hooks: true});
+            Tasks.belongsTo(Projects, {hooks: true});
+            Tasks.hasMany(MiniTasks, {onDelete: 'cascade', hooks: true});
 
-            this.MiniTasks.belongsTo(this.Projects, {hooks: true});
-            this.MiniTasks.belongsTo(this.Tasks, {hooks: true});
+            MiniTasks.belongsTo(Projects, {hooks: true});
+            MiniTasks.belongsTo(Tasks, {hooks: true});
 
-            return this.sequelize.sync({force: true});
+            return current.sync({force: true});
           });
 
           describe('#remove', () => {
@@ -852,44 +838,44 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
               let beforeMiniTask = false;
               let afterMiniTask = false;
 
-              this.Projects.beforeCreate(() => {
+              Projects.beforeCreate(() => {
                 beforeProject = true;
                 return Promise.resolve();
               });
 
-              this.Projects.afterCreate(() => {
+              Projects.afterCreate(() => {
                 afterProject = true;
                 return Promise.resolve();
               });
 
-              this.Tasks.beforeDestroy(() => {
+              Tasks.beforeDestroy(() => {
                 beforeTask = true;
                 return Promise.resolve();
               });
 
-              this.Tasks.afterDestroy(() => {
+              Tasks.afterDestroy(() => {
                 afterTask = true;
                 return Promise.resolve();
               });
 
-              this.MiniTasks.beforeDestroy(() => {
+              MiniTasks.beforeDestroy(() => {
                 beforeMiniTask = true;
                 return Promise.resolve();
               });
 
-              this.MiniTasks.afterDestroy(() => {
+              MiniTasks.afterDestroy(() => {
                 afterMiniTask = true;
                 return Promise.resolve();
               });
 
-              return this.sequelize.Promise.all([
-                this.Projects.create({title: 'New Project'}),
-                this.Tasks.create({title: 'New Task'}),
-                this.MiniTasks.create({mini_title: 'New MiniTask'}),
+              return current.Promise.all([
+                Projects.create({title: 'New Project'}),
+                Tasks.create({title: 'New Task'}),
+                MiniTasks.create({mini_title: 'New MiniTask'}),
               ]).bind(this).spread(function(project, task, minitask) {
-                return this.sequelize.Promise.all([
-                  task.addMiniTask(minitask),
-                  project.addTask(task),
+                return current.Promise.all([
+                  task.addLinkedData('MiniTask', minitask),
+                  project.addLinkedData('Task', task),
                 ]).return(project);
               }).then(project => {
                 return project.destroy();
@@ -912,39 +898,39 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
               let afterMiniTask = false;
               const CustomErrorText = 'Whoops!';
 
-              this.Projects.beforeCreate(() => {
+              Projects.beforeCreate(() => {
                 beforeProject = true;
               });
 
-              this.Projects.afterCreate(() => {
+              Projects.afterCreate(() => {
                 afterProject = true;
               });
 
-              this.Tasks.beforeDestroy(() => {
+              Tasks.beforeDestroy(() => {
                 beforeTask = true;
                 throw new Error(CustomErrorText);
               });
 
-              this.Tasks.afterDestroy(() => {
+              Tasks.afterDestroy(() => {
                 afterTask = true;
               });
 
-              this.MiniTasks.beforeDestroy(() => {
+              MiniTasks.beforeDestroy(() => {
                 beforeMiniTask = true;
               });
 
-              this.MiniTasks.afterDestroy(() => {
+              MiniTasks.afterDestroy(() => {
                 afterMiniTask = true;
               });
 
-              return this.sequelize.Promise.all([
-                this.Projects.create({title: 'New Project'}),
-                this.Tasks.create({title: 'New Task'}),
-                this.MiniTasks.create({mini_title: 'New MiniTask'}),
+              return current.Promise.all([
+                Projects.create({title: 'New Project'}),
+                Tasks.create({title: 'New Task'}),
+                MiniTasks.create({mini_title: 'New MiniTask'}),
               ]).bind(this).spread(function(project, task, minitask) {
-                return this.sequelize.Promise.all([
-                  task.addMiniTask(minitask),
-                  project.addTask(task),
+                return current.Promise.all([
+                  task.addLinkedData('MiniTask', minitask),
+                  project.addLinkedData('Task', task),
                 ]).return(project);
               }).then(project => {
                 return expect(project.destroy()).to.eventually.be.rejectedWith(CustomErrorText).then(() => {

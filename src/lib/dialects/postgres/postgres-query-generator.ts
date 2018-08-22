@@ -5,10 +5,10 @@ import * as semver from 'semver';
 import * as util from 'util';
 import { Sequelize } from '../../..';
 import DataTypes from '../../data-types';
+import { IConfig } from '../../interfaces/iconfig';
+import { IInclude } from '../../interfaces/iinclude';
+import { ISequelizeOption } from '../../interfaces/isequelize-option';
 import { Model } from '../../model';
-import { IConfig } from '../../model/iconfig';
-import { IInclude } from '../../model/iinclude';
-import { ISequelizeOption } from '../../model/isequelize-option';
 import { Transaction } from '../../transaction';
 import * as AllUtils from '../../utils';
 import { AbstractQueryGenerator } from '../abstract/abstract-query-generator';
@@ -289,7 +289,7 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
     hooks? : boolean,
     /** The maximum count you want to get. */
     limit? : number,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** Specify if we want only one row without using an array */
     plain? : boolean,
     /** Error if no result found */
@@ -472,7 +472,7 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
   /**
    * return an upsert query
    */
-  public upsertQuery(tableName : string, insertValues : {}, updateValues : {}, where : {}, model : typeof Model, options : {
+  public upsertQuery(tableName : string, insertValues : {}, updateValues : {}, where : {}, model : Model<any, any>, options : {
     allowNull? : any[],
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
     benchmark? : boolean,
@@ -494,7 +494,7 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
     isolationLevel? : string,
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** = false, A flag that defines if native library shall be used or not. Currently only has an effect for postgres */
     native? : boolean,
     /** = false, A flag that defines if null values should be passed to SQL queries or not. */
@@ -574,7 +574,7 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
     individualHooks? : boolean,
     /** How many rows to delete */
     limit? : number
-    model? : typeof Model,
+    model? : Model<any, any>,
     restartIdentity? : boolean,
     /** = false, If set to true, dialects that support it will use TRUNCATE instead of DELETE FROM. If a table is truncated the where and limit options are ignored */
     truncate? : boolean,
@@ -585,7 +585,7 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
     type? : string,
     /** A hash of search attributes. */
     where? : {}
-  }, model : typeof Model) : string {
+  }, model : Model<any, any>) : string {
     let query;
 
     options = options || {};
@@ -721,7 +721,7 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
     limit? : number,
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** An offset value to start from. Only useable with limit! */
     offset? : number,
     /** Return raw result. */
@@ -732,7 +732,7 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
     subQuery? : boolean,
     tableNames? : string[],
     topLimit? : any,
-    topModel? : typeof Model,
+    topModel? : Model<any, any>,
     /** Transaction to run query under */
     transaction? : Transaction,
     type ? : string,
@@ -1025,7 +1025,7 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
     }).join(' OR ');
   }
 
-  public pgEnumName(tableName : string, attr : string, options? : {
+  public pgEnumName(tableName : string | { schema? : string, tableName? : string }, attr : string, options? : {
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
     benchmark? : boolean,
     databaseVersion? : number,
@@ -1114,7 +1114,7 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
     return enumName;
   }
 
-  public pgListEnums(tableName : string, attrName? : string, options? : {}) {
+  public pgListEnums(tableName : string | { schema? : string, tableName? : string }, attrName? : string, options? : {}) {
     let enumName = '';
     const tableDetails = this.extractTableDetails(tableName, options);
 
@@ -1128,7 +1128,7 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
       `WHERE n.nspname = '${tableDetails.schema}'${enumName} GROUP BY 1`;
   }
 
-  public pgEnum(tableName : string, attr : string, dataType : { values? }, options? : {
+  public pgEnum(tableName : string | { schema? : string, tableName? : string }, attr : string, dataType : { values? }, options? : {
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
     benchmark? : boolean,
     databaseVersion? : number,
@@ -1222,7 +1222,7 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
     return sql;
   }
 
-  public pgEnumAdd(tableName : string, attr : string, value : string, options : {
+  public pgEnumAdd(tableName : string | { schema? : string, tableName? : string }, attr : string, value : string, options : {
     after? : string,
     before? : string,
     /** = {}, Define the default search scope to use for this model. Scopes have the same form as the options passed to find / findAll */
@@ -1279,7 +1279,7 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
     return sql;
   }
 
-  public pgEnumDrop(tableName : string, attr : string, enumName? : string) : string {
+  public pgEnumDrop(tableName : string | { schema? : string, tableName? : string }, attr : string, enumName? : string) : string {
     enumName = enumName || this.pgEnumName(tableName, attr);
     return 'DROP TYPE IF EXISTS ' + enumName + '; ';
   }

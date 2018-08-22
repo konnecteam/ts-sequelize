@@ -1,6 +1,6 @@
 'use strict';
 
-import Promise from '../../promise';
+import * as Promise from 'bluebird';
 
 export class ResourceLock {
 

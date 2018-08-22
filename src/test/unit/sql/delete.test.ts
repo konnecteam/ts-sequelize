@@ -2,6 +2,7 @@
 
 import * as util from 'util';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expectsql = Support.expectsql;
 const current   = Support.sequelize;
@@ -11,7 +12,7 @@ const sql       = current.dialect.QueryGenerator;
 
 describe(Support.getTestDialectTeaser('SQL'), () => {
   describe('delete', () => {
-    const User = current.define('test_user', {}, {
+    const User = current.define<ItestInstance, ItestAttribute>('test_user', {}, {
       timestamps: false,
       schema: 'public'
     });
@@ -150,7 +151,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
     });
 
     describe('delete when the primary key has a different field name', () => {
-      const _User = current.define('test_user', {
+      const _User = current.define<ItestInstance, ItestAttribute>('test_user', {
         id: {
           type: new DataTypes.STRING(),
           primaryKey: true,

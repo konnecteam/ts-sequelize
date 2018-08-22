@@ -5,7 +5,7 @@ import { Model } from '../model';
 import { Association } from './base';
 
 export class Helpers {
-  public static checkNamingCollision(association : Association) : void {
+  public static checkNamingCollision(association : Association<any, any, any, any>) : void {
     if (association.source.rawAttributes.hasOwnProperty(association.as)) {
       throw new Error(
         `Naming collision between attribute '${association.as}'` +
@@ -18,12 +18,12 @@ export class Helpers {
   /**
    * Add a foreign key constraints to a Model
    */
-  public static addForeignKeyConstraints(newAttribute : any, source : typeof Model, target : typeof Model, options : {
+  public static addForeignKeyConstraints(newAttribute : any, source : Model<any, any>, target : Model<any, any>, options : {
     /** : string | {}, assocation alias */
     as? : any,
     /** = {}, Define the default search scope to use for this model. Scopes have the same form as the options passed to find / findAll */
     defaultScope? : {},
-    foreignKey? : string,
+    foreignKey? : string | {},
     foreignKeyConstraint? : string,
     /** = false If freezeTableName is true, sequelize will not try to alter the model name to get the table name. Otherwise, the model name will be pluralized */
     freezeTableName? : boolean,
@@ -87,31 +87,6 @@ export class Helpers {
         newAttribute.references.key = key || primaryKeys[0];
         newAttribute.onDelete = options.onDelete;
         newAttribute.onUpdate = options.onUpdate;
-      }
-    }
-  }
-
-  /**
-   * Mixin (inject) association methods to model prototype
-   *
-   * @param Association instance
-   * @param Model prototype
-   * @param Method names to inject
-   * @param Mapping between model and association method names
-   */
-  public static mixinMethods(association : Association , obj : Model, methods : string[], aliases : any = {}) {
-
-    for (const method of methods) {
-      // don't override custom methods
-      if (!obj[association.accessors[method]]) {
-        const realMethod = aliases[method] || method;
-
-        obj[association.accessors[method]] = function() {
-          const instance = this;
-          const args = [instance].concat(Array.from(arguments));
-
-          return association[realMethod].apply(association, args);
-        };
       }
     }
   }

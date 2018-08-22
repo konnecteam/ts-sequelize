@@ -2,13 +2,17 @@
 
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Hooks'), () => {
+  let User : Model<ItestInstance, ItestAttribute>;
   beforeEach(function() {
-    this.User = this.sequelize.define('User', {
+    User = current.define<ItestInstance, ItestAttribute>('User', {
       username: {
         type: new DataTypes.STRING(),
         allowNull: false
@@ -18,22 +22,22 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         values: ['happy', 'sad', 'neutral']
       }
     });
-    return this.sequelize.sync({ force: true });
+    return current.sync({ force: true });
   });
 
   describe('#validate', () => {
     describe('#create', () => {
       it('should return the user', function() {
-        this.User.beforeValidate(user => {
+        User.beforeValidate(user => {
           user.username = 'Bob';
           user.mood = 'happy';
         });
 
-        this.User.afterValidate(user => {
+        User.afterValidate(user => {
           user.username = 'Toni';
         });
 
-        return this.User.create({mood: 'ecstatic'}).then(user => {
+        return User.create({mood: 'ecstatic'}).then(user => {
           expect(user.mood).to.equal('happy');
           expect(user.username).to.equal('Toni');
         });
@@ -42,9 +46,8 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
     describe('#3534, hooks modifications', () => {
       it('fields modified in hooks are saved', function() {
-        const self = this;
 
-        this.User.afterValidate(user => {
+        User.afterValidate(user => {
           //if username is defined and has more than 5 char
           user.username = user.username
             ? user.username.length < 5 ? null : user.username
@@ -53,12 +56,12 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
         });
 
-        this.User.beforeValidate(user => {
+        User.beforeValidate(user => {
           user.mood = user.mood || 'neutral';
         });
 
 
-        return this.User.create({username: 'T', mood: 'neutral'}).then(user => {
+        return User.create({username: 'T', mood: 'neutral'}).then(user => {
           expect(user.mood).to.equal('neutral');
           expect(user.username).to.equal('Samorost 3');
 
@@ -79,7 +82,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
           //attributes were replaced by hooks ?
           expect(uSaved.mood).to.equal('sad');
           expect(uSaved.username).to.equal('Samorost 3');
-          return self.User.findById(uSaved.id);
+          return User.findById(uSaved.id);
         }).then(uFetched => {
           expect(uFetched.mood).to.equal('sad');
           expect(uFetched.username).to.equal('Samorost 3');
@@ -92,7 +95,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
           expect(uFetchedSaved.mood).to.equal('neutral');
           expect(uFetchedSaved.username).to.equal('New Game is Needed');
 
-          return self.User.findById(uFetchedSaved.id);
+          return User.findById(uFetchedSaved.id);
         }).then(uFetched => {
           expect(uFetched.mood).to.equal('neutral');
           expect(uFetched.username).to.equal('New Game is Needed');
@@ -110,20 +113,20 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
     describe('on error', () => {
       it('should emit an error from after hook', function() {
-        this.User.afterValidate(user => {
+        User.afterValidate(user => {
           user.mood = 'ecstatic';
           throw new Error('Whoops! Changed user.mood!');
         });
 
-        return expect(this.User.create({username: 'Toni', mood: 'happy'})).to.be.rejectedWith('Whoops! Changed user.mood!');
+        return expect(User.create({username: 'Toni', mood: 'happy'})).to.be.rejectedWith('Whoops! Changed user.mood!');
       });
 
       it('should call validationFailed hook', function() {
         const validationFailedHook = sinon.spy();
 
-        this.User.validationFailed(validationFailedHook);
+        (User as any).validationFailed(validationFailedHook);
 
-        return expect(this.User.create({mood: 'happy'})).to.be.rejected.then(() => {
+        return expect(User.create({mood: 'happy'})).to.be.rejected.then(() => {
           expect(validationFailedHook).to.have.been.calledOnce;
         });
       });
@@ -131,9 +134,9 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       it('should not replace the validation error in validationFailed hook by default', function() {
         const validationFailedHook = sinon.stub();
 
-        this.User.validationFailed(validationFailedHook);
+        (User as any).validationFailed(validationFailedHook);
 
-        return expect(this.User.create({mood: 'happy'})).to.be.rejected.then(err => {
+        return expect(User.create({mood: 'happy'})).to.be.rejected.then(err => {
           expect(err.name).to.equal('SequelizeValidationError');
         });
       });
@@ -141,9 +144,9 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       it('should replace the validation error if validationFailed hook creates a new error', function() {
         const validationFailedHook = sinon.stub().throws(new Error('Whoops!'));
 
-        this.User.validationFailed(validationFailedHook);
+        (User as any).validationFailed(validationFailedHook);
 
-        return expect(this.User.create({mood: 'happy'})).to.be.rejected.then(err => {
+        return expect(User.create({mood: 'happy'})).to.be.rejected.then(err => {
           expect(err.message).to.equal('Whoops!');
         });
       });

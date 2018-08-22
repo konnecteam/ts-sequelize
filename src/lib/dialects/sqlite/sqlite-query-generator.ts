@@ -3,8 +3,8 @@
 import * as _ from 'lodash';
 import * as util from 'util';
 import { Sequelize } from '../../..';
+import { ISequelizeOption } from '../../interfaces/isequelize-option';
 import { Model } from '../../model';
-import { ISequelizeOption } from '../../model/isequelize-option';
 import { Transaction } from '../../transaction';
 import * as AllUtils from '../../utils';
 import { AbstractQueryGenerator } from '../abstract/abstract-query-generator';
@@ -324,12 +324,12 @@ export class SqliteQueryGenerator extends AbstractQueryGenerator {
   /**
    * return an upsert query
    */
-  public upsertQuery(tableName : string, insertValues : {}, updateValues : {}, where : {}, model : typeof Model, options : {
+  public upsertQuery(tableName : string, insertValues : {}, updateValues : {}, where : {}, model : Model<any, any>, options : {
     fields? : string[],
     /** An object of hook function that are called before and after certain lifecycle events */
     hooks? : boolean,
     ignoreDuplicates? : boolean
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** Return raw result. */
     raw? : boolean,
     /**
@@ -444,7 +444,7 @@ export class SqliteQueryGenerator extends AbstractQueryGenerator {
     limit? : number,
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** = false, A flag that defines if native library shall be used or not. Currently only has an effect for postgres */
     native? : boolean,
     /** = false, A flag that defines if null values should be passed to SQL queries or not. */
@@ -476,7 +476,7 @@ export class SqliteQueryGenerator extends AbstractQueryGenerator {
      */
     type? : string,
     typeValidation? : boolean
-  }, model : typeof Model) : string {
+  }, model : Model<any, any>) : string {
     options = options || {};
     _.defaults(options, this.options);
 

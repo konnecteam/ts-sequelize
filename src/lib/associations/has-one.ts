@@ -1,6 +1,8 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as _ from 'lodash';
+import { DataSet } from '../data-set';
 import { Model } from '../model';
 import Op from '../operators';
 import { Transaction } from '../transaction';
@@ -16,13 +18,15 @@ import { Helpers } from './helpers';
  *
  * @see {@link Model.hasOne}
  */
-export class HasOne extends Association {
+export class HasOne
+<TSourceInstance extends DataSet<TSourceAttributes>, TSourceAttributes,
+TTargetInstance extends DataSet<TTargetAttributes>, TTargetAttributes>
+extends Association <TSourceInstance, TSourceAttributes, TTargetInstance, TTargetAttributes> {
 
   public sourceIdentifier : string;
-  public sourceKey : string;
   public sourceKeyIsPrimary : boolean;
 
-  constructor(source : typeof Model, target : typeof Model, options : {
+  constructor(source : Model<TSourceInstance, TSourceAttributes>, target : Model<TTargetInstance, TTargetAttributes>, options : {
     /** : string | {}, assocation alias */
     as? : any,
     createByBTM? : boolean,
@@ -49,7 +53,7 @@ export class HasOne extends Association {
       this.foreignKeyAttribute = this.options.foreignKey;
       this.foreignKey = this.foreignKeyAttribute.name || this.foreignKeyAttribute.fieldName;
     } else if (this.options.foreignKey) {
-      this.foreignKey = this.options.foreignKey;
+      this.foreignKey = this.options.foreignKey as string;
     }
 
     if (!this.foreignKey) {
@@ -92,7 +96,7 @@ export class HasOne extends Association {
   /**
    * add attributes to the target of this association
    */
-  public injectAttributes() {
+  public injectAttributes() : HasOne<TSourceInstance, TSourceAttributes, TTargetInstance, TTargetAttributes> {
     const newAttributes = {};
 
     newAttributes[this.foreignKey] = _.defaults({}, this.foreignKeyAttribute, {
@@ -120,19 +124,10 @@ export class HasOne extends Association {
   }
 
   /**
-   * Mixin (inject) association methods to model prototype
-   */
-  public mixin(obj) : void {
-    const methods = ['get', 'set', 'create'];
-
-    Helpers.mixinMethods(this, obj, methods);
-  }
-
-  /**
    * Get the associated instance.
    * @see {@link Model.findOne} for a full explanation of options
    */
-  public get(instances : Model, options : {
+  public get(instances : TSourceInstance[] | TSourceInstance, options? : {
     /** Apply a schema on the related model */
     schema? : string,
     schemaDelimiter? : string,
@@ -140,7 +135,7 @@ export class HasOne extends Association {
     scope? : string|boolean,
     /** A hash of search attributes. */
     where? : {}
-  }) : Promise<Model> {
+  }) : Promise<TTargetInstance | TTargetInstance[]> {
     const where = {};
     let Target = this.target;
     let instanceNoArray;
@@ -166,7 +161,7 @@ export class HasOne extends Association {
 
     if (instances) {
       where[this.foreignKey] = {
-        [Op.in]: (instances as any).map(instance => instance.get(this.sourceKey))
+        [Op.in]: (instances as TSourceInstance[]).map(instance => instance.get(this.sourceKey))
       };
     } else {
       where[this.foreignKey] = instanceNoArray.get(this.sourceKey);
@@ -183,7 +178,7 @@ export class HasOne extends Association {
     if (instances) {
       return Target.findAll(options).then(results => {
         const result = {};
-        for (const instance of (instances as any)) {
+        for (const instance of (instances as TSourceInstance[])) {
           result[instance.get(this.sourceKey, {raw: true})] = null;
         }
 
@@ -191,7 +186,7 @@ export class HasOne extends Association {
           result[instance.get(this.foreignKey, {raw: true})] = instance;
         }
 
-        return result;
+        return result as any;
       });
     }
 
@@ -203,7 +198,7 @@ export class HasOne extends Association {
    * @param newAssociation An persisted instance or the primary key of a persisted instance to associate with this. Pass `null` or `undefined` to remove the association.
    * @param options Options passed to getAssociation and `target.save`
    */
-  public set(sourceInstance : Model, associatedInstance : Model, options : { transaction? : Transaction }) : Promise<any> {
+  public set(sourceInstance : TSourceInstance, associatedInstance : TTargetInstance, options : { transaction? : Transaction }) : Promise<TSourceInstance> {
 
     let alreadyAssociated;
 
@@ -211,7 +206,7 @@ export class HasOne extends Association {
       scope: false
     });
 
-    return sourceInstance[this.accessors.get](options).then(oldInstance => {
+    return sourceInstance.getLinkedData(this, options).then(oldInstance => {
       // TODO Use equals method once #5605 is resolved
       alreadyAssociated = oldInstance && associatedInstance && _.every(this.target.primaryKeyAttributes, attribute =>
         oldInstance.get(attribute, {raw: true}) === (associatedInstance.get ? associatedInstance.get(attribute, {raw: true}) : associatedInstance)
@@ -227,8 +222,8 @@ export class HasOne extends Association {
       }
     }).then(() => {
       if (associatedInstance && !alreadyAssociated) {
-        if (!(associatedInstance instanceof this.target)) {
-          const tmpInstance = {};
+        if (!(associatedInstance.model === this.target)) {
+          const tmpInstance = {} as TTargetAttributes;
           tmpInstance[this.target.primaryKeyAttribute] = associatedInstance;
           associatedInstance = this.target.build(tmpInstance, {
             isNewRecord: false
@@ -238,11 +233,11 @@ export class HasOne extends Association {
         _.assign(associatedInstance, this.scope);
         associatedInstance.set(this.foreignKey, sourceInstance.get(this.sourceIdentifier));
 
-        return (associatedInstance as any).save(options);
+        return associatedInstance.save(options);
       }
 
       return null;
-    });
+    }) as any;
   }
 
   /**
@@ -251,16 +246,16 @@ export class HasOne extends Association {
    * @param options Options passed to `target.create` and setAssociation.
    * @see {@link Model#create} for a full explanation of options
    */
-  public create(sourceInstance : Model, values, options : {
+  public create(sourceInstance : TSourceInstance, values : TTargetAttributes, options : {
     /**
      * If set, only columns matching those in fields will be saved
      * An optional array of strings, representing database columns. If fields is provided, only those columns will be validated and saved.
      */
     fields? : string[],
     values? : {}
-  }) : Promise<any> {
+  }) : Promise<TTargetInstance> {
 
-    values = values || {};
+    values = values || {} as TTargetAttributes;
     options = options || {};
 
     if (this.scope) {

@@ -16,7 +16,7 @@ export class ModelManager {
   /**
    * Add a Model to the Model manager
    */
-  public addModel(model : typeof Model) {
+  public addModel(model : Model<any, any>) {
     this.models.push(model);
     this.sequelize.models[model.name] = model;
 
@@ -26,7 +26,7 @@ export class ModelManager {
   /**
    * remove a Model to the Model manager
    */
-  public removeModel(modelToRemove : typeof Model) {
+  public removeModel(modelToRemove : Model<any, any>) {
     this.models = this.models.filter(model => model.name !== modelToRemove.name);
 
     delete this.sequelize.models[modelToRemove.name];
@@ -37,7 +37,7 @@ export class ModelManager {
    * @param against attributes of the desired model
    * @param options
    */
-  public getModel(against : {}, options? : { attribute? }) : typeof Model {
+  public getModel(against : {}, options? : { attribute? }) : Model<any, any> {
     options = _.defaults(options || {}, {
       attribute: 'name'
     });

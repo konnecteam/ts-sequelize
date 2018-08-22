@@ -1,7 +1,7 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as _ from 'lodash';
-import Promise from '../../promise';
 import { AbstractQueryInterface } from '../../query-interface';
 import { OracleQueryGenerator } from './oracle-query-generator';
 
@@ -30,11 +30,11 @@ export class OracleQueryInterface extends AbstractQueryInterface {
     const dropAllTablesFct = tableNames => Promise.each(tableNames, tableName => {
       // if tableName is not in the Array of tables names then dont drop it
       if (Object.keys(tableName).length > 0) {
-        if (upperSkip.indexOf(tableName.tableName) === -1) {
+        if (upperSkip.indexOf((tableName as any).tableName) === -1) {
           return this.dropTable(tableName, _.assign({}, options, { cascade: true }) );
         }
       } else {
-        if (upperSkip.indexOf(tableName) === -1) {
+        if (upperSkip.indexOf(tableName as string) === -1) {
           return this.dropTable(tableName, _.assign({}, options, { cascade: true }) );
         }
       }
@@ -63,7 +63,7 @@ export class OracleQueryInterface extends AbstractQueryInterface {
     const descriptionTableQuery = (this.QueryGenerator as OracleQueryGenerator).isIdentityPrimaryKey(tableName);
     return this.sequelize.query(descriptionTableQuery, options).spread(PKResult => {
 
-      for (let i = 0; i < PKResult.length; i++) {
+      for (let i = 0; i < (PKResult as any[]).length; i++) {
         //We iterate through the primary keys to determine if we are working on it
         if (PKResult[i].column_name === attributeName.toUpperCase()) {
           //The column we are working on is in the PK AND is an identity column, we have to drop the identity
@@ -79,7 +79,7 @@ export class OracleQueryInterface extends AbstractQueryInterface {
       //This method return all constraints on a table with a given attribute
       const findConstraintSql = (this.QueryGenerator as OracleQueryGenerator).getConstraintsOnColumn(tableName, attributeName);
       return this.sequelize.query(findConstraintSql, options).spread(results => {
-        if (!results.length && constraintsSql.length === 0) {
+        if (!(results as any[]).length && constraintsSql.length === 0) {
           // No default constraint found -- we can cleanly remove the column
           return;
         }
@@ -103,7 +103,7 @@ export class OracleQueryInterface extends AbstractQueryInterface {
           }
         };
 
-        results.forEach(result => {
+        (results as any[]).forEach(result => {
           //For each constraint, we get the sql
           constraintsSql.push({
             sql : (this.QueryGenerator as OracleQueryGenerator).dropConstraintQuery(tableName, result.constraint_name),

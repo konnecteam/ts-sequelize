@@ -1,10 +1,10 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as chai from 'chai';
 import * as Pooling from 'generic-pool';
 import * as _ from 'lodash';
 import * as sinon from 'sinon';
-import Promise from '../../../../lib/promise';
 import Config from '../../../config/config';
 import { DummyConnectionManager } from '../../../dummy/dummy-connection-manager';
 import Support from '../../support';

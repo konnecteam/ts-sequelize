@@ -2,6 +2,7 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const expectsql = Support.expectsql;
@@ -375,14 +376,14 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         });
 
         it('sequelize.or({group_id: 1}, {user_id: 2})', function() {
-          expectsql(queryGenerator.whereItemQuery(undefined, this.sequelize.or({group_id: 1}, {user_id: 2})), {
+          expectsql(queryGenerator.whereItemQuery(undefined, current.or({group_id: 1}, {user_id: 2})), {
             default: '([group_id] = 1 OR [user_id] = 2)',
             oracle: '(group_id = 1 OR user_id = 2)'
           });
         });
 
         it("sequelize.or({group_id: 1}, {user_id: 2, role: 'admin'})", function() {
-          expectsql(queryGenerator.whereItemQuery(undefined, this.sequelize.or({group_id: 1}, {user_id: 2, role: 'admin'})), {
+          expectsql(queryGenerator.whereItemQuery(undefined, current.or({group_id: 1}, {user_id: 2, role: 'admin'})), {
             default: "([group_id] = 1 OR ([user_id] = 2 AND [role] = 'admin'))",
             oracle: "(group_id = 1 OR (user_id = 2 AND \"role\" = 'admin'))",
             mssql: "([group_id] = 1 OR ([user_id] = 2 AND [role] = N'admin'))"
@@ -410,7 +411,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         });
 
         it('sequelize.or()', function() {
-          expectsql(queryGenerator.whereItemQuery(undefined, this.sequelize.or()), {
+          expectsql(queryGenerator.whereItemQuery(undefined, current.or()), {
             default: '0 = 1'
           });
         });
@@ -491,7 +492,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         });
 
         it('sequelize.and({shared: 1, sequelize.or({group_id: 1}, {user_id: 2}))', function() {
-          expectsql(queryGenerator.whereItemQuery(undefined, this.sequelize.and({shared: 1}, this.sequelize.or({group_id: 1}, {user_id: 2}))), {
+          expectsql(queryGenerator.whereItemQuery(undefined, current.and({shared: 1}, current.or({group_id: 1}, {user_id: 2}))), {
             default: '([shared] = 1 AND ([group_id] = 1 OR [user_id] = 2))',
             oracle: '(\"shared\" = 1 AND (group_id = 1 OR user_id = 2))'
           });
@@ -1061,7 +1062,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).postgres.RANGE(new DataTypes.DATE())
+              type: new DataTypes.postgres.RANGE(new DataTypes.DATE())
             },
             prefix: 'Timeline'
           };
@@ -1078,7 +1079,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).postgres.RANGE(new DataTypes.DATE())
+              type: new DataTypes.postgres.RANGE(new DataTypes.DATE())
             },
             prefix: 'Timeline'
           };
@@ -1095,7 +1096,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).postgres.RANGE(new DataTypes.DATE())
+              type: new DataTypes.postgres.RANGE(new DataTypes.DATE())
             },
             prefix: 'Timeline'
           };
@@ -1112,7 +1113,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).postgres.RANGE(new DataTypes.DATE())
+              type: new DataTypes.postgres.RANGE(new DataTypes.DATE())
             },
             prefix: 'Timeline'
           };
@@ -1129,7 +1130,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).postgres.RANGE(new DataTypes.DATE())
+              type: new DataTypes.postgres.RANGE(new DataTypes.DATE())
             },
             prefix: 'Timeline'
           };
@@ -1146,7 +1147,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).postgres.RANGE()
+              type: new DataTypes.postgres.RANGE()
             },
             prefix: 'Room'
           };
@@ -1163,7 +1164,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).postgres.RANGE()
+              type: new DataTypes.postgres.RANGE()
             },
             prefix: 'Room'
           };
@@ -1180,7 +1181,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).postgres.RANGE()
+              type: new DataTypes.postgres.RANGE()
             },
             prefix: 'Room'
           };
@@ -1197,7 +1198,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).postgres.RANGE()
+              type: new DataTypes.postgres.RANGE()
             },
             prefix: 'Room'
           };
@@ -1214,7 +1215,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).postgres.RANGE()
+              type: new DataTypes.postgres.RANGE()
             },
             prefix: 'Room'
           };
@@ -1231,7 +1232,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).postgres.RANGE()
+              type: new DataTypes.postgres.RANGE()
             },
             prefix: 'Room'
           };
@@ -1246,7 +1247,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
     if (current.dialect.supports.JSON) {
       describe('JSON', () => {
         it('sequelize.json("profile.id"), sequelize.cast(2, \'text\')")', function() {
-          expectsql(queryGenerator.whereItemQuery(undefined, this.sequelize.json('profile.id', this.sequelize.cast('12346-78912', 'text'))), {
+          expectsql(queryGenerator.whereItemQuery(undefined, current.json('profile.id', current.cast('12346-78912', 'text'))), {
             postgres: "(\"profile\"#>>'{id}') = CAST('12346-78912' AS TEXT)",
             sqlite: "json_extract(`profile`, '$.id') = CAST('12346-78912' AS TEXT)",
             mysql: "`profile`->>'$.id' = CAST('12346-78912' AS CHAR)"
@@ -1254,7 +1255,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         });
 
         it('sequelize.json({profile: {id: "12346-78912", name: "test"}})', function() {
-          expectsql(queryGenerator.whereItemQuery(undefined, this.sequelize.json({profile: {id: '12346-78912', name: 'test'}})), {
+          expectsql(queryGenerator.whereItemQuery(undefined, current.json({profile: {id: '12346-78912', name: 'test'}})), {
             postgres: "(\"profile\"#>>'{id}') = '12346-78912' AND (\"profile\"#>>'{name}') = 'test'",
             sqlite: "json_extract(`profile`, '$.id') = '12346-78912' AND json_extract(`profile`, '$.name') = 'test'",
             mysql: "`profile`->>'$.id' = '12346-78912' and `profile`->>'$.name' = 'test'"
@@ -1270,7 +1271,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).JSONB()
+              type: new DataTypes.JSONB()
             },
             prefix: 'User'
           };
@@ -1291,7 +1292,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).JSONB()
+              type: new DataTypes.JSONB()
             }
           };
           const expectation = {
@@ -1311,7 +1312,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).JSONB()
+              type: new DataTypes.JSONB()
             }
           };
           const expectation = {
@@ -1334,7 +1335,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).JSONB()
+              type: new DataTypes.JSONB()
             },
             prefix: current.literal(queryGenerator.quoteTable.call(current.dialect.QueryGenerator, {tableName: 'User'}))
           };
@@ -1358,7 +1359,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).JSONB()
+              type: new DataTypes.JSONB()
             },
             prefix: 'User'
           };
@@ -1378,7 +1379,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).JSONB()
+              type: new DataTypes.JSONB()
             }
           };
           const expectation = {
@@ -1396,7 +1397,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             model: {
               rawAttributes: {
                 data: {
-                  type: new (DataTypes as any).JSONB()
+                  type: new DataTypes.JSONB()
                 }
               }
             }
@@ -1416,7 +1417,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             model: {
               rawAttributes: {
                 data: {
-                  type: new (DataTypes as any).JSON()
+                  type: new DataTypes.JSON()
                 }
               }
             }
@@ -1438,7 +1439,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
             model: {
               rawAttributes: {
                 data: {
-                  type: new (DataTypes as any).JSONB()
+                  type: new DataTypes.JSONB()
                 }
               }
             }
@@ -1462,7 +1463,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).JSONB()
+              type: new DataTypes.JSONB()
             }
           };
           const expectation = {
@@ -1485,7 +1486,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options = {
             field: {
-              type: new (DataTypes as any).JSONB()
+              type: new DataTypes.JSONB()
             }
           };
           const expectation = {
@@ -1505,7 +1506,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options =  {
             field: {
-              type: new (DataTypes as any).JSONB()
+              type: new DataTypes.JSONB()
             }
           };
           const expectation =  {
@@ -1525,7 +1526,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
                 metaData: {
                   field: 'meta_data',
                   fieldName: 'metaData',
-                  type: new (DataTypes as any).JSONB()
+                  type: new DataTypes.JSONB()
                 }
               }
             }
@@ -1551,7 +1552,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
           };
           const options  = {
             field: {
-              type: new (DataTypes as any).JSONB()
+              type: new DataTypes.JSONB()
             }
           };
           const expectation   = {
@@ -1675,8 +1676,8 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
     }
 
     describe('fn', () => {
-      it('{name: this.sequelize.fn(\'LOWER\', \'DERP\')}', function() {
-        expectsql(queryGenerator.whereQuery({name: this.sequelize.fn('LOWER', 'DERP')}), {
+      it('{name: current.fn(\'LOWER\', \'DERP\')}', function() {
+        expectsql(queryGenerator.whereQuery({name: current.fn('LOWER', 'DERP')}), {
           default: "WHERE [name] = LOWER('DERP')",
           oracle: "WHERE name = LOWER('DERP')",
           mssql: "WHERE [name] = LOWER(N'DERP')"
@@ -1687,7 +1688,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
 
   describe('getWhereConditions', () => {
     it('lower(name) is null', () => {
-      const User = current.define('user', {});
+      const User = current.define<ItestInstance, ItestAttribute>('user', {});
       const value  =  current.where(current.fn('lower', current.col('name')));
       const expectation   = {
         default: 'lower([name]) IS NULL',

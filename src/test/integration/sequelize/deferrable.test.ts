@@ -5,8 +5,10 @@ import * as _ from 'lodash';
 import {Sequelize} from '../../../index';
 import DataTypes from '../../../lib/data-types';
 import config from '../../config/config';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
+const current = Support.sequelize;
 
 if (Support.sequelize.dialect.supports.deferrableConstraints) {
   describe(Support.getTestDialectTeaser('Sequelize'), () => {
@@ -19,11 +21,11 @@ if (Support.sequelize.dialect.supports.deferrableConstraints) {
           const transactionOptions = _.assign({}, { deferrable: new Sequelize.Deferrable.SetDeferred() }, options);
           const userTableName      = 'users_' + config.rand();
 
-          const User = this.sequelize.define(
+          const User = current.define<ItestInstance, ItestAttribute>(
             'User', { name: new DataTypes.STRING() }, { tableName: userTableName }
           );
 
-          const Task = this.sequelize.define(
+          const Task = current.define<ItestInstance, ItestAttribute>(
             'Task', {
               title: new DataTypes.STRING(),
               user_id: {
@@ -43,13 +45,13 @@ if (Support.sequelize.dialect.supports.deferrableConstraints) {
           return User.sync({ force: true }).bind(this).then(() => {
             return Task.sync({ force: true });
           }).then(function() {
-            return this.sequelize.transaction(transactionOptions, t => {
+            return current.transaction(transactionOptions, t => {
               return Task
                 .create({ title: 'a task', user_id: -1 }, { transaction: t })
                 .then(task => {
                   return [task, User.create({}, { transaction: t })];
                 })
-                .spread((task, user) => {
+                .spread((task : ItestInstance, user : ItestInstance) => {
                   task.user_id = user.id;
                   return task.save({ transaction: t });
                 });

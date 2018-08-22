@@ -2,15 +2,17 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('DAO'), () => {
   describe('Values', () => {
     describe('set', () => {
       it('doesn\'t overwrite generated primary keys', function() {
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           name: {type: new DataTypes.STRING()}
         });
 
@@ -27,7 +29,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       });
 
       it('doesn\'t overwrite defined primary keys', function() {
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           identifier: {type: new DataTypes.STRING(), primaryKey: true}
         });
 
@@ -39,7 +41,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       });
 
       it('doesn\'t set timestamps', function() {
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           identifier: {type: new DataTypes.STRING(), primaryKey: true}
         });
 
@@ -57,7 +59,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       });
 
       it('doesn\'t set underscored timestamps', function() {
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           identifier: {type: new DataTypes.STRING(), primaryKey: true}
         }, {
           underscored: true
@@ -77,7 +79,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       });
 
       it('doesn\'t set value if not a dynamic setter or a model attribute', function() {
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           name: {type: new DataTypes.STRING()},
           email_hidden: {type: new DataTypes.STRING()}
         }, {
@@ -105,8 +107,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       });
 
       it('allows use of sequelize.fn and sequelize.col in date and bool fields', function() {
-        const self = this;
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           d: new DataTypes.DATE(),
           b: new DataTypes.BOOLEAN(),
           always_false: {
@@ -119,20 +120,20 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
           return User.create({}).then(user => {
             // Create the user first to set the proper default values. PG does not support column references in insert,
             // so we must create a record with the right value for always_false, then reference it in an update
-            let now = dialect === 'sqlite' ? self.sequelize.fn('', self.sequelize.fn('datetime', 'now')) : self.sequelize.fn('NOW');
+            let now = dialect === 'sqlite' ? current.fn('', current.fn('datetime', 'now')) : current.fn('NOW');
             if (dialect === 'mssql') {
-              now = self.sequelize.fn('', self.sequelize.fn('getdate'));
+              now = current.fn('', current.fn('getdate'));
             }
             if (dialect === 'oracle') {
-              now = self.sequelize.fn('', self.sequelize.literal('CURRENT_DATE'));
+              now = current.fn('', current.literal('CURRENT_DATE'));
             }
             user.set({
               d: now,
-              b: self.sequelize.col('always_false')
+              b: current.col('always_false')
             });
 
-            expect(user.get('d')).to.be.instanceof(self.sequelize.AllUtils.Fn);
-            expect(user.get('b')).to.be.instanceof(self.sequelize.AllUtils.Col);
+            expect(user.get('d')).to.be.instanceof(current.AllUtils.Fn);
+            expect(user.get('b')).to.be.instanceof(current.AllUtils.Col);
 
             return user.save().then(() => {
               return user.reload().then(() => {
@@ -146,13 +147,13 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
 
       describe('includes', () => {
         it('should support basic includes', function() {
-          const Product = this.sequelize.define('product', {
+          const Product = current.define<ItestInstance, ItestAttribute>('product', {
             title: new DataTypes.STRING()
           });
-          const Tag = this.sequelize.define('tag', {
+          const Tag = current.define<ItestInstance, ItestAttribute>('tag', {
             name: new DataTypes.STRING()
           });
-          const User = this.sequelize.define('user', {
+          const User = current.define<ItestInstance, ItestAttribute>('user', {
             first_name: new DataTypes.STRING(),
             last_name: new DataTypes.STRING()
           });
@@ -183,19 +184,19 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
 
           expect(product.tags).to.be.ok;
           expect(product.tags.length).to.equal(2);
-          expect(product.tags[0]).to.be.instanceof(Tag);
+          expect(product.tags[0].model).to.equal(Tag);
           expect(product.user).to.be.ok;
-          expect(product.user).to.be.instanceof(User);
+          expect(product.user.model).to.equal(User);
         });
 
         it('should support basic includes (with raw: true)', function() {
-          const Product = this.sequelize.define('Product', {
+          const Product = current.define<ItestInstance, ItestAttribute>('Product', {
             title: new DataTypes.STRING()
           });
-          const Tag = this.sequelize.define('tag', {
+          const Tag = current.define<ItestInstance, ItestAttribute>('tag', {
             name: new DataTypes.STRING()
           });
-          const User = this.sequelize.define('user', {
+          const User = current.define<ItestInstance, ItestAttribute>('user', {
             first_name: new DataTypes.STRING(),
             last_name: new DataTypes.STRING()
           });
@@ -226,16 +227,16 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
 
           expect(product.tags).to.be.ok;
           expect(product.tags.length).to.equal(2);
-          expect(product.tags[0]).to.be.instanceof(Tag);
+          expect(product.tags[0].model).to.equal(Tag);
           expect(product.user).to.be.ok;
-          expect(product.user).to.be.instanceof(User);
+          expect(product.user.model).to.equal(User);
         });
       });
     });
 
     describe('get', () => {
       it('should use custom attribute getters in get(key)', function() {
-        const Product = this.sequelize.define('Product', {
+        const Product = current.define<ItestInstance, ItestAttribute>('Product', {
           price: {
             type: new DataTypes.FLOAT(),
             get() {
@@ -251,7 +252,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       });
 
       it('should custom virtual getters in get(key)', function() {
-        const Product = this.sequelize.define('Product', {
+        const Product = current.define<ItestInstance, ItestAttribute>('Product', {
           priceInCents: {
             type: new DataTypes.FLOAT()
           }
@@ -270,7 +271,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       });
 
       it('should use custom getters in toJSON', function() {
-        const Product = this.sequelize.define('Product', {
+        const Product = current.define<ItestInstance, ItestAttribute>('Product', {
           price: {
             type: new DataTypes.STRING(),
             get() {
@@ -292,7 +293,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       });
 
       it('should work with save', function() {
-        const Contact = this.sequelize.define('Contact', {
+        const Contact = current.define<ItestInstance, ItestAttribute>('Contact', {
           first: { type: new DataTypes.STRING() },
           last: { type: new DataTypes.STRING() },
           tags: {
@@ -307,7 +308,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
           }
         });
 
-        return this.sequelize.sync().then(() => {
+        return current.sync().then(() => {
           const contact = Contact.build({
             first: 'My',
             last: 'Name',
@@ -323,10 +324,10 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
 
       describe('plain', () => {
         it('should return plain values when true', function() {
-          const Product = this.sequelize.define('product', {
+          const Product = current.define<ItestInstance, ItestAttribute>('product', {
             title: new DataTypes.STRING()
           });
-          const User = this.sequelize.define('user', {
+          const User = current.define<ItestInstance, ItestAttribute>('user', {
             first_name: new DataTypes.STRING(),
             last_name: new DataTypes.STRING()
           });
@@ -349,14 +350,14 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
             }
           }, {raw: true});
 
-          expect(product.get('user', {plain: true})).not.to.be.instanceof(User);
-          expect(product.get({plain: true}).user).not.to.be.instanceof(User);
+          expect(product.get('user', {plain: true}).model).not.to.equal(User);
+          expect(product.get({plain: true}).user.model).not.to.equal(User);
         });
       });
 
       describe('clone', () => {
         it('should copy the values', function() {
-          const Product = this.sequelize.define('product', {
+          const Product = current.define<ItestInstance, ItestAttribute>('product', {
             title: new DataTypes.STRING()
           });
 
@@ -373,7 +374,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       });
 
       it('can pass parameters to getters', function() {
-        const Product = this.sequelize.define('product', {
+        const Product = current.define<ItestInstance, ItestAttribute>('product', {
           title: new DataTypes.STRING()
         }, {
           getterMethods: {
@@ -387,7 +388,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
           }
         });
 
-        const User = this.sequelize.define('user', {
+        const User = current.define<ItestInstance, ItestAttribute>('user', {
           first_name: new DataTypes.STRING(),
           last_name: new DataTypes.STRING()
         }, {
@@ -436,7 +437,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
 
     describe('changed', () => {
       it('should return false if object was built from database', function() {
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           name: {type: new DataTypes.STRING()}
         });
 
@@ -454,7 +455,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       });
 
       it('should return true if previous value is different', function() {
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           name: {type: new DataTypes.STRING()}
         });
 
@@ -467,7 +468,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       });
 
       it('should return false immediately after saving', function() {
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           name: {type: new DataTypes.STRING()}
         });
 
@@ -487,7 +488,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       });
 
       it('should be available to a afterUpdate hook', function() {
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           name: {type: new DataTypes.STRING()}
         });
         let changed;
@@ -516,7 +517,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
 
     describe('previous', () => {
       it('should return an object with the previous values', function() {
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           name: { type: new DataTypes.STRING() },
           title: { type: new DataTypes.STRING() }
         });
@@ -533,7 +534,7 @@ describe(Support.getTestDialectTeaser('DAO'), () => {
       });
 
       it('should return the previous value', function() {
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           name: {type: new DataTypes.STRING()}
         });
 

@@ -2,6 +2,7 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
@@ -9,7 +10,7 @@ const current = Support.sequelize;
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('define', () => {
     it('should allow custom timestamps with underscored: true', () => {
-      const Model = current.define('User', {}, {
+      const Model = current.define<ItestInstance, ItestAttribute>('User', {}, {
         createdAt: 'createdAt',
         updatedAt: 'updatedAt',
         timestamps: true,
@@ -28,13 +29,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     it('should throw when id is added but not marked as PK', () => {
       expect(() => {
-        current.define('foo', {
+        current.define<ItestInstance, ItestAttribute>('foo', {
           id: new DataTypes.INTEGER()
         });
       }).to.throw("A column called 'id' was added to the attributes of 'foos' but not marked with 'primaryKey: true'");
 
       expect(() => {
-        current.define('bar', {
+        current.define<ItestInstance, ItestAttribute>('bar', {
           id: {
             type: new DataTypes.INTEGER()
           }
@@ -43,7 +44,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
     it('should defend against null or undefined "unique" attributes', () => {
       expect(() => {
-        current.define('baz', {
+        current.define<ItestInstance, ItestAttribute>('baz', {
           foo: {
             type: new DataTypes.STRING(),
             unique: null

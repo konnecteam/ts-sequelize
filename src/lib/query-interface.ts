@@ -1,16 +1,17 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import { Sequelize } from '..';
+import { DataSet } from './data-set';
 import DataTypes from './data-types';
 import { AbstractQueryGenerator } from './dialects/abstract/abstract-query-generator';
 import { OracleQuery } from './dialects/oracle/oracle-query';
 import { PostgresConnectionManager } from './dialects/postgres/postgres-connection-manager';
 import { PostgresQueryGenerator } from './dialects/postgres/postgres-query-generator';
+import { IInclude } from './interfaces/iinclude';
 import { Model } from './model';
-import { IInclude } from './model/iinclude';
 import Op from './operators';
-import Promise from './promise';
 import { QueryTypes } from './query-types';
 import { Transaction } from './transaction';
 import { Utils } from './utils';
@@ -35,7 +36,7 @@ export abstract class AbstractQueryInterface {
    * @param schema Schema name to create
    * @param options Query options
    */
-  public createSchema(schema : string, options : {}) : Promise<any> {
+  public createSchema(schema : string, options? : {}) : Promise<any> {
     options = options || {};
     const sql = this.QueryGenerator.createSchema(schema);
     return this.sequelize.query(sql, options);
@@ -58,7 +59,7 @@ export abstract class AbstractQueryInterface {
    *
    * @param options Query options
    */
-  public dropAllSchemas(options : {}) : Promise<any> {
+  public dropAllSchemas(options? : {}) : Promise<any> {
     options = options || {};
 
     if (!this.QueryGenerator._dialect.supports.schemas) {
@@ -93,7 +94,7 @@ export abstract class AbstractQueryInterface {
    *
    * @param options Query options
    */
-  public databaseVersion(options : {
+  public databaseVersion(options? : {
     /** Query type */
     type? : any }) : Promise<any> {
     return this.sequelize.query(
@@ -149,7 +150,7 @@ export abstract class AbstractQueryInterface {
    * @param tableName  Name of table to create
    * @param attributes List of table attributes to create
    */
-  public createTable(tableName : string, attributes : any, options : {
+  public createTable(tableName : string | { schema? : string, tableName? : string }, attributes : any, options? : {
     after? : string,
     before? : string,
     benchmark? : boolean,
@@ -230,7 +231,7 @@ export abstract class AbstractQueryInterface {
     uniqueKeys? : {},
     validate? : {},
     whereCollection? : {}
-  }, model : typeof Model) : Promise<any> {
+  }, model? : Model<any, any>) : Promise<any> {
     const keys = Object.keys(attributes);
     const keyLen = keys.length;
     let sql = '';
@@ -361,7 +362,7 @@ export abstract class AbstractQueryInterface {
    * @param tableName Table name to drop
    * @param options   Query options
    */
-  public dropTable(tableName : string, options : {
+  public dropTable(tableName : any, options? : {
     benchmarmark? : boolean,
     /** = false, Also drop all objects depending on this table, such as views. Only works in postgres */
     cascade? : boolean,
@@ -473,14 +474,14 @@ export abstract class AbstractQueryInterface {
         }
       }
 
-      return Promise.all(promises).get(0);
+      return Promise.all(promises).get(0 as any);
     });
   }
 
   /**
    * Drop all tables from database
    */
-  public dropAllTables(options : {
+  public dropAllTables(options? : {
     /** Return raw result. */
     raw? : boolean,
     /** List of table to skip */
@@ -491,7 +492,7 @@ export abstract class AbstractQueryInterface {
 
     const dropAllTables = tableNames => Promise.each(tableNames, tableName => {
       // if tableName is not in the Array of tables names then dont drop it
-      if (skip.indexOf(tableName.tableName || tableName) === -1) {
+      if (skip.indexOf((tableName as any).tableName || tableName) === -1) {
         return this.dropTable(tableName, _.assign({}, options, { cascade: true }) );
       }
     });
@@ -543,7 +544,7 @@ export abstract class AbstractQueryInterface {
     options = options || {};
 
     return this.pgListEnums(null, options).map(result => this.sequelize.query(
-      (this.QueryGenerator as PostgresQueryGenerator).pgEnumDrop(null, null, (this.QueryGenerator as PostgresQueryGenerator).pgEscapeAndQuote(result.enum_name)),
+      (this.QueryGenerator as PostgresQueryGenerator).pgEnumDrop(null, null, (this.QueryGenerator as PostgresQueryGenerator).pgEscapeAndQuote((result as any).enum_name)),
       _.assign({}, options, { raw: true })
     ));
   }
@@ -557,7 +558,7 @@ export abstract class AbstractQueryInterface {
    *
    * @returns Promise,
    */
-  public pgListEnums(tableName : string, options : {}) {
+  public pgListEnums(tableName : string, options? : {}) : Promise<any> {
     options = options || {};
     const sql = (this.QueryGenerator as PostgresQueryGenerator).pgListEnums(tableName);
     return this.sequelize.query(sql, _.assign({}, options, { plain: false, raw: true, type: QueryTypes.SELECT }));
@@ -571,7 +572,7 @@ export abstract class AbstractQueryInterface {
    * @param after New name from table
    * @param options Query options
    */
-  public renameTable(before : string, after : string, options : {}) : Promise<any> {
+  public renameTable(before : string, after : string, options? : {}) : Promise<any> {
     options = options || {};
     const sql = this.QueryGenerator.renameTableQuery(before, after);
     return this.sequelize.query(sql, options);
@@ -583,12 +584,12 @@ export abstract class AbstractQueryInterface {
    * @param options Query options
    * @returns Promise<Array>,
    */
-  public showAllTables(options : {
+  public showAllTables(options? : {
     /** = true, Run query in raw mode */
     raw? : boolean,
     /** = QueryType.SHOWTABLE :QueryType */
     type? : string
-  }) {
+  }) : Promise<any> {
     options = _.assign({}, options, {
       raw: true,
       type: QueryTypes.SHOWTABLES
@@ -619,7 +620,7 @@ export abstract class AbstractQueryInterface {
    * ```
    * @param options Query options
    */
-  public describeTable(tableName : any, options? : string | { schema? : string, schemaDelimiter? : string}) : Promise<any> {
+  public describeTable(tableName : any, options? : string | { logging? : any, schema? : string, schemaDelimiter? : string }) : Promise<any> {
     let schema = null;
     let schemaDelimiter = null;
 
@@ -670,7 +671,7 @@ export abstract class AbstractQueryInterface {
    * @param attribute Attribute definition
    * @param options Query options
    */
-  public addColumn(table : string, key : string, attribute : {}, options? : {}) : Promise<any> {
+  public addColumn(table : string | { schema? : string, tableName? : string }, key : string, attribute : {}, options? : {}) : Promise<any> {
     if (!table || !key || !attribute) {
       throw new Error('addColumn takes atleast 3 arguments (table, attribute name, attribute definition)');
     }
@@ -687,7 +688,7 @@ export abstract class AbstractQueryInterface {
    * @param attributeName Columns name to remove
    * @param options Query options
    */
-  public removeColumn(tableName : string, attributeName : string, options : {}) : Promise<any> {
+  public removeColumn(tableName : string | { schema? : string, tableName? : string }, attributeName : string, options? : {}) : Promise<any> {
     options = options || {};
     return this.sequelize.query(this.QueryGenerator.removeColumnQuery(tableName, attributeName), options);
   }
@@ -700,7 +701,7 @@ export abstract class AbstractQueryInterface {
    * @param dataTypeOrOptions Attribute definition for new column
    * @param options Query options
    */
-  public changeColumn(tableName : string, attributeName : string, dataTypeOrOptions : any, options? : {}) : Promise<any> {
+  public changeColumn(tableName : string | { schema? : string, tableName? : string }, attributeName : string, dataTypeOrOptions : any, options? : {}) : Promise<any> {
     const attributes = {};
     options = options || {};
 
@@ -726,7 +727,7 @@ export abstract class AbstractQueryInterface {
    * @param attrNameAfter New column name
    * @param options Query option
    */
-  public renameColumn(tableName : string, attrNameBefore : string, attrNameAfter : string, options : {}) : Promise<any> {
+  public renameColumn(tableName : string | { schema? : string, tableName? : string }, attrNameBefore : string, attrNameAfter : string, options? : {}) : Promise<any> {
     options = options || {};
     return this.describeTable(tableName, options).then(data => {
       if (!data[attrNameBefore]) {
@@ -762,7 +763,7 @@ export abstract class AbstractQueryInterface {
    *
    * @param tableName Table name to add index on
    */
-  public addIndex(tableName : string, attributes : any, options : {
+  public addIndex(tableName : string | { schema? : string, tableName? : string }, attributes : any, options? : {
     /** List of attributes to add index on */
     fields? : string[],
     /** Name of the index. Default is <table>_<attr1>_<attr2> */
@@ -802,7 +803,7 @@ export abstract class AbstractQueryInterface {
    *
    * @returns Promise<Array>,
    */
-  public showIndex(tableName : string, options : {}) {
+  public showIndex(tableName : string | { schema? : string, tableName? : string }, options? : {}) {
     const sql = this.QueryGenerator.showIndexesQuery(tableName, options);
     return this.sequelize.query(sql, _.assign({}, options, { type: QueryTypes.SHOWINDEXES }));
   }
@@ -887,7 +888,7 @@ export abstract class AbstractQueryInterface {
    *
    * @returns Promise,
    */
-  public removeIndex(tableName : string, indexNameOrAttributes : string, options : {}) {
+  public removeIndex(tableName : string, indexNameOrAttributes : string | string[], options? : {}) {
     options = options || {};
     const sql = this.QueryGenerator.removeIndexQuery(tableName, indexNameOrAttributes);
     return this.sequelize.query(sql, options);
@@ -954,12 +955,14 @@ export abstract class AbstractQueryInterface {
    * @param attributes Array of column names to apply the constraint over
    * @param options An object to define the constraint name, type etc
    */
-  public addConstraint(tableName : string, attributes : any[], options : {
+  public addConstraint(tableName : string, attributes : any[] | {}, options? : {
     /** The value for the default constraint */
     defaultValue? : string,
     fields? : string[],
     /** Name of the constraint. If not specified, sequelize automatically creates a named constraint based on constraint type, table & column names */
     name? : string,
+    onDelete? : string,
+    onUpdate? : string,
     /** Object specifying target table, column name to create foreign key constraint */
     references? : {
       /** Target table name */
@@ -971,7 +974,7 @@ export abstract class AbstractQueryInterface {
     type? : string,
     /** Where clause/expression for the CHECK constraint */
     where? : {}
-  }, rawTablename) : Promise<any> {
+  }, rawTablename?) : Promise<any> {
     if (!Array.isArray(attributes)) {
       rawTablename = options;
       options = attributes;
@@ -988,7 +991,7 @@ export abstract class AbstractQueryInterface {
     }
 
     options = Utils.cloneDeep(options);
-    options.fields = attributes;
+    options.fields = attributes as any[];
 
     const sql = this.QueryGenerator.addConstraintQuery(tableName, options, rawTablename);
     return this.sequelize.query(sql, options);
@@ -997,7 +1000,7 @@ export abstract class AbstractQueryInterface {
   /**
    * show a constraint
    */
-  public showConstraint(tableName : string, constraintName : string, options? : {}) {
+  public showConstraint(tableName : string, constraintName? : string, options? : {}) {
     const sql = this.QueryGenerator.showConstraintsQuery(tableName, constraintName);
     return this.sequelize.query(sql, Object.assign({}, options, { type: QueryTypes.SHOWCONSTRAINTS }));
   }
@@ -1019,19 +1022,21 @@ export abstract class AbstractQueryInterface {
   /**
    * insert
    */
-  public insert(instance : Model, tableName : string, values : any, options : {
+  public insert(instance : DataSet<any>, tableName : string, values : any, options : {
     fields? : string[],
     hasTrigger? : boolean,
     /** An object of hook function that are called before and after certain lifecycle events */
     hooks? : boolean,
-    instance? : Model,
+    instance? : DataSet<any>,
+    plain? : boolean,
+    raw? : boolean,
     returning? : boolean,
     type? : string,
     validate? : boolean
   }) {
     options = Utils.cloneDeep(options);
-    options.hasTrigger = instance && instance.constructor.options.hasTrigger;
-    const sql = this.QueryGenerator.insertQuery(tableName, values, instance && instance.constructor.rawAttributes, options);
+    options.hasTrigger = instance && instance.model.options.hasTrigger;
+    const sql = this.QueryGenerator.insertQuery(tableName, values, instance && instance.model.rawAttributes, options);
 
     options.type = QueryTypes.INSERT;
     options.instance = instance;
@@ -1047,7 +1052,7 @@ export abstract class AbstractQueryInterface {
   /**
    * upsert
    */
-  public upsert(tableName : string, insertValues : any, updateValues : any, where : {}, model : typeof Model, options : {
+  public upsert(tableName : string, insertValues : any, updateValues : any, where : {}, model : Model<any, any>, options : {
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
     benchmark? : boolean,
     fields? : any[],
@@ -1055,7 +1060,7 @@ export abstract class AbstractQueryInterface {
     hooks? : boolean,
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** Return raw result. */
     raw? : boolean,
     /** = DEFAULT An optional parameter to specify the schema search_path (Postgres only) */
@@ -1164,7 +1169,7 @@ export abstract class AbstractQueryInterface {
     individualHooks? : boolean,
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     returning? : boolean,
     /** = DEFAULT An optional parameter to specify the schema search_path (Postgres only) */
     searchPath? : string,
@@ -1172,7 +1177,7 @@ export abstract class AbstractQueryInterface {
     /** Transaction to run query under */
     transaction? : Transaction,
     type? : string,
-    updateOnDuplicate? : any[],
+    updateOnDuplicate? : any[] | boolean,
     validate? : boolean
   }, attributes : any) {
     options = _.clone(options) || {};
@@ -1186,14 +1191,14 @@ export abstract class AbstractQueryInterface {
   /**
    * update
    */
-  public update(instance : Model, tableName : string, values : any, identifier : {}, options : {
+  public update(instance : DataSet<any>, tableName : string, values : any, identifier : {}, options? : {
     allwNull? : string[],
     association? : boolean,
     fields? : string[],
     hasTrigger? : boolean,
     /** An object of hook function that are called before and after certain lifecycle events */
     hooks? : boolean,
-    instance? : Model,
+    instance? : DataSet<any>,
     returning? : boolean,
     type? : string,
     validate? : boolean
@@ -1201,7 +1206,7 @@ export abstract class AbstractQueryInterface {
     options = _.clone(options || {});
     options.hasTrigger = !!(instance && instance._modelOptions && instance._modelOptions.hasTrigger);
 
-    const sql = this.QueryGenerator.updateQuery(tableName, values, identifier, options, instance.constructor.rawAttributes);
+    const sql = this.QueryGenerator.updateQuery(tableName, values, identifier, options, instance.model.rawAttributes);
 
     options.type = QueryTypes.UPDATE;
 
@@ -1219,7 +1224,7 @@ export abstract class AbstractQueryInterface {
     /** An object of hook function that are called before and after certain lifecycle events */
     hooks? : boolean,
     individualHooks? : boolean,
-    model? : typeof Model,
+    model? : Model<any, any>,
     returning? : boolean,
     sideEffects? : boolean,
     skip? : string[],
@@ -1244,38 +1249,38 @@ export abstract class AbstractQueryInterface {
   /**
    * delete
    */
-  public delete(instance : Model, tableName : string, identifier : {}, options : {
+  public delete(instance : DataSet<any>, tableName : string, identifier : {}, options : {
     force? : boolean,
     /** An object of hook function that are called before and after certain lifecycle events */
     hooks? : boolean,
-    instance? : Model,
+    instance? : DataSet<any>,
     /** The maximum count you want to get. */
     limit? : number,
     type? : string
   }) {
     const cascades = [];
-    const sql = this.QueryGenerator.deleteQuery(tableName, identifier, {}, instance.constructor);
+    const sql = this.QueryGenerator.deleteQuery(tableName, identifier, {}, instance.model);
 
     options = _.clone(options) || {};
 
     // Check for a restrict field
-    if (!!instance.constructor && !!instance.constructor.associations) {
-      const keys = Object.keys(instance.constructor.associations);
+    if (!!instance.model && !!instance.model.associations) {
+      const keys = Object.keys(instance.model.associations);
       const length = keys.length;
       let association;
 
       for (let i = 0; i < length; i++) {
-        association = instance.constructor.associations[keys[i]];
+        association = instance.model.associations[keys[i]];
         if (association.options && association.options.onDelete &&
           association.options.onDelete.toLowerCase() === 'cascade' &&
           association.options.useHooks === true) {
-          cascades.push(association.accessors.get);
+          cascades.push(association);
         }
       }
     }
 
     return Promise.each(cascades, cascade => {
-      return instance[cascade](options).then(instances => {
+      return (instance.getLinkedData(cascade, options) as any).then(instances => {
         // Check for hasOne relationship with non-existing associate ("has zero")
         if (!instances) {
           return Promise.resolve();
@@ -1285,7 +1290,7 @@ export abstract class AbstractQueryInterface {
           instances = [instances];
         }
 
-        return Promise.each(instances, cascadeInstance => cascadeInstance.destroy(options));
+        return Promise.each((instances as Array<DataSet<any>>), cascadeInstance => cascadeInstance.destroy(options));
       });
     }).then(() => {
       options.instance = instance;
@@ -1319,7 +1324,7 @@ export abstract class AbstractQueryInterface {
     includeMap? : {},
     /** Internal array of attributes - auto-completed */
     includeNames? : string[],
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** Specify if we want only one row without using an array */
     plain? : boolean,
     /** Error if no result found */
@@ -1328,11 +1333,11 @@ export abstract class AbstractQueryInterface {
     subQuery? : boolean,
     tableNames? : string[],
     topLimit? : any,
-    topModel? : typeof Model,
+    topModel? : Model<any, any>,
     truncate? : boolean,
     /** A hash of search attributes. */
     where? : {}
-  }, model : typeof Model) {
+  }, model : Model<any, any>) {
     options = Utils.cloneDeep(options);
     options = _.defaults(options, { limit: null });
 
@@ -1356,7 +1361,7 @@ export abstract class AbstractQueryInterface {
   /**
    * select query
    */
-  public select(model : typeof Model, tableName : string, options : {
+  public select(model : Model<any, any>, tableName : string, options : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any,
     hasDuplicating? : boolean,
@@ -1374,7 +1379,7 @@ export abstract class AbstractQueryInterface {
     includeMap? : {},
     /** Internal array of attributes - auto-completed */
     includeNames? : string[],
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** Specify if we want only one row without using an array */
     plain? : boolean,
     rawQuery? : any,
@@ -1384,7 +1389,7 @@ export abstract class AbstractQueryInterface {
     subQuery? : boolean,
     tableNames? : string[],
     topLimit? : any,
-    topModel? : typeof Model,
+    topModel? : Model<any, any>,
     type? : string,
     /** A hash of search attributes. */
     where? : {}
@@ -1411,13 +1416,13 @@ export abstract class AbstractQueryInterface {
     }
   }
 
-  public increment(model : typeof Model, tableName : string, values : any, identifier : {}, options : {
+  public increment(model : Model<any, any>, tableName : string, values : any, identifier : {}, options : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any,
     by? : number,
     increment? : boolean,
-    instance? : Model,
-    model? : typeof Model,
+    instance? : DataSet<any>,
+    model? : Model<any, any>,
     returning? : boolean,
     /** Transaction to run query under */
     transaction? : Transaction,
@@ -1435,13 +1440,13 @@ export abstract class AbstractQueryInterface {
     return this.sequelize.query(sql, options);
   }
 
-  public decrement(model : typeof Model, tableName : string, values : any, identifier : {}, options : {
+  public decrement(model : Model<any, any>, tableName : string, values : any, identifier : {}, options : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any,
     by? : number,
     increment? : boolean,
-    instance? : Model,
-    model? : typeof Model,
+    instance? : DataSet<any>,
+    model? : Model<any, any>,
     returning? : boolean,
     /** Transaction to run query under */
     transaction? : Transaction,
@@ -1485,7 +1490,7 @@ export abstract class AbstractQueryInterface {
     keyEscaped? : boolean,
     /** The maximum count you want to get. */
     limit? : number,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** An offset value to start from. Only useable with limit! */
     offset? : number,
     /** OrderBy clause */
@@ -1499,9 +1504,9 @@ export abstract class AbstractQueryInterface {
     /** Passes by sub-query ? */
     subQuery? : boolean,
     topLimit? : any,
-    topModel? : typeof Model,
+    topModel? : Model<any, any>,
     type? : string
-  }, attributeSelector : string, model : typeof Model) {
+  }, attributeSelector : string, model : Model<any, any>) : Promise<any> {
     if (options.schema) {
       tableName = this.QueryGenerator.addSchema({
         tableName,
@@ -1618,7 +1623,7 @@ export abstract class AbstractQueryInterface {
    *
    * @returns Promise,
    */
-  public createFunction(functionName : string, params : any[], returnType : string, language : string, body : string, optionsArray : any[], options : {}) {
+  public createFunction(functionName : string, params : any[], returnType : string, language : string, body : string, optionsArray? : any[] | {}, options? : {}) {
     const sql = (this.QueryGenerator as any).createFunction(functionName, params, returnType, language, body, optionsArray);
     options = options || {};
 
@@ -1647,7 +1652,7 @@ export abstract class AbstractQueryInterface {
    *
    * @returns Promise,
    */
-  public dropFunction(functionName : string, params : any[], options : {}) {
+  public dropFunction(functionName? : string, params? : any[], options? : {}) {
     const sql = (this.QueryGenerator as any).dropFunction(functionName, params);
     options = options || {};
 
@@ -1673,7 +1678,7 @@ export abstract class AbstractQueryInterface {
    * ```
    * @returns Promise,
    */
-  public renameFunction(oldFunctionName : string, params : any[], newFunctionName : string, options : {}) {
+  public renameFunction(oldFunctionName : string, params : any[], newFunctionName : string, options? : {}) {
     const sql = (this.QueryGenerator as any).renameFunction(oldFunctionName, params, newFunctionName);
     options = options || {};
 

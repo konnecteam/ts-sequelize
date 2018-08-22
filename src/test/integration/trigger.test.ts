@@ -2,6 +2,7 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
 const current = Support.sequelize;
@@ -23,7 +24,7 @@ if (current.dialect.supports.tmpTableTrigger) {
                             'end\n';
 
       beforeEach(function() {
-        User = this.sequelize.define('user', {
+        User = current.define<ItestInstance, ItestAttribute>('user', {
           username: {
             type: new DataTypes.STRING(),
             field: 'user_name'
@@ -33,7 +34,7 @@ if (current.dialect.supports.tmpTableTrigger) {
         });
 
         return User.sync({force: true}).bind(this).then(function() {
-          return this.sequelize.query(triggerQuery, {type: this.sequelize.QueryTypes.RAW});
+          return current.query(triggerQuery, {type: current.QueryTypes.RAW});
         });
       });
 

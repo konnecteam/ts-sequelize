@@ -1,39 +1,42 @@
 'use strict';
 
 import * as chai from 'chai';
+import { ItestAttribute, ItestInstance } from '../../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
 const Sequelize = Support.Sequelize;
+const DataTypes = Sequelize.DataTypes;
 const Op = Sequelize.Op;
+const current = Support.sequelize;
 
 if (dialect.match(/^mssql/)) {
   describe('[MSSQL Specific] Regressions', () => {
     it('does not duplicate columns in ORDER BY statement, #9008', function() {
-      const LoginLog = this.sequelize.define('LoginLog', {
+      const LoginLog = current.define<ItestInstance, ItestAttribute>('LoginLog', {
         ID: {
           field: 'id',
-          type: new Sequelize.INTEGER(),
+          type: new DataTypes.INTEGER(),
           primaryKey: true,
           autoIncrement: true
         },
         UserID: {
           field: 'userid',
-          type: new Sequelize.UUID(),
+          type: new DataTypes.UUID(),
           allowNull: false
         }
       });
 
-      const User = this.sequelize.define('User', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {
         UserID: {
           field: 'userid',
-          type: new Sequelize.UUID(),
-          defaultValue: new Sequelize.UUIDV4(),
+          type: new DataTypes.UUID(),
+          defaultValue: new DataTypes.UUIDV4(),
           primaryKey: true
         },
         UserName: {
           field: 'username',
-          type: new Sequelize.STRING(50),
+          type: new DataTypes.STRING(50),
           allowNull: false
         }
       });
@@ -45,7 +48,7 @@ if (dialect.match(/^mssql/)) {
         foreignKey: 'UserID'
       });
 
-      return this.sequelize.sync({ force: true })
+      return current.sync({ force: true })
         .then(() => User.bulkCreate([
           { UserName: 'Vayom' },
           { UserName: 'Shaktimaan' },
@@ -53,10 +56,10 @@ if (dialect.match(/^mssql/)) {
           { UserName: 'Aryamaan' }], { returning: true }))
         .spread((vyom, shakti, nikita, arya) => {
           return Sequelize.Promise.all([
-            vyom.createLoginLog(),
-            shakti.createLoginLog(),
-            nikita.createLoginLog(),
-            arya.createLoginLog()]);
+            vyom.createLinkedData('LoginLog')  ,
+            shakti.createLinkedData('LoginLog')  ,
+            nikita.createLinkedData('LoginLog')  ,
+            arya.createLinkedData('LoginLog')  ]);
         }).then(() => {
           return LoginLog.findAll({
             include: [

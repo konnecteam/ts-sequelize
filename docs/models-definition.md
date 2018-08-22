@@ -4,14 +4,14 @@ To define mappings between a model and a table, use the `define` method.
 
 ```js
 const Project = sequelize.define('project', {
-  title: new Sequelize.STRING(),
-  description: new Sequelize.TEXT()
+  title: new DataTypes.STRING(),
+  description: new DataTypes.TEXT()
 })
 
 const Task = sequelize.define('task', {
-  title: new Sequelize.STRING(),
-  description: new Sequelize.TEXT(),
-  deadline: new Sequelize.DATE()
+  title: new DataTypes.STRING(),
+  description: new DataTypes.TEXT(),
+  deadline: new DataTypes.DATE()
 })
 ```
 
@@ -20,41 +20,41 @@ You can also set some options on each column:
 ```js
 const Foo = sequelize.define('foo', {
  // instantiating will automatically set the flag to true if not set
- flag: { type: new Sequelize.BOOLEAN(), allowNull: false, defaultValue: true },
+ flag: { type: new DataTypes.BOOLEAN(), allowNull: false, defaultValue: true },
 
  // default values for dates => current time
- myDate: { type: new Sequelize.DATE(), defaultValue: new Sequelize.NOW() },
+ myDate: { type: new DataTypes.DATE(), defaultValue: new DataTypes.NOW() },
 
  // setting allowNull to false will add NOT NULL to the column, which means an error will be
  // thrown from the DB when the query is executed if the column is null. If you want to check that a value
  // is not null before querying the DB, look at the validations section below.
- title: { type: new Sequelize.STRING(), allowNull: false },
+ title: { type: new DataTypes.STRING(), allowNull: false },
 
  // Creating two objects with the same value will throw an error. The unique property can be either a
  // boolean, or a string. If you provide the same string for multiple columns, they will form a
  // composite unique key.
- uniqueOne: { type: new Sequelize.STRING(),  unique: 'compositeIndex' },
- uniqueTwo: { type: new Sequelize.INTEGER(), unique: 'compositeIndex' },
+ uniqueOne: { type: new DataTypes.STRING(),  unique: 'compositeIndex' },
+ uniqueTwo: { type: new DataTypes.INTEGER(), unique: 'compositeIndex' },
 
  // The unique property is simply a shorthand to create a unique constraint.
- someUnique: { type: new Sequelize.STRING(), unique: true },
+ someUnique: { type: new DataTypes.STRING(), unique: true },
 
  // It's exactly the same as creating the index in the model's options.
- { someUnique: { type: new Sequelize.STRING() } },
+ { someUnique: { type: new DataTypes.STRING() } },
  { indexes: [ { unique: true, fields: [ 'someUnique' ] } ] },
 
  // Go on reading for further information about primary keys
- identifier: { type: new Sequelize.STRING(), primaryKey: true },
+ identifier: { type: new DataTypes.STRING(), primaryKey: true },
 
  // autoIncrement can be used to create auto_incrementing integer columns
- incrementMe: { type: new Sequelize.INTEGER(), autoIncrement: true },
+ incrementMe: { type: new DataTypes.INTEGER(), autoIncrement: true },
 
  // You can specify a custom field name via the 'field' attribute:
- fieldWithUnderscores: { type: new Sequelize.STRING(), field: 'field_with_underscores' },
+ fieldWithUnderscores: { type: new DataTypes.STRING(), field: 'field_with_underscores' },
 
  // It is possible to create foreign keys:
  bar_id: {
-   type: new Sequelize.INTEGER(),
+   type: new DataTypes.INTEGER(),
 
    references: {
      // This is a reference to another model
@@ -83,14 +83,14 @@ module.exports = {
   up(queryInterface, Sequelize) {
     return queryInterface.createTable('my-table', {
       id: {
-        type: new Sequelize.INTEGER(),
+        type: new DataTypes.INTEGER(),
         primaryKey: true,
         autoIncrement: true,
       },
 
       // Timestamps
-      createdAt: new Sequelize.DATE(),
-      updatedAt: new Sequelize.DATE(),
+      createdAt: new DataTypes.DATE(),
+      updatedAt: new DataTypes.DATE(),
     })
   },
   down(queryInterface, Sequelize) {
@@ -106,7 +106,10 @@ If you do not want timestamps on your models, only want some timestamps, or you 
 ## Data Types
 
 ```js
-new Sequelize.TYPE()
+// you need to import DataTypes first
+import { DataTypes } from 'ts-sequelize';
+// TYPE need to be replace by a DataTypes
+new DataTypes.TYPE()
 ```
 
 ### STRING / CHAR
@@ -233,7 +236,7 @@ Usage in object notation:
 // for enums:
 sequelize.define('model', {
   states: {
-    type:   new Sequelize.ENUM(),
+    type:   new DataTypes.ENUM(),
     values: ['active', 'pending', 'deleted']
   }
 })
@@ -337,7 +340,7 @@ Getters and Setters can be defined in 2 ways (you can mix and match these 2 appr
 ```js
 const Employee = sequelize.define('employee', {
   name: {
-    type: new Sequelize.STRING(),
+    type: new DataTypes.STRING(),
     allowNull: false,
     get() {
       const title = this.getDataValue('title');
@@ -346,7 +349,7 @@ const Employee = sequelize.define('employee', {
     },
   },
   title: {
-    type: new Sequelize.STRING(),
+    type: new DataTypes.STRING(),
     allowNull: false,
     set(val) {
       this.setDataValue('title', val.toUpperCase());
@@ -372,8 +375,8 @@ Note that the `this.firstname` and `this.lastname` references in the `fullName` 
 
 ```js
 const Foo = sequelize.define('foo', {
-  firstname: new Sequelize.STRING(),
-  lastname: new Sequelize.STRING()
+  firstname: new DataTypes.STRING(),
+  lastname: new DataTypes.STRING()
 }, {
   getterMethods: {
     fullName() {
@@ -425,7 +428,7 @@ The validations are implemented by [validator.js][3].
 ```js
 const ValidateMe = sequelize.define('foo', {
   foo: {
-    type: new Sequelize.STRING(),
+    type: new DataTypes.STRING(),
     validate: {
       is: ["^[a-z]+$",'i'],     // will only allow letters
       is: /^[a-z]+$/i,          // same as the previous example using real RegExp
@@ -514,16 +517,16 @@ An example:
 
 ```js
 const Pub = Sequelize.define('pub', {
-  name: { type: new Sequelize.STRING() },
-  address: { type: new Sequelize.STRING() },
+  name: { type: new DataTypes.STRING() },
+  address: { type: new DataTypes.STRING() },
   latitude: {
-    type: new Sequelize.INTEGER(),
+    type: new DataTypes.INTEGER(),
     allowNull: true,
     defaultValue: null,
     validate: { min: -90, max: 90 }
   },
   longitude: {
-    type: new Sequelize.INTEGER(),
+    type: new DataTypes.INTEGER(),
     allowNull: true,
     defaultValue: null,
     validate: { min: -180, max: 180 }
@@ -734,7 +737,7 @@ sequelize.sync({ force: true, match: /_test$/ });
 Sequelize Models are ES6 classes. You can very easily add custom instance or class level methods.
 
 ```js
-const User = sequelize.define('user', { firstname: new Sequelize.STRING() });
+const User = sequelize.define('user', { firstname: new DataTypes.STRING() });
 
 // Adding a class level method
 User.classLevelMethod = function() {
@@ -750,7 +753,7 @@ User.prototype.instanceLevelMethod = function() {
 Of course you can also access the instance's data and generate virtual getters:
 
 ```js
-const User = sequelize.define('user', { firstname: new Sequelize.STRING(), lastname: new Sequelize.STRING() });
+const User = sequelize.define('user', { firstname: new DataTypes.STRING(), lastname: new DataTypes.STRING() });
 
 User.prototype.getFullname = function() {
   return [this.firstname, this.lastname].join(' ');

@@ -4,6 +4,7 @@ import * as chai from 'chai';
 import * as _ from 'lodash';
 import * as sinon from 'sinon';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
@@ -12,7 +13,7 @@ const Promise = current.Promise;
 describe(Support.getTestDialectTeaser('Model'), () => {
 
   describe('method destroy', () => {
-    const User = current.define('User', {
+    const User = current.define<ItestInstance, ItestAttribute>('User', {
       name: new DataTypes.STRING(),
       secretValue: new DataTypes.INTEGER()
     });

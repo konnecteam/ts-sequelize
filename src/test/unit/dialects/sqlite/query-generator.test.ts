@@ -3,19 +3,22 @@
 import * as chai from 'chai';
 import * as _ from 'lodash';
 import * as moment from 'moment';
+import { Sequelize } from '../../../..';
 import DataTypes from '../../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../../dummy/dummy-data-set';
 import Support from '../../../support';
 const dialect = Support.getTestDialect();
 const expect = chai.expect;
 const QueryGenerator = Support.sequelize.dialect.QueryGenerator;
+const current = Support.sequelize;
 
 if (dialect === 'sqlite') {
   describe('[SQLITE Specific] QueryGenerator', () => {
     beforeEach(function() {
-      this.User = this.sequelize.define('User', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {
         username: new DataTypes.STRING()
       });
-      return this.User.sync({ force: true });
+      return User.sync({ force: true });
     });
 
     const suites = {
@@ -192,12 +195,12 @@ if (dialect === 'sqlite') {
           expectation: 'SELECT * FROM `myTable` ORDER BY `myTable`.`id` DESC;',
           context: QueryGenerator
         }, {
-          arguments: ['myTable', {order: [['id', 'DESC']]}, function(sequelize) {return sequelize.define('myTable', {}); }],
+          arguments: ['myTable', {order: [['id', 'DESC']]}, function(sequelize) {return (sequelize as Sequelize).define<ItestInstance, ItestAttribute>('myTable', {}); }],
           expectation: 'SELECT * FROM `myTable` AS `myTable` ORDER BY `myTable`.`id` DESC;',
           context: QueryGenerator,
           needsSequelize: true
         }, {
-          arguments: ['myTable', {order: [['id', 'DESC'], ['name']]}, function(sequelize) {return sequelize.define('myTable', {}); }],
+          arguments: ['myTable', {order: [['id', 'DESC'], ['name']]}, function(sequelize) {return (sequelize as Sequelize).define<ItestInstance, ItestAttribute>('myTable', {}); }],
           expectation: 'SELECT * FROM `myTable` AS `myTable` ORDER BY `myTable`.`id` DESC, `myTable`.`name`;',
           context: QueryGenerator,
           needsSequelize: true
@@ -624,15 +627,15 @@ if (dialect === 'sqlite') {
             const context = test.context || {options: {}};
             if (test.needsSequelize) {
               if (_.isFunction(test.arguments[1])) {
-                test.arguments[1] = test.arguments[1](this.sequelize);
+                test.arguments[1] = test.arguments[1](current);
               }
               if (_.isFunction(test.arguments[2])) {
-                test.arguments[2] = test.arguments[2](this.sequelize);
+                test.arguments[2] = test.arguments[2](current);
               }
             }
             QueryGenerator.options = _.assign(context.options, { timezone: '+00:00' });
-            QueryGenerator._dialect = this.sequelize.dialect;
-            QueryGenerator.sequelize = this.sequelize;
+            QueryGenerator._dialect = current.dialect;
+            QueryGenerator.sequelize = current;
             const conditions = QueryGenerator[suiteTitle].apply(QueryGenerator, test.arguments);
             expect(conditions).to.deep.equal(test.expectation);
           });

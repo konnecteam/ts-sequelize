@@ -1,52 +1,58 @@
 'use strict';
 
 import * as chai from 'chai';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('associations'), () => {
+  let A : Model<ItestInstance, ItestAttribute>;
+  let B : Model<ItestInstance, ItestAttribute>;
+  let C : Model<ItestInstance, ItestAttribute>;
   describe('Test options.foreignKey', () => {
     beforeEach(function() {
 
-      this.A = this.sequelize.define('A', {
+      A = current.define<ItestInstance, ItestAttribute>('A', {
         id: {
           type: new DataTypes.CHAR(20),
           primaryKey: true
         }
       });
-      this.B = this.sequelize.define('B', {
+      B = current.define<ItestInstance, ItestAttribute>('B', {
         id: {
           type: new DataTypes.CHAR(20),
           primaryKey: true
         }
       });
-      this.C = this.sequelize.define('C', {});
+      C = current.define<ItestInstance, ItestAttribute>('C', {});
     });
 
     it('should not be overwritten for belongsTo', function() {
       const reqValidForeignKey = { foreignKey: { allowNull: false }};
-      this.A.belongsTo(this.B, reqValidForeignKey);
-      this.A.belongsTo(this.C, reqValidForeignKey);
-      expect(this.A.rawAttributes.CId.type).to.deep.equal(this.C.rawAttributes.id.type);
+      A.belongsTo(B, reqValidForeignKey);
+      A.belongsTo(C, reqValidForeignKey);
+      expect(A.rawAttributes.CId.type).to.deep.equal(C.rawAttributes.id.type);
     });
     it('should not be overwritten for belongsToMany', function() {
       const reqValidForeignKey = { foreignKey: { allowNull: false }, through: 'ABBridge'};
-      this.B.belongsToMany(this.A, reqValidForeignKey);
-      this.A.belongsTo(this.C, reqValidForeignKey);
-      expect(this.A.rawAttributes.CId.type).to.deep.equal(this.C.rawAttributes.id.type);
+      B.belongsToMany(A, reqValidForeignKey);
+      A.belongsTo(C, reqValidForeignKey);
+      expect(A.rawAttributes.CId.type).to.deep.equal(C.rawAttributes.id.type);
     });
     it('should not be overwritten for hasOne', function() {
       const reqValidForeignKey = { foreignKey: { allowNull: false }};
-      this.B.hasOne(this.A, reqValidForeignKey);
-      this.A.belongsTo(this.C, reqValidForeignKey);
-      expect(this.A.rawAttributes.CId.type).to.deep.equal(this.C.rawAttributes.id.type);
+      B.hasOne(A, reqValidForeignKey);
+      A.belongsTo(C, reqValidForeignKey);
+      expect(A.rawAttributes.CId.type).to.deep.equal(C.rawAttributes.id.type);
     });
     it('should not be overwritten for hasMany', function() {
       const reqValidForeignKey = { foreignKey: { allowNull: false }};
-      this.B.hasMany(this.A, reqValidForeignKey);
-      this.A.belongsTo(this.C, reqValidForeignKey);
-      expect(this.A.rawAttributes.CId.type).to.deep.equal(this.C.rawAttributes.id.type);
+      B.hasMany(A, reqValidForeignKey);
+      A.belongsTo(C, reqValidForeignKey);
+      expect(A.rawAttributes.CId.type).to.deep.equal(C.rawAttributes.id.type);
     });
   });
 });

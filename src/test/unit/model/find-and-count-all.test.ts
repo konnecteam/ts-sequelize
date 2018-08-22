@@ -4,6 +4,7 @@ import * as bluebird from 'bluebird';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
@@ -19,7 +20,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           this.stub();
         });
 
-        this.User = current.define('User', {
+        this.User = current.define<ItestInstance, ItestAttribute>('User', {
           username: new DataTypes.STRING(),
           age: new DataTypes.INTEGER()
         });

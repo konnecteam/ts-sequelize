@@ -2,6 +2,7 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
@@ -14,7 +15,7 @@ const sql  = current.dialect.QueryGenerator;
 describe(Support.getTestDialectTeaser('SQL'), () => {
   describe('insert', () => {
     it('with temp table for trigger', () => {
-      const User = Support.sequelize.define('user', {
+      const User = current.define<ItestInstance, ItestAttribute>('user', {
         username: {
           type: new DataTypes.STRING(),
           field: 'user_name'
@@ -62,7 +63,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         timezone: Support.getTestDialect() === 'sqlite' ? '+00:00' : 'CET'
       });
 
-      const User = timezoneSequelize.define('user', {
+      const User = timezoneSequelize.define<ItestInstance, ItestAttribute>('user', {
         date: {
           type: new DataTypes.DATE()
         }
@@ -92,7 +93,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         timezone: Support.getTestDialect() === 'sqlite' ? '+00:00' : 'CET'
       });
 
-      const User = timezoneSequelize.define('user', {
+      const User = timezoneSequelize.define<ItestInstance, ItestAttribute>('user', {
         date: {
           type: new DataTypes.DATE(3)
         }
@@ -124,7 +125,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         return;
       }
 
-      const User = Support.sequelize.define('user', {
+      const User = current.define<ItestInstance, ItestAttribute>('user', {
         username: {
           type: new DataTypes.STRING(),
           field: 'user_name'

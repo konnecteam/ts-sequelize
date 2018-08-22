@@ -3,6 +3,7 @@
 import * as chai from 'chai';
 import DataTypes from '../../../../lib/data-types';
 import {AbstractQuery as Query} from '../../../../lib/dialects/abstract/abstract-query';
+import { ItestAttribute, ItestInstance } from '../../../dummy/dummy-data-set';
 import Support from '../../../support';
 
 const current = Support.sequelize;
@@ -12,21 +13,21 @@ describe('[ABSTRACT]', () => {
   describe('groupJoinData', () => {
 
     it('should hash second nested set correctly, when has multiple primary keys and one is a Buffer', () => {
-      const Team = current.define('team', {
+      const Team = current.define<ItestInstance, ItestAttribute>('team', {
         id: {
           primaryKey: true,
           type: new DataTypes.STRING(1)
         }
       });
 
-      const Player = current.define('player', {
+      const Player = current.define<ItestInstance, ItestAttribute>('player', {
         id: {
           primaryKey: true,
           type: new DataTypes.STRING(1)
         }
       });
 
-      const Agent = current.define('agent', {
+      const Agent = current.define<ItestInstance, ItestAttribute>('agent', {
         uuid: {
           primaryKey: true,
           type: 'BINARY(16)'
@@ -37,19 +38,19 @@ describe('[ABSTRACT]', () => {
         }
       });
 
-      Team.Player = Team.hasMany(Player, { foreignKey: 'teamId' });
-      Team.Agent = Team.hasMany(Agent, { foreignKey: 'teamId' });
+      const Team_Player = Team.hasMany(Player, { foreignKey: 'teamId' });
+      const Team_Agent = Team.hasMany(Agent, { foreignKey: 'teamId' });
 
       const includeOptions = {
         model: Team,
         includeMap: {
           players: {
             model: Player,
-            association: Team.Player
+            association: Team_Player
           },
           agents: {
             model: Agent,
-            association: Team.Agent
+            association: Team_Agent
           }
         }
       };
@@ -98,40 +99,40 @@ describe('[ABSTRACT]', () => {
     });
 
     it('should hash second nested set correctly, when primary is a Buffer', () => {
-      const Team = current.define('team', {
+      const Team = current.define<ItestInstance, ItestAttribute>('team', {
         id: {
           primaryKey: true,
           type: new DataTypes.STRING(1)
         }
       });
 
-      const Player = current.define('player', {
+      const Player = current.define<ItestInstance, ItestAttribute>('player', {
         id: {
           primaryKey: true,
           type: new DataTypes.STRING(1)
         }
       });
 
-      const Agent = current.define('agent', {
+      const Agent = current.define<ItestInstance, ItestAttribute>('agent', {
         uuid: {
           primaryKey: true,
           type: 'BINARY(16)'
         }
       });
 
-      Team.Player = Team.hasMany(Player, { foreignKey: 'teamId' });
-      Team.Agent = Team.hasMany(Agent, { foreignKey: 'teamId' });
+      const Team_Player = Team.hasMany(Player, { foreignKey: 'teamId' });
+      const Team_Agent = Team.hasMany(Agent, { foreignKey: 'teamId' });
 
       const includeOptions = {
         model: Team,
         includeMap: {
           players: {
             model: Player,
-            association: Team.Player
+            association: Team_Player
           },
           agents: {
             model: Agent,
-            association: Team.Agent
+            association: Team_Agent
           }
         }
       };
@@ -176,7 +177,7 @@ describe('[ABSTRACT]', () => {
     });
 
     it('should hash parents correctly, when has multiple primary keys and one is a Buffer', () => {
-      const Team = current.define('team', {
+      const Team = current.define<ItestInstance, ItestAttribute>('team', {
         uuid: {
           primaryKey: true,
           type: 'BINARY(16)'
@@ -187,7 +188,7 @@ describe('[ABSTRACT]', () => {
         }
       });
 
-      const Player = current.define('player', {
+      const Player = current.define<ItestInstance, ItestAttribute>('player', {
         id: {
           primaryKey: true,
           type: new DataTypes.STRING(1)
@@ -260,14 +261,14 @@ describe('[ABSTRACT]', () => {
     });
 
     it('should hash parents correctly, when primary key is a Buffer', () => {
-      const Team = current.define('team', {
+      const Team = current.define<ItestInstance, ItestAttribute>('team', {
         uuid: {
           primaryKey: true,
           type: 'BINARY(16)'
         }
       });
 
-      const Player = current.define('player', {
+      const Player = current.define<ItestInstance, ItestAttribute>('player', {
         id: {
           primaryKey: true,
           type: new DataTypes.STRING(1)
@@ -337,14 +338,14 @@ describe('[ABSTRACT]', () => {
     });
 
     it('should hash nested correctly, when primary key is a Buffer', () => {
-      const Team = current.define('team', {
+      const Team = current.define<ItestInstance, ItestAttribute>('team', {
         id: {
           primaryKey: true,
           type: new DataTypes.STRING(1)
         }
       });
 
-      const Player = current.define('player', {
+      const Player = current.define<ItestInstance, ItestAttribute>('player', {
         uuid: {
           primaryKey: true,
           type: 'BINARY(16)'
@@ -401,14 +402,14 @@ describe('[ABSTRACT]', () => {
     });
 
     it('should hash nested correctly, when has multiple primary keys and one is a Buffer', () => {
-      const Team = current.define('team', {
+      const Team = current.define<ItestInstance, ItestAttribute>('team', {
         id: {
           primaryKey: true,
           type: new DataTypes.STRING(1)
         }
       });
 
-      const Player = current.define('player', {
+      const Player = current.define<ItestInstance, ItestAttribute>('player', {
         uuid: {
           primaryKey: true,
           type: 'BINARY(16)'

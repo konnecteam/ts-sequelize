@@ -3,8 +3,8 @@
 import * as _ from 'lodash';
 import * as util from 'util';
 import { Sequelize } from '../../..';
+import { ISequelizeOption } from '../../interfaces/isequelize-option';
 import { Model } from '../../model';
-import { ISequelizeOption } from '../../model/isequelize-option';
 import Op from '../../operators';
 import * as AllUtils from '../../utils';
 import { AbstractQueryGenerator } from '../abstract/abstract-query-generator';
@@ -356,7 +356,7 @@ export class MysqlQueryGenerator extends AbstractQueryGenerator {
     hooks? : boolean,
     ignoreDuplicates? : boolean
     onDuplicate? : string,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** Return raw result. */
     raw? : boolean,
     /**
@@ -406,7 +406,7 @@ export class MysqlQueryGenerator extends AbstractQueryGenerator {
     limit? : number,
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** = false, A flag that defines if native library shall be used or not. Currently only has an effect for postgres */
     native? : boolean,
     /** = false, A flag that defines if null values should be passed to SQL queries or not. */
@@ -441,7 +441,7 @@ export class MysqlQueryGenerator extends AbstractQueryGenerator {
      */
     type? : string,
     typeValidation? : boolean
-  } = {}, model : typeof Model) : string {
+  } = {}, model : Model<any, any>) : string {
     let limit = '';
     let query = 'DELETE FROM ' + this.quoteTable(tableName);
 
@@ -601,7 +601,7 @@ export class MysqlQueryGenerator extends AbstractQueryGenerator {
     /** An object with reference configurations */
     references? : {
       /** If this column references another table, provide it here as a Model, or a string */
-      model? : typeof Model | string,
+      model? : Model<any, any> | string,
       /** = 'id', The column of the foreign table that this column references */
       key? : string;
     };

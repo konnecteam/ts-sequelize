@@ -8,6 +8,7 @@ branches:
     - typescript
     - develop
     - develop-import-v5
+    - develop-model-dataset
     - /^greenkeeper/.*$/
   except:
     - /^v\d+\.\d+\.\d+$/

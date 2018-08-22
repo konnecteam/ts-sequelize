@@ -3,14 +3,16 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import DataTypes from '../../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
+const current = Support.sequelize;
 
 if (dialect === 'mysql') {
   describe('[MYSQL Specific] Connection Manager', () => {
     it('works correctly after being idle', function() {
-      const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
+      const User = current.define<ItestInstance, ItestAttribute>('User', { username: new DataTypes.STRING() });
       const spy = sinon.spy();
 
       return User
@@ -20,7 +22,7 @@ if (dialect === 'mysql') {
         .then(count => {
           expect(count).to.equal(1);
           spy();
-          return this.sequelize.Promise.delay(1000);
+          return current.Promise.delay(1000);
         })
         .then(() => User.count())
         .then(count => {
@@ -35,7 +37,7 @@ if (dialect === 'mysql') {
     it('accepts new queries after shutting down a connection', () => {
       // Create a sequelize instance with fast disconnecting connection
       const sequelize = Support.createSequelizeInstance({ pool: { idle: 50, max: 1, evict: 10 }});
-      const User = sequelize.define('User', { username: new DataTypes.STRING() });
+      const User = sequelize.define<ItestInstance, ItestAttribute>('User', { username: new DataTypes.STRING() });
 
       return User
         .sync({force: true})
@@ -110,7 +112,7 @@ if (dialect === 'mysql') {
 
     it('-FOUND_ROWS can be suppressed to get back legacy behavior', () => {
       const sequelize = Support.createSequelizeInstance({ dialectOptions: { flags: '' }});
-      const User = sequelize.define('User', { username: new DataTypes.STRING() });
+      const User = sequelize.define<ItestInstance, ItestAttribute>('User', { username: new DataTypes.STRING() });
 
       return User.sync({force: true})
         .then(() => User.create({ id: 1, username: 'jozef' }))

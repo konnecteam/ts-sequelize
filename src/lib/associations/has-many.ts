@@ -1,9 +1,11 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import { Sequelize } from '../..';
+import { DataSet } from '../data-set';
+import { IInclude } from '../interfaces/iinclude';
 import { Model } from '../model';
-import { IInclude } from '../model/iinclude';
 import Op from '../operators';
 import { Transaction } from '../transaction';
 import { Utils } from '../utils';
@@ -18,19 +20,21 @@ import { Helpers } from './helpers';
  *
  * @see {@link Model.hasMany}
  */
-export class HasMany extends Association {
+export class HasMany
+<TSourceInstance extends DataSet<TSourceAttributes>, TSourceAttributes,
+TTargetInstance extends DataSet<TTargetAttributes>, TTargetAttributes>
+extends Association <TSourceInstance, TSourceAttributes, TTargetInstance, TTargetAttributes> {
 
   public foreignKeyField : string;
   public sequelize : Sequelize;
   public sourceIdentifier : string;
-  public sourceKey : string;
-  public targetAssociation : Association;
+  public targetAssociation : Association<TTargetInstance, TTargetAttributes, TSourceInstance, TSourceAttributes>;
 
-  constructor(source : typeof Model, target : typeof Model, options : {
+  constructor(source : Model<TSourceInstance, TSourceAttributes>, target : Model<TTargetInstance, TTargetAttributes>, options : {
     /** : string | {}, assocation alias */
     as? : any,
     createByBTM? : boolean,
-    foreignKey? : string,
+    foreignKey? : string | {},
     /** Additional attributes for the join table */
     through? : {}
   }) {
@@ -50,7 +54,7 @@ export class HasMany extends Association {
     * If self association, this is the target association
     */
     if (this.isSelfAssociation) {
-      this.targetAssociation = this;
+      this.targetAssociation = (this as any);
     }
 
     if (this.as) {
@@ -77,7 +81,7 @@ export class HasMany extends Association {
       this.foreignKeyAttribute = this.options.foreignKey;
       this.foreignKey = this.foreignKeyAttribute.name || this.foreignKeyAttribute.fieldName;
     } else if (this.options.foreignKey) {
-      this.foreignKey = this.options.foreignKey;
+      this.foreignKey = this.options.foreignKey as string;
     }
 
     if (!this.foreignKey) {
@@ -130,7 +134,7 @@ export class HasMany extends Association {
   /**
    * add attributes to the target table of this association or in an extra table which connects two tables
    */
-  public injectAttributes() {
+  public injectAttributes() : HasMany<TSourceInstance, TSourceAttributes, TTargetInstance, TTargetAttributes> {
     const newAttributes = {};
     // Create a new options object for use with addForeignKeyConstraints, to avoid polluting this.options in case it is later used for a n:m
     const constraintOptions = _.clone(this.options);
@@ -162,25 +166,10 @@ export class HasMany extends Association {
   }
 
   /**
-   * Mixin (inject) association methods to model prototype
-   */
-  public mixin(obj) : void {
-    const methods = ['get', 'count', 'hasSingle', 'hasAll', 'set', 'add', 'addMultiple', 'remove', 'removeMultiple', 'create'];
-    const aliases = {
-      hasSingle: 'has',
-      hasAll: 'has',
-      addMultiple: 'add',
-      removeMultiple: 'remove'
-    };
-
-    Helpers.mixinMethods(this, obj, methods, aliases);
-  }
-
-  /**
    * Get everything currently associated with this, using an optional where clause.
    * @see {@link Model.findAll}  for a full explanation of options
    */
-  public get(instances : Model[] | Model, options : {
+  public get(instances : TSourceInstance[] | TSourceInstance, options : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any,
     /** Group by clause */
@@ -189,12 +178,13 @@ export class HasMany extends Association {
     groupedLimit? : {},
     /**
      * Array<Object|Model|String>, A list of associations to eagerly load using a left join.
-     * Supported is either `{ include: [ Model1, Model2, ...]}` or `{ include: [{ model: Model1, as: 'Alias' }]}` or `{ include: ['Alias']}`.
+     * Supported is either `{ include: [ Model1, Model2, ...]}` or `{ include: [{ model: DataSet<any>1, as: 'Alias' }]}` or `{ include: ['Alias']}`.
      * If your association are set up with an `as` (eg. `X.hasMany(Y, { as: 'Z }`, you need to specify Z in the as attribute when eager loading Y).
      */
     include? : IInclude[],
     /** The maximum count you want to get. */
     limit? : number,
+    order? : string[][],
     /** Specify if we want only one row without using an array */
     plain? : boolean,
     /** Apply a schema on the related model */
@@ -206,10 +196,10 @@ export class HasMany extends Association {
     raw? : boolean,
     /** An optional where clause to limit the associated models */
     where? : {},
-  } = {}) : Promise<Model[]> {
+  } = {}) : Promise<TTargetInstance[]> {
     const where = {};
     let targetModel = this.target;
-    let instanceNoArray;
+    let instanceNoArray : TSourceInstance;
     let values;
 
     if (!Array.isArray(instances)) {
@@ -224,9 +214,9 @@ export class HasMany extends Association {
     }
 
     if (instances) {
-      values = (instances as any).map(instance => instance.get(this.sourceKey, {raw: true}));
+      values = (instances as TSourceInstance[]).map(instance => instance.get(this.sourceKey, {raw: true}));
 
-      if (options.limit && (instances as any).length > 1) {
+      if (options.limit && (instances as TSourceInstance[]).length > 1) {
         options.groupedLimit = {
           limit: options.limit,
           on: this, // association
@@ -267,7 +257,7 @@ export class HasMany extends Association {
       }
 
       const result = {};
-      for (const instance of (instances as any)) {
+      for (const instance of (instances as TSourceInstance[])) {
         result[instance.get(this.sourceKey, {raw: true})] = [];
       }
 
@@ -275,14 +265,14 @@ export class HasMany extends Association {
         result[instance.get(this.foreignKey, { raw: true })].push(instance);
       }
 
-      return result;
+      return result as any;
     });
   }
 
   /**
    * Count everything currently associated with this, using an optional where clause.
    */
-  public count(instance : Model, options : {
+  public count(instance : TSourceInstance, options : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any,
     /** Group by clause */
@@ -316,12 +306,12 @@ export class HasMany extends Association {
    * Check if one or more rows are associated with `this`.
    * @param options Options passed to getAssociations
    */
-  public has(sourceInstance : Model, targetInstances : Model[]|Model|string[]|string|number[]|number, options : {
+  public has(sourceInstance : TSourceInstance, targetInstances : TTargetInstance[] | TTargetInstance | string[] | string | number[] | number, options : {
     /** Transaction to run query under */
     transaction? : Transaction,
     /** A hash of search attributes. */
     where? : {}
-  }) : Promise<any> {
+  }) : Promise<boolean> {
     const where = {};
 
     if (!Array.isArray(targetInstances)) {
@@ -333,9 +323,9 @@ export class HasMany extends Association {
       raw: true
     });
 
-    where[Op.or] = (targetInstances as any).map(instance => {
-      if (instance instanceof this.target) {
-        return instance.where();
+    where[Op.or] = (targetInstances as any[]).map(instance => {
+      if (instance.model === this.target) {
+        return (instance as TTargetInstance).where();
       } else {
         const _where = {};
         _where[this.target.primaryKeyAttribute] = instance;
@@ -350,7 +340,7 @@ export class HasMany extends Association {
       ]
     };
 
-    return this.get(sourceInstance, options).then(associatedObjects => associatedObjects.length === (targetInstances as any).length);
+    return this.get(sourceInstance, options).then(associatedObjects => associatedObjects.length === (targetInstances as any[]).length);
   }
 
   /**
@@ -359,12 +349,12 @@ export class HasMany extends Association {
    * @param newAssociations An array of persisted instances or primary key of instances to associate with this. Pass `null` or `undefined` to remove all associations.
    * @param options Options passed to `target.findAll` and `update`.
    */
-  public set(sourceInstance : Model, targetInstances : Array<Model|string|number>, options : {
+  public set(sourceInstance : TSourceInstance, targetInstances : Array<TTargetInstance | string | number>, options : {
     /** Transaction to run query under */
     transaction? : Transaction,
     /** Run validation for the join model */
     validate? : {}
-  }) : Promise<any> {
+  }) : Promise<TSourceInstance> {
 
     if (targetInstances === null) {
       targetInstances = [];
@@ -432,15 +422,15 @@ export class HasMany extends Association {
    * Associate one or more target rows with `this`. This method accepts a Model / string / number to associate a single row,
    * or a mixed array of Model / string / numbers to associate multiple rows.
    *
-   * @param {Model[]|Model|string[]|string|number[]|number} newAssociation(s)
+   * @param {Array<Model<any, any>>|Model|string[]|string|number[]|number} newAssociation(s)
    * @param options Options passed to `target.update`.
    */
-  public add(sourceInstance : Model, targetInstances : Model[]|Model|string[]|string|number[]|number, options : {} = {}) : Promise<any> {
+  public add(sourceInstance : TSourceInstance, targetInstances : TTargetInstance[] | TTargetInstance | string[] | string | number[] | number, options : {} = {}) : Promise<TSourceInstance | void> {
     if (!targetInstances) {
       return Utils.Promise.resolve();
     }
 
-    const update = {};
+    const update = {} as TTargetAttributes;
     const where = {};
 
     targetInstances = this.toInstanceArray(targetInstances);
@@ -448,7 +438,7 @@ export class HasMany extends Association {
     update[this.foreignKey] = sourceInstance.get(this.sourceKey);
     _.assign(update, this.scope);
 
-    where[this.target.primaryKeyAttribute] = (targetInstances as any).map(unassociatedObject =>
+    where[this.target.primaryKeyAttribute] = (targetInstances as TTargetInstance[]).map(unassociatedObject =>
       unassociatedObject.get(this.target.primaryKeyAttribute)
     );
 
@@ -458,11 +448,12 @@ export class HasMany extends Association {
   /**
    * Un-associate one or several target rows.
    *
-   * @param {Model[]|Model|String[]|string|Number[]|number} [oldAssociatedInstance(s)]
+   * @param {Array<Model<any, any>>|Model|String[]|string|Number[]|number} [oldAssociatedInstance(s)]
    * @param options Options passed to `target.update`
    */
-  public remove(sourceInstance : Model, targetInstances : Model[]|Model|string[]|string|number[]|number, options : {} = {}) {
-    const update = {};
+  public remove(sourceInstance : TSourceInstance, targetInstances : TTargetInstance[] | TTargetInstance | string[] | string | number[] | number, options : {} = {})
+  : Promise<TSourceInstance> {
+    const update = {} as TTargetAttributes;
     const where = {};
 
     targetInstances = this.toInstanceArray(targetInstances);
@@ -470,21 +461,21 @@ export class HasMany extends Association {
     update[this.foreignKey] = null;
 
     where[this.foreignKey] = sourceInstance.get(this.sourceKey);
-    where[this.target.primaryKeyAttribute] = (targetInstances as any).map(targetInstance =>
+    where[this.target.primaryKeyAttribute] = (targetInstances as TTargetInstance[]).map(targetInstance =>
       targetInstance.get(this.target.primaryKeyAttribute)
     );
 
-    return this.target.unscoped().update(update, _.defaults({where}, options)).then( () => this);
+    return this.target.unscoped().update(update, _.defaults({where}, options)).then( () => this) as any;
   }
 
   /**
    * Create a new instance of the associated model and associate it with this.
    * @param options Options passed to `target.create`.
    */
-  public create(sourceInstance : Model, values, options : {
+  public create(sourceInstance : TSourceInstance, values : TTargetAttributes, options : {
     fields? : string[],
     values? : {}
-  } = {}) : Promise<any> {
+  } = {}) : Promise<TTargetInstance> {
 
     if (Array.isArray(options)) {
       options = {
@@ -493,7 +484,7 @@ export class HasMany extends Association {
     }
 
     if (values === undefined) {
-      values = {};
+      values = {} as TTargetAttributes;
     }
 
     if (this.scope) {

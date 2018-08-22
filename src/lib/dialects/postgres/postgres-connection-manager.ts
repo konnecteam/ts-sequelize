@@ -1,13 +1,13 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as moment from 'moment-timezone';
 import * as semver from 'semver';
 import { Sequelize } from '../../..';
 import AllDataTypes, { IDataTypes } from '../../data-types';
 import * as sequelizeErrors from '../../errors/index';
-import { IConfig } from '../../model/iconfig';
-import Promise from '../../promise';
+import { IConfig } from '../../interfaces/iconfig';
 import { Utils } from '../../utils';
 import { AbstractConnectionManager } from '../abstract/abstract-connection-manager';
 import { PostgresDialect } from './postgres-dialect';
@@ -64,7 +64,7 @@ export class PostgresConnectionManager extends AbstractConnectionManager {
     }
   }
 
-  private _clearTypeParser() {
+  public _clearTypeParser() {
     this.oidMap = {};
     this.arrayOidMap = {};
   }

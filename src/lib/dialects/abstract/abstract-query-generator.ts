@@ -11,10 +11,11 @@ import { BelongsTo } from '../../associations/belongs-to';
 import { BelongsToMany } from '../../associations/belongs-to-many';
 import { HasMany } from '../../associations/has-many';
 import { HasOne } from '../../associations/has-one';
+import { DataSet } from '../../data-set';
 import DataTypes from '../../data-types';
+import { IInclude } from '../../interfaces/iinclude';
+import { ISequelizeOption } from '../../interfaces/isequelize-option';
 import { Model } from '../../model';
-import { IInclude } from '../../model/iinclude';
-import { ISequelizeOption } from '../../model/isequelize-option';
 import Op from '../../operators';
 import { SqlString } from '../../sql-string';
 import { Transaction } from '../../transaction';
@@ -57,7 +58,7 @@ export abstract class AbstractQueryGenerator {
   /**
    * return the table name if there is no schema and an object with some attributes if there is one
    */
-  public addSchema(param : typeof Model | any) : any  {
+  public addSchema(param : Model<any, any> | any) : any  {
     const self = this;
 
     if (!param._schema) {
@@ -189,7 +190,7 @@ export abstract class AbstractQueryGenerator {
  /**
   * Returns an insert into command. Parameters: table name + hash of attribute-value-pairs.
   */
-  public insertQuery(table : string, valueHash : { createdAt? : Date, id? : number, updatedAt? : Date}, modelAttributes : {}, options : {
+  public insertQuery(table : string, valueHash : { createdAt? : Date, id? : number, updatedAt? : Date, [key : string] : any }, modelAttributes : {}, options : {
     bindParam? : boolean,
     defaultFields? : string[],
     fields? : string[],
@@ -370,7 +371,7 @@ export abstract class AbstractQueryGenerator {
     individualHooks? : boolean,
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     returning? : boolean,
     /** Additional attributes for the join table */
     through? : {},
@@ -382,7 +383,7 @@ export abstract class AbstractQueryGenerator {
      */
     type? : string,
     validate? : boolean,
-    updateOnDuplicate? : string[],
+    updateOnDuplicate? : string[] | boolean,
   }, fieldMappedAttributes? : {}) {
     options = options || {};
     fieldMappedAttributes = fieldMappedAttributes || {};
@@ -423,7 +424,7 @@ export abstract class AbstractQueryGenerator {
     }
 
     if (this._dialect.supports.updateOnDuplicate && options.updateOnDuplicate) {
-      onDuplicateKeyUpdate = ' ON DUPLICATE KEY UPDATE ' + options.updateOnDuplicate.map(attr => {
+      onDuplicateKeyUpdate = ' ON DUPLICATE KEY UPDATE ' + (options.updateOnDuplicate as string[]).map(attr => {
         const key = this.quoteIdentifier(attr);
         return key + '=VALUES(' + key + ')';
       }).join(',');
@@ -450,7 +451,7 @@ export abstract class AbstractQueryGenerator {
   *              OR a string with conditions (e.g. 'name="foo"').
   *              If you use a string, you have to escape it on your own.
   */
-  public updateQuery(tableName : string, attrValueHash : {}, where : { length? }, options : {
+  public updateQuery(tableName : string, attrValueHash : {}, where : { length?, [key : string] : any }, options : {
     bindParam? : boolean,
     fields? : string[],
     hasTrigger? : boolean,
@@ -459,7 +460,7 @@ export abstract class AbstractQueryGenerator {
     /** How many rows to update */
     limit? : number,
     mapToModel? : boolean,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** = false, A flag that defines if null values should be passed to SQL queries or not. */
     omitNull? : boolean,
     /** Return raw result. */
@@ -470,7 +471,7 @@ export abstract class AbstractQueryGenerator {
      * The type is a string, but `Sequelize.QueryTypes` is provided as convenience shortcuts.
      */
     type? : string
-  }, attributes : {}) : any {
+  }, attributes? : {}) : any {
     options = options || {};
     _.defaults(options, this.options);
 
@@ -597,7 +598,7 @@ export abstract class AbstractQueryGenerator {
     attributes? : {} | any[],
     by? : number,
     increment? : boolean,
-    instance? : Model,
+    instance? : DataSet<any>,
     mapToModel? : boolean,
     returning? : boolean,
     /** Transaction to run query under */
@@ -666,7 +667,7 @@ export abstract class AbstractQueryGenerator {
   * @param type UNIQUE|FULLTEXT|SPATIAL
   * @param rawTablename, the name of the table, without schema. Used to create the name of the index
   */
-  public addIndexQuery(tableName : string, attributes : {}, options : {
+  public addIndexQuery(tableName : any, attributes : {}, options? : {
     /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
     benchmark? : boolean,
     concurrently? : boolean,
@@ -768,7 +769,7 @@ export abstract class AbstractQueryGenerator {
       options = this.nameIndexes([options], options.prefix)[0];
     }
 
-    options = Model._conformIndex(options);
+    options = Model.prototype._conformIndex(options);
 
     if (!this._dialect.supports.index.type) {
       delete options.type;
@@ -971,7 +972,7 @@ export abstract class AbstractQueryGenerator {
   * Strings: should proxy to quoteIdentifiers
   * Arrays:
   *   * Expects array in the form: [<model> (optional), <model> (optional),... String, String (optional)]
-  *     Each <model> can be a model, or an object {model: Model, as: String}, matching include, or an
+  *     Each <model> can be a model, or an object {model: DataSet<any>, as: String}, matching include, or an
   *     association object, or the name of an association.
   *   * Zero or more models can be included in the array and are used to trace a path through the tree of
   *     included nested associations. This produces the correct table name for the ORDER BY/GROUP BY SQL
@@ -1030,14 +1031,14 @@ export abstract class AbstractQueryGenerator {
         }
 
         // if the previous item is a model, then attempt getting an association
-        if (previousModel && previousModel.prototype instanceof Model) {
+        if (previousModel && previousModel instanceof Model) {
           let model;
           let as;
 
-          if (typeof item === 'function' && item.prototype instanceof Model) {
+          if (item instanceof Model) {
             // set
             model = item;
-          } else if (_.isPlainObject(item) && item.model && item.model.prototype instanceof Model) {
+          } else if (_.isPlainObject(item) && item.model && item.model instanceof Model) {
             // set
             model = item.model;
             as = item.as;
@@ -1078,7 +1079,7 @@ export abstract class AbstractQueryGenerator {
           // see if this is an order
           if (index > 0 && orderIndex !== -1) {
             item = this.sequelize.literal(' ' + validOrderOptions[orderIndex]);
-          } else if (previousModel && previousModel.prototype instanceof Model) {
+          } else if (previousModel && previousModel instanceof Model) {
             // only go down this path if we have preivous model and check only once
             if (previousModel.associations !== undefined && previousModel.associations[item]) {
               // convert the item to an association
@@ -1286,7 +1287,7 @@ export abstract class AbstractQueryGenerator {
   /**
    * Returns a query for selecting elements in the table <tableName>.
    */
-  public selectQuery(tableName : string | any, options : {
+  public selectQuery(tableName : string | any, options? : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any,
     /** Group by clause */
@@ -1319,7 +1320,7 @@ export abstract class AbstractQueryGenerator {
      */
     lock? : any,
     /** Model */
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** An offset value to start from. Only useable with limit! */
     offset? : number,
     /** OrderBy clause 'id DESC' */
@@ -1334,10 +1335,11 @@ export abstract class AbstractQueryGenerator {
     skipLocked? : boolean,
     /** Passes by sub-query ? */
     subQuery? : boolean,
+    table? : string,
     tableAs? : string,
     tableNames? : string[],
     topLimit? : any,
-    topModel? : typeof Model,
+    topModel? : Model<any, any>,
     type ? : string,
     /**
      * A hash with conditions (e.g. {name: 'foo'})
@@ -1346,7 +1348,7 @@ export abstract class AbstractQueryGenerator {
      * If you use a string, you have to escape it on your own.
      */
     where? : {}
-  }, model : typeof Model) : string {
+  }, model? : Model<any, any>) : string {
     options = options || {};
     const limit = options.limit;
     const mainQueryItems = [];
@@ -1466,7 +1468,7 @@ export abstract class AbstractQueryGenerator {
         if (options.groupedLimit.on instanceof BelongsToMany) {
           // BTM includes needs to join the through table on to check ID
           groupedTableName = options.groupedLimit.on.manyFromSource.as;
-          const groupedLimitOptions = Model._validateIncludedElements({
+          const groupedLimitOptions = Model.prototype._validateIncludedElements({
             include: [{
               association: options.groupedLimit.on.manyFromSource,
               duplicating: false, // The UNION'ed query may contain duplicates, but each sub-query cannot
@@ -1646,7 +1648,7 @@ export abstract class AbstractQueryGenerator {
       } else {
         query += ' FOR UPDATE';
       }
-      if (this._dialect.supports.lockOf && options.lock.of && options.lock.of.prototype instanceof Model) {
+      if (this._dialect.supports.lockOf && options.lock.of && options.lock.of instanceof Model) {
         query += ' OF ' + this.quoteTable(options.lock.of.name);
       }
       if (this._dialect.supports.skipLocked && options.skipLocked && (this.dialect !== 'postgres' || semver.gte(this.options.databaseVersion, '9.5.0'))) {
@@ -1678,7 +1680,7 @@ export abstract class AbstractQueryGenerator {
     includeMap? : {},
     /** Internal array of attributes - auto-completed */
     includeNames? : string[],
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** Specify if we want only one row without using an array */
     plain? : boolean,
     /** Error if no result found */
@@ -1746,9 +1748,9 @@ export abstract class AbstractQueryGenerator {
     };
     let joinQuery;
 
-    const hasParentRequired = Model.hasReqOrParentRequired(include);
-    const hasParentReqOrMM = Model.hasParentMismatchOrRequired(include);
-    const parentExistInLimitQuery = Model.parentExistInLimitQuery(include);
+    const hasParentRequired = Model.prototype.hasReqOrParentRequired(include);
+    const hasParentReqOrMM = Model.prototype.hasParentMismatchOrRequired(include);
+    const parentExistInLimitQuery = Model.prototype.parentExistInLimitQuery(include);
 
     topLevelInfo.options.keysEscaped = true;
 
@@ -1837,7 +1839,7 @@ export abstract class AbstractQueryGenerator {
           }
         }
 
-        if (!parentExistInLimitQuery && topLevelInfo.subQuery && Model.hasParentMismatchOrRequired(include) && (isNotHMorBTM || include.mismatch)) {
+        if (!parentExistInLimitQuery && topLevelInfo.subQuery && Model.prototype.hasParentMismatchOrRequired(include) && (isNotHMorBTM || include.mismatch)) {
           for (const attr of includeAttributes) {
             attributes.subQuery.push(attr);
           }
@@ -1856,11 +1858,11 @@ export abstract class AbstractQueryGenerator {
       // const hasLimitRequiredHasMany = topLevelInfo.options.limit && include.required &&
       //   !(include.parent.association instanceof HasMany) && include.association instanceof HasMany ? true : false;
       const hasLimitRequiredHasMany = topLevelInfo.options.limit && hasParentRequired /*include.required*/ &&
-      !Model.hasParentHasMany(include) && include.association instanceof HasMany ? true : false;
+      !Model.prototype.hasParentHasMany(include) && include.association instanceof HasMany ? true : false;
       // BTM has already generated a subquery
-      const notFromBTM = !(Model.hasParentBelongsToMany(include, true));
+      const notFromBTM = !(Model.prototype.hasParentBelongsToMany(include, true));
 
-      if (!(Model.parentExistInLimitQuery(include)) && notFromBTM && include.required === true && !(include.mismatch) && (hasLimitRequiredHasMany || (topLevelInfo.subQuery && include.subQueryFilter))) {
+      if (!(Model.prototype.parentExistInLimitQuery(include)) && notFromBTM && include.required === true && !(include.mismatch) && (hasLimitRequiredHasMany || (topLevelInfo.subQuery && include.subQueryFilter))) {
         include.inSubQuery = true;
         const associationWhere = {};
 
@@ -1882,7 +1884,7 @@ export abstract class AbstractQueryGenerator {
             ]
           },
           limit: 1,
-          tableAs: Model.getFullAsPath(include),
+          tableAs: Model.prototype.getFullAsPath(include),
           includeIgnoreAttributes : hasInclude ? false : undefined,
           include: hasInclude ? include.include : undefined,
           parent: hasInclude ? include.include[0].parent : undefined,
@@ -2032,8 +2034,8 @@ export abstract class AbstractQueryGenerator {
 
     let joinOn = `${this.quoteTable(asLeft)}.${this.quoteIdentifier(fieldLeft)}`;
 
-    const parentExistInLimitQuery = Model.parentExistInLimitQuery(include);
-    if (!parentExistInLimitQuery && ((topLevelInfo.options.groupedLimit && parentIsTop) || (topLevelInfo.subQuery && include.parent.subQuery && !include.subQuery && Model.hasReqOrParentRequired(include, true)) )) {
+    const parentExistInLimitQuery = Model.prototype.parentExistInLimitQuery(include);
+    if (!parentExistInLimitQuery && ((topLevelInfo.options.groupedLimit && parentIsTop) || (topLevelInfo.subQuery && include.parent.subQuery && !include.subQuery && Model.prototype.hasReqOrParentRequired(include, true)) )) {
       if (parentIsTop) {
         // The main model attributes is not aliased to a prefix
         joinOn = `${this.quoteTable(parent.as || parent.model.name)}.${this.quoteIdentifier(attrLeft)}`;
@@ -2107,7 +2109,7 @@ export abstract class AbstractQueryGenerator {
       main: [],
       subQuery: []
     };
-    const hasParentInSubQuery = Model.parentExistInLimitQuery(include);
+    const hasParentInSubQuery = Model.prototype.parentExistInLimitQuery(include);
     let attrSource = hasParentInSubQuery ? association.source.primaryKeyField : primaryKeysSource[0];
     let sourceJoinOn;
     let targetJoinOn;
@@ -2195,7 +2197,7 @@ export abstract class AbstractQueryGenerator {
         if (topInclude.through && Object(topInclude.through.model) === topInclude.through.model) {
           query = this.selectQuery(topInclude.through.model.getTableName(), {
             attributes: [topInclude.through.model.primaryKeyField],
-            include: Model._validateIncludedElements({
+            include: Model.prototype._validateIncludedElements({
               model: topInclude.through.model,
               include: [{
                 include : include.include,
@@ -2299,7 +2301,7 @@ export abstract class AbstractQueryGenerator {
     if (topInclude.through && Object(topInclude.through.model) === topInclude.through.model) {
       query = this.selectQuery(topInclude.through.model.getTableName(), {
         attributes: [topInclude.through.model.primaryKeyField],
-        include: Model._validateIncludedElements({
+        include: Model.prototype._validateIncludedElements({
           model: topInclude.through.model,
           include: [{
             association: topAssociation.toTarget,
@@ -2330,7 +2332,7 @@ export abstract class AbstractQueryGenerator {
 
       query = this.selectQuery(topInclude.model.getTableName(), {
         attributes: [targetField],
-        include: Model._validateIncludedElements(topInclude).include,
+        include: Model.prototype._validateIncludedElements(topInclude).include,
         model: topInclude.model,
         where: {
           [Op.and]: [
@@ -2395,7 +2397,7 @@ export abstract class AbstractQueryGenerator {
     keysEscaped? : boolean,
     /** The maximum count you want to get. */
     limit? : number,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** An offset value to start from. Only useable with limit! */
     offset? : number,
     /** OrderBy clause */
@@ -2406,11 +2408,11 @@ export abstract class AbstractQueryGenerator {
     subQuery? : boolean,
     tableNames? : string[],
     topLimit? : any,
-    topModel? : typeof Model,
+    topModel? : Model<any, any>,
     type ? : string,
     /** A hash of search attributes. */
     where? : {}
-  }, model : typeof Model, subQuery : boolean) : { mainQueryOrder, subQueryOrder } {
+  }, model : Model<any, any>, subQuery : boolean) : { mainQueryOrder, subQueryOrder } {
     const mainQueryOrder = [];
     const subQueryOrder = [];
 
@@ -2426,7 +2428,7 @@ export abstract class AbstractQueryGenerator {
           && Array.isArray(order)
           && order[0]
           && !(order[0] instanceof HasMany || order[0] instanceof BelongsToMany)
-          && !(typeof order[0] === 'function' && order[0].prototype instanceof Model)
+          && !(order[0] instanceof Model)
           // && !(typeof order[0].model === 'function' && order[0].model.prototype instanceof Model)
           && !(typeof order[0] === 'string' && model && model.associations !== undefined && model.associations[order[0]])
         ) {
@@ -2494,7 +2496,7 @@ export abstract class AbstractQueryGenerator {
     keysEscaped? : boolean,
     /** The maximum count you want to get. */
     limit? : number,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** An offset value to start from. Only useable with limit! */
     offset? : number,
     /** OrderBy clause */
@@ -2505,11 +2507,11 @@ export abstract class AbstractQueryGenerator {
     subQuery? : boolean,
     tableNames? : string[],
     topLimit? : any,
-    topModel? : typeof Model,
+    topModel? : Model<any, any>,
     type ? : string,
     /** A hash of search attributes. */
     where? : {}
-  }, model : typeof Model, attributes : any[], tables : string, mainTableAs : string, where? : {}) : string {
+  }, model : Model<any, any>, attributes : any[], tables : string, mainTableAs : string, where? : {}) : string {
     let fragment = 'SELECT ' + attributes.join(', ') + ' FROM ' + tables;
 
     if (mainTableAs) {
@@ -2653,7 +2655,7 @@ export abstract class AbstractQueryGenerator {
     limit? : number,
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** An offset value to start from. Only useable with limit! */
     offset? : number,
     /** Return raw result. */
@@ -2664,7 +2666,7 @@ export abstract class AbstractQueryGenerator {
     subQuery? : boolean,
     tableNames? : string[],
     topLimit? : any,
-    topModel? : typeof Model,
+    topModel? : Model<any, any>,
     /** Transaction to run query under */
     transaction? : Transaction,
     type ? : string,
@@ -2799,7 +2801,7 @@ export abstract class AbstractQueryGenerator {
     isolationLevel? : string,
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** = false, A flag that defines if native library shall be used or not. Currently only has an effect for postgres */
     native? : boolean,
     /** = false, A flag that defines if null values should be passed to SQL queries or not. */
@@ -2849,7 +2851,7 @@ export abstract class AbstractQueryGenerator {
   /**
    * return the items of the where part of a query
    */
-  public whereItemsQuery(where : {}, options? : { model? : typeof Model, prefix? : string }, binding? : string) : string {
+  public whereItemsQuery(where : {}, options? : { model? : Model<any, any>, prefix? : string }, binding? : string) : string {
     if (
       where === null ||
       where === undefined ||
@@ -2939,7 +2941,8 @@ export abstract class AbstractQueryGenerator {
   public whereItemQuery(key : any, value : any, options? : {
     bind? : {},
     bindParam? : boolean,
-    model? : typeof Model,
+    field?,
+    model? : Model<any, any> | any,
     type? : string,
     modelAttributeMap? : {},
     prefix? : string,
@@ -3067,7 +3070,7 @@ export abstract class AbstractQueryGenerator {
    * return if exist options.field or the field of the attribute designated by the key
    * @hidden
    */
-  private _findField(key : string, options : { field? : { type? : string }, model? : typeof Model, prefix? : string }) : { type? : any } {
+  private _findField(key : string, options : { field? : { type? : string }, model? : Model<any, any>, prefix? : string }) : { type? : any } {
     if (options.field) {
       return options.field;
     }
@@ -3114,7 +3117,7 @@ export abstract class AbstractQueryGenerator {
    * OR/AND/NOT grouping logic
    * @hidden
    */
-  private _whereGroupBind(key : any, value : any, options : { model? : typeof Model, prefix? : string } ) : string {
+  private _whereGroupBind(key : any, value : any, options : { model? : Model<any, any>, prefix? : string } ) : string {
     const binding = key === Op.or ? this.OperatorMap[Op.or] : this.OperatorMap[Op.and];
     const outerBinding = key === Op.not ? 'NOT ' : '';
 
@@ -3329,7 +3332,7 @@ export abstract class AbstractQueryGenerator {
     isolationLevel? : string,
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** = false, A flag that defines if native library shall be used or not. Currently only has an effect for postgres */
     native? : boolean,
     /** = false, A flag that defines if null values should be passed to SQL queries or not. */
@@ -3456,7 +3459,7 @@ export abstract class AbstractQueryGenerator {
  /**
   * Takes something and transforms it into values of a where condition.
   */
-  public getWhereConditions(smth : {}, tableName? : string, factory? : typeof Model, options? : {
+  public getWhereConditions(smth : {}, tableName? : string, factory? : Model<any, any>, options? : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any,
     hasDuplicating? : boolean,
@@ -3475,7 +3478,7 @@ export abstract class AbstractQueryGenerator {
     /** Internal array of attributes - auto-completed */
     includeNames? : string[],
     keysEscaped? : boolean,
-    model? : typeof Model,
+    model? : Model<any, any>,
     plain? : boolean,
     /** Error if no result found */
     rejectOnEmpty? : boolean,
@@ -3485,7 +3488,7 @@ export abstract class AbstractQueryGenerator {
     subQuery? : boolean,
     tableNames? : string[],
     topLimit? : any,
-    topModel? : typeof Model,
+    topModel? : Model<any, any>,
     type ? : string,
     /** A hash of search attributes. */
     where? : {}
@@ -3638,7 +3641,7 @@ export abstract class AbstractQueryGenerator {
   /**
    * return a query to remove index
    */
-  public abstract removeIndexQuery(tableName, indexNameOrAttributes);
+  public abstract removeIndexQuery(tableName, indexNameOrAttributes, ...args);
   /**
    * return a query to show constraints
    */

@@ -1,14 +1,20 @@
 'use strict';
 
 import * as chai from 'chai';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
+  let M : Model<ItestInstance, ItestAttribute>;
+  let N : Model<ItestInstance, ItestAttribute>;
+  let NM : Model<ItestInstance, ItestAttribute>;
   describe('options.underscored', () => {
     beforeEach(function() {
-      this.N = this.sequelize.define('N', {
+      N = current.define<ItestInstance, ItestAttribute>('N', {
         id: {
           type: new DataTypes.CHAR(10),
           primaryKey: true,
@@ -18,7 +24,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         underscored: true
       });
 
-      this.M = this.sequelize.define('M', {
+      M = current.define<ItestInstance, ItestAttribute>('M', {
         id: {
           type: new DataTypes.CHAR(20),
           primaryKey: true,
@@ -27,68 +33,68 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       }, {
         underscored: true
       });
-      this.NM = this.sequelize.define('NM', {});
+      NM = current.define<ItestInstance, ItestAttribute>('NM', {});
     });
 
     it('should properly set field when defining', function() {
-      expect(this.N.rawAttributes['id'].field).to.equal('n_id');
-      expect(this.M.rawAttributes['id'].field).to.equal('m_id');
+      expect(N.rawAttributes['id'].field).to.equal('n_id');
+      expect(M.rawAttributes['id'].field).to.equal('m_id');
     });
 
     it('hasOne does not override already defined field', function() {
-      this.N.rawAttributes['mId'] = {
+      N.rawAttributes['mId'] = {
         type: new DataTypes.CHAR(20),
         field: 'n_m_id'
       };
-      this.N.refreshAttributes();
+      N.refreshAttributes();
 
-      expect(this.N.rawAttributes['mId'].field).to.equal('n_m_id');
-      this.M.hasOne(this.N, { foreignKey: 'mId' });
-      expect(this.N.rawAttributes['mId'].field).to.equal('n_m_id');
+      expect(N.rawAttributes['mId'].field).to.equal('n_m_id');
+      M.hasOne(N, { foreignKey: 'mId' });
+      expect(N.rawAttributes['mId'].field).to.equal('n_m_id');
     });
 
     it('belongsTo does not override already defined field', function() {
-      this.N.rawAttributes['mId'] = {
+      N.rawAttributes['mId'] = {
         type: new DataTypes.CHAR(20),
         field: 'n_m_id'
       };
-      this.N.refreshAttributes();
+      N.refreshAttributes();
 
-      expect(this.N.rawAttributes['mId'].field).to.equal('n_m_id');
-      this.N.belongsTo(this.M, { foreignKey: 'mId' });
-      expect(this.N.rawAttributes['mId'].field).to.equal('n_m_id');
+      expect(N.rawAttributes['mId'].field).to.equal('n_m_id');
+      N.belongsTo(M, { foreignKey: 'mId' });
+      expect(N.rawAttributes['mId'].field).to.equal('n_m_id');
     });
 
     it('hasOne/belongsTo does not override already defined field', function() {
-      this.N.rawAttributes['mId'] = {
+      N.rawAttributes['mId'] = {
         type: new DataTypes.CHAR(20),
         field: 'n_m_id'
       };
-      this.N.refreshAttributes();
+      N.refreshAttributes();
 
-      expect(this.N.rawAttributes['mId'].field).to.equal('n_m_id');
-      this.N.belongsTo(this.M, { foreignKey: 'mId' });
-      this.M.hasOne(this.N, { foreignKey: 'mId' });
-      expect(this.N.rawAttributes['mId'].field).to.equal('n_m_id');
+      expect(N.rawAttributes['mId'].field).to.equal('n_m_id');
+      N.belongsTo(M, { foreignKey: 'mId' });
+      M.hasOne(N, { foreignKey: 'mId' });
+      expect(N.rawAttributes['mId'].field).to.equal('n_m_id');
     });
 
     it('hasMany does not override already defined field', function() {
-      this.M.rawAttributes['nId'] = {
+      M.rawAttributes['nId'] = {
         type: new DataTypes.CHAR(20),
         field: 'nana_id'
       };
-      this.M.refreshAttributes();
+      M.refreshAttributes();
 
-      expect(this.M.rawAttributes['nId'].field).to.equal('nana_id');
+      expect(M.rawAttributes['nId'].field).to.equal('nana_id');
 
-      this.N.hasMany(this.M, { foreignKey: 'nId' });
-      this.M.belongsTo(this.N, { foreignKey: 'nId' });
+      N.hasMany(M, { foreignKey: 'nId' });
+      M.belongsTo(N, { foreignKey: 'nId' });
 
-      expect(this.M.rawAttributes['nId'].field).to.equal('nana_id');
+      expect(M.rawAttributes['nId'].field).to.equal('nana_id');
     });
 
     it('belongsToMany does not override already defined field', function() {
-      this.NM = this.sequelize.define('NM', {
+      NM = current.define<ItestInstance, ItestAttribute>('NM', {
         n_id: {
           type: new DataTypes.CHAR(10),
           field: 'nana_id'
@@ -101,11 +107,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         underscored: true
       });
 
-      this.N.belongsToMany(this.M, { through: this.NM, foreignKey: 'n_id' });
-      this.M.belongsToMany(this.N, { through: this.NM, foreignKey: 'm_id' });
+      N.belongsToMany(M, { through: NM, foreignKey: 'n_id' });
+      M.belongsToMany(N, { through: NM, foreignKey: 'm_id' });
 
-      expect(this.NM.rawAttributes['n_id'].field).to.equal('nana_id');
-      expect(this.NM.rawAttributes['m_id'].field).to.equal('mama_id');
+      expect(NM.rawAttributes['n_id'].field).to.equal('nana_id');
+      expect(NM.rawAttributes['m_id'].field).to.equal('mama_id');
     });
   });
 });

@@ -9,28 +9,31 @@ const dialect = Support.getTestDialect();
 const current = Support.sequelize;
 
 describe('Transaction', function() {
+  let stub;
+  let stubConnection;
+  let stubRelease;
   before(() => {
-    (this as any).stub = sinon.stub(current, 'query').returns(Sequelize.Promise.resolve({}));
+    stub = sinon.stub(current, 'query').returns(Sequelize.Promise.resolve({}));
 
-    (this as any).stubConnection = sinon.stub(current.connectionManager, 'getConnection')
+    stubConnection = sinon.stub(current.connectionManager, 'getConnection')
       .returns(Sequelize.Promise.resolve({
         uuid: 'ssfdjd-434fd-43dfg23-2d',
         close() {}
       }));
 
-    (this as any).stubRelease = sinon.stub(current.connectionManager, 'releaseConnection')
+    stubRelease = sinon.stub(current.connectionManager, 'releaseConnection')
       .returns(Sequelize.Promise.resolve());
   });
 
   beforeEach(() => {
-    (this as any).stub.resetHistory();
-    (this as any).stubConnection.resetHistory();
-    (this as any).stubRelease.resetHistory();
+    stub.resetHistory();
+    stubConnection.resetHistory();
+    stubRelease.resetHistory();
   });
 
   after(() => {
-    (this as any).stub.restore();
-    (this as any).stubConnection.restore();
+    stub.restore();
+    stubConnection.restore();
   });
 
   it('should run auto commit query only when needed', () => {
@@ -49,7 +52,7 @@ describe('Transaction', function() {
       ]
     };
     return current.transaction(() => {
-      expect((this as any).stub.args.map(arg => arg[0])).to.deep.equal(expectations[dialect] || expectations.all);
+      expect(stub.args.map(arg => arg[0])).to.deep.equal(expectations[dialect] || expectations.all);
       return Sequelize.Promise.resolve();
     });
   });

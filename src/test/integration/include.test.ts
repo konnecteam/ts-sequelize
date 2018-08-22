@@ -2,12 +2,14 @@
 
 import * as chai from 'chai';
 import * as _ from 'lodash';
-import {Sequelize} from '../../index';
+import { Model, Sequelize} from '../../index';
 import DataTypes from '../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../dummy/dummy-data-set';
 import Support from './support';
 const Promise = Sequelize.Promise;
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
+const current = Support.sequelize;
 
 const sortById = function(a, b) {
   return a.id < b.id ? -1 : 1;
@@ -16,12 +18,12 @@ const sortById = function(a, b) {
 describe(Support.getTestDialectTeaser('Include'), () => {
   describe('find', () => {
     it('should support an empty belongsTo include', function() {
-      const Company = this.sequelize.define('Company', {});
-      const User = this.sequelize.define('User', {});
+      const Company = current.define<ItestInstance, ItestAttribute>('Company', {});
+      const User = current.define<ItestInstance, ItestAttribute>('User', {});
 
       User.belongsTo(Company, {as: 'Employer'});
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return User.create();
       }).then(() => {
         return User.find({
@@ -33,11 +35,11 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support a belongsTo association reference', function() {
-      const Company = this.sequelize.define('Company', {});
-      const User = this.sequelize.define('User', {});
+      const Company = current.define<ItestInstance, ItestAttribute>('Company', {});
+      const User = current.define<ItestInstance, ItestAttribute>('User', {});
       const Employer = User.belongsTo(Company, {as: 'Employer'});
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return User.create();
       }).then(() => {
         return User.findOne({
@@ -49,11 +51,11 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support a belongsTo association reference with a where', function() {
-      const Company = this.sequelize.define('Company', {name: new DataTypes.STRING()});
-      const User = this.sequelize.define('User', {});
+      const Company = current.define<ItestInstance, ItestAttribute>('Company', {name: new DataTypes.STRING()});
+      const User = current.define<ItestInstance, ItestAttribute>('User', {});
       const Employer = User.belongsTo(Company, {as: 'Employer', foreignKey: 'employerId'});
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Company.create({
           name: 'CyberCorp'
         }).then(company => {
@@ -73,12 +75,12 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support a empty hasOne include', function() {
-      const Company = this.sequelize.define('Company', {});
-      const Person = this.sequelize.define('Person', {});
+      const Company = current.define<ItestInstance, ItestAttribute>('Company', {});
+      const Person = current.define<ItestInstance, ItestAttribute>('Person', {});
 
       Company.hasOne(Person, {as: 'CEO'});
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Company.create().then(() => {
           return Company.find({
             include: [{model: Person, as: 'CEO'}]
@@ -90,11 +92,11 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support a hasOne association reference', function() {
-      const Company = this.sequelize.define('Company', {});
-      const Person = this.sequelize.define('Person', {});
+      const Company = current.define<ItestInstance, ItestAttribute>('Company', {});
+      const Person = current.define<ItestInstance, ItestAttribute>('Person', {});
       const CEO = Company.hasOne(Person, {as: 'CEO'});
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Company.create();
       }).then(() => {
         return Company.find({
@@ -106,23 +108,23 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support including a belongsTo association rather than a model/as pair', function() {
-      const Company = this.sequelize.define('Company', {});
-      const Person = this.sequelize.define('Person', {});
+      const Company = current.define<ItestInstance, ItestAttribute>('Company', {});
+      const Person = current.define<ItestInstance, ItestAttribute>('Person', {});
 
-      Person.relation = {
+      const Person_relation = {
         Employer: Person.belongsTo(Company, {as: 'employer'})
       };
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Promise.join(
           Person.create(),
           Company.create()
         ).spread((person, company) => {
-          return person.setEmployer(company);
+          return person.setLinkedData({ model : 'Company', associationAlias : 'employer' }, company);
         });
       }).then(() => {
         return Person.find({
-          include: [Person.relation.Employer]
+          include: [Person_relation.Employer]
         }).then(person => {
           expect(person).to.be.ok;
           expect(person.employer).to.be.ok;
@@ -131,15 +133,15 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support a hasMany association reference', function() {
-      const User = this.sequelize.define('user', {});
-      const Task = this.sequelize.define('task', {});
+      const User = current.define<ItestInstance, ItestAttribute>('user', {});
+      const Task = current.define<ItestInstance, ItestAttribute>('task', {});
       const Tasks = User.hasMany(Task);
 
       Task.belongsTo(User);
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return User.create().then(user => {
-          return user.createTask();
+          return user.createLinkedData<ItestInstance, ItestAttribute>('task', );
         }).then(() => {
           return User.find({
             include: [Tasks]
@@ -152,19 +154,19 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support a hasMany association reference with a where condition', function() {
-      const User = this.sequelize.define('user', {});
-      const Task = this.sequelize.define('task', {title: new DataTypes.STRING()});
+      const User = current.define<ItestInstance, ItestAttribute>('user', {});
+      const Task = current.define<ItestInstance, ItestAttribute>('task', {title: new DataTypes.STRING()});
       const Tasks = User.hasMany(Task);
 
       Task.belongsTo(User);
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return User.create().then(user => {
           return Promise.join(
-            user.createTask({
+            user.createLinkedData<ItestInstance, ItestAttribute>('task', {
               title: 'trivial'
             }),
-            user.createTask({
+            user.createLinkedData<ItestInstance, ItestAttribute>('task', {
               title: 'pursuit'
             })
           );
@@ -183,15 +185,15 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support a belongsToMany association reference', function() {
-      const User = this.sequelize.define('user', {});
-      const Group = this.sequelize.define('group', {});
+      const User = current.define<ItestInstance, ItestAttribute>('user', {});
+      const Group = current.define<ItestInstance, ItestAttribute>('group', {});
       const Groups = User.belongsToMany(Group, { through: 'UserGroup' });
 
       Group.belongsToMany(User, { through: 'UserGroup' });
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return User.create().then(user => {
-          return user.createGroup();
+          return user.createLinkedData<ItestInstance, ItestAttribute>('group', );
         });
       }).then(() => {
         return User.find({
@@ -204,22 +206,22 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support a simple nested belongsTo -> belongsTo include', function() {
-      const Task = this.sequelize.define('Task', {});
-      const User = this.sequelize.define('User', {});
-      const Group = this.sequelize.define('Group', {});
+      const Task = current.define<ItestInstance, ItestAttribute>('Task', {});
+      const User = current.define<ItestInstance, ItestAttribute>('User', {});
+      const Group = current.define<ItestInstance, ItestAttribute>('Group', {});
 
       Task.belongsTo(User);
       User.belongsTo(Group);
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Promise.props({
           task: Task.create(),
           user: User.create(),
           group: Group.create()
         }).then(props => {
           return Promise.join(
-            props.task.setUser(props.user),
-            props.user.setGroup(props.group)
+            props.task.setLinkedData('User', props.user),
+            props.user.setLinkedData('Group', props.group)
           ).return(props);
         }).then(props => {
           return Task.findOne({
@@ -240,14 +242,14 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support a simple sibling set of belongsTo include', function() {
-      const Task = this.sequelize.define('Task', {});
-      const User = this.sequelize.define('User', {});
-      const Group = this.sequelize.define('Group', {});
+      const Task = current.define<ItestInstance, ItestAttribute>('Task', {});
+      const User = current.define<ItestInstance, ItestAttribute>('User', {});
+      const Group = current.define<ItestInstance, ItestAttribute>('Group', {});
 
       Task.belongsTo(User);
       Task.belongsTo(Group);
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Task.create({
           User: {},
           Group: {}
@@ -271,15 +273,15 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support a simple nested hasOne -> hasOne include', function() {
-      const Task = this.sequelize.define('Task', {});
-      const User = this.sequelize.define('User', {});
-      const Group = this.sequelize.define('Group', {});
+      const Task = current.define<ItestInstance, ItestAttribute>('Task', {});
+      const User = current.define<ItestInstance, ItestAttribute>('User', {});
+      const Group = current.define<ItestInstance, ItestAttribute>('Group', {});
 
       User.hasOne(Task);
       Group.hasOne(User);
       User.belongsTo(Group);
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return User.create({
           Task: {},
           Group: {}
@@ -304,14 +306,14 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support a simple nested hasMany -> belongsTo include', function() {
-      const Task = this.sequelize.define('Task', {});
-      const User = this.sequelize.define('User', {});
-      const Project = this.sequelize.define('Project', {});
+      const Task = current.define<ItestInstance, ItestAttribute>('Task', {});
+      const User = current.define<ItestInstance, ItestAttribute>('User', {});
+      const Project = current.define<ItestInstance, ItestAttribute>('Project', {});
 
       User.hasMany(Task);
       Task.belongsTo(Project);
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Project.bulkCreate([{ id: 1 }, { id: 2 }]);
       }).then(() => {
         return User.create({
@@ -346,15 +348,15 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support a simple nested belongsTo -> hasMany include', function() {
-      const Task = this.sequelize.define('Task', {});
-      const Worker = this.sequelize.define('Worker', {});
-      const Project = this.sequelize.define('Project', {});
+      const Task = current.define<ItestInstance, ItestAttribute>('Task', {});
+      const Worker = current.define<ItestInstance, ItestAttribute>('Worker', {});
+      const Project = current.define<ItestInstance, ItestAttribute>('Project', {});
 
       Worker.belongsTo(Project);
       Project.hasMany(Worker);
       Project.hasMany(Task);
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Project.create({
           Workers: [{}],
           Tasks: [{}, {}, {}, {}]
@@ -380,11 +382,11 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support a simple nested hasMany <-> hasMany include', function() {
-      const User = this.sequelize.define('User', {});
-      const Product = this.sequelize.define('Product', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {});
+      const Product = current.define<ItestInstance, ItestAttribute>('Product', {
         title: new DataTypes.STRING()
       });
-      const Tag = this.sequelize.define('Tag', {
+      const Tag = current.define<ItestInstance, ItestAttribute>('Tag', {
         name: new DataTypes.STRING()
       });
 
@@ -392,7 +394,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       Product.belongsToMany(Tag, {through: 'product_tag'});
       Tag.belongsToMany(Product, {through: 'product_tag'});
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Promise.all([
           User.create({
             id: 1,
@@ -417,9 +419,9 @@ describe(Support.getTestDialectTeaser('Include'), () => {
         ]);
       }).spread((products, tags) => {
         return Promise.all([
-          products[0].setTags([tags[0], tags[2]]),
-          products[1].setTags([tags[1]]),
-          products[2].setTags([tags[0], tags[1], tags[2]]),
+          products[0].setLinkedData('Tag', [tags[0], tags[2]]),
+          products[1].setLinkedData('Tag', [tags[1]]),
+          products[2].setLinkedData('Tag', [tags[0], tags[1], tags[2]]),
         ]);
       }).then(() => {
         return User.find({
@@ -446,23 +448,23 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support an include with multiple different association types', function() {
-      const User = this.sequelize.define('User', {});
-      const Product = this.sequelize.define('Product', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {});
+      const Product = current.define<ItestInstance, ItestAttribute>('Product', {
         title: new DataTypes.STRING()
       });
-      const Tag = this.sequelize.define('Tag', {
+      const Tag = current.define<ItestInstance, ItestAttribute>('Tag', {
         name: new DataTypes.STRING()
       });
-      const Price = this.sequelize.define('Price', {
+      const Price = current.define<ItestInstance, ItestAttribute>('Price', {
         value: new DataTypes.FLOAT()
       });
-      const Group = this.sequelize.define('Group', {
+      const Group = current.define<ItestInstance, ItestAttribute>('Group', {
         name: new DataTypes.STRING()
       });
-      const GroupMember = this.sequelize.define('GroupMember', {
+      const GroupMember = current.define<ItestInstance, ItestAttribute>('GroupMember', {
 
       });
-      const Rank = this.sequelize.define('Rank', {
+      const Rank = current.define<ItestInstance, ItestAttribute>('Rank', {
         name: new DataTypes.STRING(),
         canInvite: {
           type: new DataTypes.INTEGER(),
@@ -490,7 +492,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       GroupMember.belongsTo(Group);
       Group.hasMany(GroupMember, {as: 'Memberships'});
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Promise.all([
           Product.create({
             id: 1,
@@ -519,12 +521,12 @@ describe(Support.getTestDialectTeaser('Include'), () => {
             return Tag.findAll();
           }),
         ]);
-      }).spread((product1, product2, user, tags) => {
+      }).spread((product1 : ItestInstance, product2 : ItestInstance, user : ItestInstance, tags) => {
         return Promise.all([
-          user.setProducts([product1, product2]),
-          product1.setTags([tags[0], tags[2]]),
-          product2.setTags([tags[1]]),
-          product1.setCategory(tags[1]),
+          user.setLinkedData('Product', [product1, product2]),
+          product1.setLinkedData('Tag', [tags[0], tags[2]]),
+          product2.setLinkedData('Tag', [tags[1]]),
+          product1.setLinkedData({ model : 'Tag', associationAlias : 'Category' }, tags[1]),
         ]);
       }).then(() => {
         return User.find({
@@ -562,11 +564,11 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support specifying attributes', function() {
-      const Project = this.sequelize.define('Project', {
+      const Project = current.define<ItestInstance, ItestAttribute>('Project', {
         title: new DataTypes.STRING()
       });
 
-      const Task = this.sequelize.define('Task', {
+      const Task = current.define<ItestInstance, ItestAttribute>('Task', {
         title: new DataTypes.STRING(),
         description: new DataTypes.TEXT()
       });
@@ -574,7 +576,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       Project.hasMany(Task);
       Task.belongsTo(Project);
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Task.create({
           title: 'FooBar',
           Project: {title: 'BarFoo'}
@@ -598,18 +600,18 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support Sequelize.literal and renaming of attributes in included model attributes', function() {
-      const Post = this.sequelize.define('Post', {});
-      const PostComment = this.sequelize.define('PostComment', {
+      const Post = current.define<ItestInstance, ItestAttribute>('Post', {});
+      const PostComment = current.define<ItestInstance, ItestAttribute>('PostComment', {
         someProperty: new DataTypes.VIRTUAL(), // Since we specify the AS part as a part of the literal string, not with sequelize syntax, we have to tell sequelize about the field
         comment_title: new DataTypes.STRING()
       });
 
       Post.hasMany(PostComment);
 
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         return Post.create({});
       }).then(post => {
-        return post.createPostComment({
+        return post.createLinkedData('PostComment', {
           comment_title: 'WAT'
         });
       }).then(() => {
@@ -648,13 +650,13 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support self associated hasMany (with through) include', function() {
-      const Group = this.sequelize.define('Group', {
+      const Group = current.define<ItestInstance, ItestAttribute>('Group', {
         name: new DataTypes.STRING()
       });
 
       Group.belongsToMany(Group, { through: 'groups_outsourcing_companies', as: 'OutsourcingCompanies'});
 
-      return this.sequelize.sync({force: true}).bind({}).then(() => {
+      return current.sync({force: true}).bind({}).then(() => {
         return Group.bulkCreate([
           {name: 'SoccerMoms'},
           {name: 'Coca Cola'},
@@ -665,7 +667,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
         return Group.findAll();
       }).then(function(groups) {
         this.groups = groups;
-        return groups[0].setOutsourcingCompanies(groups.slice(1));
+        return groups[0].setLinkedData({ model : 'Group', associationAlias : 'OutsourcingCompanies' }, groups.slice(1));
       }).then(function() {
         return Group.find({
           where: {
@@ -680,24 +682,24 @@ describe(Support.getTestDialectTeaser('Include'), () => {
 
     //TODO Oracle - the correct datatype is not supported for now
     it('should support including date fields, with the correct timeszone', function() {
-      const User = this.sequelize.define('user', {
+      const User = current.define<ItestInstance, ItestAttribute>('user', {
         dateField: new DataTypes.DATE()
       }, {timestamps: false});
-      const Group = this.sequelize.define('group', {
+      const Group = current.define<ItestInstance, ItestAttribute>('group', {
         dateField: new DataTypes.DATE()
       }, {timestamps: false});
 
       User.belongsToMany(Group, {through: 'group_user'});
       Group.belongsToMany(User, {through: 'group_user'});
 
-      return this.sequelize.sync({ force: true }).bind({}).then(() => {
+      return current.sync({ force: true }).bind({}).then(() => {
         return Promise.all([
           User.create({ dateField: Date.UTC(2014, 1, 20) }),
           Group.create({ dateField: Date.UTC(2014, 1, 20) }),
         ]);
       }).spread(function(user, group) {
         this.user = user;
-        return user.addGroup(group);
+        return user.addLinkedData('group', group);
       }).then(function() {
         return User.find({
           where: {
@@ -714,13 +716,13 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should support include when retrieving associated objects', function() {
-      const User = this.sequelize.define('user', {
+      const User = current.define<ItestInstance, ItestAttribute>('user', {
         name: new DataTypes.STRING()
       });
-      const Group = this.sequelize.define('group', {
+      const Group = current.define<ItestInstance, ItestAttribute>('group', {
         name: new DataTypes.STRING()
       });
-      const UserGroup = this.sequelize.define('user_group', {
+      const UserGroup = current.define<ItestInstance, ItestAttribute>('user_group', {
         vip: new DataTypes.INTEGER()
       });
 
@@ -735,7 +737,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
         as: 'Members'
       });
 
-      return this.sequelize.sync({ force: true }).bind({}).then(() => {
+      return current.sync({ force: true }).bind({}).then(() => {
         return Promise.all([
           User.create({ name: 'Owner' }),
           User.create({ name: 'Member' }),
@@ -745,11 +747,11 @@ describe(Support.getTestDialectTeaser('Include'), () => {
         this.owner = owner;
         this.member = member;
         this.group = group;
-        return owner.addGroup(group);
+        return owner.addLinkedData('group', group);
       }).then(function() {
-        return this.group.addMember(this.member);
+        return this.group.addLinkedData({ model : 'user', associationAlias : 'Members' }, this.member);
       }).then(function() {
-        return this.owner.getGroups({
+        return this.owner.getLinkedData('group', {
           include: [{
             model: User,
             as: 'Members'
@@ -763,8 +765,8 @@ describe(Support.getTestDialectTeaser('Include'), () => {
   });
 
   const createUsersAndItems = function() {
-    const User = this.sequelize.define('User', {});
-    const Item = this.sequelize.define('Item', {test: new DataTypes.STRING()});
+    const User = current.define<ItestInstance, ItestAttribute>('User', {});
+    const Item = current.define<ItestInstance, ItestAttribute>('Item', {test: new DataTypes.STRING()});
 
     User.hasOne(Item);
     Item.belongsTo(User);
@@ -772,7 +774,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     this.User = User;
     this.Item = Item;
 
-    return this.sequelize.sync({ force: true }).then(() => {
+    return current.sync({ force: true }).then(() => {
       return Promise.all([
         User.bulkCreate([{}, {}, {}]).then(() => {
           return User.findAll();
@@ -787,9 +789,9 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       ]);
     }).spread((users, items) => {
       return Promise.all([
-        users[0].setItem(items[0]),
-        users[1].setItem(items[1]),
-        users[2].setItem(items[2]),
+        users[0].setLinkedData('Item', items[0]),
+        users[1].setLinkedData('Item', items[1]),
+        users[2].setLinkedData('Item', items[2]),
       ]);
     });
   };
@@ -802,7 +804,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     it('should support Sequelize.and()', function() {
       return this.User.findAll({
         include: [
-          {model: this.Item, where: (Sequelize as any).and({ test: 'def' })},
+          {model: this.Item, where: Sequelize.and({ test: 'def' })},
         ]
       }).then(result => {
         expect(result.length).to.eql(1);
@@ -813,7 +815,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     it('should support Sequelize.or()', function() {
       return expect(this.User.findAll({
         include: [
-          {model: this.Item, where: (Sequelize as any).or({
+          {model: this.Item, where: Sequelize.or({
             test: 'def'
           }, {
             test: 'abc'
@@ -844,9 +846,9 @@ describe(Support.getTestDialectTeaser('Include'), () => {
 
   describe('association getter', () => {
     it('should support getting an include on a N:M association getter', function() {
-      const Question = this.sequelize.define('Question', {});
-      const Answer = this.sequelize.define('Answer', {});
-      const Questionnaire = this.sequelize.define('Questionnaire', {});
+      const Question = current.define<ItestInstance, ItestAttribute>('Question', {});
+      const Answer = current.define<ItestInstance, ItestAttribute>('Answer', {});
+      const Questionnaire = current.define<ItestInstance, ItestAttribute>('Questionnaire', {});
 
       Question.belongsToMany(Answer, {through: 'question_answer'});
       Answer.belongsToMany(Question, {through: 'question_answer'});
@@ -854,10 +856,10 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       Questionnaire.hasMany(Question);
       Question.belongsTo(Questionnaire);
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Questionnaire.create();
       }).then(questionnaire => {
-        return questionnaire.getQuestions({
+        return questionnaire.getLinkedData('Question', {
           include: Answer
         });
       });
@@ -865,20 +867,21 @@ describe(Support.getTestDialectTeaser('Include'), () => {
   });
 
   describe('nested includes', () => {
+    let Employee : Model<ItestInstance, ItestAttribute>;
+    let Team : Model<ItestInstance, ItestAttribute>;
+    let Clearence : Model<ItestInstance, ItestAttribute>;
+    let Team_Members;
+    let Employee_Clearence;
     beforeEach(function() {
-      const Employee = this.sequelize.define('Employee', { name: new DataTypes.STRING() });
-      const Team = this.sequelize.define('Team', { name: new DataTypes.STRING() });
-      const Clearence = this.sequelize.define('Clearence', { level: new DataTypes.INTEGER() });
+      Employee = current.define<ItestInstance, ItestAttribute>('Employee', { name: new DataTypes.STRING() });
+      Team = current.define<ItestInstance, ItestAttribute>('Team', { name: new DataTypes.STRING() });
+      Clearence = current.define<ItestInstance, ItestAttribute>('Clearence', { level: new DataTypes.INTEGER() });
 
-      Team.Members = Team.hasMany(Employee, { as: 'members' });
-      Employee.Clearence = Employee.hasOne(Clearence, { as: 'clearence' });
-      Clearence.Employee = Clearence.belongsTo(Employee, { as: 'employee' });
+      Team_Members = Team.hasMany(Employee, { as: 'members' });
+      Employee_Clearence = Employee.hasOne(Clearence, { as: 'clearence' });
+      Clearence.belongsTo(Employee, { as: 'employee' });
 
-      this.Employee = Employee;
-      this.Team = Team;
-      this.Clearence = Clearence;
-
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         return Promise.all([
           Team.create({ name: 'TeamA' }),
           Team.create({ name: 'TeamB' }),
@@ -890,24 +893,24 @@ describe(Support.getTestDialectTeaser('Include'), () => {
           Clearence.create({ level: 5 }),
         ]).then(instances => {
           return Promise.all([
-            instances[0].addMembers([instances[2], instances[3]]),
-            instances[1].addMembers([instances[4], instances[5]]),
-            instances[2].setClearence(instances[6]),
-            instances[3].setClearence(instances[7]),
+            instances[0].addLinkedData({ model : 'Employee', associationAlias : 'members' }, [instances[2], instances[3]]),
+            instances[1].addLinkedData({ model : 'Employee', associationAlias : 'members' }, [instances[4], instances[5]]),
+            instances[2].setLinkedData('Clearence', instances[6]),
+            instances[3].setLinkedData('Clearence', instances[7]),
           ]);
         });
       });
     });
 
     it('should not ripple grandchild required to top level find when required of child is set to false', function() {
-      return this.Team.findAll({
+      return Team.findAll({
         include: [
           {
-            association: this.Team.Members,
+            association: Team_Members,
             required: false,
             include: [
               {
-                association: this.Employee.Clearence,
+                association: Employee_Clearence,
                 required: true
               },
             ]
@@ -919,13 +922,13 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should not ripple grandchild required to top level find when required of child is not given (implicitly false)', function() {
-      return this.Team.findAll({
+      return Team.findAll({
         include: [
           {
-            association: this.Team.Members,
+            association: Team_Members,
             include: [
               {
-                association: this.Employee.Clearence,
+                association: Employee_Clearence,
                 required: true
               },
             ]
@@ -937,14 +940,14 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should ripple grandchild required to top level find when required of child is set to true as well', function() {
-      return this.Team.findAll({
+      return Team.findAll({
         include: [
           {
-            association: this.Team.Members,
+            association: Team_Members,
             required: true,
             include: [
               {
-                association: this.Employee.Clearence,
+                association: Employee_Clearence,
                 required: true
               },
             ]

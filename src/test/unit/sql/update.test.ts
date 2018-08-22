@@ -2,6 +2,7 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
@@ -14,7 +15,7 @@ const sql  = current.dialect.QueryGenerator;
 describe(Support.getTestDialectTeaser('SQL'), () => {
   describe('update', () => {
     it('with temp table for trigger', () => {
-      const User = Support.sequelize.define('user', {
+      const User = Support.sequelize.define<ItestInstance, ItestAttribute>('user', {
         username: {
           type: new DataTypes.STRING(),
           field: 'user_name'
@@ -61,7 +62,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
 
 
     it('Works with limit', () => {
-      const User = Support.sequelize.define('User', {
+      const User = Support.sequelize.define<ItestInstance, ItestAttribute>('User', {
         username: {
           type: new DataTypes.STRING()
         },

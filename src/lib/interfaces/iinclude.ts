@@ -22,7 +22,7 @@ export interface IInclude {
   all? : any;
   /** : string | {}, assocation alias */
   as? : string;
-  association? : Association;
+  association? : Association<any, any, any, any>;
   /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
   attributes? : any;
   duplicating? : boolean;
@@ -40,9 +40,11 @@ export interface IInclude {
   /** The maximum count you want to get. */
   limit? : number;
   mismatch? : any;
-  model? : typeof Model;
+  model? : Model<any, any>;
+  myOption? : string;
   on? : any;
   or? : boolean;
+  order? : string[][];
   parent? : any;
   required? : boolean;
   /** Separate requests if multiple left outer */
@@ -54,7 +56,7 @@ export interface IInclude {
   through? : {
     as? : any,
     attributes? : any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     where? : {}
   };
   /** A hash of search attributes. */

@@ -2,13 +2,17 @@
 
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Hooks'), () => {
+  let ParanoidUser : Model<ItestInstance, ItestAttribute>;
   beforeEach(function() {
-    this.User = this.sequelize.define('User', {
+    current.define<ItestInstance, ItestAttribute>('User', {
       username: {
         type: new DataTypes.STRING(),
         allowNull: false
@@ -19,7 +23,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       }
     });
 
-    this.ParanoidUser = this.sequelize.define('ParanoidUser', {
+    ParanoidUser = current.define<ItestInstance, ItestAttribute>('ParanoidUser', {
       username: new DataTypes.STRING(),
       mood: {
         type: new DataTypes.ENUM(),
@@ -29,7 +33,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       paranoid: true
     });
 
-    return this.sequelize.sync({ force: true });
+    return current.sync({ force: true });
   });
 
   describe('#restore', () => {
@@ -38,10 +42,10 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         const beforeHook = sinon.spy();
         const afterHook = sinon.spy();
 
-        this.ParanoidUser.beforeRestore(beforeHook);
-        this.ParanoidUser.afterRestore(afterHook);
+        ParanoidUser.beforeRestore(beforeHook);
+        ParanoidUser.afterRestore(afterHook);
 
-        return this.ParanoidUser.create({username: 'Toni', mood: 'happy'}).then(user => {
+        return ParanoidUser.create({username: 'Toni', mood: 'happy'}).then(user => {
           return user.destroy().then(() => {
             return user.restore().then(() => {
               expect(beforeHook).to.have.been.calledOnce;
@@ -57,13 +61,13 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         const beforeHook = sinon.spy();
         const afterHook = sinon.spy();
 
-        this.ParanoidUser.beforeRestore(() => {
+        ParanoidUser.beforeRestore(() => {
           beforeHook();
           throw new Error('Whoops!');
         });
-        this.ParanoidUser.afterRestore(afterHook);
+        ParanoidUser.afterRestore(afterHook);
 
-        return this.ParanoidUser.create({username: 'Toni', mood: 'happy'}).then(user => {
+        return ParanoidUser.create({username: 'Toni', mood: 'happy'}).then(user => {
           return user.destroy().then(() => {
             return expect(user.restore()).to.be.rejected.then(() => {
               expect(beforeHook).to.have.been.calledOnce;
@@ -77,13 +81,13 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         const beforeHook = sinon.spy();
         const afterHook = sinon.spy();
 
-        this.ParanoidUser.beforeRestore(beforeHook);
-        this.ParanoidUser.afterRestore(() => {
+        ParanoidUser.beforeRestore(beforeHook);
+        ParanoidUser.afterRestore(() => {
           afterHook();
           throw new Error('Whoops!');
         });
 
-        return this.ParanoidUser.create({username: 'Toni', mood: 'happy'}).then(user => {
+        return ParanoidUser.create({username: 'Toni', mood: 'happy'}).then(user => {
           return user.destroy().then(() => {
             return expect(user.restore()).to.be.rejected.then(() => {
               expect(beforeHook).to.have.been.calledOnce;

@@ -4,6 +4,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import DataTypes from '../../../lib/data-types';
 import config from '../../config/config';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
@@ -11,6 +12,7 @@ const Promise = current.Promise;
 
 
 describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
+  let stub;
   describe('validations', () => {
     const checks = {
       is: {
@@ -188,7 +190,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
         validations[validator] = validatorDetails.spec || {};
         validations[validator].msg = message;
 
-        const UserFail = this.sequelize.define('User' + config.rand(), {
+        const UserFail = current.define<ItestInstance, ItestAttribute>('User' + config.rand(), {
           name: {
             type: new DataTypes.STRING(),
             validate: validations
@@ -221,7 +223,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
           validations[validator] = true;
         }
 
-        const UserSuccess = this.sequelize.define('User' + config.rand(), {
+        const UserSuccess = current.define<ItestInstance, ItestAttribute>('User' + config.rand(), {
           name: {
             type: new DataTypes.STRING(),
             validate: validations
@@ -263,7 +265,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
       typeValidation: true
     });
 
-    const User = _current.define('user', {
+    const User = _current.define<ItestInstance, ItestAttribute>('user', {
       age: new DataTypes.INTEGER(),
       name: new DataTypes.STRING(),
       awesome: new DataTypes.BOOLEAN(),
@@ -273,7 +275,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
     });
 
     before(function() {
-      this.stub = sinon.stub(_current, 'query').callsFake(() => {
+      stub = sinon.stub(_current, 'query').callsFake(() => {
         return new Promise(resolve => {
           resolve([User.build({}), 1]);
         });
@@ -281,7 +283,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
     });
 
     after(function() {
-      this.stub.restore();
+      stub.restore();
     });
 
     describe('should not throw', () => {
@@ -411,7 +413,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
 
   describe('custom validation functions', () => {
 
-    const User = current.define('user', {
+    const User = current.define<ItestInstance, ItestAttribute>('user', {
       age: {
         type: new DataTypes.STRING(),
         validate: {
@@ -437,11 +439,11 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
     });
 
     before(function() {
-      this.stub = sinon.stub(current, 'query').returns(Promise.resolve([User.build(), 1]));
+      stub = sinon.stub(current, 'query').returns(Promise.resolve([User.build(), 1]));
     });
 
     after(function() {
-      this.stub.restore();
+      stub.restore();
     });
 
     describe('should not throw', () => {
@@ -498,7 +500,7 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
 
   describe('custom validation functions returning promises', () => {
 
-    const User = current.define('user', {
+    const User = current.define<ItestInstance, ItestAttribute>('user', {
       name: new DataTypes.STRING()
     }, {
       validate: {
@@ -512,11 +514,11 @@ describe(Support.getTestDialectTeaser('InstanceValidator'), () => {
     });
 
     before(function() {
-      this.stub = sinon.stub(current, 'query').returns(Promise.resolve([User.build(), 1]));
+      stub = sinon.stub(current, 'query').returns(Promise.resolve([User.build(), 1]));
     });
 
     after(function() {
-      this.stub.restore();
+      stub.restore();
     });
 
     describe('should not throw', () => {

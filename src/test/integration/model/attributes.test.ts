@@ -1,20 +1,25 @@
 'use strict';
 
 import * as chai from 'chai';
-import {Sequelize} from '../../../index';
+import { Model, Sequelize } from '../../../index';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const Promise = Sequelize.Promise;
 const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
+  let Student : Model<ItestInstance, ItestAttribute>;
+  let Course : Model<ItestInstance, ItestAttribute>;
+  let Score : Model<ItestInstance, ItestAttribute>;
+  let callCount : number;
   describe('attributes', () => {
     describe('set', () => {
       it('should only be called once when used on a join model called with an association getter', function() {
-        const self = this;
-        self.callCount = 0;
+        callCount = 0;
 
-        this.Student = this.sequelize.define('student', {
+        Student = current.define<ItestInstance, ItestAttribute>('student', {
           no: {type: new DataTypes.INTEGER(), primaryKey: true},
           name: new DataTypes.STRING()
         }, {
@@ -22,7 +27,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           timestamps: false
         });
 
-        this.Course = this.sequelize.define('course', {
+        Course = current.define<ItestInstance, ItestAttribute>('course', {
           no: {type: new DataTypes.INTEGER(), primaryKey: true},
           name: new DataTypes.STRING()
         }, {
@@ -30,12 +35,12 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           timestamps: false
         });
 
-        this.Score = this.sequelize.define('score', {
+        Score = current.define<ItestInstance, ItestAttribute>('score', {
           score: new DataTypes.INTEGER(),
           test_value: {
             type: new DataTypes.INTEGER(),
             set(v) {
-              self.callCount++;
+              callCount++;
               this.setDataValue('test_value', v + 1);
             }
           }
@@ -44,44 +49,44 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           timestamps: false
         });
 
-        this.Student.belongsToMany(this.Course, {through: this.Score, foreignKey: 'StudentId'});
-        this.Course.belongsToMany(this.Student, {through: this.Score, foreignKey: 'CourseId'});
+        Student.belongsToMany(Course, {through: Score, foreignKey: 'StudentId'});
+        Course.belongsToMany(Student, {through: Score, foreignKey: 'CourseId'});
 
-        return this.sequelize.sync({force: true}).then(() => {
+        return current.sync({force: true}).then(() => {
           return Promise.join(
-            self.Student.create({no: 1, name: 'ryan'}),
-            self.Course.create({no: 100, name: 'history'})
+            Student.create({no: 1, name: 'ryan'}),
+            Course.create({no: 100, name: 'history'})
           ).spread((student, course) => {
-            return student.addCourse(course, { through: {score: 98, test_value: 1000}});
+            return student.addLinkedData('course', course, { through: {score: 98, test_value: 1000}});
           }).then(() => {
-            expect(self.callCount).to.equal(1);
-            return self.Score.find({ where: { StudentId: 1, CourseId: 100 } }).then(score => {
+            expect(callCount).to.equal(1);
+            return Score.find({ where: { StudentId: 1, CourseId: 100 } }).then(score => {
               expect(score.test_value).to.equal(1001);
             });
           })
             .then(() => {
               return Promise.join(
-                self.Student.build({no: 1}).getCourses({where: {no: 100}}),
-                self.Score.find({ where: { StudentId: 1, CourseId: 100 } })
+                Student.build({no: 1}).getLinkedData<ItestInstance, ItestAttribute>('course', {where: {no: 100}}),
+                Score.find({ where: { StudentId: 1, CourseId: 100 } })
               );
             })
-            .spread((courses, score) => {
+            .spread((courses : ItestInstance, score : ItestInstance) => {
               expect(score.test_value).to.equal(1001);
               expect(courses[0].score.toJSON().test_value).to.equal(1001);
-              expect(self.callCount).to.equal(1);
+              expect(callCount).to.equal(1);
             });
         });
       });
 
       it('allows for an attribute to be called "toString"', function() {
-        const Person = this.sequelize.define('person', {
+        const Person = current.define<ItestInstance, ItestAttribute>('person', {
           name: new DataTypes.STRING(),
           nick: new DataTypes.STRING()
         }, {
           timestamps: false
         });
 
-        return this.sequelize.sync({force: true})
+        return current.sync({force: true})
           .then(() => Person.create({name: 'Jozef', nick: 'Joe'}))
           .then(() => Person.findOne({
             attributes: [
@@ -99,20 +104,20 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('allows for an attribute to be called "toString" with associations', function() {
-        const Person = this.sequelize.define('person', {
+        const Person = current.define<ItestInstance, ItestAttribute>('person', {
           name: new DataTypes.STRING(),
           nick: new DataTypes.STRING()
         });
 
-        const Computer = this.sequelize.define('computer', {
+        const Computer = current.define<ItestInstance, ItestAttribute>('computer', {
           hostname: new DataTypes.STRING(),
         });
 
         Person.hasMany(Computer);
 
-        return this.sequelize.sync({force: true})
+        return current.sync({force: true})
           .then(() => Person.create({name: 'Jozef', nick: 'Joe'}))
-          .then(person => person.createComputer({hostname: 'laptop'}))
+          .then(person => person.createLinkedData<ItestInstance, ItestAttribute>('computer', {hostname: 'laptop'}))
           .then(() => Person.findAll({
             attributes: [
               'nick',

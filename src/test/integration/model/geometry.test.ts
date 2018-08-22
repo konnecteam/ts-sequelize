@@ -2,7 +2,9 @@
 
 import * as chai from 'chai';
 import * as semver from 'semver';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 
 const expect = chai.expect;
@@ -11,18 +13,19 @@ const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   if (current.dialect.supports.GEOMETRY) {
+    let User : Model<ItestInstance, ItestAttribute>;
     describe('GEOMETRY', () => {
       beforeEach(function() {
-        this.User = this.sequelize.define('User', {
+        User = current.define<ItestInstance, ItestAttribute>('User', {
           username: new DataTypes.STRING(),
           geometry: new DataTypes.GEOMETRY()
         });
 
-        return this.User.sync({ force: true });
+        return User.sync({ force: true });
       });
 
       it('works with aliases fields', function() {
-        const Pub = this.sequelize.define('Pub', {
+        const Pub = current.define<ItestInstance, ItestAttribute>('Pub', {
           location: {field: 'coordinates', type: new DataTypes.GEOMETRY()}
         });
         const point = {type: 'Point', coordinates: [39.807222, -76.984722]};
@@ -36,7 +39,6 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should create a geometry object', function() {
-        const User = this.User;
         const point = { type: 'Point', coordinates: [39.807222, -76.984722]};
 
         return User.create({username: 'username', geometry: point }).then(newUser => {
@@ -46,7 +48,6 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should update a geometry object', function() {
-        const User = this.User;
         const point1 = { type: 'Point', coordinates: [39.807222, -76.984722]};
         const point2 = { type: 'Point', coordinates: [49.807222, -86.984722]};
         const props = {username: 'username', geometry: point1};
@@ -63,16 +64,15 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     describe('GEOMETRY(POINT)', () => {
       beforeEach(function() {
-        this.User = this.sequelize.define('User', {
+        User = current.define<ItestInstance, ItestAttribute>('User', {
           username: new DataTypes.STRING(),
           geometry: new DataTypes.GEOMETRY('POINT')
         });
 
-        return this.User.sync({ force: true });
+        return User.sync({ force: true });
       });
 
       it('should create a geometry object', function() {
-        const User = this.User;
         const point = { type: 'Point', coordinates: [39.807222, -76.984722]};
 
         return User.create({username: 'username', geometry: point }).then(newUser => {
@@ -82,7 +82,6 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should update a geometry object', function() {
-        const User = this.User;
         const point1 = { type: 'Point', coordinates: [39.807222, -76.984722]};
         const point2 = { type: 'Point', coordinates: [49.807222, -86.984722]};
         const props = {username: 'username', geometry: point1};
@@ -99,16 +98,15 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     describe('GEOMETRY(LINESTRING)', () => {
       beforeEach(function() {
-        this.User = this.sequelize.define('User', {
+        User = current.define<ItestInstance, ItestAttribute>('User', {
           username: new DataTypes.STRING(),
           geometry: new DataTypes.GEOMETRY('LINESTRING')
         });
 
-        return this.User.sync({ force: true });
+        return User.sync({ force: true });
       });
 
       it('should create a geometry object', function() {
-        const User = this.User;
         const point = { type: 'LineString', coordinates: [[100.0, 0.0], [101.0, 1.0]] };
 
         return User.create({username: 'username', geometry: point }).then(newUser => {
@@ -118,7 +116,6 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should update a geometry object', function() {
-        const User = this.User;
         const point1 = { type: 'LineString', coordinates: [[100.0, 0.0], [101.0, 1.0]] };
         const point2 = { type: 'LineString', coordinates: [[101.0, 0.0], [102.0, 1.0]] };
         const props = {username: 'username', geometry: point1};
@@ -135,16 +132,15 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     describe('GEOMETRY(POLYGON)', () => {
       beforeEach(function() {
-        this.User = this.sequelize.define('User', {
+        User = current.define<ItestInstance, ItestAttribute>('User', {
           username: new DataTypes.STRING(),
           geometry: new DataTypes.GEOMETRY('POLYGON')
         });
 
-        return this.User.sync({ force: true });
+        return User.sync({ force: true });
       });
 
       it('should create a geometry object', function() {
-        const User = this.User;
         const point = { type: 'Polygon', coordinates: [
           [[100.0, 0.0], [101.0, 0.0], [101.0, 1.0],
             [100.0, 1.0], [100.0, 0.0]],
@@ -157,7 +153,6 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should update a geometry object', function() {
-        const User = this.User;
         const polygon1 = { type: 'Polygon', coordinates: [
           [[100.0, 0.0], [101.0, 0.0], [101.0, 1.0], [100.0, 1.0], [100.0, 0.0]],
         ]};
@@ -178,15 +173,16 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     describe('sql injection attacks', () => {
+      let _Model : Model<ItestInstance, ItestAttribute>;
       beforeEach(function() {
-        this.Model = this.sequelize.define('Model', {
+        _Model = current.define<ItestInstance, ItestAttribute>('Model', {
           location: new DataTypes.GEOMETRY()
         });
-        return this.sequelize.sync({ force: true });
+        return current.sync({ force: true });
       });
 
       it('should properly escape the single quotes', function() {
-        return this.Model.create({
+        return _Model.create({
           location: {
             type: 'Point',
             properties: {
@@ -200,11 +196,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       it('should properly escape the single quotes in coordinates', function() {
 
         // MySQL 5.7, those guys finally fixed this
-        if (dialect === 'mysql' && semver.gte(this.sequelize.options.databaseVersion, '5.7.0')) {
+        if (dialect === 'mysql' && semver.gte(current.options.databaseVersion, '5.7.0')) {
           return;
         }
 
-        return this.Model.create({
+        return _Model.create({
           location: {
             type: 'Point',
             properties: {

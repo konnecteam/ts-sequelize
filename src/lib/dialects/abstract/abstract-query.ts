@@ -4,8 +4,9 @@ import * as Dot from 'dottie';
 import * as _ from 'lodash';
 import { Sequelize } from '../../..';
 import { Association } from '../../associations/base';
+import { DataSet } from '../../data-set';
+import { IInclude } from '../../interfaces/iinclude';
 import { Model } from '../../model';
-import { IInclude } from '../../model/iinclude';
 import { QueryTypes } from '../../query-types';
 import { SqlString } from '../../sql-string';
 import { Transaction } from '../../transaction';
@@ -35,7 +36,7 @@ export abstract class AbstractQuery {
     isolationLevel? : string,
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /**
      *  = false, If true, transforms objects with `.` separated property names into nested objects using [dottie.js](https://github.com/mickhansen/dottie.js).
      * For example { 'user.username': 'john' } becomes { user: { username: 'john' }}. When `nest` is true, the query type is assumed to be `'SELECT'`, unless otherwise specified
@@ -59,9 +60,9 @@ export abstract class AbstractQuery {
      */
     type? : any
   };
-  public model : typeof Model;
+  public model : Model<any, any>;
   public sql : string;
-  public instance : Model;
+  public instance : DataSet<any>;
   public connection : any;
   public sequelize : Sequelize;
 
@@ -462,8 +463,8 @@ export abstract class AbstractQuery {
    * @hidden
    */
   private static _groupJoinData(rows : any[], includeOptions : {
-    association? : Association;
-    model? : typeof Model,
+    association? : Association<any, any, any, any>;
+    model? : Model<any, any>,
     /** Internal map of includes - auto-completed */
     includeMap? : {},
     /** Internal array of attributes - auto-completed */

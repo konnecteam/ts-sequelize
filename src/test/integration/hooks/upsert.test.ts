@@ -2,14 +2,18 @@
 
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
+const current = Support.sequelize;
 
 if (Support.sequelize.dialect.supports.upserts) {
   describe(Support.getTestDialectTeaser('Hooks'), () => {
+    let User : Model<ItestInstance, ItestAttribute>;
     beforeEach(function() {
-      this.User = this.sequelize.define('User', {
+      User = current.define<ItestInstance, ItestAttribute>('User', {
         username: {
           type: new DataTypes.STRING(),
           allowNull: false,
@@ -20,7 +24,7 @@ if (Support.sequelize.dialect.supports.upserts) {
           values: ['happy', 'sad', 'neutral']
         }
       });
-      return this.sequelize.sync({ force: true });
+      return current.sync({ force: true });
     });
 
     describe('#upsert', () => {
@@ -29,10 +33,10 @@ if (Support.sequelize.dialect.supports.upserts) {
           const beforeHook = sinon.spy();
           const afterHook = sinon.spy();
 
-          this.User.beforeUpsert(beforeHook);
-          this.User.afterUpsert(afterHook);
+          User.beforeUpsert(beforeHook);
+          User.afterUpsert(afterHook);
 
-          return this.User.upsert({username: 'Toni', mood: 'happy'}).then(() => {
+          return User.upsert({username: 'Toni', mood: 'happy'}).then(() => {
             expect(beforeHook).to.have.been.calledOnce;
             expect(afterHook).to.have.been.calledOnce;
           });
@@ -44,13 +48,13 @@ if (Support.sequelize.dialect.supports.upserts) {
           const beforeHook = sinon.spy();
           const afterHook = sinon.spy();
 
-          this.User.beforeUpsert(() => {
+          User.beforeUpsert(() => {
             beforeHook();
             throw new Error('Whoops!');
           });
-          this.User.afterUpsert(afterHook);
+          User.afterUpsert(afterHook);
 
-          return expect(this.User.upsert({username: 'Toni', mood: 'happy'})).to.be.rejected.then(() => {
+          return expect(User.upsert({username: 'Toni', mood: 'happy'})).to.be.rejected.then(() => {
             expect(beforeHook).to.have.been.calledOnce;
             expect(afterHook).not.to.have.been.called;
           });
@@ -60,13 +64,13 @@ if (Support.sequelize.dialect.supports.upserts) {
           const beforeHook = sinon.spy();
           const afterHook = sinon.spy();
 
-          this.User.beforeUpsert(beforeHook);
-          this.User.afterUpsert(() => {
+          User.beforeUpsert(beforeHook);
+          User.afterUpsert(() => {
             afterHook();
             throw new Error('Whoops!');
           });
 
-          return expect(this.User.upsert({username: 'Toni', mood: 'happy'})).to.be.rejected.then(() => {
+          return expect(User.upsert({username: 'Toni', mood: 'happy'})).to.be.rejected.then(() => {
             expect(beforeHook).to.have.been.calledOnce;
             expect(afterHook).to.have.been.calledOnce;
           });
@@ -78,12 +82,12 @@ if (Support.sequelize.dialect.supports.upserts) {
           let hookCalled = 0;
           const valuesOriginal = { mood: 'sad', username: 'leafninja' };
 
-          this.User.beforeUpsert(values => {
+          User.beforeUpsert(values => {
             values.mood = 'happy';
             hookCalled++;
           });
 
-          return this.User.upsert(valuesOriginal).then(() => {
+          return User.upsert(valuesOriginal).then(() => {
             expect(valuesOriginal.mood).to.equal('happy');
             expect(hookCalled).to.equal(1);
           });

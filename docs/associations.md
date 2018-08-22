@@ -16,12 +16,12 @@ Let's first begin with a basic concept that you will see used in most associatio
 
 ```js
 const User = sequelize.define('User', {
-  name: new Sequelize.STRING(),
-  email: new Sequelize.STRING()
+  name: new DataTypes.STRING(),
+  email: new DataTypes.STRING()
 });
 
 const Project = sequelize.define('Project', {
-  name: new Sequelize.STRING()
+  name: new DataTypes.STRING()
 });
 
 User.hasOne(Project);
@@ -34,8 +34,8 @@ User.hasOne(Project);
 When you create associations between your models in sequelize, foreign key references with constraints will automatically be created. The setup below:
 
 ```js
-const Task = sequelize.define('task', { title: new Sequelize.STRING() });
-const User = sequelize.define('user', { username: new Sequelize.STRING() });
+const Task = sequelize.define('task', { title: new DataTypes.STRING() });
+const User = sequelize.define('user', { username: new DataTypes.STRING() });
 
 User.hasMany(Task); // Will add userId to Task model
 Task.belongsTo(User); // Will also add userId to Task model
@@ -78,13 +78,13 @@ Let's modify last example to use `underscored` option.
 
 ```js
 const Task = sequelize.define('task', {
-  title: new Sequelize.STRING()
+  title: new DataTypes.STRING()
 }, {
   underscored: true
 });
 
 const User = sequelize.define('user', {
-  username: new Sequelize.STRING()
+  username: new DataTypes.STRING()
 }, {
   underscored: true
 });
@@ -129,10 +129,10 @@ Adding constraints between tables means that tables must be created in the datab
 
 ```js
 const Document = sequelize.define('document', {
-  author: new Sequelize.STRING()
+  author: new DataTypes.STRING()
 });
 const Version = sequelize.define('version', {
-  timestamp: new Sequelize.DATE()
+  timestamp: new DataTypes.DATE()
 });
 
 Document.hasMany(Version); // This adds documentId attribute to version
@@ -185,19 +185,19 @@ Sometimes you may want to reference another table, without adding any constraint
 
 ```js 
 const Trainer = sequelize.define('trainer', {
-  firstName: new Sequelize.STRING(),
-  lastName: new Sequelize.STRING()
+  firstName: new DataTypes.STRING(),
+  lastName: new DataTypes.STRING()
 });
 
 // Series will have a trainerId = Trainer.id foreign reference key
 // after we call Trainer.hasMany(series)
 const Series = sequelize.define('series', {
-  title: new Sequelize.STRING(),
-  subTitle: new Sequelize.STRING(),
-  description: new Sequelize.TEXT(),
+  title: new DataTypes.STRING(),
+  subTitle: new DataTypes.STRING(),
+  description: new DataTypes.TEXT(),
   // Set FK relationship (hasMany) with `Trainer`
   trainerId: {
-    type: new Sequelize.INTEGER(),
+    type: new DataTypes.INTEGER(),
     references: {
       model: Trainer,
       key: 'id'
@@ -208,12 +208,12 @@ const Series = sequelize.define('series', {
 // Video will have seriesId = Series.id foreign reference key
 // after we call Series.hasOne(Video)
 const Video = sequelize.define('video', {
-  title: new Sequelize.STRING(),
-  sequence: new Sequelize.INTEGER(),
-  description: new Sequelize.TEXT(),
+  title: new DataTypes.STRING(),
+  sequence: new DataTypes.INTEGER(),
+  description: new DataTypes.TEXT(),
   // set relationship (hasOne) with `Series`
   seriesId: {
-    type: new Sequelize.INTEGER(),
+    type: new DataTypes.INTEGER(),
     references: {
       model: Series, // Can be both a string representing the table name or a Sequelize model
       key: 'id'
@@ -257,7 +257,7 @@ User.belongsTo(Company);
 const User = this.sequelize.define('user', {/* attributes */}, {underscored: true})
 const Company  = this.sequelize.define('company', {
   uuid: {
-    type: new Sequelize.UUID(),
+    type: new DataTypes.UUID(),
     primaryKey: true
   }
 });
@@ -433,8 +433,8 @@ This will add the attribute `projectId` to User. Depending on your setting for u
 Sometimes you may need to associate records on different columns, you may use `sourceKey` option:
 
 ```js
-const City = sequelize.define('city', { countryCode: new Sequelize.STRING() });
-const Country = sequelize.define('country', { isoCode: new Sequelize.STRING() });
+const City = sequelize.define('city', { countryCode: new DataTypes.STRING() });
+const Country = sequelize.define('country', { isoCode: new DataTypes.STRING() });
 
 // Here we can connect countries and cities base on country code
 Country.hasMany(City, {foreignKey: 'countryCode', sourceKey: 'isoCode'});
@@ -502,7 +502,7 @@ By default the code above will add projectId and userId to the UserProjects tabl
 ```js
 const UserProjects = sequelize.define('userProjects', {
   id: {
-    type: new Sequelize.INTEGER(),
+    type: new DataTypes.INTEGER(),
     primaryKey: true,
     autoIncrement: true
   },
@@ -533,9 +533,9 @@ Assume we have tables Comment, Post, and Image. A comment can be associated to e
 
 ```js
 const Comment = this.sequelize.define('comment', {
-  title: new Sequelize.STRING(),
-  commentable: new Sequelize.STRING(),
-  commentable_id: new Sequelize.INTEGER()
+  title: new DataTypes.STRING(),
+  commentable: new DataTypes.STRING(),
+  commentable_id: new DataTypes.INTEGER()
 });
 
 Comment.prototype.getItem = function(options) {
@@ -869,22 +869,22 @@ Association scopes allow you to place a scope (a set of default attributes for `
 Assume we have models Comment, Post, and Image. A comment can be associated to either an image or a post via `commentableId` and `commentable` - we say that Post and Image are `Commentable`
 
 ```js
-const Task = this.sequelize.define('task', { title: new Sequelize.STRING() })
-const User = this.sequelize.define('user', { username: new Sequelize.STRING() })
+const Task = this.sequelize.define('task', { title: new DataTypes.STRING() })
+const User = this.sequelize.define('user', { username: new DataTypes.STRING() })
  
 User.hasMany(Task)
 Task.belongsTo(User)
 ```
 
 const Image = sequelize.define('image', {
-  title: new Sequelize.STRING(),
-  link: new Sequelize.STRING()
+  title: new DataTypes.STRING(),
+  link: new DataTypes.STRING()
 });
 
 const Comment = sequelize.define('comment', {
-  title: new Sequelize.STRING(),
-  commentable: new Sequelize.STRING(),
-  commentableId: new Sequelize.INTEGER()
+  title: new DataTypes.STRING(),
+  commentable: new DataTypes.STRING(),
+  commentableId: new DataTypes.INTEGER()
 });
 
 Comment.prototype.getItem = function(options) {
@@ -932,10 +932,10 @@ Note that the Image -> Comment and Post -> Comment relations define a scope, `co
 
 ```js
 const Document = this.sequelize.define('document', {
-  author: new Sequelize.STRING()
+  author: new DataTypes.STRING()
 })
 const Version = this.sequelize.define('version', {
-  timestamp: new Sequelize.DATE()
+  timestamp: new DataTypes.DATE()
 })
 // INSERT INTO "comments" ("id","title","commentable","commentableId","createdAt","updatedAt") VALUES (DEFAULT,'Awesome!','image',1,'2018-04-17 05:36:40.454 +00:00','2018-04-17 05:36:40.454 +00:00') RETURNING *;
 
@@ -953,28 +953,28 @@ For brevity, the example only shows a Post model, but in reality Tag would be re
 ```js
 const ItemTag = sequelize.define('item_tag', {
   id: {
-    type: new Sequelize.INTEGER(),
+    type: new DataTypes.INTEGER(),
     primaryKey: true,
     autoIncrement: true
   },
   tagId: {
-    type: new Sequelize.INTEGER(),
+    type: new DataTypes.INTEGER(),
     unique: 'item_tag_taggable'
   },
   taggable: {
-    type: new Sequelize.STRING(),
+    type: new DataTypes.STRING(),
     unique: 'item_tag_taggable'
   },
   taggableId: {
-    type: new Sequelize.INTEGER(),
+    type: new DataTypes.INTEGER(),
     unique: 'item_tag_taggable',
     references: null
   }
 });
 
 const Tag = sequelize.define('tag', {
-  name: new Sequelize.STRING(),
-  status: new Sequelize.STRING()
+  name: new DataTypes.STRING(),
+  status: new DataTypes.STRING()
 });
 
 Post.belongsToMany(Tag, {
@@ -1083,19 +1083,19 @@ Consider the following models:
 
 ```js
 const Product = this.sequelize.define('product', {
-  title: new Sequelize.STRING()
+  title: new DataTypes.STRING()
 });
 const User = this.sequelize.define('user', {
-  first_name: new Sequelize.STRING(),
-  last_name: new Sequelize.STRING()
+  first_name: new DataTypes.STRING(),
+  last_name: new DataTypes.STRING()
 });
 const Address = this.sequelize.define('address', {
-  type: new Sequelize.STRING(),
-  line_1: new Sequelize.STRING(),
-  line_2: new Sequelize.STRING(),
-  city: new Sequelize.STRING(),
-  state: new Sequelize.STRING(),
-  zip: new Sequelize.STRING(),
+  type: new DataTypes.STRING(),
+  line_1: new DataTypes.STRING(),
+  line_2: new DataTypes.STRING(),
+  city: new DataTypes.STRING(),
+  state: new DataTypes.STRING(),
+  zip: new DataTypes.STRING(),
 });
 
 Product.User = Product.belongsTo(User);
@@ -1153,7 +1153,7 @@ Let's introduce the ability to associate a product with many tags. Setting up th
 
 ```js
 const Tag = this.sequelize.define('tag', {
-  name: new Sequelize.STRING()
+  name: new DataTypes.STRING()
 });
 
 Product.hasMany(Tag);

@@ -1,15 +1,18 @@
 'use strict';
 
 import * as chai from 'chai';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
+  let User : Model<ItestInstance, ItestAttribute>;
   describe('changed', () => {
     beforeEach(function() {
-      this.User = current.define('User', {
+      User = current.define<ItestInstance, ItestAttribute>('User', {
         name: new DataTypes.STRING(),
         birthday: new DataTypes.DATE(),
         yoj: new DataTypes.DATEONLY(),
@@ -18,7 +21,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should return true for changed primitive', function() {
-      const user = this.User.build({
+      const user = User.build({
         name: 'a'
       }, {
         isNewRecord: false,
@@ -33,7 +36,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should return false for unchanged primitive', function() {
-      const user = this.User.build({
+      const user = User.build({
         name: 'a',
         meta: null
       }, {
@@ -48,7 +51,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should return true for multiple changed values', function() {
-      const user = this.User.build({
+      const user = User.build({
         name: 'a',
         birthday: new Date(new Date().getTime() - 10)
       }, {
@@ -67,7 +70,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       const firstDate = new Date(milliseconds);
       const secondDate = new Date(milliseconds);
 
-      const user = this.User.build({
+      const user = User.build({
         birthday: firstDate
       }, {
         isNewRecord: false,
@@ -79,7 +82,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should return true for changed JSON with same object', function() {
-      const user = this.User.build({
+      const user = User.build({
         meta: {
           city: 'Copenhagen'
         }
@@ -96,7 +99,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should return true for JSON dot.separated key with changed values', function() {
-      const user = this.User.build({
+      const user = User.build({
         meta: {
           city: 'Stockholm'
         }
@@ -109,7 +112,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should return false for JSON dot.separated key with same value', function() {
-      const user = this.User.build({
+      const user = User.build({
         meta: {
           city: 'Gothenburg'
         }
@@ -123,7 +126,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should return true for JSON dot.separated key with object', function() {
-      const user = this.User.build({
+      const user = User.build({
         meta: {
           address: { street: 'Main street', number: '40' }
         }
@@ -137,7 +140,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should return false for JSON dot.separated key with same object', function() {
-      const user = this.User.build({
+      const user = User.build({
         meta: {
           address: { street: 'Main street', number: '40' }
         }
@@ -152,25 +155,25 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     it('should return false when changed from null to null', function() {
       const attributes = {};
-      for (const attr in this.User.rawAttributes) {
-        if (this.User.rawAttributes[attr]) {
+      for (const attr in User.rawAttributes) {
+        if (User.rawAttributes[attr]) {
           attributes[attr] = null;
         }
       }
 
-      const user = this.User.build(attributes, {
+      const user = User.build(attributes, {
         isNewRecord: false,
         raw: true
       });
 
-      for (const attr in this.User.rawAttributes) {
-        if (this.User.rawAttributes[attr]) {
+      for (const attr in User.rawAttributes) {
+        if (User.rawAttributes[attr]) {
           user.set(attr, null);
         }
       }
 
-      for (const attr in this.User.rawAttributes) {
-        if (this.User.rawAttributes[attr]) {
+      for (const attr in User.rawAttributes) {
+        if (User.rawAttributes[attr]) {
           expect(user.changed(attr), `${attr} is not changed`).to.equal(false);
         }
       }
@@ -178,7 +181,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     describe('setDataValue', () => {
       it('should return false for unchanged primitive', function() {
-        const user = this.User.build({
+        const user = User.build({
           name: 'a',
           meta: null
         }, {

@@ -1,6 +1,8 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as _ from 'lodash';
+import { DataSet } from '../data-set';
 import { Model } from '../model';
 import Op from '../operators';
 import { Transaction } from '../transaction';
@@ -15,7 +17,10 @@ import { Helpers } from './helpers';
  *
  * @see {@link Model.belongsTo}
  */
-export class BelongsTo extends Association {
+export class BelongsTo
+<TSourceInstance extends DataSet<TSourceAttributes>, TSourceAttributes,
+TTargetInstance extends DataSet<TTargetAttributes>, TTargetAttributes>
+extends Association <TSourceInstance, TSourceAttributes, TTargetInstance, TTargetAttributes> {
 
   public identifier : string;
   public targetIdentifier : string;
@@ -23,7 +28,7 @@ export class BelongsTo extends Association {
   public targetKeyField : string;
   public targetKeyIsPrimary : boolean;
 
-  constructor(source : typeof Model, target : typeof Model, options : {
+  constructor(source : Model<TSourceInstance, TSourceAttributes>, target : Model<TTargetInstance, TTargetAttributes>, options : {
     /** : string | {}, assocation alias */
     as? : any,
     createByBTM? : boolean,
@@ -50,7 +55,7 @@ export class BelongsTo extends Association {
       this.foreignKeyAttribute = this.options.foreignKey;
       this.foreignKey = this.foreignKeyAttribute.name || this.foreignKeyAttribute.fieldName;
     } else if (this.options.foreignKey) {
-      this.foreignKey = this.options.foreignKey;
+      this.foreignKey = this.options.foreignKey as string;
     }
 
     if (!this.foreignKey) {
@@ -94,7 +99,7 @@ export class BelongsTo extends Association {
   /**
    * add attributes to the source of this association
    */
-  public injectAttributes() {
+  public injectAttributes() : BelongsTo<TSourceInstance, TSourceAttributes, TTargetInstance, TTargetAttributes> {
     const newAttributes = {};
 
     newAttributes[this.foreignKey] = _.defaults({}, this.foreignKeyAttribute, {
@@ -121,19 +126,10 @@ export class BelongsTo extends Association {
   }
 
   /**
-   * Mixin (inject) association methods to model prototype
-   */
-  public mixin(obj) {
-    const methods = ['get', 'set', 'create'];
-
-    Helpers.mixinMethods(this, obj, methods);
-  }
-
-  /**
    * Get the associated instance.
    * @see {@link Model.findOne} for a full explanation of options
    */
-  public get(instances : Model[], options : {
+  public get(instances : TSourceInstance[], options? : {
     /** The maximum count you want to get. */
     limit? : number,
     /** Apply a schema on the related model */
@@ -145,7 +141,7 @@ export class BelongsTo extends Association {
     transaction? : Transaction,
     /** A hash of search attributes. */
     where? : {}
-  }) : Promise<Model> {
+  }) : Promise<TTargetInstance | TTargetInstance[]> {
     const where = {};
     let Target = this.target;
     let instanceNoArray;
@@ -197,7 +193,7 @@ export class BelongsTo extends Association {
           result[instance.get(this.targetKey, {raw: true})] = instance;
         }
 
-        return result;
+        return result as any;
       });
     }
 
@@ -210,15 +206,15 @@ export class BelongsTo extends Association {
    * @param associatedInstance An persisted instance or the primary key of an instance to associate with this. Pass `null` or `undefined` to remove the association.
    * @param options Options passed to `this.save`
    */
-  public set(sourceInstance : Model, associatedInstance : Model|string|number, options : {
+  public set(sourceInstance : TSourceInstance, associatedInstance : TTargetInstance|string|number, options : {
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
     /** = true Skip saving this after setting the foreign key if false. */
     save? : boolean
-  } = {}) : Promise<any> {
-    let value = associatedInstance;
+  } = {}) : Promise<TSourceInstance> {
+    let value = (associatedInstance as TTargetInstance);
 
-    if (associatedInstance instanceof this.target) {
+    if (associatedInstance && associatedInstance['model'] === this.target) {
       value = associatedInstance[this.targetKey];
     }
 
@@ -244,12 +240,12 @@ export class BelongsTo extends Association {
    * @param options Options passed to `target.create` and setAssociation.
    * @see {@link Model#create}  for a full explanation of options
    */
-  public create(sourceInstance : Model, values : {}, fieldsOrOptions : {
+  public create(sourceInstance : TSourceInstance, values : TTargetAttributes, fieldsOrOptions : {
     /** = false, A function that gets executed while running the query to log the sql. */
     logging? : boolean | any,
     /** Transaction to run query under */
     transaction? : Transaction
-  }) : Promise<any> {
+  }) : Promise<TTargetInstance> {
 
     const options = {
       transaction: undefined,
@@ -264,7 +260,7 @@ export class BelongsTo extends Association {
 
     return this.target.create(values, fieldsOrOptions)
       .then(newAssociatedObject =>
-        sourceInstance[this.accessors.set](newAssociatedObject, options)
-      );
+        sourceInstance.setLinkedData(this, newAssociatedObject, options)
+      ) as any;
   }
 }

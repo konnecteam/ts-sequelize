@@ -2,9 +2,11 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
+const current = Support.sequelize;
 
 if (dialect === 'postgres') {
   describe('[POSTGRES Specific] Data Types', () => {
@@ -72,24 +74,24 @@ if (dialect === 'postgres') {
     describe('DATE SQL', () => {
       // create dummy user
       it('should be able to create and update records with Infinity/-Infinity', function() {
-        this.sequelize.options.typeValidation = true;
+        current.options.typeValidation = true;
 
         const date = new Date();
-        const User = this.sequelize.define('User', {
-          username: new this.sequelize.Sequelize.STRING(),
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
+          username: new DataTypes.STRING(),
           beforeTime: {
-            type: this.sequelize.Sequelize.DATE,
+            type: DataTypes.DATE,
             defaultValue: -Infinity
           },
           sometime: {
-            type: this.sequelize.Sequelize.DATE,
-            defaultValue: this.sequelize.fn('NOW')
+            type: DataTypes.DATE,
+            defaultValue: current.fn('NOW')
           },
           anotherTime: {
-            type: this.sequelize.Sequelize.DATE
+            type: DataTypes.DATE
           },
           afterTime: {
-            type: this.sequelize.Sequelize.DATE,
+            type: DataTypes.DATE,
             defaultValue: Infinity
           }
         }, {
@@ -108,7 +110,7 @@ if (dialect === 'postgres') {
         }).then(user => {
           expect(user.username).to.equal('bob');
           expect(user.beforeTime).to.equal(-Infinity);
-          (expect(user.sometime).to.be as any).withinTime(date, new Date());
+          expect(user.sometime).to.be.withinTime(date, new Date());
           expect(user.anotherTime).to.equal(Infinity);
           expect(user.afterTime).to.equal(Infinity);
 
@@ -127,12 +129,12 @@ if (dialect === 'postgres') {
           expect(user.sometime).to.equal(Infinity);
 
           return user.update({
-            sometime: this.sequelize.fn('NOW')
+            sometime: current.fn('NOW')
           }, {
             returning: true
           });
         }).then(user => {
-          (expect(user.sometime).to.be as any).withinTime(date, new Date());
+          expect(user.sometime).to.be.withinTime(date, new Date());
 
           // find
           return User.findAll();
@@ -159,24 +161,24 @@ if (dialect === 'postgres') {
     describe('DATEONLY SQL', () => {
       // create dummy user
       it('should be able to create and update records with Infinity/-Infinity', function() {
-        this.sequelize.options.typeValidation = true;
+        current.options.typeValidation = true;
 
         const date = new Date();
-        const User = this.sequelize.define('User', {
-          username: this.sequelize.Sequelize.STRING,
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
+          username: DataTypes.STRING,
           beforeTime: {
-            type: this.sequelize.Sequelize.DATEONLY,
+            type: DataTypes.DATEONLY,
             defaultValue: -Infinity
           },
           sometime: {
-            type: this.sequelize.Sequelize.DATEONLY,
-            defaultValue: this.sequelize.fn('NOW')
+            type: DataTypes.DATEONLY,
+            defaultValue: current.fn('NOW')
           },
           anotherTime: {
-            type: this.sequelize.Sequelize.DATEONLY
+            type: DataTypes.DATEONLY
           },
           afterTime: {
-            type: this.sequelize.Sequelize.DATEONLY,
+            type: DataTypes.DATEONLY,
             defaultValue: Infinity
           }
         }, {
@@ -195,7 +197,7 @@ if (dialect === 'postgres') {
         }).then(user => {
           expect(user.username).to.equal('bob');
           expect(user.beforeTime).to.equal(-Infinity);
-          (expect(new Date(user.sometime)).to.be as any).withinDate(date, new Date());
+          expect(new Date(user.sometime)).to.be.withinDate(date, new Date());
           expect(user.anotherTime).to.equal(Infinity);
           expect(user.afterTime).to.equal(Infinity);
 
@@ -214,13 +216,13 @@ if (dialect === 'postgres') {
           expect(user.sometime).to.equal(Infinity);
 
           return user.update({
-            sometime: this.sequelize.fn('NOW')
+            sometime: current.fn('NOW')
           }, {
             returning: true
           });
         }).then(user => {
           expect(user.sometime).to.not.equal(Infinity);
-          (expect(new Date(user.sometime)).to.be as any).withinDate(date, new Date());
+          expect(new Date(user.sometime)).to.be.withinDate(date, new Date());
 
           // find
           return User.findAll();

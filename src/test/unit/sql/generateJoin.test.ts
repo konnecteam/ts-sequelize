@@ -3,6 +3,7 @@
 import * as _ from 'lodash';
 import DataTypes from '../../../lib/data-types';
 import {Sequelize} from '../../../lib/sequelize';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expectsql      = Support.expectsql;
 const current        = Support.sequelize;
@@ -12,7 +13,7 @@ const queryGenerator = current.dialect.QueryGenerator;
 
 describe(Support.getTestDialectTeaser('SQL'), () => {
   describe('generateJoin', () => {
-    const User = current.define('User', {
+    const User = current.define<ItestInstance, ItestAttribute>('User', {
       id: {
         type: new DataTypes.INTEGER(),
         primaryKey: true,
@@ -26,7 +27,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
     }, {
       tableName: 'user'
     });
-    const Task = current.define('Task', {
+    const Task = current.define<ItestInstance, ItestAttribute>('Task', {
       title: new DataTypes.STRING(),
       userId: {
         type: new DataTypes.INTEGER(),
@@ -36,7 +37,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       tableName: 'task'
     });
 
-    const Company = current.define('Company', {
+    const Company = current.define<ItestInstance, ItestAttribute>('Company', {
       name: new DataTypes.STRING(),
       ownerId: {
         type: new DataTypes.STRING(),
@@ -49,24 +50,24 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       tableName: 'company'
     });
 
-    const Profession = current.define('Profession', {
+    const Profession = current.define<ItestInstance, ItestAttribute>('Profession', {
       name: new DataTypes.STRING()
     }, {
       tableName: 'profession'
     });
 
-    User.Tasks = User.hasMany(Task, {as: 'Tasks', foreignKey: 'userId'});
-    User.Company = User.belongsTo(Company, {foreignKey: 'companyId'});
-    User.Profession = User.belongsTo(Profession, {foreignKey: 'professionId'});
-    Profession.Professionals = Profession.hasMany(User, {as: 'Professionals', foreignKey: 'professionId'});
-    Company.Employees = Company.hasMany(User, {as: 'Employees', foreignKey: 'companyId'});
-    Company.Owner = Company.belongsTo(User, {as: 'Owner', foreignKey: 'ownerId'});
+    const User_Tasks = User.hasMany(Task, {as: 'Tasks', foreignKey: 'userId'});
+    const User_Company = User.belongsTo(Company, {foreignKey: 'companyId'});
+    const User_Profession = User.belongsTo(Profession, {foreignKey: 'professionId'});
+    const Profession_Professionals = Profession.hasMany(User, {as: 'Professionals', foreignKey: 'professionId'});
+    Company.hasMany(User, {as: 'Employees', foreignKey: 'companyId'});
+    const Company_Owner = Company.belongsTo(User, {as: 'Owner', foreignKey: 'ownerId'});
 
 
     const preparesql = function(path, options) {
 
-      Sequelize.Model.conformOptions(options);
-      options = Sequelize.Model._validateIncludedElements(options);
+      Sequelize.Model.prototype.conformOptions(options);
+      options = Sequelize.Model.prototype._validateIncludedElements(options);
 
       const include = _.at(options, path)[0];
 
@@ -87,7 +88,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       const options = {
         model: User,
         include: [
-          User.Company,
+          User_Company,
         ]
       };
 
@@ -107,7 +108,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         model: User,
         include: [
           {
-            association: User.Company,
+            association: User_Company,
             where: { public: true },
             or: true
           },
@@ -132,10 +133,10 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         model: Profession,
         include: [
           {
-            association: Profession.Professionals,
+            association: Profession_Professionals,
             limit: 3,
             include: [
-              User.Company,
+              User_Company,
             ]
           },
         ]
@@ -157,7 +158,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         model: User,
         subQuery: true,
         include: [
-          User.Company,
+          User_Company,
         ]
       };
 
@@ -178,7 +179,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         subQuery: true,
         include: [
           {
-            association: User.Company, required: false, where: { name: 'ABC' }
+            association: User_Company, required: false, where: { name: 'ABC' }
           },
         ]
       };
@@ -201,8 +202,8 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         model: User,
         include: [
           {
-            association: User.Company, include: [
-              Company.Owner,
+            association: User_Company, include: [
+              Company_Owner,
             ]
           },
         ]
@@ -225,11 +226,11 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         subQuery: true,
         include: [
           {
-            association: User.Company,
+            association: User_Company,
             include: [{
-              association: Company.Owner,
+              association: Company_Owner,
               include: [
-                User.Profession,
+                User_Profession,
               ]
             }]
           },
@@ -253,10 +254,10 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         subQuery: true,
         include: [
           {
-            association: User.Company,
+            association: User_Company,
             required: true,
             include: [
-              Company.Owner,
+              Company_Owner,
             ]
           },
         ]
@@ -278,7 +279,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         model: User,
         subQuery: true,
         include: [
-          { association: User.Company, required: true },
+          { association: User_Company, required: true },
         ]
       };
 
@@ -301,7 +302,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       const options = {
         model: User,
         include: [
-          User.Tasks,
+          User_Tasks,
         ]
       };
 
@@ -321,7 +322,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         model: User,
         subQuery: true,
         include: [
-          User.Tasks,
+          User_Tasks,
         ]
       };
 
@@ -342,7 +343,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         model: User,
         include: [
           {
-            association: User.Tasks, on: {
+            association: User_Tasks, on: {
               $or: [
                 { '$User.id_user$': { $col: 'Tasks.user_id' } },
                 { '$Tasks.user_id$': 2 },
@@ -368,7 +369,7 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         model: User,
         include: [
           {
-            association: User.Tasks,
+            association: User_Tasks,
             on: { user_id: { $col: 'User.alternative_id' } }
           },
         ]
@@ -391,10 +392,10 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
         model: User,
         include: [
           {
-            association: User.Company,
+            association: User_Company,
             include: [
               {
-                association: Company.Owner,
+                association: Company_Owner,
                 on: {
                   $or: [
                     { '$Company.owner_id$': { $col: 'Company.Owner.id_user'} },

@@ -1,14 +1,14 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as Inflection from 'inflection';
 import * as _ from 'lodash';
 import * as uuid from 'uuid';
 import { Sequelize } from '..';
 import DataTypes from './data-types';
+import { IInclude } from './interfaces/iinclude';
 import { Model } from './model';
-import { IInclude } from './model/iinclude';
 import operators from './operators';
-import promise from './promise';
 import { SqlString } from './sql-string';
 import { Logger } from './utils/logger';
 import { ParameterValidator } from './utils/parameter-validator';
@@ -22,7 +22,7 @@ export class Utils {
   // private static operatorsArray = Object.values(operators);
   private static primitives = ['string', 'number', 'boolean'];
 
-  public static Promise = promise;
+  public static Promise = Promise;
   public static debug = Utils.logger.debug.bind(Utils.logger);
   public static deprecate = Utils.logger.deprecate.bind(Utils.logger);
   public static warn = Utils.logger.warn.bind(Utils.logger);
@@ -93,7 +93,7 @@ export class Utils {
     /** Set name of the model. By default its same as Class name. */
     modelName? : string,
     sequelize? : Sequelize,
-    user? : string,
+    user? : any,
   }) : {} {
     const result = {};
 
@@ -198,9 +198,9 @@ export class Utils {
     as? : any,
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     parent? : {},
-  }, model : typeof Model) : { attributes? : any} {
+  }, model : Model<any, any>) : { attributes? : any} {
     if (model.hasVirtualAttributes && Array.isArray(options.attributes)) {
       for (const attribute of options.attributes) {
         if (model.isVirtualAttribute(attribute) && model.rawAttributes[attribute].type.fields) {
@@ -232,7 +232,7 @@ export class Utils {
     rejectOnEmpty? : boolean,
     /** A hash of search attributes. */
     where? : {}
-  }, model : typeof Model) : { attributes?, where? } {
+  }, model : Model<any, any>) : { attributes?, where? } {
     if (Array.isArray(options.attributes)) {
       options.attributes = options.attributes.map(attr => {
         // Object lookups will force any variable to strings, we don't want that for special objects etc
@@ -257,7 +257,7 @@ export class Utils {
   /**
    *
    */
-  public static mapWhereFieldNames(attributes : any , model : typeof Model) : string {
+  public static mapWhereFieldNames(attributes : any , model : Model<any, any>) : string {
     if (attributes) {
       Utils.getComplexKeys(attributes).forEach(attribute => {
         const rawAttribute = model.rawAttributes[attribute];
@@ -292,7 +292,7 @@ export class Utils {
   /**
    * Used to map field names in values
    */
-  public static mapValueFieldNames(dataValues : any , fields : string[], model : typeof Model) : any {
+  public static mapValueFieldNames(dataValues : any , fields : string[], model : Model<any, any>) : any {
     const values = {};
 
     for (const attr of fields) {

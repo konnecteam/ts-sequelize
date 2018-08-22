@@ -4,13 +4,14 @@ import * as Promise from 'bluebird';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import { UniqueConstraintError } from '../../../lib/errors/index';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('findCreateFind', () => {
-    const Model = current.define('Model', {});
+    const Model = current.define<ItestInstance, ItestAttribute>('Model', {});
 
     beforeEach(function() {
       this.sinon = sinon.sandbox.create();

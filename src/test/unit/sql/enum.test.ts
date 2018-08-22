@@ -2,25 +2,26 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expectsql = Support.expectsql;
 const current = Support.sequelize;
-const  sql = current.dialect.QueryGenerator;
+const sql : any = current.dialect.QueryGenerator;
 const expect = chai.expect;
 
 
 describe(Support.getTestDialectTeaser('SQL'), () => {
   describe('enum', () => {
     if (Support.getTestDialect() === 'postgres') {
-      const FooUser = current.define('user', {
-        mood: new (DataTypes as any).ENUM('happy', 'sad')
+      const FooUser = current.define<ItestInstance, ItestAttribute>('user', {
+        mood: new DataTypes.ENUM('happy', 'sad')
       }, {
         schema: 'foo'
       });
 
-      const PublicUser = current.define('user', {
+      const PublicUser = current.define<ItestInstance, ItestAttribute>('user', {
         mood: {
-          type: new (DataTypes as any).ENUM('happy', 'sad'),
+          type: new DataTypes.ENUM('happy', 'sad'),
           field: 'theirMood'
         }
       });

@@ -1,10 +1,10 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import { Sequelize } from '../../..';
+import { DataSet } from '../../data-set';
 import * as sequelizeErrors from '../../errors/index';
-import { Model } from '../../model';
-import Promise from '../../promise';
 import { QueryTypes } from '../../query-types';
 import { Utils } from '../../utils';
 import { AbstractQuery } from '../abstract/abstract-query';
@@ -16,7 +16,7 @@ const store = connectionManager.store;
 export class SqliteQuery extends AbstractQuery {
   public database;
 
-  constructor(database : {}, sequelize : Sequelize, options : { instance? : Model, model?}) {
+  constructor(database : {}, sequelize : Sequelize, options : { instance? : DataSet<any>, model?}) {
     super();
     this.database = database;
     this.sequelize = sequelize;
@@ -455,7 +455,7 @@ export class SqliteQuery extends AbstractQuery {
   /**
    * @hidden
    */
-  private handleShowIndexesQuery(data : any) : Promise<any> {
+  private handleShowIndexesQuery(data : any[]) : Promise<any> {
 
     // Sqlite returns indexes so the one that was defined last is returned first. Lets reverse that!
     return this.sequelize.Promise.map(data.reverse(), item => {

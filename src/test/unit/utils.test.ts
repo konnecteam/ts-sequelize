@@ -3,13 +3,14 @@
 import * as chai from 'chai';
 import DataTypes from '../../lib/data-types';
 import { Utils } from '../../lib/utils';
+import { ItestAttribute, ItestInstance } from '../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
 
 describe(Support.getTestDialectTeaser('Utils'), () => {
   describe('merge', () => {
     it('does not clone sequelize models', () => {
-      const User = Support.sequelize.define('user');
+      const User = Support.sequelize.define<ItestInstance, ItestAttribute>('user');
       const merged = Utils.merge({}, { include: [{model: User }]});
       const merged2 = Utils.merge({}, { user: User });
 
@@ -45,7 +46,7 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
         attributes: [
           'active',
         ]
-      }, Support.sequelize.define('User', {
+      }, Support.sequelize.define<ItestInstance, ItestAttribute>('User', {
         createdAt: {
           type: new DataTypes.DATE(),
           field: 'created_at'
@@ -62,7 +63,7 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
     });
 
     it('multiple calls', () => {
-      const Model = Support.sequelize.define('User', {
+      const Model = Support.sequelize.define<ItestInstance, ItestAttribute>('User', {
         createdAt: {
           type: new DataTypes.DATE(),
           field: 'created_at'
@@ -97,7 +98,7 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
           firstName: 'Paul',
           lastName: 'Atreides'
         }
-      }, Support.sequelize.define('User', {
+      }, Support.sequelize.define<ItestInstance, ItestAttribute>('User', {
         firstName: {
           type: new DataTypes.STRING(),
           field: 'first_name'
@@ -122,7 +123,7 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
             lastName: 'Atreides'
           }
         }
-      }, Support.sequelize.define('User', {
+      }, Support.sequelize.define<ItestInstance, ItestAttribute>('User', {
         firstName: {
           type: new DataTypes.STRING(),
           field: 'first_name'
@@ -149,7 +150,7 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
             {lastName: 'Atreides'},
           ]
         }
-      }, Support.sequelize.define('User', {
+      }, Support.sequelize.define<ItestInstance, ItestAttribute>('User', {
         firstName: {
           type: new DataTypes.STRING(),
           field: 'first_name'
@@ -176,7 +177,7 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
             lastName: 'Atreides'
           }
         }
-      }, Support.sequelize.define('User', {
+      }, Support.sequelize.define<ItestInstance, ItestAttribute>('User', {
         firstName: {
           type: new DataTypes.STRING(),
           field: 'first_name'

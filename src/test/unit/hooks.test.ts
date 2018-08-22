@@ -4,14 +4,15 @@ import * as chai from 'chai';
 import * as _ from 'lodash';
 import * as sinon from 'sinon';
 import DataTypes from '../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../dummy/dummy-data-set';
 import Support from '../support';
-const current = Support.sequelize;
+let current = Support.sequelize;
 const expect = chai.expect;
 const Promise = current.Promise;
 
 describe(Support.getTestDialectTeaser('Hooks'), () => {
   beforeEach(function() {
-    this.Model = current.define('m');
+    this.Model = current.define<ItestInstance, ItestAttribute>('m');
   });
 
   describe('arguments', () => {
@@ -38,7 +39,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
     });
 
     afterEach(() => {
-      current.query.restore();
+      (current.query as any).restore();
     });
 
     describe('defined by options.hooks', () => {
@@ -47,7 +48,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         this.afterSaveHook = sinon.spy();
         this.afterCreateHook = sinon.spy();
 
-        this.Model = current.define('m', {
+        this.Model = current.define<ItestInstance, ItestAttribute>('m', {
           name: new DataTypes.STRING()
         }, {
           hooks: {
@@ -72,7 +73,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         this.beforeSaveHook = sinon.spy();
         this.afterSaveHook = sinon.spy();
 
-        this.Model = current.define('m', {
+        this.Model = current.define<ItestInstance, ItestAttribute>('m', {
           name: new DataTypes.STRING()
         });
 
@@ -93,7 +94,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         this.beforeSaveHook = sinon.spy();
         this.afterSaveHook = sinon.spy();
 
-        this.Model = current.define('m', {
+        this.Model = current.define<ItestInstance, ItestAttribute>('m', {
           name: new DataTypes.STRING()
         });
 
@@ -141,7 +142,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       });
 
       it('using define', function() {
-        return current.define('M', {}, {
+        return current.define<ItestInstance, ItestAttribute>('M', {}, {
           hooks: {
             beforeCreate: [this.hook1, this.hook2, this.hook3]
           }
@@ -149,7 +150,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       });
 
       it('using a mixture', function() {
-        const Model = current.define('M', {}, {
+        const Model = current.define<ItestInstance, ItestAttribute>('M', {}, {
           hooks: {
             beforeCreate: this.hook1
           }
@@ -210,7 +211,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
         current.addHook('beforeUpdate', globalHookBefore);
 
-        const Model = current.define('m', {}, {
+        const Model = current.define<ItestInstance, ItestAttribute>('m', {}, {
           hooks: {
             beforeUpdate: localHook
           }
@@ -232,7 +233,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
     describe('using define hooks', () => {
       beforeEach(function() {
         this.beforeCreate = sinon.spy();
-        this.sequelize = Support.createSequelizeInstance({
+        current = Support.createSequelizeInstance({
           define: {
             hooks: {
               beforeCreate: this.beforeCreate
@@ -242,7 +243,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       });
 
       it('runs the global hook when no hook is passed', function() {
-        const Model = this.sequelize.define('M', {}, {
+        const Model = current.define<ItestInstance, ItestAttribute>('M', {}, {
           hooks: {
             beforeUpdate: _.noop // Just to make sure we can define other hooks without overwriting the global one
           }
@@ -255,7 +256,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
       it('does not run the global hook when the model specifies its own hook', function() {
         const localHook = sinon.spy();
-        const Model = this.sequelize.define('M', {}, {
+        const Model = current.define<ItestInstance, ItestAttribute>('M', {}, {
           hooks: {
             beforeCreate: localHook
           }
@@ -281,8 +282,8 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         expect(hook1).to.have.been.calledOnce;
         expect(hook2).to.have.been.calledOnce;
 
-        hook1.resetHistory();
-        hook2.resetHistory();
+        hook1.reset();
+        hook2.reset();
 
         this.Model.removeHook('beforeCreate', 'myHook');
         this.Model.removeHook('beforeCreate', 'myHook2');
@@ -311,10 +312,10 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         expect(hook3).to.have.been.calledOnce;
         expect(hook4).to.have.been.calledOnce;
 
-        hook1.resetHistory();
-        hook2.resetHistory();
-        hook3.resetHistory();
-        hook4.resetHistory();
+        hook1.reset();
+        hook2.reset();
+        hook3.reset();
+        hook4.reset();
 
         this.Model.removeHook('beforeCreate', 'myHook');
 
@@ -333,7 +334,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       const hook1 = sinon.spy();
       const hook2 = sinon.spy();
 
-      const Model = this.sequelize.define('Model', {}, {
+      const Model = current.define<ItestInstance, ItestAttribute>('Model', {}, {
         hooks: { beforeCreate: hook1 }
       });
 
@@ -384,10 +385,8 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
   describe('promises', () => {
     it('can return a promise', function() {
-      const self = this;
-
       this.Model.beforeBulkCreate(() => {
-        return self.sequelize.Promise.resolve();
+        return current.Promise.resolve();
       });
 
       return expect(this.Model.runHooks('beforeBulkCreate')).to.be.fulfilled;
@@ -460,7 +459,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       sequelize.addHook('beforeDefine', this.hook2);
       sequelize.addHook('afterDefine', this.hook3);
       sequelize.addHook('afterDefine', this.hook4);
-      sequelize.define('Test', {});
+      sequelize.define<ItestInstance, ItestAttribute>('Test', {});
       expect(this.hook1).to.have.been.calledOnce;
       expect(this.hook2).to.have.been.calledOnce;
       expect(this.hook3).to.have.been.calledOnce;

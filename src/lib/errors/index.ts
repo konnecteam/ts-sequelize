@@ -1,6 +1,6 @@
 'use strict';
 
-import { Model } from '../model';
+import { DataSet } from '../data-set';
 
 /**
  * Sequelize provides a host of custom error classes, to allow you to do easier debugging. All of these errors are exposed on the sequelize object and the sequelize constructor.
@@ -10,7 +10,7 @@ import { Model } from '../model';
  * The Base Error all Sequelize Errors inherit from.
  */
 export class BaseError extends Error {
-  constructor(message : any) {
+  constructor(message? : any) {
     super(message);
     this.name = 'SequelizeBaseError';
     Error.captureStackTrace(this, this.constructor);
@@ -260,13 +260,13 @@ export class ValidationErrorItem {
   public path : string;
   public value : string;
   public origin;
-  public instance : Model;
+  public instance : DataSet<any>;
   public validatorKey : string;
   public validatorName : string;
   public validatorArgs;
   public static Origins;
   public static TypeStringMap;
-  constructor(message : string, type : string, path : string, value? : string, inst? : Model, validatorKey? : string, fnName? : string, fnArgs? : any[]) {
+  constructor(message : string, type : string, path : string, value? : string, inst? : any, validatorKey? : string, fnName? : string, fnArgs? : any[]) {
     /**
      * An error message
      *
@@ -354,7 +354,7 @@ export class ValidationErrorItem {
    * @throws {Error} thrown if NSSeparator is found to be invalid.
    * @hidden
    */
-  private _getValidatorKey(useTypeAsNS : boolean, NSSeparator : string) : string {
+  private _getValidatorKey(useTypeAsNS : boolean | number, NSSeparator : string) : string {
     const useTANS = typeof useTypeAsNS === 'undefined' ?  true : !!useTypeAsNS;
     const NSSep = typeof NSSeparator === 'undefined' ? '.' : NSSeparator;
 
@@ -377,7 +377,7 @@ export class ValidationErrorItem {
    * @internal
    * @hidden
    */
-  public getValidatorKey(useTypeAsNS : boolean, NSSeparator : string) : string {
+  public getValidatorKey(useTypeAsNS? : boolean | number, NSSeparator? : any) : string {
     return this._getValidatorKey(useTypeAsNS, NSSeparator);
   }
 }
@@ -399,7 +399,7 @@ ValidationErrorItem.Origins = {
 
 /**
  * An object that is used internally by the `ValidationErrorItem` class
- * that maps current `type` strings (as given to ValidationErrorItem.constructor()) to
+ * that maps current `type` strings (as given to ValidationErrorItem.model()) to
  * our new `origin` values.
  *
  * @type {Object}

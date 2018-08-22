@@ -2,23 +2,27 @@
 
 import * as chai from 'chai';
 import * as moment from 'moment';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const dialect = Support.getTestDialect();
 const expect = chai.expect;
 const Promise = Support.sequelize.Promise;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
+  let User : Model<ItestInstance, ItestAttribute>;
   beforeEach(function() {
-    this.User = this.sequelize.define('User', {
+    User = current.define<ItestInstance, ItestAttribute>('User', {
       id: { type: DataTypes.INTEGER, primaryKey: true },
       aNumber: { type: DataTypes.INTEGER },
       bNumber: { type: DataTypes.INTEGER },
       cNumber: { type: DataTypes.INTEGER, field: 'c_number'}
     });
 
-    return this.User.sync({ force: true }).then(() => {
-      return this.User.bulkCreate([{
+    return User.sync({ force: true }).then(() => {
+      return User.bulkCreate([{
         id: 1,
         aNumber: 0,
         bNumber: 0
@@ -51,9 +55,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('supports where conditions', function() {
-        return this.User.findById(1).then(() => {
-          return this.User[method](['aNumber'], { by: 2, where: { id: 1 } }).then(() => {
-            return this.User.findById(2).then(user3 => {
+        return User.findById(1).then(() => {
+          return User[method](['aNumber'], { by: 2, where: { id: 1 } }).then(() => {
+            return User.findById(2).then(user3 => {
               expect(user3.aNumber).to.be.equal(this.assert(0, 0));
             });
           });
@@ -61,21 +65,21 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('uses correct column names for where conditions', function() {
-        return this.User[method](['aNumber'], {by: 2, where: {cNumber: 0}}).then(() => {
-          return this.User.findById(4).then(user4 => {
+        return User[method](['aNumber'], {by: 2, where: {cNumber: 0}}).then(() => {
+          return User.findById(4).then(user4 => {
             expect(user4.aNumber).to.be.equal(this.assert(2, -2));
           });
         });
       });
 
       it('should still work right with other concurrent increments', function() {
-        return this.User.findAll().then(aUsers => {
-          return this.sequelize.Promise.all([
-            this.User[method](['aNumber'], { by: 2, where: {} }),
-            this.User[method](['aNumber'], { by: 2, where: {} }),
-            this.User[method](['aNumber'], { by: 2, where: {} })])
+        return User.findAll().then(aUsers => {
+          return current.Promise.all([
+            User[method](['aNumber'], { by: 2, where: {} }),
+            User[method](['aNumber'], { by: 2, where: {} }),
+            User[method](['aNumber'], { by: 2, where: {} })])
           .then(() => {
-            return this.User.findAll().then(bUsers => {
+            return User.findAll().then(bUsers => {
               for (let i = 0; i < bUsers.length; i++) {
                 expect(bUsers[i].aNumber).to.equal(this.assert(aUsers[i].aNumber + 6, aUsers[i].aNumber - 6));
               }
@@ -85,9 +89,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('with array', function() {
-        return this.User.findAll().then(aUsers => {
-          return this.User[method](['aNumber'], { by: 2, where: {} }).then(() => {
-            return this.User.findAll().then(bUsers => {
+        return User.findAll().then(aUsers => {
+          return User[method](['aNumber'], { by: 2, where: {} }).then(() => {
+            return User.findAll().then(bUsers => {
               for (let i = 0; i < bUsers.length; i++) {
                 expect(bUsers[i].aNumber).to.equal(this.assert(aUsers[i].aNumber + 2, aUsers[i].aNumber - 2));
               }
@@ -97,9 +101,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('with single field', function() {
-        return this.User.findAll().then(aUsers => {
-          return this.User[method]('aNumber', { by: 2, where: {} }).then(() => {
-            return this.User.findAll().then(bUsers => {
+        return User.findAll().then(aUsers => {
+          return User[method]('aNumber', { by: 2, where: {} }).then(() => {
+            return User.findAll().then(bUsers => {
               for (let i = 0; i < bUsers.length; i++) {
                 expect(bUsers[i].aNumber).to.equal(this.assert(aUsers[i].aNumber + 2, aUsers[i].aNumber - 2));
               }
@@ -109,9 +113,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('with single field and no value', function() {
-        return this.User.findAll().then(aUsers => {
-          return this.User[method]('aNumber', { where: {}}).then(() => {
-            return this.User.findAll().then(bUsers => {
+        return User.findAll().then(aUsers => {
+          return User[method]('aNumber', { where: {}}).then(() => {
+            return User.findAll().then(bUsers => {
               for (let i = 0; i < bUsers.length; i++) {
                 expect(bUsers[i].aNumber).to.equal(this.assert(aUsers[i].aNumber + 1, aUsers[i].aNumber - 1));
               }
@@ -121,9 +125,9 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('with key value pair', function() {
-        return this.User.findAll().then(aUsers => {
-          return this.User[method]({ aNumber: 1, bNumber: 2 }, { where: { }}).then(() => {
-            return this.User.findAll().then(bUsers => {
+        return User.findAll().then(aUsers => {
+          return User[method]({ aNumber: 1, bNumber: 2 }, { where: { }}).then(() => {
+            return User.findAll().then(bUsers => {
               for (let i = 0; i < bUsers.length; i++) {
                 expect(bUsers[i].aNumber).to.equal(this.assert(aUsers[i].aNumber + 1, aUsers[i].aNumber - 1));
                 expect(bUsers[i].bNumber).to.equal(this.assert(aUsers[i].bNumber + 2, aUsers[i].bNumber - 2));
@@ -134,10 +138,10 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should still work right with other concurrent updates', function() {
-        return this.User.findAll().then(aUsers => {
-          return this.User.update({ aNumber: 2 }, { where: {} }).then(() => {
-            return this.User[method](['aNumber'], { by: 2, where: {} }).then(() => {
-              return this.User.findAll().then(bUsers => {
+        return User.findAll().then(aUsers => {
+          return User.update({ aNumber: 2 }, { where: {} }).then(() => {
+            return User[method](['aNumber'], { by: 2, where: {} }).then(() => {
+              return User.findAll().then(bUsers => {
                 for (let i = 0; i < bUsers.length; i++) {
                   // for decrement 2 - 2 = 0
                   expect(bUsers[i].aNumber).to.equal(this.assert(aUsers[i].aNumber + 4, aUsers[i].aNumber));
@@ -149,7 +153,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('with timestamps set to true', function() {
-        const User = this.sequelize.define('IncrementUser', {
+        User = current.define<ItestInstance, ItestAttribute>('IncrementUser', {
           aNumber: DataTypes.INTEGER
         }, { timestamps: true });
 
@@ -167,7 +171,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('with timestamps set to true and options.silent set to true', function() {
-        const User = this.sequelize.define('IncrementUser', {
+        User = current.define<ItestInstance, ItestAttribute>('IncrementUser', {
           aNumber: DataTypes.INTEGER
         }, { timestamps: true });
 
@@ -185,7 +189,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should work with scopes', function() {
-        const User = this.sequelize.define('User', {
+        User = current.define<ItestInstance, ItestAttribute>('User', {
           aNumber: DataTypes.INTEGER,
           name: DataTypes.STRING
         }, {

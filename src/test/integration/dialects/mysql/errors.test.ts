@@ -2,9 +2,12 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../../lib/data-types';
+import { Model } from '../../../../lib/model';
+import { ItestAttribute, ItestInstance } from '../../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
+const current = Support.sequelize;
 
 if (dialect === 'mysql') {
   describe('[MYSQL Specific] Errors', () => {
@@ -17,40 +20,43 @@ if (dialect === 'mysql') {
     };
 
     describe('ForeignKeyConstraintError', () => {
+      let Task : Model<ItestInstance, ItestAttribute>;
+      let User : Model<ItestInstance, ItestAttribute>;
+      let user : ItestInstance;
+      let task : ItestInstance;
       beforeEach(function() {
-        this.Task = this.sequelize.define('task', { title: new DataTypes.STRING() });
-        this.User = this.sequelize.define('user', { username: new DataTypes.STRING() });
-        this.UserTasks = this.sequelize.define('tasksusers', { userId: new DataTypes.INTEGER(), taskId: new DataTypes.INTEGER() });
+        Task = current.define<ItestInstance, ItestAttribute>('task', { title: new DataTypes.STRING() });
+        User = current.define<ItestInstance, ItestAttribute>('user', { username: new DataTypes.STRING() });
+        current.define<ItestInstance, ItestAttribute>('tasksusers', { userId: new DataTypes.INTEGER(), taskId: new DataTypes.INTEGER() });
 
-        this.User.belongsToMany(this.Task, { onDelete: 'RESTRICT', through: 'tasksusers' });
-        this.Task.belongsToMany(this.User, { onDelete: 'RESTRICT', through: 'tasksusers' });
+        User.belongsToMany(Task, { onDelete: 'RESTRICT', through: 'tasksusers' });
+        Task.belongsToMany(User, { onDelete: 'RESTRICT', through: 'tasksusers' });
 
-        this.Task.belongsTo(this.User, { foreignKey: 'primaryUserId', as: 'primaryUsers' });
+        Task.belongsTo(User, { foreignKey: 'primaryUserId', as: 'primaryUsers' });
       });
 
       it('in context of DELETE restriction', function() {
-        const self = this;
-        const ForeignKeyConstraintError = this.sequelize.ForeignKeyConstraintError;
+        const ForeignKeyConstraintError = current.ForeignKeyConstraintError;
 
-        return this.sequelize.sync({ force: true }).bind({}).then(() => {
+        return current.sync({ force: true }).bind({}).then(() => {
           return Promise.all([
-            self.User.create({ id: 67, username: 'foo' }),
-            self.Task.create({ id: 52, title: 'task' }),
+            User.create({ id: 67, username: 'foo' }),
+            Task.create({ id: 52, title: 'task' }),
           ]);
         }).spread(function(user1, task1) {
-          this.user1 = user1;
-          this.task1 = task1;
-          return user1.setTasks([task1]);
+          user = user1;
+          task = task1;
+          return user.setLinkedData('task', [task]);
         }).then(function() {
           return Promise.all([
-            validateError(this.user1.destroy(), ForeignKeyConstraintError, {
+            validateError(user.destroy(), ForeignKeyConstraintError, {
               fields: ['userId'],
               table: 'users',
               value: undefined,
               index: 'tasksusers_ibfk_1',
               reltype: 'parent'
             }),
-            validateError(this.task1.destroy(), ForeignKeyConstraintError, {
+            validateError(task.destroy(), ForeignKeyConstraintError, {
               fields: ['taskId'],
               table: 'tasks',
               value: undefined,
@@ -62,11 +68,10 @@ if (dialect === 'mysql') {
       });
 
       it('in context of missing relation', function() {
-        const self = this;
-        const ForeignKeyConstraintError = this.sequelize.ForeignKeyConstraintError;
+        const ForeignKeyConstraintError = current.ForeignKeyConstraintError;
 
-        return this.sequelize.sync({ force: true }).then(() =>
-          validateError(self.Task.create({ title: 'task', primaryUserId: 5 }), ForeignKeyConstraintError, {
+        return current.sync({ force: true }).then(() =>
+          validateError(Task.create({ title: 'task', primaryUserId: 5 }), ForeignKeyConstraintError, {
             fields: ['primaryUserId'],
             table: 'users',
             value: 5,

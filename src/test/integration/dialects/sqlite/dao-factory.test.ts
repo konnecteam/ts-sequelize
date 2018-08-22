@@ -2,26 +2,30 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../../lib/data-types';
+import { Model } from '../../../../lib/model';
+import { ItestAttribute, ItestInstance } from '../../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
 const dbFile = __dirname + '/test.sqlite';
 const storages = [dbFile];
+const current = Support.sequelize;
 
 if (dialect === 'sqlite') {
   describe('[SQLITE Specific] DAOFactory', () => {
+    let User : Model<ItestInstance, ItestAttribute>;
     after(function() {
-      this.sequelize.options.storage = ':memory:';
+      current.options.storage = ':memory:';
     });
 
     beforeEach(function() {
-      this.sequelize.options.storage = dbFile;
-      this.User = this.sequelize.define('User', {
+      current.options.storage = dbFile;
+      User = current.define<ItestInstance, ItestAttribute>('User', {
         age: new DataTypes.INTEGER(),
         name: new DataTypes.STRING(),
         bio: new DataTypes.TEXT()
       });
-      return this.User.sync({ force: true });
+      return User.sync({ force: true });
     });
 
     storages.forEach(storage => {
@@ -34,13 +38,12 @@ if (dialect === 'sqlite') {
 
         describe('create', () => {
           it('creates a table entry', function() {
-            const self = this;
-            return this.User.create({ age: 21, name: 'John Wayne', bio: 'noot noot' }).then(user => {
+            return User.create({ age: 21, name: 'John Wayne', bio: 'noot noot' }).then(user => {
               expect(user.age).to.equal(21);
               expect(user.name).to.equal('John Wayne');
               expect(user.bio).to.equal('noot noot');
 
-              return self.User.findAll().then(users => {
+              return User.findAll().then(users => {
                 const usernames = users.map(_user => {
                   return _user.name;
                 });
@@ -50,7 +53,7 @@ if (dialect === 'sqlite') {
           });
 
           it('should allow the creation of an object with options as attribute', function() {
-            const Person = this.sequelize.define('Person', {
+            const Person = current.define<ItestInstance, ItestAttribute>('Person', {
               name: new DataTypes.STRING(),
               options: new DataTypes.TEXT()
             });
@@ -68,7 +71,7 @@ if (dialect === 'sqlite') {
           });
 
           it('should allow the creation of an object with a boolean (true) as attribute', function() {
-            const Person = this.sequelize.define('Person', {
+            const Person = current.define<ItestInstance, ItestAttribute>('Person', {
               name: new DataTypes.STRING(),
               has_swag: new DataTypes.BOOLEAN()
             });
@@ -84,7 +87,7 @@ if (dialect === 'sqlite') {
           });
 
           it('should allow the creation of an object with a boolean (false) as attribute', function() {
-            const Person = this.sequelize.define('Person', {
+            const Person = current.define<ItestInstance, ItestAttribute>('Person', {
               name: new DataTypes.STRING(),
               has_swag: new DataTypes.BOOLEAN()
             });
@@ -102,17 +105,17 @@ if (dialect === 'sqlite') {
 
         describe('.find', () => {
           beforeEach(function() {
-            return this.User.create({name: 'user', bio: 'footbar'});
+            return User.create({name: 'user', bio: 'footbar'});
           });
 
           it('finds normal lookups', function() {
-            return this.User.find({ where: { name: 'user' } }).then(user => {
+            return User.find({ where: { name: 'user' } }).then(user => {
               expect(user.name).to.equal('user');
             });
           });
 
           it.skip('should make aliased attributes available', function() {
-            return this.User.find({ where: { name: 'user' }, attributes: ['id', ['name', 'username']] }).then(user => {
+            return User.find({ where: { name: 'user' }, attributes: ['id', ['name', 'username']] }).then(user => {
               expect(user.username).to.equal('user');
             });
           });
@@ -120,14 +123,14 @@ if (dialect === 'sqlite') {
 
         describe('.all', () => {
           beforeEach(function() {
-            return this.User.bulkCreate([
+            return User.bulkCreate([
               {name: 'user', bio: 'foobar'},
               {name: 'user', bio: 'foobar'},
             ]);
           });
 
           it('should return all users', function() {
-            return this.User.findAll().then(users => {
+            return User.findAll().then(users => {
               expect(users).to.have.length(2);
             });
           });
@@ -135,15 +138,14 @@ if (dialect === 'sqlite') {
 
         describe('.min', () => {
           it('should return the min value', function() {
-            const self = this;
             const users = [];
 
             for (let i = 2; i < 5; i++) {
               users[users.length] = {age: i};
             }
 
-            return this.User.bulkCreate(users).then(() => {
-              return self.User.min('age').then(min => {
+            return User.bulkCreate(users).then(() => {
+              return User.min('age').then(min => {
                 expect(min).to.equal(2);
               });
             });
@@ -152,15 +154,14 @@ if (dialect === 'sqlite') {
 
         describe('.max', () => {
           it('should return the max value', function() {
-            const self = this;
             const users = [];
 
             for (let i = 2; i <= 5; i++) {
               users[users.length] = {age: i};
             }
 
-            return this.User.bulkCreate(users).then(() => {
-              return self.User.max('age').then(min => {
+            return User.bulkCreate(users).then(() => {
+              return User.max('age').then(min => {
                 expect(min).to.equal(5);
               });
             });

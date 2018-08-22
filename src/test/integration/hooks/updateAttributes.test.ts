@@ -2,13 +2,17 @@
 
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Hooks'), () => {
+  let User : Model<ItestInstance, ItestAttribute>;
   beforeEach(function() {
-    this.User = this.sequelize.define('User', {
+    User = current.define<ItestInstance, ItestAttribute>('User', {
       username: {
         type: new DataTypes.STRING(),
         allowNull: false
@@ -18,7 +22,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         values: ['happy', 'sad', 'neutral']
       }
     });
-    return this.sequelize.sync({ force: true });
+    return current.sync({ force: true });
   });
 
   describe('#updateAttributes', () => {
@@ -29,12 +33,12 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         const beforeSave = sinon.spy();
         const afterSave = sinon.spy();
 
-        this.User.beforeUpdate(beforeHook);
-        this.User.afterUpdate(afterHook);
-        this.User.beforeSave(beforeSave);
-        this.User.afterSave(afterSave);
+        User.beforeUpdate(beforeHook);
+        User.afterUpdate(afterHook);
+        User.beforeSave(beforeSave);
+        User.afterSave(afterSave);
 
-        return this.User.create({username: 'Toni', mood: 'happy'}).then(user => {
+        return User.create({username: 'Toni', mood: 'happy'}).then(user => {
           return user.updateAttributes({username: 'Chong'}).then(_user => {
             expect(beforeHook).to.have.been.calledOnce;
             expect(afterHook).to.have.been.calledOnce;
@@ -53,15 +57,15 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         const beforeSave = sinon.spy();
         const afterSave = sinon.spy();
 
-        this.User.beforeUpdate(() => {
+        User.beforeUpdate(() => {
           beforeHook();
           throw new Error('Whoops!');
         });
-        this.User.afterUpdate(afterHook);
-        this.User.beforeSave(beforeSave);
-        this.User.afterSave(afterSave);
+        User.afterUpdate(afterHook);
+        User.beforeSave(beforeSave);
+        User.afterSave(afterSave);
 
-        return this.User.create({username: 'Toni', mood: 'happy'}).then(user => {
+        return User.create({username: 'Toni', mood: 'happy'}).then(user => {
           return expect(user.updateAttributes({username: 'Chong'})).to.be.rejected.then(() => {
             expect(beforeHook).to.have.been.calledOnce;
             expect(beforeSave).to.have.been.calledOnce;
@@ -77,15 +81,15 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         const beforeSave = sinon.spy();
         const afterSave = sinon.spy();
 
-        this.User.beforeUpdate(beforeHook);
-        this.User.afterUpdate(() => {
+        User.beforeUpdate(beforeHook);
+        User.afterUpdate(() => {
           afterHook();
           throw new Error('Whoops!');
         });
-        this.User.beforeSave(beforeSave);
-        this.User.afterSave(afterSave);
+        User.beforeSave(beforeSave);
+        User.afterSave(afterSave);
 
-        return this.User.create({username: 'Toni', mood: 'happy'}).then(user => {
+        return User.create({username: 'Toni', mood: 'happy'}).then(user => {
           return expect(user.updateAttributes({username: 'Chong'})).to.be.rejected.then(() => {
             expect(beforeHook).to.have.been.calledOnce;
             expect(afterHook).to.have.been.calledOnce;
@@ -99,11 +103,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
     describe('preserves changes to instance', () => {
       it('beforeValidate', function() {
 
-        this.User.beforeValidate(user => {
+        User.beforeValidate(user => {
           user.mood = 'happy';
         });
 
-        return this.User.create({username: 'fireninja', mood: 'invalid'}).then(user => {
+        return User.create({username: 'fireninja', mood: 'invalid'}).then(user => {
           return user.updateAttributes({username: 'hero'});
         }).then(user => {
           expect(user.username).to.equal('hero');
@@ -113,11 +117,11 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
 
       it('afterValidate', function() {
 
-        this.User.afterValidate(user => {
+        User.afterValidate(user => {
           user.mood = 'sad';
         });
 
-        return this.User.create({username: 'fireninja', mood: 'nuetral'}).then(user => {
+        return User.create({username: 'fireninja', mood: 'nuetral'}).then(user => {
           return user.updateAttributes({username: 'spider'});
         }).then(user => {
           expect(user.username).to.equal('spider');
@@ -128,12 +132,12 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       it('beforeSave', function() {
         let hookCalled = 0;
 
-        this.User.beforeSave(user => {
+        User.beforeSave(user => {
           user.mood = 'happy';
           hookCalled++;
         });
 
-        return this.User.create({username: 'fireninja', mood: 'nuetral'}).then(user => {
+        return User.create({username: 'fireninja', mood: 'nuetral'}).then(user => {
           return user.updateAttributes({username: 'spider', mood: 'sad'});
         }).then(user => {
           expect(user.username).to.equal('spider');
@@ -145,17 +149,17 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       it('beforeSave with beforeUpdate', function() {
         let hookCalled = 0;
 
-        this.User.beforeUpdate(user => {
+        User.beforeUpdate(user => {
           user.mood = 'sad';
           hookCalled++;
         });
 
-        this.User.beforeSave(user => {
+        User.beforeSave(user => {
           user.mood = 'happy';
           hookCalled++;
         });
 
-        return this.User.create({username: 'akira'}).then(user => {
+        return User.create({username: 'akira'}).then(user => {
           return user.updateAttributes({username: 'spider', mood: 'sad'});
         }).then(user => {
           expect(user.mood).to.equal('happy');

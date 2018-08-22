@@ -1,9 +1,9 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import { Sequelize } from '../../..';
 import AllDataTypes, { IDataTypes } from '../../data-types';
 import * as sequelizeErrors from '../../errors/index';
-import Promise from '../../promise';
 import { Utils } from '../../utils';
 import { AbstractConnectionManager } from '../abstract/abstract-connection-manager';
 import { ParserStore } from '../parserStore';
@@ -106,12 +106,12 @@ export class SqliteConnectionManager extends AbstractConnectionManager {
     }).tap(connection => {
       if (this.sequelize.config.password) {
         // Make it possible to define and use password for sqlite encryption plugin like sqlcipher
-        connection.run('PRAGMA KEY=' + this.sequelize.escape(this.sequelize.config.password));
+        (connection as any).run('PRAGMA KEY=' + this.sequelize.escape(this.sequelize.config.password));
       }
       if (this.sequelize.options.foreignKeys !== false) {
         // Make it possible to define and use foreign key constraints unless
         // explicitly disallowed. It's still opt-in per relation
-        connection.run('PRAGMA FOREIGN_KEYS=ON');
+        (connection as any).run('PRAGMA FOREIGN_KEYS=ON');
       }
     });
   }

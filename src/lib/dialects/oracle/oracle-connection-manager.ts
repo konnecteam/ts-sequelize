@@ -1,9 +1,9 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import { Sequelize } from '../../..';
 import * as sequelizeErrors from '../../errors/index';
-import { IConfig, IConfigOracle } from '../../model/iconfig';
-import Promise from '../../promise';
+import { IConfig, IConfigOracle } from '../../interfaces/iconfig';
 import { AbstractConnectionManager } from '../abstract/abstract-connection-manager';
 import { ParserStore } from '../parserStore';
 import { OracleDialect } from './oracle-dialect';

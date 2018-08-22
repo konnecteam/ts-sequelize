@@ -1,8 +1,8 @@
 'use strict';
 
 import * as assert from 'assert';
+import * as Promise from 'bluebird';
 import { ResourceLock } from '../../../../lib/dialects/mssql/resource-lock';
-import Promise from '../../../../lib/promise';
 import Support from '../../../support';
 const dialect = Support.getTestDialect();
 
@@ -29,6 +29,8 @@ if (dialect === 'mssql') {
           validateResource(resource);
           assert.equal(last, 1);
           last = 2;
+
+          return Promise.resolve();
         }),
         Promise.using(lock.lock(), resource => {
           validateResource(resource);
@@ -46,6 +48,7 @@ if (dialect === 'mssql') {
 
       function validateResource(actual) {
         assert.equal(actual, expected);
+        return Promise.resolve();
       }
 
       return Promise.all([

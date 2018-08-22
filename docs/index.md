@@ -29,8 +29,8 @@ const sequelize = new Sequelize('database', 'username', 'password', {
 });
 
 const User = sequelize.define('user', {
-  username: new Sequelize.STRING(),
-  birthday: new Sequelize.DATE()
+  username: new DataTypes.STRING(),
+  birthday: new DataTypes.DATE()
 });
 
 sequelize.sync()

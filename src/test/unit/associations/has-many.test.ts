@@ -1,11 +1,10 @@
 'use strict';
 
 import * as chai from 'chai';
-import * as _ from 'lodash';
 import * as sinon from 'sinon';
-import { HasMany } from '../../../lib/associations/has-many';
 import DataTypes from '../../../lib/data-types';
 import Op from '../../../lib/operators';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const stub = sinon.stub;
@@ -13,17 +12,9 @@ const current = Support.sequelize;
 const Promise = current.Promise;
 
 describe(Support.getTestDialectTeaser('hasMany'), () => {
-  it('throws when invalid model is passed', () => {
-    const User = current.define('User');
-
-    expect(() => {
-      User.hasMany();
-    }).to.throw('User.hasMany called with something that\'s not a subclass of Sequelize.Model');
-  });
-
   describe('optimizations using bulk create, destroy and update', () => {
-    const User = current.define('User', { username: new DataTypes.STRING() });
-    const Task = current.define('Task', { title: new DataTypes.STRING() });
+    const User = current.define<ItestInstance, ItestAttribute>('User', { username: new DataTypes.STRING() });
+    const Task = current.define<ItestInstance, ItestAttribute>('Task', { title: new DataTypes.STRING() });
 
     User.hasMany(Task);
 
@@ -36,98 +27,47 @@ describe(Support.getTestDialectTeaser('hasMany'), () => {
     const task2 = Task.build({
       id: 16
     });
+    const self = this;
 
-    beforeEach(function() {
-      this.findAll = stub(Task, 'findAll').returns(Promise.resolve([]));
-      this.update = stub(Task, 'update').returns(Promise.resolve([]));
+    beforeEach(() => {
+      self.oldFindAll = current.Model.prototype.findAll;
+      self.oldupdate = current.Model.prototype.update;
+      self.findAll = current.Model.prototype.findAll = stub().returns(Promise.resolve([]));
+      self.update = current.Model.prototype.update = stub().returns(Promise.resolve([]));
     });
 
-    afterEach(function() {
-      this.findAll.restore();
-      this.update.restore();
+    afterEach(() => {
+      current.Model.prototype.findAll = self.oldFindAll;
+      current.Model.prototype.update = self.oldupdate;
     });
 
     it('uses one update statement for addition', function() {
-      return user.setTasks([task1, task2]).bind(this).  then(function() {
-        expect(this.findAll).to.have.been.calledOnce;
-        expect(this.update).to.have.been.calledOnce;
+      return user.setLinkedData('Task', [task1, task2]).bind(self).then(function() {
+        expect(self.findAll).to.have.been.calledOnce;
+        expect(self.update).to.have.been.calledOnce;
       });
     });
 
     it('uses one delete from statement', function() {
-      this.findAll
+      self.findAll
         .onFirstCall().returns(Promise.resolve([]))
         .onSecondCall().returns(Promise.resolve([
           { userId: 42, taskId: 15 },
-          { userId: 42, taskId: 16 }        ]));
+          { userId: 42, taskId: 16 }]));
 
-      return user.setTasks([task1, task2]).bind(this).then(function() {
-        this.update.resetHistory();
-        return user.setTasks(null);
+      return user.setLinkedData('Task', [task1, task2]).bind(self).then(function() {
+        self.update.reset();
+        return user.setLinkedData('Task', null);
       }).then(function() {
-        expect(this.findAll).to.have.been.calledTwice;
-        expect(this.update).to.have.been.calledOnce;
-      });
-    });
-  });
-
-  describe('mixin', () => {
-    const User = current.define('User');
-    const Task = current.define('Task');
-
-    it('should mixin association methods', () => {
-      const as = Math.random().toString();
-      const association = new HasMany(User, Task, { as });
-      const obj = {};
-
-      association.mixin(obj);
-
-      expect(obj[association.accessors.get]).to.be.an('function');
-      expect(obj[association.accessors.set]).to.be.an('function');
-      expect(obj[association.accessors.addMultiple]).to.be.an('function');
-      expect(obj[association.accessors.add]).to.be.an('function');
-      expect(obj[association.accessors.remove]).to.be.an('function');
-      expect(obj[association.accessors.removeMultiple]).to.be.an('function');
-      expect(obj[association.accessors.hasSingle]).to.be.an('function');
-      expect(obj[association.accessors.hasAll]).to.be.an('function');
-      expect(obj[association.accessors.count]).to.be.an('function');
-    });
-
-    it('should not override custom methods', () => {
-      const methods = {
-        getTasks: 'get',
-        countTasks: 'count',
-        hasTask: 'has',
-        hasTasks: 'has',
-        setTasks: 'set',
-        addTask: 'add',
-        addTasks: 'add',
-        removeTask: 'remove',
-        removeTasks: 'remove',
-        createTask: 'create'
-      };
-
-      _.each(methods, (alias, method) => {
-        User.prototype[method] = function() {
-          const realMethod = this.constructor.associations.task[alias];
-          expect(realMethod).to.be.a('function');
-          return realMethod;
-        };
-      });
-
-      User.hasMany(Task, { as: 'task' });
-
-      const user = User.build();
-
-      _.each(methods, (alias, method) => {
-        expect(user[method]()).to.be.a('function');
+        expect(self.findAll).to.have.been.calledTwice;
+        expect(self.update).to.have.been.calledOnce;
       });
     });
   });
 
   describe('get', () => {
-    const User = current.define('User', {});
-    const Task = current.define('Task', {});
+    const User = current.define<ItestInstance, ItestAttribute>('User', {});
+    const Task = current.define<ItestInstance, ItestAttribute>('Task', {});
     const idA = Math.random().toString();
     const idB = Math.random().toString();
     const idC = Math.random().toString();
@@ -140,15 +80,15 @@ describe(Support.getTestDialectTeaser('hasMany'), () => {
       ]));
       const where = {};
 
-      User.Tasks = User.hasMany(Task, {foreignKey});
-      const actual = User.Tasks.get(User.build({id: idA}));
+      const User_Tasks = User.hasMany(Task, {foreignKey});
+      const actual = User_Tasks.get(User.build({id: idA}));
 
       where[foreignKey] = idA;
 
       expect(findAll).to.have.been.calledOnce;
       expect(findAll.firstCall.args[0].where).to.deep.equal(where);
 
-      return actual.then(results => {
+      return (actual as any).then(results => {
         expect(results).to.be.an('array');
         expect(results.length).to.equal(2);
       }).finally(() => {
@@ -173,8 +113,8 @@ describe(Support.getTestDialectTeaser('hasMany'), () => {
           }),
         ]));
 
-      User.Tasks = User.hasMany(Task, {foreignKey});
-      const actual = User.Tasks.get([
+      const User_Tasks = User.hasMany(Task, {foreignKey});
+      const actual = User_Tasks.get([
         User.build({id: idA}),
         User.build({id: idB}),
         User.build({id: idC}),
@@ -185,7 +125,7 @@ describe(Support.getTestDialectTeaser('hasMany'), () => {
       expect(findAll.firstCall.args[0].where[foreignKey]).to.have.property(Op.in as any);
       expect(findAll.firstCall.args[0].where[foreignKey][Op.in]).to.deep.equal([idA, idB, idC]);
 
-      return actual.then(result => {
+      return (actual as any).then(result => {
         expect(result).to.be.an('object');
         expect(Object.keys(result)).to.deep.equal([idA, idB, idC]);
 

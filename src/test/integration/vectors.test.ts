@@ -2,14 +2,16 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../dummy/dummy-data-set';
 import Support from './support';
 const expect = chai.expect;
+const current = Support.sequelize;
 
 chai.should();
 
 describe(Support.getTestDialectTeaser('Vectors'), () => {
   it('should not allow insert backslash', function() {
-    const Student = this.sequelize.define('student', {
+    const Student = current.define<ItestInstance, ItestAttribute>('student', {
       name: new DataTypes.STRING()
     }, {
       tableName: 'student'

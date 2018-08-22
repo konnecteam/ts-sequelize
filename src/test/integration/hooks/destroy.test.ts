@@ -2,13 +2,17 @@
 
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Hooks'), () => {
+  let User : Model<ItestInstance, ItestAttribute>;
   beforeEach(function() {
-    this.User = this.sequelize.define('User', {
+    User = current.define<ItestInstance, ItestAttribute>('User', {
       username: {
         type: new DataTypes.STRING(),
         allowNull: false
@@ -18,7 +22,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         values: ['happy', 'sad', 'neutral']
       }
     });
-    return this.sequelize.sync({ force: true });
+    return current.sync({ force: true });
   });
 
   describe('#destroy', () => {
@@ -27,10 +31,10 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         const beforeHook = sinon.spy();
         const afterHook = sinon.spy();
 
-        this.User.beforeDestroy(beforeHook);
-        this.User.afterDestroy(afterHook);
+        User.beforeDestroy(beforeHook);
+        User.afterDestroy(afterHook);
 
-        return this.User.create({username: 'Toni', mood: 'happy'}).then(user => {
+        return User.create({username: 'Toni', mood: 'happy'}).then(user => {
           return user.destroy().then(() => {
             expect(beforeHook).to.have.been.calledOnce;
             expect(afterHook).to.have.been.calledOnce;
@@ -44,13 +48,13 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         const beforeHook = sinon.spy();
         const afterHook = sinon.spy();
 
-        this.User.beforeDestroy(() => {
+        User.beforeDestroy(() => {
           beforeHook();
           throw new Error('Whoops!');
         });
-        this.User.afterDestroy(afterHook);
+        User.afterDestroy(afterHook);
 
-        return this.User.create({username: 'Toni', mood: 'happy'}).then(user => {
+        return User.create({username: 'Toni', mood: 'happy'}).then(user => {
           return expect(user.destroy()).to.be.rejected.then(() => {
             expect(beforeHook).to.have.been.calledOnce;
             expect(afterHook).not.to.have.been.called;
@@ -62,13 +66,13 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         const beforeHook = sinon.spy();
         const afterHook = sinon.spy();
 
-        this.User.beforeDestroy(beforeHook);
-        this.User.afterDestroy(() => {
+        User.beforeDestroy(beforeHook);
+        User.afterDestroy(() => {
           afterHook();
           throw new Error('Whoops!');
         });
 
-        return this.User.create({username: 'Toni', mood: 'happy'}).then(user => {
+        return User.create({username: 'Toni', mood: 'happy'}).then(user => {
           return expect(user.destroy()).to.be.rejected.then(() => {
             expect(beforeHook).to.have.been.calledOnce;
             expect(afterHook).to.have.been.calledOnce;

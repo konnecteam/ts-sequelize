@@ -1,10 +1,10 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as mssql from 'mssql';
 import AllDataTypes from '../../data-types';
 import * as sequelizeErrors from '../../errors/index';
-import { IConfig } from '../../model/iconfig';
-import Promise from '../../promise';
+import { IConfig } from '../../interfaces/iconfig';
 import { AbstractConnectionManager } from '../abstract/abstract-connection-manager';
 import { ParserStore } from '../parserStore';
 import { ResourceLock } from './resource-lock';

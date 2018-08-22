@@ -2,6 +2,7 @@
 
 import * as _ from 'lodash';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expectsql = Support.expectsql;
 const current = Support.sequelize;
@@ -9,8 +10,8 @@ const  sql = current.dialect.QueryGenerator;
 
 describe(Support.getTestDialectTeaser('SQL'), () => {
   describe('createTable', () => {
-    const FooUser = current.define('user', {
-      mood: new (DataTypes as any).ENUM('happy', 'sad')
+    const FooUser = current.define<ItestInstance, ItestAttribute>('user', {
+      mood: new DataTypes.ENUM('happy', 'sad')
     }, {
       schema: 'foo',
       timestamps: false
@@ -28,10 +29,10 @@ describe(Support.getTestDialectTeaser('SQL'), () => {
       });
     });
     describe('with references', () => {
-      const BarUser = current.define('user', {
+      const BarUser = current.define<ItestInstance, ItestAttribute>('user', {
         timestamps: false
       }).schema('bar');
-      const BarProject = current.define('project', {
+      const BarProject = current.define<ItestInstance, ItestAttribute>('project', {
         user_id: {
           type: new DataTypes.INTEGER(),
           references: { model: BarUser },

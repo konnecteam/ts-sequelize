@@ -6,28 +6,30 @@ import DataTypes from '../../../../lib/data-types';
 import Support from '../../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
+const current = Support.sequelize;
 
 
 if (dialect.match(/^postgres/)) {
   describe('[POSTGRES Specific] QueryInterface', () => {
+    let queryInterface = current.getQueryInterface();
     beforeEach(function() {
-      this.sequelize.options.quoteIdenifiers = true;
-      this.queryInterface = this.sequelize.getQueryInterface();
+      current.options.quoteIdentifiers = true;
+      queryInterface = current.getQueryInterface();
     });
 
     describe('createSchema', () => {
       beforeEach(function() {
         // make sure we don't have a pre-existing schema called testSchema.
-        return this.queryInterface.dropSchema('testschema').reflect();
+        return queryInterface.dropSchema('testschema').reflect();
       });
 
       it('creates a schema', function() {
-        return this.queryInterface.createSchema('testschema')
-          .then(() => this.sequelize.query(`
+        return queryInterface.createSchema('testschema')
+          .then(() => current.query(`
             SELECT schema_name
             FROM information_schema.schemata
             WHERE schema_name = 'testschema';
-          `, { type: this.sequelize.QueryTypes.SELECT }))
+          `, { type: current.QueryTypes.SELECT }))
           .then(res => {
             expect(res, 'query results').to.not.be.empty;
             expect(res[0].schema_name).to.be.equal('testschema');
@@ -35,13 +37,13 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('works even when schema exists', function() {
-        return this.queryInterface.createSchema('testschema')
-          .then(() => this.queryInterface.createSchema('testschema'))
-          .then(() => this.sequelize.query(`
+        return queryInterface.createSchema('testschema')
+          .then(() => queryInterface.createSchema('testschema'))
+          .then(() => current.query(`
             SELECT schema_name
             FROM information_schema.schemata
             WHERE schema_name = 'testschema';
-          `, { type: this.sequelize.QueryTypes.SELECT }))
+          `, { type: current.QueryTypes.SELECT }))
           .then(res => {
             expect(res, 'query results').to.not.be.empty;
             expect(res[0].schema_name).to.be.equal('testschema');
@@ -51,7 +53,7 @@ if (dialect.match(/^postgres/)) {
 
     describe('databaseVersion', () => {
       it('reports version', function() {
-        return this.queryInterface.databaseVersion()
+        return queryInterface.databaseVersion()
           .then(res => {
             // check that result matches expected version number format. example 9.5.4
             expect(res).to.match(/[0-9\.[0-9]\.[0-9]/);
@@ -63,16 +65,16 @@ if (dialect.match(/^postgres/)) {
       beforeEach(function() {
         // ensure the function names we'll use don't exist before we start.
         // then setup our function to rename
-        return this.queryInterface.dropFunction('rftest1', [])
+        return queryInterface.dropFunction('rftest1', [])
           .reflect()
-          .then(() => this.queryInterface.dropFunction('rftest2', []))
+          .then(() => queryInterface.dropFunction('rftest2', []))
           .reflect()
-          .then(() => this.queryInterface.createFunction('rftest1', [], 'varchar', 'plpgsql', 'return \'testreturn\';', {}));
+          .then(() => queryInterface.createFunction('rftest1', [], 'varchar', 'plpgsql', 'return \'testreturn\';', {}));
       });
 
       it('renames a function', function() {
-        return this.queryInterface.renameFunction('rftest1', [], 'rftest2')
-          .then(() => this.sequelize.query('select rftest2();', { type: this.sequelize.QueryTypes.SELECT }))
+        return queryInterface.renameFunction('rftest1', [], 'rftest2')
+          .then(() => current.query('select rftest2();', { type: current.QueryTypes.SELECT }))
           .then(res => {
             expect(res[0].rftest2).to.be.eql('testreturn');
           });
@@ -85,14 +87,14 @@ if (dialect.match(/^postgres/)) {
         // make sure we don't have a pre-existing function called create_job
         // this is needed to cover the edge case of afterEach not getting called because of an unexpected issue or stopage with the
         // test suite causing a failure of afterEach's cleanup to be called.
-        return this.queryInterface.dropFunction('create_job', [{type: 'varchar', name: 'test'}])
+        return queryInterface.dropFunction('create_job', [{type: 'varchar', name: 'test'}])
           // suppress errors here. if create_job doesn't exist thats ok.
           .reflect();
       });
 
       after(function() {
         // cleanup
-        return this.queryInterface.dropFunction('create_job', [{type: 'varchar', name: 'test'}])
+        return queryInterface.dropFunction('create_job', [{type: 'varchar', name: 'test'}])
           // suppress errors here. if create_job doesn't exist thats ok.
           .reflect();
       });
@@ -102,9 +104,9 @@ if (dialect.match(/^postgres/)) {
         const options = {};
 
         // make our call to create a function
-        return this.queryInterface.createFunction('create_job', [{type: 'varchar', name: 'test'}], 'varchar', 'plpgsql', body, options)
+        return queryInterface.createFunction('create_job', [{type: 'varchar', name: 'test'}], 'varchar', 'plpgsql', body, options)
           // validate
-          .then(() => this.sequelize.query('select create_job(\'test\');', { type: this.sequelize.QueryTypes.SELECT }))
+          .then(() => current.query('select create_job(\'test\');', { type: current.QueryTypes.SELECT }))
           .then(res => {
             expect(res[0].create_job).to.be.eql('test');
           });
@@ -114,9 +116,9 @@ if (dialect.match(/^postgres/)) {
         const body = 'return test;';
 
         // run with null options parameter
-        return this.queryInterface.createFunction('create_job', [{type: 'varchar', name: 'test'}], 'varchar', 'plpgsql', body)
+        return queryInterface.createFunction('create_job', [{type: 'varchar', name: 'test'}], 'varchar', 'plpgsql', body)
           // validate
-          .then(() => this.sequelize.query('select create_job(\'test\');', { type: this.sequelize.QueryTypes.SELECT }))
+          .then(() => current.query('select create_job(\'test\');', { type: current.QueryTypes.SELECT }))
           .then(res => {
             expect(res[0].create_job).to.be.eql('test');
           });
@@ -129,32 +131,32 @@ if (dialect.match(/^postgres/)) {
         return Promise.all([
           // requires functionName
           expect(() => {
-            return this.queryInterface.createFunction(null, [{name: 'test'}], 'integer', 'plpgsql', body, options);
+            return queryInterface.createFunction(null, [{name: 'test'}], 'integer', 'plpgsql', body, options);
           }).to.throw(/createFunction missing some parameters. Did you pass functionName, returnType, language and body/),
 
           // requires Parameters array
           expect(() => {
-            return this.queryInterface.createFunction('create_job', null, 'integer', 'plpgsql', body, options);
+            return queryInterface.createFunction('create_job', null, 'integer', 'plpgsql', body, options);
           }).to.throw(/function parameters array required/),
 
           // requires returnType
           expect(() => {
-            return this.queryInterface.createFunction('create_job', [{type: 'varchar', name: 'test'}], null, 'plpgsql', body, options);
+            return queryInterface.createFunction('create_job', [{type: 'varchar', name: 'test'}], null, 'plpgsql', body, options);
           }).to.throw(/createFunction missing some parameters. Did you pass functionName, returnType, language and body/),
 
           // requires type in parameter array
           expect(() => {
-            return this.queryInterface.createFunction('create_job', [{name: 'test'}], 'integer', 'plpgsql', body, options);
+            return queryInterface.createFunction('create_job', [{name: 'test'}], 'integer', 'plpgsql', body, options);
           }).to.throw(/function or trigger used with a parameter without any type/),
 
           // requires language
           expect(() => {
-            return this.queryInterface.createFunction('create_job', [{type: 'varchar', name: 'test'}], 'varchar', null, body, options);
+            return queryInterface.createFunction('create_job', [{type: 'varchar', name: 'test'}], 'varchar', null, body, options);
           }).to.throw(/createFunction missing some parameters. Did you pass functionName, returnType, language and body/),
 
           // requires body
           expect(() => {
-            return this.queryInterface.createFunction('create_job', [{type: 'varchar', name: 'test'}], 'varchar', 'plpgsql', null, options);
+            return queryInterface.createFunction('create_job', [{type: 'varchar', name: 'test'}], 'varchar', 'plpgsql', null, options);
           }).to.throw(/createFunction missing some parameters. Did you pass functionName, returnType, language and body/),
         ]);
       });
@@ -166,7 +168,7 @@ if (dialect.match(/^postgres/)) {
         const options = {};
 
         // make sure we have a droptest function in place.
-        return this.queryInterface.createFunction('droptest', [{type: 'varchar', name: 'test'}], 'varchar', 'plpgsql', body, options)
+        return queryInterface.createFunction('droptest', [{type: 'varchar', name: 'test'}], 'varchar', 'plpgsql', body, options)
           // suppress errors.. this could fail if the function is already there.. thats ok.
           .reflect();
       });
@@ -174,11 +176,11 @@ if (dialect.match(/^postgres/)) {
       it('can drop a function', function() {
         return expect(
           // call drop function
-          this.queryInterface.dropFunction('droptest', [{type: 'varchar', name: 'test'}])
+          queryInterface.dropFunction('droptest', [{type: 'varchar', name: 'test'}])
             // now call the function we attempted to drop.. if dropFunction worked as expect it should produce an error.
             .then(() => {
               // call the function we attempted to drop.. if it is still there then throw an error informing that the expected behavior is not met.
-              return this.sequelize.query('select droptest(\'test\');', { type: this.sequelize.QueryTypes.SELECT });
+              return current.query('select droptest(\'test\');', { type: current.QueryTypes.SELECT });
             })
         // test that we did get the expected error indicating that droptest was properly removed.
         ).to.be.rejectedWith(/.*function droptest.* does not exist/);
@@ -187,15 +189,15 @@ if (dialect.match(/^postgres/)) {
       it('produces an error when missing expected parameters', function() {
         return Promise.all([
           expect(() => {
-            return this.queryInterface.dropFunction();
+            return queryInterface.dropFunction();
           }).to.throw(/.*requires functionName/),
 
           expect(() => {
-            return this.queryInterface.dropFunction('droptest');
+            return queryInterface.dropFunction('droptest');
           }).to.throw(/.*function parameters array required/),
 
           expect(() => {
-            return this.queryInterface.dropFunction('droptest', [{name: 'test'}]);
+            return queryInterface.dropFunction('droptest', [{name: 'test'}]);
           }).to.be.throw(/.*function or trigger used with a parameter without any type/),
         ]);
       });
@@ -203,8 +205,8 @@ if (dialect.match(/^postgres/)) {
 
     describe('indexes', () => {
       beforeEach(function() {
-        return this.queryInterface.dropTable('Group')
-          .then(() => this.queryInterface.createTable('Group', {
+        return queryInterface.dropTable('Group')
+          .then(() => queryInterface.createTable('Group', {
             username: new DataTypes.STRING(),
             isAdmin: new DataTypes.BOOLEAN(),
             from: new DataTypes.STRING()
@@ -212,13 +214,13 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('supports newlines', function() {
-        return this.queryInterface.addIndex('Group', [this.sequelize.literal(`(
+        return queryInterface.addIndex('Group', [current.literal(`(
             CASE "username"
               WHEN 'foo' THEN 'bar'
               ELSE 'baz'
             END
           )`)], { name: 'group_username_case' })
-          .then(() => this.queryInterface.showIndex('Group'))
+          .then(() => queryInterface.showIndex('Group'))
           .then(indexes => {
             const indexColumns = _.uniq(indexes.map(index => index.name));
 
@@ -227,17 +229,17 @@ if (dialect.match(/^postgres/)) {
       });
 
       it('adds, reads and removes a named functional index to the table', function() {
-        return this.queryInterface.addIndex('Group', [this.sequelize.fn('lower', this.sequelize.col('username'))], {
+        return queryInterface.addIndex('Group', [current.fn('lower', current.col('username'))], {
           name: 'group_username_lower'
         })
-          .then(() => this.queryInterface.showIndex('Group'))
+          .then(() => queryInterface.showIndex('Group'))
           .then(indexes => {
             const indexColumns = _.uniq(indexes.map(index => index.name));
 
             expect(indexColumns).to.include('group_username_lower');
           })
-          .then(() => this.queryInterface.removeIndex('Group', 'group_username_lower'))
-          .then(() => this.queryInterface.showIndex('Group'))
+          .then(() => queryInterface.removeIndex('Group', 'group_username_lower'))
+          .then(() => queryInterface.showIndex('Group'))
           .then(indexes => {
             const indexColumns = _.uniq(indexes.map(index => index.name));
             expect(indexColumns).to.be.empty;

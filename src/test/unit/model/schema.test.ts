@@ -1,14 +1,15 @@
 'use strict';
 
 import * as chai from 'chai';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model') + 'Schemas', () => {
   if (current.dialect.supports.schemas) {
-    const Project = current.define('project');
-    const Company = current.define('company', {}, {
+    const Project = current.define<ItestInstance, ItestAttribute>('project');
+    const Company = current.define<ItestInstance, ItestAttribute>('company', {}, {
       schema: 'default',
       schemaDelimiter: '&'
     });

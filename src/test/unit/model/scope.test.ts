@@ -2,13 +2,14 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
-  const Project = current.define('project');
-  const User = current.define('user');
+  const Project = current.define<ItestInstance, ItestAttribute>('project');
+  const User = current.define<ItestInstance, ItestAttribute>('user');
 
   const scopes = {
     complexFunction(value) {
@@ -67,7 +68,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     }
   };
 
-  const Company = current.define('company', {}, {
+  const Company = current.define<ItestInstance, ItestAttribute>('company', {}, {
     defaultScope: {
       include: [Project],
       where: { active: true }
@@ -77,7 +78,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
   describe('.scope', () => {
     describe('attribute exclude / include', () => {
-      const _User = current.define('user', {
+      const _User = current.define<ItestInstance, ItestAttribute>('user', {
         password: new DataTypes.STRING(),
         name: new DataTypes.STRING()
       }, {
@@ -115,7 +116,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('defaultScope should be an empty object if not overridden', () => {
-      const Foo = current.define('foo', {}, {});
+      const Foo = current.define<ItestInstance, ItestAttribute>('foo', {}, {});
 
       expect(Foo.scope('defaultScope')._scope).to.deep.equal({});
     });
@@ -249,7 +250,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
   describe('addScope', () => {
     it('works if the model does not have any initial scopes', () => {
-      const Model = current.define('model');
+      const Model = current.define<ItestInstance, ItestAttribute>('model');
 
       expect(() => {
         Model.addScope('anything', {});
@@ -341,7 +342,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         limit: 9
       };
 
-      current.Model._injectScope.call({
+      current.Model.prototype._injectScope.call({
         _scope: scope
       }, options);
 
@@ -367,7 +368,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         include: undefined
       };
 
-      current.Model._injectScope.call({
+      current.Model.prototype._injectScope.call({
         _scope: scope
       }, options);
 
@@ -384,7 +385,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         include: [{ model: Project, where: { something: true }}]
       };
 
-      current.Model._injectScope.call({
+      current.Model.prototype._injectScope.call({
         _scope: scope
       }, options);
 
@@ -401,7 +402,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         include: [{model: User, as: 'otherUser'}]
       };
 
-      current.Model._injectScope.call({
+      current.Model.prototype._injectScope.call({
         _scope: scope
       }, options);
 
@@ -423,7 +424,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         ]
       };
 
-      current.Model._injectScope.call({
+      current.Model.prototype._injectScope.call({
         _scope: scope
       }, options);
 
@@ -446,7 +447,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           ]
         };
 
-        current.Model._injectScope.call({
+        current.Model.prototype._injectScope.call({
           _scope: scope
         }, options);
 
@@ -469,7 +470,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           ]
         };
 
-        current.Model._injectScope.call({
+        current.Model.prototype._injectScope.call({
           _scope: scope
         }, options);
 

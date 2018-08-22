@@ -3,9 +3,10 @@
 import * as chai from 'chai';
 import * as moment from 'moment';
 import * as validateUUID from 'uuid-validate';
-import {Sequelize} from '../../index';
+import { Model, Sequelize } from '../../index';
 import DataTypes from '../../lib/data-types';
 import config from '../config/config';
+import { ItestAttribute, ItestInstance } from '../dummy/dummy-data-set';
 import Support from './support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
@@ -13,9 +14,19 @@ const current = Support.sequelize;
 const Promise = current.Promise;
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
+  let User : Model<ItestInstance, ItestAttribute>;
+  let User2 : Model<ItestInstance, ItestAttribute>;
+  let UserEager : Model<ItestInstance, ItestAttribute>;
+  let ProjectEager : Model<ItestInstance, ItestAttribute>;
+  let ParanoidUser : Model<ItestInstance, ItestAttribute>;
+  let UserDestroy : Model<ItestInstance, ItestAttribute>;
+  let UserDelete : Model<ItestInstance, ItestAttribute>;
+  let UserAssociationEqual : Model<ItestInstance, ItestAttribute>;
+  let ProjectAssociationEqual : Model<ItestInstance, ItestAttribute>;
+  let ParanoidUserWithCustomDeletedAt : Model<ItestInstance, ItestAttribute>;
 
   beforeEach(function() {
-    this.User = this.sequelize.define('User', {
+    User = current.define<ItestInstance, ItestAttribute>('User', {
       username: { type: new DataTypes.STRING() },
       uuidv1: { type: new DataTypes.UUID(), defaultValue: new DataTypes.UUIDV1() },
       uuidv4: { type: new DataTypes.UUID(), defaultValue: new DataTypes.UUIDV4() },
@@ -46,7 +57,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       }
     });
 
-    return this.User.sync({ force: true });
+    return User.sync({ force: true });
   });
 
   describe('Escaping', () => {
@@ -54,10 +65,8 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       // Ideally we should test more: "\0\n\r\b\t\\\'\"\x1a"
       // But this causes sqlite to fail and exits the entire test suite immediately
       const bio = dialect + "'\"\n"; // Need to add the dialect here so in case of failure I know what DB it failed for
-      const self = this;
-
-      return this.User.create({ username: bio }).then(u1 => {
-        return self.User.findById(u1.id).then(u2 => {
+      return User.create({ username: bio }).then(u1 => {
+        return User.findById(u1.id).then(u2 => {
           expect(u2.username).to.equal(bio);
         });
       });
@@ -66,28 +75,27 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
   describe('isNewRecord', () => {
     it('returns true for non-saved objects', function() {
-      const user = this.User.build({ username: 'user' });
+      const user = User.build({ username: 'user' });
       expect(user.id).to.be.null;
       expect(user.isNewRecord).to.be.ok;
     });
 
     it('returns false for saved objects', function() {
-      return this.User.build({ username: 'user' }).save().then(user => {
+      return User.build({ username: 'user' }).save().then(user => {
         expect(user.isNewRecord).to.not.be.ok;
       });
     });
 
     it('returns false for created objects', function() {
-      return this.User.create({ username: 'user' }).then(user => {
+      return User.create({ username: 'user' }).then(user => {
         expect(user.isNewRecord).to.not.be.ok;
       });
     });
 
     it('returns false for objects found by find method', function() {
-      const self = this;
-      return this.User.create({ username: 'user' }).then(() => {
-        return self.User.create({ username: 'user' }).then(user => {
-          return self.User.findById(user.id).then(_user => {
+      return User.create({ username: 'user' }).then(() => {
+        return User.create({ username: 'user' }).then(user => {
+          return User.findById(user.id).then(_user => {
             expect(_user.isNewRecord).to.not.be.ok;
           });
         });
@@ -95,15 +103,14 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('returns false for objects found by findAll method', function() {
-      const self = this;
       const users = [];
 
       for (let i = 0; i < 10; i++) {
         users[users.length] = {username: 'user'};
       }
 
-      return this.User.bulkCreate(users).then(() => {
-        return self.User.findAll().then(_users => {
+      return User.bulkCreate(users).then(() => {
+        return User.findAll().then(_users => {
           _users.forEach(u => {
             expect(u.isNewRecord).to.not.be.ok;
           });
@@ -114,13 +121,13 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
   describe('increment', () => {
     beforeEach(function() {
-      return this.User.create({ id: 1, aNumber: 0, bNumber: 0 });
+      return User.create({ id: 1, aNumber: 0, bNumber: 0 });
     });
 
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
-        return Support.prepareTransactionTest(this.sequelize).bind({}).then(sequelize => {
-          const User = sequelize.define('User', { number: new DataTypes.INTEGER() });
+        return Support.prepareTransactionTest(current).bind({}).then(sequelize => {
+          User = (sequelize as Sequelize).define<ItestInstance, ItestAttribute>('User', { number: new DataTypes.INTEGER() });
 
           return User.sync({ force: true }).then(() => {
             return User.create({ number: 1 }).then(user => {
@@ -143,7 +150,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     if (current.dialect.supports.returnValues.returning) {
       it('supports returning', function() {
-        return this.User.findById(1).then(user1 => {
+        return User.findById(1).then(user1 => {
           return user1.increment('aNumber', { by: 2 }).then(() => {
             expect(user1.aNumber).to.be.equal(2);
             return user1.increment('bNumber', { by: 2, returning: false }).then(user3 => {
@@ -155,10 +162,9 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     }
 
     it('supports where conditions', function() {
-      const self = this;
-      return this.User.findById(1).then(user1 => {
+      return User.findById(1).then(user1 => {
         return user1.increment(['aNumber'], { by: 2, where: { bNumber: 1 } }).then(() => {
-          return self.User.findById(1).then(user3 => {
+          return User.findById(1).then(user3 => {
             expect(user3.aNumber).to.be.equal(0);
           });
         });
@@ -166,10 +172,9 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('with array', function() {
-      const self = this;
-      return this.User.findById(1).then(user1 => {
+      return User.findById(1).then(user1 => {
         return user1.increment(['aNumber'], { by: 2 }).then(() => {
-          return self.User.findById(1).then(user3 => {
+          return User.findById(1).then(user3 => {
             expect(user3.aNumber).to.be.equal(2);
           });
         });
@@ -177,10 +182,9 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('with single field', function() {
-      const self = this;
-      return this.User.findById(1).then(user1 => {
+      return User.findById(1).then(user1 => {
         return user1.increment('aNumber', { by: 2 }).then(() => {
-          return self.User.findById(1).then(user3 => {
+          return User.findById(1).then(user3 => {
             expect(user3.aNumber).to.be.equal(2);
           });
         });
@@ -188,10 +192,9 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('with single field and no value', function() {
-      const self = this;
-      return this.User.findById(1).then(user1 => {
+      return User.findById(1).then(user1 => {
         return user1.increment('aNumber').then(() => {
-          return self.User.findById(1).then(user2 => {
+          return User.findById(1).then(user2 => {
             expect(user2.aNumber).to.be.equal(1);
           });
         });
@@ -199,15 +202,14 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should still work right with other concurrent updates', function() {
-      const self = this;
-      return this.User.findById(1).then(user1 => {
+      return User.findById(1).then(user1 => {
         // Select the user again (simulating a concurrent query)
-        return self.User.findById(1).then(user2 => {
+        return User.findById(1).then(user2 => {
           return user2.updateAttributes({
             aNumber: user2.aNumber + 1
           }).then(() => {
             return user1.increment(['aNumber'], { by: 2 }).then(() => {
-              return self.User.findById(1).then(user5 => {
+              return User.findById(1).then(user5 => {
                 expect(user5.aNumber).to.be.equal(3);
               });
             });
@@ -217,14 +219,13 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should still work right with other concurrent increments', function() {
-      const self = this;
-      return this.User.findById(1).then(user1 => {
-        return self.sequelize.Promise.all([
+      return User.findById(1).then(user1 => {
+        return current.Promise.all([
           user1.increment(['aNumber'], { by: 2 }),
           user1.increment(['aNumber'], { by: 2 }),
           user1.increment(['aNumber'], { by: 2 }),
         ]).then(() => {
-          return self.User.findById(1).then(user2 => {
+          return User.findById(1).then(user2 => {
             expect(user2.aNumber).to.equal(6);
           });
         });
@@ -232,10 +233,9 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('with key value pair', function() {
-      const self = this;
-      return this.User.findById(1).then(user1 => {
+      return User.findById(1).then(user1 => {
         return user1.increment({ aNumber: 1, bNumber: 2 }).then(() => {
-          return self.User.findById(1).then(user3 => {
+          return User.findById(1).then(user3 => {
             expect(user3.aNumber).to.be.equal(1);
             expect(user3.bNumber).to.be.equal(2);
           });
@@ -244,7 +244,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('with timestamps set to true', function() {
-      const User = this.sequelize.define('IncrementUser', {
+      User = current.define<ItestInstance, ItestAttribute>('IncrementUser', {
         aNumber: new DataTypes.INTEGER()
       }, { timestamps: true });
 
@@ -264,7 +264,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('with timestamps set to true and options.silent set to true', function() {
-      const User = this.sequelize.define('IncrementUser', {
+      User = current.define<ItestInstance, ItestAttribute>('IncrementUser', {
         aNumber: new DataTypes.INTEGER()
       }, { timestamps: true });
 
@@ -284,13 +284,13 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
   describe('decrement', () => {
     beforeEach(function() {
-      return this.User.create({ id: 1, aNumber: 0, bNumber: 0 });
+      return User.create({ id: 1, aNumber: 0, bNumber: 0 });
     });
 
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
-        return Support.prepareTransactionTest(this.sequelize).bind({}).then(sequelize => {
-          const User = sequelize.define('User', { number: new DataTypes.INTEGER() });
+        return Support.prepareTransactionTest(current).bind({}).then(sequelize => {
+          User = (sequelize as Sequelize).define<ItestInstance, ItestAttribute>('User', { number: new DataTypes.INTEGER() });
 
           return User.sync({ force: true }).then(() => {
             return User.create({ number: 3 }).then(user => {
@@ -313,7 +313,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     if (current.dialect.supports.returnValues.returning) {
       it('supports returning', function() {
-        return this.User.findById(1).then(user1 => {
+        return User.findById(1).then(user1 => {
           return user1.decrement('aNumber', { by: 2 }).then(() => {
             expect(user1.aNumber).to.be.equal(-2);
             return user1.decrement('bNumber', { by: 2, returning: false }).then(user3 => {
@@ -325,10 +325,9 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     }
 
     it('with array', function() {
-      const self = this;
-      return this.User.findById(1).then(user1 => {
+      return User.findById(1).then(user1 => {
         return user1.decrement(['aNumber'], { by: 2 }).then(() => {
-          return self.User.findById(1).then(user3 => {
+          return User.findById(1).then(user3 => {
             expect(user3.aNumber).to.be.equal(-2);
           });
         });
@@ -336,10 +335,9 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('with single field', function() {
-      const self = this;
-      return this.User.findById(1).then(user1 => {
+      return User.findById(1).then(user1 => {
         return user1.decrement('aNumber', { by: 2 }).then(() => {
-          return self.User.findById(1).then(user3 => {
+          return User.findById(1).then(user3 => {
             expect(user3.aNumber).to.be.equal(-2);
           });
         });
@@ -347,10 +345,9 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('with single field and no value', function() {
-      const self = this;
-      return this.User.findById(1).then(user1 => {
+      return User.findById(1).then(user1 => {
         return user1.decrement('aNumber').then(() => {
-          return self.User.findById(1).then(user2 => {
+          return User.findById(1).then(user2 => {
             expect(user2.aNumber).to.be.equal(-1);
           });
         });
@@ -358,15 +355,14 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should still work right with other concurrent updates', function() {
-      const self = this;
-      return this.User.findById(1).then(user1 => {
+      return User.findById(1).then(user1 => {
         // Select the user again (simulating a concurrent query)
-        return self.User.findById(1).then(user2 => {
+        return User.findById(1).then(user2 => {
           return user2.updateAttributes({
             aNumber: user2.aNumber + 1
           }).then(() => {
             return user1.decrement(['aNumber'], { by: 2 }).then(() => {
-              return self.User.findById(1).then(user5 => {
+              return User.findById(1).then(user5 => {
                 expect(user5.aNumber).to.be.equal(-1);
               });
             });
@@ -376,14 +372,13 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should still work right with other concurrent increments', function() {
-      const self = this;
-      return this.User.findById(1).then(user1 => {
-        return self.sequelize.Promise.all([
+      return User.findById(1).then(user1 => {
+        return current.Promise.all([
           user1.decrement(['aNumber'], { by: 2 }),
           user1.decrement(['aNumber'], { by: 2 }),
           user1.decrement(['aNumber'], { by: 2 }),
         ]).then(() => {
-          return self.User.findById(1).then(user2 => {
+          return User.findById(1).then(user2 => {
             expect(user2.aNumber).to.equal(-6);
           });
         });
@@ -391,10 +386,9 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('with key value pair', function() {
-      const self = this;
-      return this.User.findById(1).then(user1 => {
+      return User.findById(1).then(user1 => {
         return user1.decrement({ aNumber: 1, bNumber: 2}).then(() => {
-          return self.User.findById(1).then(user3 => {
+          return User.findById(1).then(user3 => {
             expect(user3.aNumber).to.be.equal(-1);
             expect(user3.bNumber).to.be.equal(-2);
           });
@@ -403,14 +397,13 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('with negative value', function() {
-      const self = this;
-      return this.User.findById(1).then(user1 => {
-        return self.sequelize.Promise.all([
+      return User.findById(1).then(user1 => {
+        return current.Promise.all([
           user1.decrement('aNumber', { by: -2 }),
           user1.decrement(['aNumber', 'bNumber'], { by: -2 }),
           user1.decrement({ aNumber: -1, bNumber: -2 }),
         ]).then(() => {
-          return self.User.findById(1).then(user3 => {
+          return User.findById(1).then(user3 => {
             expect(user3.aNumber).to.be.equal(+5);
             expect(user3.bNumber).to.be.equal(+4);
           });
@@ -419,7 +412,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('with timestamps set to true', function() {
-      const User = this.sequelize.define('IncrementUser', {
+      User = current.define<ItestInstance, ItestAttribute>('IncrementUser', {
         aNumber: new DataTypes.INTEGER()
       }, { timestamps: true });
 
@@ -436,7 +429,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('with timestamps set to true and options.silent set to true', function() {
-      const User = this.sequelize.define('IncrementUser', {
+      User = current.define<ItestInstance, ItestAttribute>('IncrementUser', {
         aNumber: new DataTypes.INTEGER()
       }, { timestamps: true });
 
@@ -457,8 +450,8 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
   describe('reload', () => {
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
-        return Support.prepareTransactionTest(this.sequelize).bind({}).then(sequelize => {
-          const User = sequelize.define('User', { username: new DataTypes.STRING() });
+        return Support.prepareTransactionTest(current).bind({}).then(sequelize => {
+          User = (sequelize as Sequelize).define<ItestInstance, ItestAttribute>('User', { username: new DataTypes.STRING() });
 
           return User.sync({ force: true }).then(() => {
             return User.create({ username: 'foo' }).then(user => {
@@ -480,7 +473,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     }
 
     it('should return a reference to the same DAO instead of creating a new one', function() {
-      return this.User.create({ username: 'John Doe' }).then(originalUser => {
+      return User.create({ username: 'John Doe' }).then(originalUser => {
         return originalUser.updateAttributes({ username: 'Doe John' }).then(() => {
           return originalUser.reload().then(updatedUser => {
             expect(originalUser === updatedUser).to.be.true;
@@ -490,9 +483,8 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should update the values on all references to the DAO', function() {
-      const self = this;
-      return this.User.create({ username: 'John Doe' }).then(originalUser => {
-        return self.User.findById(originalUser.id).then(updater => {
+      return User.create({ username: 'John Doe' }).then(originalUser => {
+        return User.findById(originalUser.id).then(updater => {
           return updater.updateAttributes({ username: 'Doe John' }).then(() => {
             // We used a different reference when calling updateAttributes, so originalUser is now out of sync
             expect(originalUser.username).to.equal('John Doe');
@@ -506,11 +498,11 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should support updating a subset of attributes', function() {
-      return this.User.create({
+      return User.create({
         aNumber: 1,
         bNumber: 1
       }).bind(this).tap(function(user) {
-        return this.User.update({
+        return User.update({
           bNumber: 2
         }, {
           where: {
@@ -528,28 +520,30 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should update read only attributes as well (updatedAt)', function() {
-      return this.User.create({ username: 'John Doe' }).bind(this).then(function(originalUser) {
-        this.originallyUpdatedAt = originalUser.updatedAt;
-        this.originalUser = originalUser;
+      let originallyUpdatedAt;
+      let updatedUser : ItestInstance;
+      return User.create({ username: 'John Doe' }).bind(this).then(function(originalUser) {
+        originallyUpdatedAt = originalUser.updatedAt;
+        originalUser = originalUser;
 
         // Wait for a second, so updatedAt will actually be different
         return Promise.delay(1000).then(() => {
-          return this.User.findById(originalUser.id);
+          return User.findById(originalUser.id);
         }).then(updater => {
           return updater.updateAttributes({username: 'Doe John'});
-        }).then(updatedUser => {
-          this.updatedUser = updatedUser;
-          return this.originalUser.reload();
+        }).then(_updatedUser => {
+          updatedUser = _updatedUser;
+          return originalUser.reload();
         }).then(() => {
-          expect(this.originalUser.updatedAt).to.be.above(this.originallyUpdatedAt);
-          expect(this.updatedUser.updatedAt).to.be.above(this.originallyUpdatedAt);
+          expect(originalUser.updatedAt).to.be.above(originallyUpdatedAt);
+          expect(updatedUser.updatedAt).to.be.above(originallyUpdatedAt);
         });
       });
     });
 
     it('should update the associations as well', function() {
-      const Book = this.sequelize.define('Book', { title: new DataTypes.STRING() });
-      const Page = this.sequelize.define('Page', { content: new DataTypes.TEXT() });
+      const Book = current.define<ItestInstance, ItestAttribute>('Book', { title: new DataTypes.STRING() });
+      const Page = current.define<ItestInstance, ItestAttribute>('Page', { content: new DataTypes.TEXT() });
 
       Book.hasMany(Page);
       Page.belongsTo(Book);
@@ -558,7 +552,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         return Page.sync({force: true}).then(() => {
           return Book.create({ title: 'A very old book' }).then(book => {
             return Page.create({ content: 'om nom nom' }).then(page => {
-              return book.setPages([page]).then(() => {
+              return book.setLinkedData('Page', [page]).then(() => {
                 return Book.findOne({
                   where: { id: book.id },
                   include: [Page]
@@ -582,8 +576,8 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should update internal options of the instance', function() {
-      const Book = this.sequelize.define('Book', { title: new DataTypes.STRING() });
-      const Page = this.sequelize.define('Page', { content: new DataTypes.TEXT() });
+      const Book = current.define<ItestInstance, ItestAttribute>('Book', { title: new DataTypes.STRING() });
+      const Page = current.define<ItestInstance, ItestAttribute>('Page', { content: new DataTypes.TEXT() });
 
       Book.hasMany(Page);
       Page.belongsTo(Book);
@@ -592,7 +586,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         return Page.sync({force: true}).then(() => {
           return Book.create({ title: 'A very old book' }).then(book => {
             return Page.create().then(page => {
-              return book.setPages([page]).then(() => {
+              return book.setLinkedData('Page', [page]).then(() => {
                 return Book.findOne({
                   where: { id: book.id }
                 }).then(leBook => {
@@ -614,7 +608,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should return an error when reload fails', function() {
-      return this.User.create({ username: 'John Doe' }).then(user => {
+      return User.create({ username: 'John Doe' }).then(user => {
         return user.destroy().then(() => {
           return expect(user.reload()).to.be.rejectedWith(
             Sequelize.InstanceError,
@@ -625,13 +619,13 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should set an association to null after deletion, 1-1', function() {
-      const Shoe = this.sequelize.define('Shoe', { brand: new DataTypes.STRING() });
-      const Player = this.sequelize.define('Player', { name: new DataTypes.STRING() });
+      const Shoe = current.define<ItestInstance, ItestAttribute>('Shoe', { brand: new DataTypes.STRING() });
+      const Player = current.define<ItestInstance, ItestAttribute>('Player', { name: new DataTypes.STRING() });
 
       Player.hasOne(Shoe);
       Shoe.belongsTo(Player);
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Shoe.create({
           brand: 'the brand',
           Player: {
@@ -654,13 +648,13 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should set an association to empty after all deletion, 1-N', function() {
-      const Team = this.sequelize.define('Team', { name: new DataTypes.STRING() });
-      const Player = this.sequelize.define('Player', { name: new DataTypes.STRING() });
+      const Team = current.define<ItestInstance, ItestAttribute>('Team', { name: new DataTypes.STRING() });
+      const Player = current.define<ItestInstance, ItestAttribute>('Player', { name: new DataTypes.STRING() });
 
       Team.hasMany(Player);
       Player.belongsTo(Team);
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Team.create({
           name: 'the team',
           Players: [{
@@ -687,14 +681,14 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should update the associations after one element deleted', function() {
-      const Team = this.sequelize.define('Team', { name: new DataTypes.STRING() });
-      const Player = this.sequelize.define('Player', { name: new DataTypes.STRING() });
+      const Team = current.define<ItestInstance, ItestAttribute>('Team', { name: new DataTypes.STRING() });
+      const Player = current.define<ItestInstance, ItestAttribute>('Player', { name: new DataTypes.STRING() });
 
       Team.hasMany(Player);
       Player.belongsTo(Team);
 
 
-      return this.sequelize.sync({force: true}).then(() => {
+      return current.sync({force: true}).then(() => {
         return Team.create({
           name: 'the team',
           Players: [{
@@ -722,25 +716,25 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
   describe('default values', () => {
     describe('uuid', () => {
       it('should store a string in uuidv1 and uuidv4', function() {
-        const user = this.User.build({ username: 'a user'});
+        const user = User.build({ username: 'a user'});
         expect(user.uuidv1).to.be.a('string');
         expect(user.uuidv4).to.be.a('string');
       });
 
       it('should store a string of length 36 in uuidv1 and uuidv4', function() {
-        const user = this.User.build({ username: 'a user'});
+        const user = User.build({ username: 'a user'});
         expect(user.uuidv1).to.have.length(36);
         expect(user.uuidv4).to.have.length(36);
       });
 
       it('should store a valid uuid in uuidv1 and uuidv4 that conforms to the UUID v1 and v4 specifications', function() {
-        const user = this.User.build({ username: 'a user'});
+        const user = User.build({ username: 'a user'});
         expect(validateUUID(user.uuidv1, 1)).to.be.true;
         expect(validateUUID(user.uuidv4, 4)).to.be.true;
       });
 
       it('should store a valid uuid if the field is a primary key named id', function() {
-        const Person = this.sequelize.define('Person', {
+        const Person = current.define<ItestInstance, ItestAttribute>('Person', {
           id: {
             type: new DataTypes.UUID(),
             defaultValue: new DataTypes.UUIDV1(),
@@ -755,32 +749,30 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
     describe('current date', () => {
       it('should store a date in touchedAt', function() {
-        const user = this.User.build({ username: 'a user'});
+        const user = User.build({ username: 'a user'});
         expect(user.touchedAt).to.be.instanceof(Date);
       });
 
       it('should store the current date in touchedAt', function() {
         const date = moment().milliseconds(0).toISOString();
-        const user = this.User.build({ username: 'a user'});
+        const user = User.build({ username: 'a user'});
         expect(moment(user.touchedAt).milliseconds(0).toISOString()).to.equal(date);
       });
     });
 
     describe('allowNull date', () => {
       it('should be just "null" and not Date with Invalid Date', function() {
-        const self = this;
-        return this.User.build({ username: 'a user'}).save().then(() => {
-          return self.User.findOne({where: {username: 'a user'}}).then(user => {
+        return User.build({ username: 'a user'}).save().then(() => {
+          return User.findOne({where: {username: 'a user'}}).then(user => {
             expect(user.dateAllowNullTrue).to.be.null;
           });
         });
       });
 
       it('should be the same valid date when saving the date', function() {
-        const self = this;
         const date = new Date();
-        return this.User.build({ username: 'a user', dateAllowNullTrue: date}).save().then(() => {
-          return self.User.findOne({where: {username: 'a user'}}).then(user => {
+        return User.build({ username: 'a user', dateAllowNullTrue: date}).save().then(() => {
+          return User.findOne({where: {username: 'a user'}}).then(user => {
             expect(user.dateAllowNullTrue.toString()).to.equal(date.toString());
           });
         });
@@ -789,13 +781,13 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     describe('super user boolean', () => {
       it('should default to false', function() {
-        return this.User.build({
+        return User.build({
           username: 'a user'
         })
           .save()
           .bind(this)
           .then(function() {
-            return this.User.findOne({
+            return User.findOne({
               where: {
                 username: 'a user'
               }
@@ -807,14 +799,14 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       it('should override default when given truthy boolean', function() {
-        return this.User.build({
+        return User.build({
           username: 'a user',
           isSuperUser: true
         })
           .save()
           .bind(this)
           .then(function() {
-            return this.User.findOne({
+            return User.findOne({
               where: {
                 username: 'a user'
               }
@@ -826,14 +818,14 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       it('should override default when given truthy boolean-string ("true")', function() {
-        return this.User.build({
+        return User.build({
           username: 'a user',
           isSuperUser: 'true'
         })
           .save()
           .bind(this)
           .then(function() {
-            return this.User.findOne({
+            return User.findOne({
               where: {
                 username: 'a user'
               }
@@ -845,14 +837,14 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       it('should override default when given truthy boolean-int (1)', function() {
-        return this.User.build({
+        return User.build({
           username: 'a user',
           isSuperUser: 1
         })
           .save()
           .bind(this)
           .then(function() {
-            return this.User.findOne({
+            return User.findOne({
               where: {
                 username: 'a user'
               }
@@ -866,7 +858,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       it('should throw error when given value of incorrect type', function() {
         let callCount = 0;
 
-        return this.User.build({
+        return User.build({
           username: 'a user',
           isSuperUser: 'INCORRECT_VALUE_TYPE'
         })
@@ -885,14 +877,14 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
   describe('complete', () => {
     it('gets triggered if an error occurs', function() {
-      return this.User.findOne({ where: ['asdasdasd'] }).catch(err => {
+      return User.findOne({ where: ['asdasdasd'] }).catch(err => {
         expect(err).to.exist;
         expect(err.message).to.exist;
       });
     });
 
     it('gets triggered if everything was ok', function() {
-      return this.User.count().then(result => {
+      return User.count().then(result => {
         expect(result).to.exist;
       });
     });
@@ -901,8 +893,8 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
   describe('save', () => {
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
-        return Support.prepareTransactionTest(this.sequelize).bind({}).then(sequelize => {
-          const User = sequelize.define('User', { username: new DataTypes.STRING() });
+        return Support.prepareTransactionTest(current).bind({}).then(sequelize => {
+          User = (sequelize as Sequelize).define<ItestInstance, ItestAttribute>('User', { username: new DataTypes.STRING() });
           return User.sync({ force: true }).then(() => {
             return sequelize.transaction().then(t => {
               return User.build({ username: 'foo' }).save({ transaction: t }).then(() => {
@@ -921,10 +913,9 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     }
 
     it('only updates fields in passed array', function() {
-      const self = this;
       const date = new Date(1990, 1, 1);
 
-      return this.User.create({
+      return User.create({
         username: 'foo',
         touchedAt: new Date()
       }).then(user => {
@@ -933,7 +924,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
         return user.save({fields: ['username']}).then(() => {
           // re-select user
-          return self.User.findById(user.id).then(user2 => {
+          return User.findById(user.id).then(user2 => {
             // name should have changed
             expect(user2.username).to.equal('fizz');
             // bio should be unchanged
@@ -944,7 +935,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should work on a model with an attribute named length', function() {
-      const Box = this.sequelize.define('box', {
+      const Box = current.define<ItestInstance, ItestAttribute>('box', {
         length: new DataTypes.INTEGER(),
         width: new DataTypes.INTEGER(),
         height: new DataTypes.INTEGER()
@@ -972,7 +963,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('only validates fields in passed array', function() {
-      return this.User.build({
+      return User.build({
         validateTest: 'cake', // invalid, but not saved
         validateCustom: '1'
       }).save({
@@ -982,7 +973,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     describe('hooks', () => {
       it('should update attributes added in hooks when default fields are used', function() {
-        const User = this.sequelize.define('User' + config.rand(), {
+        User = current.define<ItestInstance, ItestAttribute>('User' + config.rand(), {
           name: new DataTypes.STRING(),
           bio: new DataTypes.TEXT(),
           email: new DataTypes.STRING()
@@ -1013,7 +1004,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       it('should update attributes changed in hooks when default fields are used', function() {
-        const User = this.sequelize.define('User' + config.rand(), {
+        User = current.define<ItestInstance, ItestAttribute>('User' + config.rand(), {
           name: new DataTypes.STRING(),
           bio: new DataTypes.TEXT(),
           email: new DataTypes.STRING()
@@ -1045,7 +1036,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       it('should validate attributes added in hooks when default fields are used', function() {
-        const User = this.sequelize.define('User' + config.rand(), {
+        User = current.define<ItestInstance, ItestAttribute>('User' + config.rand(), {
           name: new DataTypes.STRING(),
           bio: new DataTypes.TEXT(),
           email: {
@@ -1078,7 +1069,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       it('should validate attributes changed in hooks when default fields are used', function() {
-        const User = this.sequelize.define('User' + config.rand(), {
+        User = current.define<ItestInstance, ItestAttribute>('User' + config.rand(), {
           name: new DataTypes.STRING(),
           bio: new DataTypes.TEXT(),
           email: {
@@ -1114,8 +1105,8 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     it('stores an entry in the database', function() {
       const username = 'user';
-      const User = this.User;
-      const user = this.User.build({
+      User = User;
+      const user = User.build({
         username,
         touchedAt: new Date(1984, 8, 23)
       });
@@ -1136,7 +1127,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     it('handles an entry with primaryKey of zero', function() {
       const username = 'user';
       const newUsername = 'newUser';
-      const User2 = this.sequelize.define('User2',
+      User2 = current.define<ItestInstance, ItestAttribute>('User2',
         {
           id: {
             type: new DataTypes.INTEGER().UNSIGNED,
@@ -1169,7 +1160,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       const now = new Date();
       now.setMilliseconds(0);
 
-      const user = this.User.build({ username: 'user' });
+      const user = User.build({ username: 'user' });
       return Promise.delay(1000).then(() => {
 
         return user.save().then(savedUser => {
@@ -1185,7 +1176,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('does not update timestamps when passing silent=true', function() {
-      return this.User.create({ username: 'user' }).bind(this).then(function(user) {
+      return User.create({ username: 'user' }).bind(this).then(function(user) {
         const updatedAt = user.updatedAt;
 
         return Promise.delay(1000).then(() => {
@@ -1199,7 +1190,6 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('does not update timestamps when passing silent=true in a bulk update', function() {
-      const self = this;
       const data = [
         { username: 'Paul' },
         { username: 'Peter' },
@@ -1207,20 +1197,20 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       let updatedAtPeter;
       let updatedAtPaul;
 
-      return this.User.bulkCreate(data).bind(this).then(function() {
-        return this.User.findAll();
+      return User.bulkCreate(data).bind(this).then(function() {
+        return User.findAll();
       }).then(users => {
         updatedAtPaul = users[0].updatedAt;
         updatedAtPeter = users[1].updatedAt;
       })
         .then(function() {
           return Promise.delay(150).then(() => {
-            return this.User.update(
+            return User.update(
               { aNumber: 1 },
               { where: {}, silent: true }
             );
           }).then(() => {
-            return self.User.findAll();
+            return User.findAll();
           }).then(users => {
             expect(users[0].updatedAt).to.equalTime(updatedAtPeter);
             expect(users[1].updatedAt).to.equalTime(updatedAtPaul);
@@ -1230,14 +1220,13 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     describe('when nothing changed', () => {
       it('does not update timestamps', function() {
-        const self = this;
-        return self.User.create({ username: 'John' }).then(() => {
-          return self.User.findOne({ where: { username: 'John' } }).then(user => {
+        return User.create({ username: 'John' }).then(() => {
+          return User.findOne({ where: { username: 'John' } }).then(user => {
             const updatedAt = user.updatedAt;
             return Promise.delay(2000).then(() => {
               return user.save().then(newlySavedUser => {
                 expect(newlySavedUser.updatedAt).to.equalTime(updatedAt);
-                return self.User.findOne({ where: { username: 'John' } }).then(_newlySavedUser => {
+                return User.findOne({ where: { username: 'John' } }).then(_newlySavedUser => {
                   expect(_newlySavedUser.updatedAt).to.equalTime(updatedAt);
                 });
               });
@@ -1247,7 +1236,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       it('should not throw ER_EMPTY_QUERY if changed only virtual fields', function() {
-        const User = this.sequelize.define('User' + config.rand(), {
+        User = current.define<ItestInstance, ItestAttribute>('User' + config.rand(), {
           name: new DataTypes.STRING(),
           bio: {
             type: new DataTypes.VIRTUAL(),
@@ -1257,21 +1246,19 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
           timestamps: false
         });
         return User.sync({force: true}).then(() =>
-          User.create({ name: 'John', bio: 'swag 1' }).then(user => user.update({ bio: 'swag 2' }).should.be.fulfilled)
+          User.create({ name: 'John', bio: 'swag 1' }).then(user => (user.update({ bio: 'swag 2' }) as any).should.be.fulfilled)
         );
       });
     });
 
     it('updates with function and column value', function() {
-      const self = this;
-
-      return this.User.create({
+      return User.create({
         aNumber: 42
       }).then(user => {
-        user.bNumber = self.sequelize.col('aNumber');
-        user.username = self.sequelize.fn('upper', 'sequelize');
+        user.bNumber = current.col('aNumber');
+        user.username = current.fn('upper', 'sequelize');
         return user.save().then(() => {
-          return self.User.findById(user.id).then(user2 => {
+          return User.findById(user.id).then(user2 => {
             expect(user2.username).to.equal('SEQUELIZE');
             expect(user2.bNumber).to.equal(42);
           });
@@ -1281,7 +1268,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     describe('without timestamps option', () => {
       it("doesn't update the updatedAt column", function() {
-        const User2 = this.sequelize.define('User2', {
+        User2 = current.define<ItestInstance, ItestAttribute>('User2', {
           username: new DataTypes.STRING(),
           updatedAt: new DataTypes.DATE()
         }, { timestamps: false });
@@ -1298,7 +1285,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       it('updates the createdAt column if updatedAt is disabled', function() {
         const now = new Date();
         return Promise.delay(1000).then(() => {
-          const User2 = this.sequelize.define('User2', {
+          User2 = current.define<ItestInstance, ItestAttribute>('User2', {
             username: new DataTypes.STRING()
           }, { updatedAt: false });
 
@@ -1314,7 +1301,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       it('updates the updatedAt column if createdAt is disabled', function() {
         const now = new Date();
         return Promise.delay(1000).then(() => {
-          const User2 = this.sequelize.define('User2', {
+          User2 = current.define<ItestInstance, ItestAttribute>('User2', {
             username: new DataTypes.STRING()
           }, { createdAt: false });
 
@@ -1328,7 +1315,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       it('works with `allowNull: false` on createdAt and updatedAt columns', function() {
-        const User2 = this.sequelize.define('User2', {
+        User2 = current.define<ItestInstance, ItestAttribute>('User2', {
           username: new DataTypes.STRING(),
           createdAt: {
             type: new DataTypes.DATE(),
@@ -1351,7 +1338,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should fail a validation upon creating', function() {
-      return this.User.create({aNumber: 0, validateTest: 'hello'}).catch(err => {
+      return User.create({aNumber: 0, validateTest: 'hello'}).catch(err => {
         expect(err).to.exist;
         expect(err).to.be.instanceof(Object);
         expect(err.get('validateTest')).to.be.instanceof(Array);
@@ -1361,7 +1348,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should fail a validation upon creating with hooks false', function() {
-      return this.User.create({aNumber: 0, validateTest: 'hello'}, {hooks: false}).catch(err => {
+      return User.create({aNumber: 0, validateTest: 'hello'}, {hooks: false}).catch(err => {
         expect(err).to.exist;
         expect(err).to.be.instanceof(Object);
         expect(err.get('validateTest')).to.be.instanceof(Array);
@@ -1371,7 +1358,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should fail a validation upon building', function() {
-      return this.User.build({aNumber: 0, validateCustom: 'aaaaaaaaaaaaaaaaaaaaaaaaaa'}).save()
+      return User.build({aNumber: 0, validateCustom: 'aaaaaaaaaaaaaaaaaaaaaaaaaa'}).save()
         .catch(err => {
           expect(err).to.exist;
           expect(err).to.be.instanceof(Object);
@@ -1383,7 +1370,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should fail a validation when updating', function() {
-      return this.User.create({aNumber: 0}).then(user => {
+      return User.create({aNumber: 0}).then(user => {
         return user.updateAttributes({validateTest: 'hello'}).catch(err => {
           expect(err).to.exist;
           expect(err).to.be.instanceof(Object);
@@ -1396,7 +1383,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('takes zero into account', function() {
-      return this.User.build({ aNumber: 0 }).save({
+      return User.build({ aNumber: 0 }).save({
         fields: ['aNumber']
       }).then(user => {
         expect(user.aNumber).to.equal(0);
@@ -1404,7 +1391,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('saves a record with no primary key', function() {
-      const HistoryLog = this.sequelize.define('HistoryLog', {
+      const HistoryLog = current.define<ItestInstance, ItestAttribute>('HistoryLog', {
         someText: { type: new DataTypes.STRING() },
         aNumber: { type: new DataTypes.INTEGER() },
         aRandomId: { type: new DataTypes.INTEGER() }
@@ -1420,32 +1407,30 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     describe('eagerly loaded objects', () => {
       beforeEach(function() {
-        const self = this;
-        this.UserEager = this.sequelize.define('UserEagerLoadingSaves', {
+        UserEager = current.define<ItestInstance, ItestAttribute>('UserEagerLoadingSaves', {
           username: new DataTypes.STRING(),
           age: new DataTypes.INTEGER()
         }, { timestamps: false });
 
-        this.ProjectEager = this.sequelize.define('ProjectEagerLoadingSaves', {
+        ProjectEager = current.define<ItestInstance, ItestAttribute>('ProjectEagerLoadingSaves', {
           title: new DataTypes.STRING(),
           overdue_days: new DataTypes.INTEGER()
         }, { timestamps: false });
 
-        this.UserEager.hasMany(this.ProjectEager, { as: 'Projects', foreignKey: 'PoobahId' });
-        this.ProjectEager.belongsTo(this.UserEager, { as: 'Poobah', foreignKey: 'PoobahId' });
+        UserEager.hasMany(ProjectEager, { as: 'Projects', foreignKey: 'PoobahId' });
+        ProjectEager.belongsTo(UserEager, { as: 'Poobah', foreignKey: 'PoobahId' });
 
-        return self.UserEager.sync({force: true}).then(() => {
-          return self.ProjectEager.sync({force: true});
+        return UserEager.sync({force: true}).then(() => {
+          return ProjectEager.sync({force: true});
         });
       });
 
       it('saves one object that has a collection of eagerly loaded objects', function() {
-        const self = this;
-        return this.UserEager.create({ username: 'joe', age: 1 }).then(user => {
-          return self.ProjectEager.create({ title: 'project-joe1', overdue_days: 0 }).then(project1 => {
-            return self.ProjectEager.create({ title: 'project-joe2', overdue_days: 0 }).then(project2 => {
-              return user.setProjects([project1, project2]).then(() => {
-                return self.UserEager.findOne({where: {age: 1}, include: [{model: self.ProjectEager, as: 'Projects'}]}).then(_user => {
+        return UserEager.create({ username: 'joe', age: 1 }).then(user => {
+          return ProjectEager.create({ title: 'project-joe1', overdue_days: 0 }).then(project1 => {
+            return ProjectEager.create({ title: 'project-joe2', overdue_days: 0 }).then(project2 => {
+              return user.setLinkedData({ model : 'ProjectEagerLoadingSaves', associationAlias : 'Projects' }, [project1, project2]).then(() => {
+                return UserEager.findOne({where: {age: 1}, include: [{model: ProjectEager, as: 'Projects'}]}).then(_user => {
                   expect(_user.username).to.equal('joe');
                   expect(_user.age).to.equal(1);
                   expect(_user.Projects).to.exist;
@@ -1466,16 +1451,15 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       it('saves many objects that each a have collection of eagerly loaded objects', function() {
-        const self = this;
-        return this.UserEager.create({ username: 'bart', age: 20 }).then(bart => {
-          return self.UserEager.create({ username: 'lisa', age: 20 }).then(lisa => {
-            return self.ProjectEager.create({ title: 'detention1', overdue_days: 0 }).then(detention1 => {
-              return self.ProjectEager.create({ title: 'detention2', overdue_days: 0 }).then(detention2 => {
-                return self.ProjectEager.create({ title: 'exam1', overdue_days: 0 }).then(exam1 => {
-                  return self.ProjectEager.create({ title: 'exam2', overdue_days: 0 }).then(exam2 => {
-                    return bart.setProjects([detention1, detention2]).then(() => {
-                      return lisa.setProjects([exam1, exam2]).then(() => {
-                        return self.UserEager.findAll({where: {age: 20}, order: [['username', 'ASC']], include: [{model: self.ProjectEager, as: 'Projects'}]}).then(simpsons => {
+        return UserEager.create({ username: 'bart', age: 20 }).then(bart => {
+          return UserEager.create({ username: 'lisa', age: 20 }).then(lisa => {
+            return ProjectEager.create({ title: 'detention1', overdue_days: 0 }).then(detention1 => {
+              return ProjectEager.create({ title: 'detention2', overdue_days: 0 }).then(detention2 => {
+                return ProjectEager.create({ title: 'exam1', overdue_days: 0 }).then(exam1 => {
+                  return ProjectEager.create({ title: 'exam2', overdue_days: 0 }).then(exam2 => {
+                    return bart.setLinkedData({ model : 'ProjectEagerLoadingSaves', associationAlias : 'Projects' }, [detention1, detention2]).then(() => {
+                      return lisa.setLinkedData({ model : 'ProjectEagerLoadingSaves', associationAlias : 'Projects' }, [exam1, exam2]).then(() => {
+                        return UserEager.findAll({where: {age: 20}, order: [['username', 'ASC']], include: [{model: ProjectEager, as: 'Projects'}]}).then(simpsons => {
                           expect(simpsons.length).to.equal(2);
 
                           const _bart = simpsons[0];
@@ -1511,12 +1495,11 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       it('saves many objects that each has one eagerly loaded object (to which they belong)', function() {
-        const self = this;
-        return this.UserEager.create({ username: 'poobah', age: 18 }).then(user => {
-          return self.ProjectEager.create({ title: 'homework', overdue_days: 10 }).then(homework => {
-            return self.ProjectEager.create({ title: 'party', overdue_days: 2 }).then(party => {
-              return user.setProjects([homework, party]).then(() => {
-                return self.ProjectEager.findAll({include: [{model: self.UserEager, as: 'Poobah'}]}).then(projects => {
+        return UserEager.create({ username: 'poobah', age: 18 }).then(user => {
+          return ProjectEager.create({ title: 'homework', overdue_days: 10 }).then(homework => {
+            return ProjectEager.create({ title: 'party', overdue_days: 2 }).then(party => {
+              return user.setLinkedData({ model : 'ProjectEagerLoadingSaves', associationAlias : 'Projects' }, [homework, party]).then(() => {
+                return ProjectEager.findAll({include: [{model: UserEager, as: 'Poobah'}]}).then(projects => {
                   expect(projects.length).to.equal(2);
                   expect(projects[0].Poobah).to.exist;
                   expect(projects[1].Poobah).to.exist;
@@ -1530,7 +1513,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
                   return projects[0].save().then(() => {
                     return projects[1].save().then(() => {
-                      return self.ProjectEager.findAll({where: {title: 'partymore', overdue_days: 0}, include: [{model: self.UserEager, as: 'Poobah'}]}).then(savedprojects => {
+                      return ProjectEager.findAll({where: {title: 'partymore', overdue_days: 0}, include: [{model: UserEager, as: 'Poobah'}]}).then(savedprojects => {
                         expect(savedprojects.length).to.equal(2);
                         expect(savedprojects[0].Poobah).to.exist;
                         expect(savedprojects[1].Poobah).to.exist;
@@ -1550,26 +1533,25 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
   describe('findAll', () => {
     beforeEach(function() {
-      this.ParanoidUser = this.sequelize.define('ParanoidUser', {
+      ParanoidUser = current.define<ItestInstance, ItestAttribute>('ParanoidUser', {
         username: { type: new DataTypes.STRING() }
       }, { paranoid: true });
 
-      this.ParanoidUser.hasOne(this.ParanoidUser);
-      return this.ParanoidUser.sync({ force: true });
+      ParanoidUser.hasOne(ParanoidUser);
+      return ParanoidUser.sync({ force: true });
     });
 
     it('sql should have paranoid condition', function() {
-      const self = this;
-      return self.ParanoidUser.create({ username: 'cuss' })
+      return ParanoidUser.create({ username: 'cuss' })
         .then(() => {
-          return self.ParanoidUser.findAll();
+          return ParanoidUser.findAll();
         })
         .then(users => {
           expect(users).to.have.length(1);
           return users[0].destroy();
         })
         .then(() => {
-          return self.ParanoidUser.findAll();
+          return ParanoidUser.findAll();
         })
         .then(users => {
           expect(users).to.have.length(0);
@@ -1577,11 +1559,10 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('sequelize.and as where should include paranoid condition', function() {
-      const self = this;
-      return self.ParanoidUser.create({ username: 'cuss' })
+      return ParanoidUser.create({ username: 'cuss' })
         .then(() => {
-          return self.ParanoidUser.findAll({
-            where: self.sequelize.and({
+          return ParanoidUser.findAll({
+            where: current.and({
               username: 'cuss'
             })
           });
@@ -1591,8 +1572,8 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
           return users[0].destroy();
         })
         .then(() => {
-          return self.ParanoidUser.findAll({
-            where: self.sequelize.and({
+          return ParanoidUser.findAll({
+            where: current.and({
               username: 'cuss'
             })
           });
@@ -1603,11 +1584,10 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('sequelize.or as where should include paranoid condition', function() {
-      const self = this;
-      return self.ParanoidUser.create({ username: 'cuss' })
+      return ParanoidUser.create({ username: 'cuss' })
         .then(() => {
-          return self.ParanoidUser.findAll({
-            where: self.sequelize.or({
+          return ParanoidUser.findAll({
+            where: current.or({
               username: 'cuss'
             })
           });
@@ -1617,8 +1597,8 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
           return users[0].destroy();
         })
         .then(() => {
-          return self.ParanoidUser.findAll({
-            where: self.sequelize.or({
+          return ParanoidUser.findAll({
+            where: current.or({
               username: 'cuss'
             })
           });
@@ -1629,11 +1609,10 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('escapes a single single quotes properly in where clauses', function() {
-      const self = this;
-      return this.User
+      return User
         .create({ username: "user'name" })
         .then(() => {
-          return self.User.findAll({
+          return User.findAll({
             where: { username: "user'name" }
           }).then(users => {
             expect(users.length).to.equal(1);
@@ -1643,11 +1622,10 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('escapes two single quotes properly in where clauses', function() {
-      const self = this;
-      return this.User
+      return User
         .create({ username: "user''name" })
         .then(() => {
-          return self.User.findAll({
+          return User.findAll({
             where: { username: "user''name" }
           }).then(users => {
             expect(users.length).to.equal(1);
@@ -1657,18 +1635,16 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('returns the timestamps if no attributes have been specified', function() {
-      const self = this;
-      return this.User.create({ username: 'fnord' }).then(() => {
-        return self.User.findAll().then(users => {
+      return User.create({ username: 'fnord' }).then(() => {
+        return User.findAll().then(users => {
           expect(users[0].createdAt).to.exist;
         });
       });
     });
 
     it('does not return the timestamps if the username attribute has been specified', function() {
-      const self = this;
-      return this.User.create({ username: 'fnord' }).then(() => {
-        return self.User.findAll({ attributes: ['username'] }).then(users => {
+      return User.create({ username: 'fnord' }).then(() => {
+        return User.findAll({ attributes: ['username'] }).then(users => {
           expect(users[0].createdAt).not.to.exist;
           expect(users[0].username).to.exist;
         });
@@ -1676,16 +1652,15 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('creates the deletedAt property, when defining paranoid as true', function() {
-      const self = this;
-      return this.ParanoidUser.create({ username: 'fnord' }).then(() => {
-        return self.ParanoidUser.findAll().then(users => {
+      return ParanoidUser.create({ username: 'fnord' }).then(() => {
+        return ParanoidUser.findAll().then(users => {
           expect(users[0].deletedAt).to.be.null;
         });
       });
     });
 
     it('destroys a record with a primary key of something other than id', function() {
-      const UserDestroy = this.sequelize.define('UserDestroy', {
+      UserDestroy = current.define<ItestInstance, ItestAttribute>('UserDestroy', {
         newId: {
           type: new DataTypes.STRING(),
           primaryKey: true
@@ -1703,9 +1678,8 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('sets deletedAt property to a specific date when deleting an instance', function() {
-      const self = this;
-      return this.ParanoidUser.create({ username: 'fnord' }).then(() => {
-        return self.ParanoidUser.findAll().then(users => {
+      return ParanoidUser.create({ username: 'fnord' }).then(() => {
+        return ParanoidUser.findAll().then(users => {
           return users[0].destroy().then(() => {
             expect(users[0].deletedAt.getMonth).to.exist;
 
@@ -1718,9 +1692,8 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('keeps the deletedAt-attribute with value null, when running updateAttributes', function() {
-      const self = this;
-      return this.ParanoidUser.create({ username: 'fnord' }).then(() => {
-        return self.ParanoidUser.findAll().then(users => {
+      return ParanoidUser.create({ username: 'fnord' }).then(() => {
+        return ParanoidUser.findAll().then(users => {
           return users[0].updateAttributes({username: 'newFnord'}).then(user => {
             expect(user.deletedAt).not.to.exist;
           });
@@ -1729,11 +1702,10 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('keeps the deletedAt-attribute with value null, when updating associations', function() {
-      const self = this;
-      return this.ParanoidUser.create({ username: 'fnord' }).then(() => {
-        return self.ParanoidUser.findAll().then(users => {
-          return self.ParanoidUser.create({ username: 'linkedFnord' }).then(linkedUser => {
-            return users[0].setParanoidUser(linkedUser).then(user => {
+      return ParanoidUser.create({ username: 'fnord' }).then(() => {
+        return ParanoidUser.findAll().then(users => {
+          return ParanoidUser.create({ username: 'linkedFnord' }).then(linkedUser => {
+            return users[0].setLinkedData('ParanoidUser', linkedUser).then(user => {
               expect(user.deletedAt).not.to.exist;
             });
           });
@@ -1742,12 +1714,11 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('can reuse query option objects', function() {
-      const self = this;
-      return this.User.create({ username: 'fnord' }).then(() => {
+      return User.create({ username: 'fnord' }).then(() => {
         const query = { where: { username: 'fnord' }};
-        return self.User.findAll(query).then(users => {
+        return User.findAll(query).then(users => {
           expect(users[0].username).to.equal('fnord');
-          return self.User.findAll(query).then(_users => {
+          return User.findAll(query).then(_users => {
             expect(_users[0].username).to.equal('fnord');
           });
         });
@@ -1757,19 +1728,18 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
   describe('find', () => {
     it('can reuse query option objects', function() {
-      const self = this;
-      return this.User.create({ username: 'fnord' }).then(() => {
+      return User.create({ username: 'fnord' }).then(() => {
         const query = { where: { username: 'fnord' }};
-        return self.User.findOne(query).then(user => {
+        return User.findOne(query).then(user => {
           expect(user.username).to.equal('fnord');
-          return self.User.findOne(query).then(_user => {
+          return User.findOne(query).then(_user => {
             expect(_user.username).to.equal('fnord');
           });
         });
       });
     });
     it('returns null for null, undefined, and unset boolean values', function() {
-      const Setting = this.sequelize.define('SettingHelper', {
+      const Setting = current.define<ItestInstance, ItestAttribute>('SettingHelper', {
         setting_key: new DataTypes.STRING(),
         bool_value: { type: new DataTypes.BOOLEAN(), allowNull: true },
         bool_value2: { type: new DataTypes.BOOLEAN(), allowNull: true },
@@ -1790,37 +1760,34 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
   describe('equals', () => {
     it('can compare records with Date field', function() {
-      const self = this;
-      return this.User.create({ username: 'fnord' }).then(user1 => {
-        return self.User.findOne({ where: { username: 'fnord' }}).then(user2 => {
+      return User.create({ username: 'fnord' }).then(user1 => {
+        return User.findOne({ where: { username: 'fnord' }}).then(user2 => {
           expect(user1.equals(user2)).to.be.true;
         });
       });
     });
 
     it('does not compare the existence of associations', function() {
-      const self = this;
-
-      this.UserAssociationEqual = this.sequelize.define('UserAssociationEquals', {
+      UserAssociationEqual = current.define<ItestInstance, ItestAttribute>('UserAssociationEquals', {
         username: new DataTypes.STRING(),
         age: new DataTypes.INTEGER()
       }, { timestamps: false });
 
-      this.ProjectAssociationEqual = this.sequelize.define('ProjectAssocationEquals', {
+      ProjectAssociationEqual = current.define<ItestInstance, ItestAttribute>('ProjectAssocationEquals', {
         title: new DataTypes.STRING(),
         overdue_days: new DataTypes.INTEGER()
       }, { timestamps: false });
 
-      this.UserAssociationEqual.hasMany(this.ProjectAssociationEqual, { as: 'Projects', foreignKey: 'userId' });
-      this.ProjectAssociationEqual.belongsTo(this.UserAssociationEqual, { as: 'Users', foreignKey: 'userId' });
+      UserAssociationEqual.hasMany(ProjectAssociationEqual, { as: 'Projects', foreignKey: 'userId' });
+      ProjectAssociationEqual.belongsTo(UserAssociationEqual, { as: 'Users', foreignKey: 'userId' });
 
-      return this.UserAssociationEqual.sync({force: true}).then(() => {
-        return self.ProjectAssociationEqual.sync({force: true}).then(() => {
-          return self.UserAssociationEqual.create({ username: 'jimhalpert' }).then(user1 => {
-            return self.ProjectAssociationEqual.create({ title: 'A Cool Project'}).then(project1 => {
-              return user1.setProjects([project1]).then(() => {
-                return self.UserAssociationEqual.findOne({ where: { username: 'jimhalpert' }, include: [{model: self.ProjectAssociationEqual, as: 'Projects'}] }).then(user2 => {
-                  return self.UserAssociationEqual.create({ username: 'pambeesly' }).then(user3 => {
+      return UserAssociationEqual.sync({force: true}).then(() => {
+        return ProjectAssociationEqual.sync({force: true}).then(() => {
+          return UserAssociationEqual.create({ username: 'jimhalpert' }).then(user1 => {
+            return ProjectAssociationEqual.create({ title: 'A Cool Project'}).then(project1 => {
+              return user1.setLinkedData({ model : 'ProjectAssocationEquals', associationAlias : 'Projects' }, [project1]).then(() => {
+                return UserAssociationEqual.findOne({ where: { username: 'jimhalpert' }, include: [{model: ProjectAssociationEqual, as: 'Projects'}] }).then(user2 => {
+                  return UserAssociationEqual.create({ username: 'pambeesly' }).then(user3 => {
                     expect(user1.get('Projects')).to.not.exist;
                     expect(user2.get('Projects')).to.exist;
                     expect(user1.equals(user2)).to.be.true;
@@ -1839,7 +1806,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
   describe('values', () => {
     it('returns all values', function() {
-      const User = this.sequelize.define('UserHelper', {
+      User = current.define<ItestInstance, ItestAttribute>('UserHelper', {
         username: new DataTypes.STRING()
       }, { timestamps: false, logging: false });
 
@@ -1853,8 +1820,8 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
   describe('destroy', () => {
     if (current.dialect.supports.transactions) {
       it('supports transactions', function() {
-        return Support.prepareTransactionTest(this.sequelize).bind({}).then(sequelize => {
-          const User = sequelize.define('User', { username: new DataTypes.STRING() });
+        return Support.prepareTransactionTest(current).bind({}).then(sequelize => {
+          User = (sequelize as Sequelize).define<ItestInstance, ItestAttribute>('User', { username: new DataTypes.STRING() });
 
           return User.sync({ force: true }).then(() => {
             return User.create({ username: 'foo' }).then(user => {
@@ -1876,7 +1843,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     }
 
     it('does not set the deletedAt date in subsequent destroys if dao is paranoid', function() {
-      const UserDestroy = this.sequelize.define('UserDestroy', {
+      UserDestroy = current.define<ItestInstance, ItestAttribute>('UserDestroy', {
         name: new DataTypes.STRING(),
         bio: new DataTypes.TEXT()
       }, { paranoid: true });
@@ -1899,7 +1866,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('deletes a record from the database if dao is not paranoid', function() {
-      const UserDestroy = this.sequelize.define('UserDestroy', {
+      UserDestroy = current.define<ItestInstance, ItestAttribute>('UserDestroy', {
         name: new DataTypes.STRING(),
         bio: new DataTypes.TEXT()
       });
@@ -1919,7 +1886,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('allows sql logging of delete statements', function() {
-      const UserDelete = this.sequelize.define('UserDelete', {
+      UserDelete = current.define<ItestInstance, ItestAttribute>('UserDelete', {
         name: new DataTypes.STRING(),
         bio: new DataTypes.TEXT()
       });
@@ -1940,7 +1907,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('delete a record of multiple primary keys table', function() {
-      const MultiPrimary = this.sequelize.define('MultiPrimary', {
+      const MultiPrimary = current.define<ItestInstance, ItestAttribute>('MultiPrimary', {
         bilibili: {
           type: new DataTypes.CHAR(2),
           primaryKey: true
@@ -1979,7 +1946,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     if (dialect.match(/^postgres/)) {
       it('converts Infinity in where clause to a timestamp', function() {
-        const Date = this.sequelize.define('Date',
+        const Date = current.define<ItestInstance, ItestAttribute>('Date',
           {
             date: {
               type: new DataTypes.DATE(),
@@ -1992,7 +1959,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
           },
           { paranoid: true });
 
-        return this.sequelize.sync({ force: true })
+        return current.sync({ force: true })
           .then(() => {
             return Date.build({ date: Infinity })
               .save()
@@ -2006,24 +1973,24 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
   describe('isSoftDeleted', () => {
     beforeEach(function() {
-      this.ParanoidUser = this.sequelize.define('ParanoidUser', {
+      ParanoidUser = current.define<ItestInstance, ItestAttribute>('ParanoidUser', {
         username: { type: new DataTypes.STRING() }
       }, { paranoid: true });
 
-      return this.ParanoidUser.sync({ force: true });
+      return ParanoidUser.sync({ force: true });
     });
 
     it('returns false if user is not soft deleted', function() {
-      return this.ParanoidUser.create({ username: 'fnord' }).then(() => {
-        return this.ParanoidUser.findAll().then(users => {
+      return ParanoidUser.create({ username: 'fnord' }).then(() => {
+        return ParanoidUser.findAll().then(users => {
           expect(users[0].isSoftDeleted()).to.be.false;
         });
       });
     });
 
     it('returns true if user is soft deleted', function() {
-      return this.ParanoidUser.create({ username: 'fnord' }).then(() => {
-        return this.ParanoidUser.findAll().then(users => {
+      return ParanoidUser.create({ username: 'fnord' }).then(() => {
+        return ParanoidUser.findAll().then(users => {
           return users[0].destroy().then(() => {
             expect(users[0].isSoftDeleted()).to.be.true;
 
@@ -2038,19 +2005,18 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     //oracle supports names with 30 char length max
     if (current.dialect.name !== 'oracle') {
       it('works with custom `deletedAt` field name', function() {
-        const self = this;
-        this.ParanoidUserWithCustomDeletedAt = this.sequelize.define('ParanoidUserWithCustomDeletedAt', {
+        ParanoidUserWithCustomDeletedAt = current.define<ItestInstance, ItestAttribute>('ParanoidUserWithCustomDeletedAt', {
           username: { type: new DataTypes.STRING() }
         }, {
           deletedAt: 'deletedAtThisTime',
           paranoid: true
         });
 
-        this.ParanoidUserWithCustomDeletedAt.hasOne(this.ParanoidUser);
+        ParanoidUserWithCustomDeletedAt.hasOne(ParanoidUser);
 
-        return this.ParanoidUserWithCustomDeletedAt.sync({ force: true }).then(() => {
-          return this.ParanoidUserWithCustomDeletedAt.create({ username: 'fnord' }).then(() => {
-            return self.ParanoidUserWithCustomDeletedAt.findAll().then(users => {
+        return ParanoidUserWithCustomDeletedAt.sync({ force: true }).then(() => {
+          return ParanoidUserWithCustomDeletedAt.create({ username: 'fnord' }).then(() => {
+            return ParanoidUserWithCustomDeletedAt.findAll().then(users => {
               expect(users[0].isSoftDeleted()).to.be.false;
 
               return users[0].destroy().then(() => {
@@ -2069,14 +2035,13 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
   describe('restore', () => {
     it('returns an error if the model is not paranoid', function() {
-      return this.User.create({username: 'Peter', secretValue: '42'}).then(user => {
+      return User.create({username: 'Peter', secretValue: '42'}).then(user => {
         expect(() => {user.restore(); }).to.throw(Error, 'Model is not paranoid');
       });
     });
 
     it('restores a previously deleted model', function() {
-      const self = this;
-      const ParanoidUser = self.sequelize.define('ParanoidUser', {
+      ParanoidUser = current.define<ItestInstance, ItestAttribute>('ParanoidUser', {
         username: new DataTypes.STRING(),
         secretValue: new DataTypes.STRING(),
         data: new DataTypes.STRING(),

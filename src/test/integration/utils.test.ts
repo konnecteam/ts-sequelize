@@ -4,10 +4,12 @@ import * as chai from 'chai';
 import {Sequelize} from '../../index';
 import DataTypes from '../../lib/data-types';
 import * as AllUtils from '../../lib/utils';
+import { ItestAttribute, ItestInstance } from '../dummy/dummy-data-set';
 import Support from './support';
 const expect = chai.expect;
 const Utils = AllUtils.Utils;
 const queryGenerator = Support.sequelize.dialect.QueryGenerator;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Utils'), () => {
   describe('underscore', () => {
@@ -174,7 +176,7 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
     let Airplane;
 
     beforeEach(function() {
-      Airplane = this.sequelize.define('Airplane', {
+      Airplane = current.define<ItestInstance, ItestAttribute>('Airplane', {
         wings: new DataTypes.INTEGER(),
         engines: new DataTypes.INTEGER()
       });
@@ -201,11 +203,11 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
 
         return Airplane.findAll({
           attributes: [
-            [this.sequelize.fn('COUNT', '*'), 'count'],
-            [(Sequelize as any).fn('SUM', Sequelize.cast({
+            [current.fn('COUNT', '*'), 'count'],
+            [Sequelize.fn('SUM', Sequelize.cast({
               engines: 1
             }, type)), 'count-engines'],
-            [(Sequelize as any).fn('SUM', Sequelize.cast({
+            [Sequelize.fn('SUM', Sequelize.cast({
               $or: {
                 engines: {
                   $gt: 1
@@ -226,11 +228,11 @@ describe(Support.getTestDialectTeaser('Utils'), () => {
       it('accepts condition object (auto casting)', function() {
         return Airplane.findAll({
           attributes: [
-            [this.sequelize.fn('COUNT', '*'), 'count'],
-            [(Sequelize as any).fn('SUM', {
+            [current.fn('COUNT', '*'), 'count'],
+            [Sequelize.fn('SUM', {
               engines: 1
             }), 'count-engines'],
-            [(Sequelize as any).fn('SUM', {
+            [Sequelize.fn('SUM', {
               $or: {
                 engines: {
                   $gt: 1

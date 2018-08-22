@@ -2,7 +2,7 @@ export interface ISequelizeOption {
   /** = false, Pass query execution time in milliseconds as second argument to logging function (options.logging). */
   benchmark? : boolean;
   database? : string;
-  databaseVersion? : number;
+  databaseVersion? : number | string;
   /** = {}, Default options for model definitions. See sequelize.define for options */
   define? : {};
   /** The dialect of the database you are connecting to. One of mysql, postgres, sqlite, oracle and mssql. */
@@ -13,7 +13,7 @@ export interface ISequelizeOption {
   dialectOptions? : any;
   foreignKeys? : boolean; // sqlite
   /** An object of hook function that are called before and after certain lifecycle events */
-  hooks? : {};
+  hooks?;
   /** = 'localhost', The host of the relational database. */
   host? : string;
   isolationLevel? : string;

@@ -2,13 +2,14 @@
 
 import * as chai from 'chai';
 import * as _ from 'lodash';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('belongsTo'), () => {
   it('throws when invalid model is passed', () => {
-    const User = current.define('User');
+    const User = current.define<ItestInstance, ItestAttribute>('User');
 
     expect(() => {
       User.belongsTo();
@@ -16,8 +17,8 @@ describe(Support.getTestDialectTeaser('belongsTo'), () => {
   });
 
   it('warn on invalid options', () => {
-    const User = current.define('User', {});
-    const Task = current.define('Task', {});
+    const User = current.define<ItestInstance, ItestAttribute>('User', {});
+    const Task = current.define<ItestInstance, ItestAttribute>('Task', {});
 
     expect(() => {
       User.belongsTo(Task, { targetKey: 'wowow' });
@@ -30,12 +31,12 @@ describe(Support.getTestDialectTeaser('belongsTo'), () => {
       setTask: 'set',
       createTask: 'create'
     };
-    const User = current.define('User');
-    const Task = current.define('Task');
+    const User = current.define<ItestInstance, ItestAttribute>('User');
+    const Task = current.define<ItestInstance, ItestAttribute>('Task');
 
     _.each(methods, (alias, method) => {
-      User.prototype[method] = function() {
-        const realMethod = this.constructor.associations.task[alias];
+      User.dataSetsMethods[method] = function() {
+        const realMethod = this.model.associations.task[alias];
         expect(realMethod).to.be.a('function');
         return realMethod;
       };

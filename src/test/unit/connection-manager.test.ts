@@ -7,6 +7,7 @@ import { DummyConnectionManager } from '../dummy/dummy-connection-manager';
 import Support from '../support';
 const expect = chai.expect;
 const Promise = Sequelize.Promise;
+let current = Support.sequelize;
 
 describe('connection manager', () => {
   describe('_connect', () => {
@@ -20,7 +21,7 @@ describe('connection manager', () => {
         }
       };
 
-      this.sequelize = Support.createSequelizeInstance();
+      current = Support.createSequelizeInstance();
     });
 
     afterEach(function() {
@@ -31,7 +32,7 @@ describe('connection manager', () => {
       const connection = {};
       this.dialect.connectionManager.connect.returns(Promise.resolve(connection));
 
-      const connectionManager = new DummyConnectionManager(this.dialect, this.sequelize);
+      const connectionManager = new DummyConnectionManager(this.dialect, current);
 
       const config = {};
 
@@ -44,13 +45,13 @@ describe('connection manager', () => {
       const username = Math.random().toString();
       const password = Math.random().toString();
 
-      this.sequelize.beforeConnect(config => {
+      current.beforeConnect(config => {
         config.username = username;
         config.password = password;
         return config;
       });
 
-      const connectionManager = new DummyConnectionManager(this.dialect, this.sequelize);
+      const connectionManager = new DummyConnectionManager(this.dialect, current);
 
       return connectionManager._connect({}).then(() => {
         expect(this.dialect.connectionManager.connect).to.have.been.calledWith({
@@ -62,9 +63,9 @@ describe('connection manager', () => {
 
     it('should call afterConnect', function() {
       const spy = sinon.spy();
-      this.sequelize.afterConnect(spy);
+      current.afterConnect(spy);
 
-      const connectionManager = new DummyConnectionManager(this.dialect, this.sequelize);
+      const connectionManager = new DummyConnectionManager(this.dialect, current);
 
       return connectionManager._connect({}).then(() => {
         expect(spy.callCount).to.equal(1);

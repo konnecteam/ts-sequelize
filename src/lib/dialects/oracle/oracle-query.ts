@@ -1,11 +1,11 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as semver from 'semver';
 import { Sequelize } from '../../..';
+import { DataSet } from '../../data-set';
 import * as sequelizeErrors from '../../errors/index';
-import { Model } from '../../model';
-import Promise from '../../promise';
 import { AbstractQuery } from '../abstract/abstract-query';
 import * as connectionManager from './oracle-connection-manager';
 
@@ -17,7 +17,7 @@ export class OracleQuery extends AbstractQuery {
   public autocommit;
   public autoCommit;
 
-  constructor(connection, sequelize : Sequelize, options : { instance? : Model, model?, outFormat?}) {
+  constructor(connection, sequelize : Sequelize, options : { instance? : DataSet<any>, model?, outFormat?}) {
     super();
     this.connection = connection;
     this.instance = options.instance;

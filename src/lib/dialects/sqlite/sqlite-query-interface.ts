@@ -1,9 +1,9 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import DataTypes from '../../data-types';
 import * as errors from '../../errors/index';
-import Promise from '../../promise';
 import { AbstractQueryInterface } from '../../query-interface';
 import { QueryTypes } from '../../query-types';
 import { Utils } from '../../utils';

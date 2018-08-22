@@ -3,16 +3,18 @@
 import * as Promise from 'bluebird';
 import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Include'), () => {
 
   describe('findAndCountAll', () => {
     it('should be able to include two required models with a limit. Result rows should match limit.', function() {
-      const Project = this.sequelize.define('Project', { id: { type: new DataTypes.INTEGER(), primaryKey: true }, name: new DataTypes.STRING(40) });
-      const Task = this.sequelize.define('Task', { name: new DataTypes.STRING(40), fk: new DataTypes.INTEGER() });
-      const Employee = this.sequelize.define('Employee', { name: new DataTypes.STRING(40), fk: new DataTypes.INTEGER() });
+      const Project = current.define<ItestInstance, ItestAttribute>('Project', { id: { type: new DataTypes.INTEGER(), primaryKey: true }, name: new DataTypes.STRING(40) });
+      const Task = current.define<ItestInstance, ItestAttribute>('Task', { name: new DataTypes.STRING(40), fk: new DataTypes.INTEGER() });
+      const Employee = current.define<ItestInstance, ItestAttribute>('Employee', { name: new DataTypes.STRING(40), fk: new DataTypes.INTEGER() });
 
       Project.hasMany(Task, { foreignKey: 'fk', constraints: false  });
       Project.hasMany(Employee, { foreignKey: 'fk', constraints: false  });
@@ -21,7 +23,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       Employee.belongsTo(Project, { foreignKey: 'fk', constraints: false  });
 
       // Sync them
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         // Create an enviroment
         return Promise.join(
           Project.bulkCreate([
@@ -65,15 +67,15 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       });
     });
     it('should be able to include a required model. Result rows should match count', function() {
-      const User = this.sequelize.define('User', { name: new DataTypes.STRING(40) }, { paranoid: true });
-      const SomeConnection = this.sequelize.define('SomeConnection', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', { name: new DataTypes.STRING(40) }, { paranoid: true });
+      const SomeConnection = current.define<ItestInstance, ItestAttribute>('SomeConnection', {
         m: new DataTypes.STRING(40),
         fk: new DataTypes.INTEGER(),
         u: new DataTypes.INTEGER()
       }, { paranoid: true });
-      const A = this.sequelize.define('A', { name: new DataTypes.STRING(40) }, { paranoid: true });
-      const B = this.sequelize.define('B', { name: new DataTypes.STRING(40) }, { paranoid: true });
-      const C = this.sequelize.define('C', { name: new DataTypes.STRING(40) }, { paranoid: true });
+      const A = current.define<ItestInstance, ItestAttribute>('A', { name: new DataTypes.STRING(40) }, { paranoid: true });
+      const B = current.define<ItestInstance, ItestAttribute>('B', { name: new DataTypes.STRING(40) }, { paranoid: true });
+      const C = current.define<ItestInstance, ItestAttribute>('C', { name: new DataTypes.STRING(40) }, { paranoid: true });
 
       // Associate them
       User.hasMany(SomeConnection, { foreignKey: 'u', constraints: false });
@@ -88,7 +90,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       C.hasMany(SomeConnection, { foreignKey: 'fk', constraints: false });
 
       // Sync them
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         // Create an enviroment
 
         return Promise.join(
@@ -166,12 +168,12 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should count on a where and not use an uneeded include', function() {
-      const Project = this.sequelize.define('Project', {
+      const Project = current.define<ItestInstance, ItestAttribute>('Project', {
         id: { type: new DataTypes.INTEGER(), allowNull: false, primaryKey: true, autoIncrement: true },
         project_name: { type: new DataTypes.STRING()}
       });
 
-      const User = this.sequelize.define('User', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {
         id: { type: new DataTypes.INTEGER(), allowNull: false, primaryKey: true, autoIncrement: true },
         user_name: { type: new DataTypes.STRING() }
       });
@@ -187,7 +189,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       }).then(results => {
         const user = results[0];
         userId = user.id;
-        return user.setProjects([results[1], results[2], results[3]]);
+        return user.setLinkedData('Project', [results[1], results[2], results[3]]);
       }).then(() => {
         return User.findAndCountAll({
           where: {id: userId},
@@ -202,9 +204,9 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should return the correct count and rows when using a required belongsTo and a limit', function() {
-      const s = this.sequelize;
-      const Foo = s.define('Foo', {});
-      const Bar = s.define('Bar', {});
+      const s = current;
+      const Foo = s.define<ItestInstance, ItestAttribute>('Foo', {});
+      const Bar = s.define<ItestInstance, ItestAttribute>('Bar', {});
 
       Foo.hasMany(Bar);
       Bar.belongsTo(Foo);
@@ -238,13 +240,13 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should return the correct count and rows when using a required belongsTo with a where condition and a limit', function() {
-      const Foo = this.sequelize.define('Foo', {});
-      const Bar = this.sequelize.define('Bar', {m: new DataTypes.STRING(40)});
+      const Foo = current.define<ItestInstance, ItestAttribute>('Foo', {});
+      const Bar = current.define<ItestInstance, ItestAttribute>('Bar', {m: new DataTypes.STRING(40)});
 
       Foo.hasMany(Bar);
       Bar.belongsTo(Foo);
 
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         return Foo.bulkCreate([{id: 1}, {id: 2}, {id: 3}, {id: 4}, {id: 5}]);
       }).then(() => {
         // Make four instances of Bar, related to the first two instances of Foo
@@ -266,26 +268,26 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should correctly filter, limit and sort when multiple includes and types of associations are present.', function() {
-      const TaskTag = this.sequelize.define('TaskTag', {
+      const TaskTag = current.define<ItestInstance, ItestAttribute>('TaskTag', {
         id: { type: new DataTypes.INTEGER(), allowNull: false, primaryKey: true, autoIncrement: true },
         name: { type: new DataTypes.STRING()}
       });
 
-      const Tag = this.sequelize.define('Tag', {
+      const Tag = current.define<ItestInstance, ItestAttribute>('Tag', {
         id: { type: new DataTypes.INTEGER(), allowNull: false, primaryKey: true, autoIncrement: true },
         name: { type: new DataTypes.STRING()}
       });
 
-      const Task = this.sequelize.define('Task', {
+      const Task = current.define<ItestInstance, ItestAttribute>('Task', {
         id: { type: new DataTypes.INTEGER(), allowNull: false, primaryKey: true, autoIncrement: true },
         name: { type: new DataTypes.STRING()}
       });
-      const Project = this.sequelize.define('Project', {
+      const Project = current.define<ItestInstance, ItestAttribute>('Project', {
         id: { type: new DataTypes.INTEGER(), allowNull: false, primaryKey: true, autoIncrement: true },
         m: { type: new DataTypes.STRING()}
       });
 
-      const User = this.sequelize.define('User', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {
         id: { type: new DataTypes.INTEGER(), allowNull: false, primaryKey: true, autoIncrement: true },
         name: { type: new DataTypes.STRING() }
       });
@@ -294,7 +296,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       Task.belongsTo(Project);
       Task.belongsToMany(Tag, {through: TaskTag});
       // Sync them
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         // Create an enviroment
         return User.bulkCreate([
           { name: 'user-name-1' },
@@ -339,21 +341,21 @@ describe(Support.getTestDialectTeaser('Include'), () => {
     });
 
     it('should properly work with sequelize.function', function() {
-      const sequelize = this.sequelize;
-      const User = this.sequelize.define('User', {
+      const sequelize = current;
+      const User = current.define<ItestInstance, ItestAttribute>('User', {
         id: { type: new DataTypes.INTEGER(), allowNull: false, primaryKey: true, autoIncrement: true },
         first_name: { type: new DataTypes.STRING() },
         last_name: { type: new DataTypes.STRING() }
       });
 
-      const Project = this.sequelize.define('Project', {
+      const Project = current.define<ItestInstance, ItestAttribute>('Project', {
         id: { type: new DataTypes.INTEGER(), allowNull: false, primaryKey: true, autoIncrement: true },
         name: { type: new DataTypes.STRING()}
       });
 
       User.hasMany(Project);
 
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         return User.bulkCreate([
           { first_name: 'user-fname-1', last_name: 'user-lname-1' },
           { first_name: 'user-fname-2', last_name: 'user-lname-2' },

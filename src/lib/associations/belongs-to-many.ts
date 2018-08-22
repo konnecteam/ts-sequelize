@@ -1,10 +1,12 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import { Sequelize } from '../..';
+import { DataSet } from '../data-set';
 import * as Errors from '../errors/index';
+import { IInclude } from '../interfaces/iinclude';
 import { Model } from '../model';
-import { IInclude } from '../model/iinclude';
 import Op from '../operators';
 import { Transaction } from '../transaction';
 import { Utils } from '../utils';
@@ -60,26 +62,30 @@ const AssociationError = Errors.AssociationError;
  *
  * @see {@link Model.belongsToMany}
  */
-export class BelongsToMany extends Association {
+export class BelongsToMany
+<TSourceInstance extends DataSet<TSourceAttributes>, TSourceAttributes,
+TTargetInstance extends DataSet<TTargetAttributes>, TTargetAttributes>
+extends Association <TSourceInstance, TSourceAttributes, TTargetInstance, TTargetAttributes> {
 
   public combinedName : string;
   public combinedTableName : string;
   public doubleLinked : boolean;
   public foreignKeyDefault : boolean;
   public identifier : string;
-  public manyFromSource : HasMany;
-  public manyFromTarget : HasMany;
-  public oneFromSource : HasOne;
+  public manyFromSource : HasMany<TSourceInstance, TSourceAttributes, any, any>;
+  public manyFromTarget : HasMany<TTargetInstance, TTargetAttributes, any, any>;
+  public oneFromSource : HasOne<TSourceInstance, TSourceAttributes, any, any>;
+  public oneFromTarget : HasOne<TTargetInstance, TTargetAttributes, any, any>;
   public otherKeyAttribute;
-  public paired : Association;
+  public paired : BelongsToMany<TSourceInstance, TSourceAttributes, TTargetInstance, TTargetAttributes>;
   public primaryKeyDeleted : boolean;
   public sequelize : Sequelize;
-  public targetAssociation : Association;
-  public throughModel : typeof Model;
-  public toSource : Association;
+  public targetAssociation : Association<TSourceInstance, TSourceAttributes, TTargetInstance, TTargetAttributes>;
+  public throughModel : Model<any, any>;
+  public toSource : Association<TTargetInstance, TTargetAttributes, TSourceInstance, TSourceAttributes>;
 
 
-  constructor(source : typeof Model, target : typeof Model, options : {
+  constructor(source : Model<TSourceInstance, TSourceAttributes>, target : Model<TTargetInstance, TTargetAttributes>, options : {
     /** = false If freezeTableName is true, sequelize will not try to alter the model name to get the table name. Otherwise, the model name will be pluralized */
     freezeTableName? : boolean,
     /** An object of hook function that are called before and after certain lifecycle events */
@@ -180,7 +186,7 @@ export class BelongsToMany extends Association {
       }
 
       this.foreignKeyAttribute = {};
-      this.foreignKey = this.options.foreignKey || Utils.camelize(
+      this.foreignKey = (this.options.foreignKey as string) || Utils.camelize(
         [
           this.source.options.name.singular,
           this.source.primaryKeyAttribute].join('_')
@@ -248,7 +254,7 @@ export class BelongsToMany extends Association {
         if (this.paired.otherKey !== this.foreignKey) {
           delete this.through.model.rawAttributes[this.paired.otherKey];
           this.paired.otherKey = this.foreignKey;
-          (this.paired as any).injectAttributes();
+          this.paired.injectAttributes();
         }
       }
     }
@@ -283,7 +289,7 @@ export class BelongsToMany extends Association {
   /**
    * add attributes to the target table of this association or in an extra table which connects two tables
    */
-  public injectAttributes() : Association {
+  public injectAttributes() : Association<TSourceInstance, TSourceAttributes, TTargetInstance, TTargetAttributes> {
 
     this.identifier = this.foreignKey;
     this.foreignIdentifier = this.otherKey;
@@ -426,28 +432,13 @@ export class BelongsToMany extends Association {
   }
 
   /**
-   * Mixin (inject) association methods to model prototype
-   */
-  public mixin(obj : Model) {
-    const methods = ['get', 'count', 'hasSingle', 'hasAll', 'set', 'add', 'addMultiple', 'remove', 'removeMultiple', 'create'];
-    const aliases = {
-      hasSingle: 'has',
-      hasAll: 'has',
-      addMultiple: 'add',
-      removeMultiple: 'remove'
-    };
-
-    Helpers.mixinMethods(this, obj, methods, aliases);
-  }
-
-  /**
    * Get everything currently associated with this, using an optional where clause.
    * @see {@link Model.findAll}  for a full explanation of options
    */
-  public get(instance : Model, options : {
+  public get(instance : TSourceInstance, options : {
     /**
      * Array<Object|Model|String>, A list of associations to eagerly load using a left join.
-     * Supported is either `{ include: [ Model1, Model2, ...]}` or `{ include: [{ model: Model1, as: 'Alias' }]}` or `{ include: ['Alias']}`.
+     * Supported is either `{ include: [ Model1, Model2, ...]}` or `{ include: [{ model: DataSet<any>1, as: 'Alias' }]}` or `{ include: ['Alias']}`.
      * If your association are set up with an `as` (eg. `X.hasMany(Y, { as: 'Z }`, you need to specify Z in the as attribute when eager loading Y).
      */
     include? : IInclude[],
@@ -461,7 +452,7 @@ export class BelongsToMany extends Association {
     through? : { where? : {}},
     /** An optional where clause to limit the associated models */
     where? : {},
-  }) : Promise<Model[]> {
+  }) : Promise<TTargetInstance[]> {
     options = Utils.cloneDeep(options) || {};
 
     const association = this;
@@ -523,7 +514,7 @@ export class BelongsToMany extends Association {
   /**
    * Count everything currently associated with this, using an optional where clause.
    */
-  public count(instance : Model, options : {
+  public count(instance : TSourceInstance, options : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any,
     joinTableAttributes? : any[],
@@ -558,7 +549,7 @@ export class BelongsToMany extends Association {
    * @param options Options passed to getAssociations
    * @returns Promise<boolean>,
    */
-  public has(sourceInstance : Model, instances : Model[]|Model|string[]|string|number[]|number, options : { where? : {}, transaction? : Transaction}) {
+  public has(sourceInstance : TSourceInstance, instances : TTargetInstance | TTargetInstance[] | string[] | string | number[] | number, options : { where? : {}, transaction? : Transaction}) : Promise<boolean> {
     const association = this;
     const mainWhere = {};
 
@@ -572,8 +563,8 @@ export class BelongsToMany extends Association {
       scope: false
     });
 
-    mainWhere[Op.or] = (instances as any).map(instance => {
-      if (instance instanceof association.target) {
+    mainWhere[Op.or] = (instances as any[]).map(instance => {
+      if (instance.model && instance.model.name === this.target.name) {
         return instance.where();
       } else {
         const where = {};
@@ -589,7 +580,7 @@ export class BelongsToMany extends Association {
       ]
     };
 
-    return association.get(sourceInstance, options).then(associatedObjects => associatedObjects.length === (instances as any).length);
+    return association.get(sourceInstance, options).then(associatedObjects => associatedObjects.length === (instances as any[]).length);
   }
 
   /**
@@ -598,12 +589,12 @@ export class BelongsToMany extends Association {
    * @param newAssociatedObjects An array of persisted instances or primary key of instances to associate with this. Pass `null` or `undefined` to remove all associations.
    * @param options Options passed to `through.findAll`, `bulkCreate`, `update` and `destroy`
    */
-  public set(sourceInstance : Model, newAssociatedObjects : Array<Model|string|number>, options : {
+  public set(sourceInstance : TSourceInstance, newAssociatedObjects : Array<TTargetInstance | string | number>, options : {
     /** Additional attributes for the join table. */
     through? : {},
     /** Run validation for the join model */
     validate? : {}
-  }) : Promise<any> {
+  }) : Promise<TSourceInstance> {
     options = options || {};
 
     const association = this;
@@ -630,19 +621,19 @@ export class BelongsToMany extends Association {
       // Don't try to insert the transaction as an attribute in the through table
       defaultAttributes = _.omit(defaultAttributes, ['transaction', 'hooks', 'individualHooks', 'ignoreDuplicates', 'validate', 'fields', 'logging']);
 
-      const unassociatedObjects = newAssociatedObjects.filter(obj =>
-        !_.find(currentRows, currentRow => currentRow[foreignIdentifier] === (obj as any).get(targetKey))
+      const unassociatedObjects = (newAssociatedObjects as TTargetInstance[]).filter(obj =>
+        !_.find(currentRows, currentRow => currentRow[foreignIdentifier] === obj.get(targetKey))
       );
 
       for (const currentRow of currentRows) {
-        const newObj = _.find(newAssociatedObjects, obj => currentRow[foreignIdentifier] === (obj as any).get(targetKey));
+        const newObj = _.find((newAssociatedObjects as TTargetInstance[]), obj => currentRow[foreignIdentifier] === obj.get(targetKey));
 
         if (!newObj) {
           obsoleteAssociations.push(currentRow);
         } else {
           let throughAttributes = newObj[association.through.model.name];
           // Quick-fix for subtle bug when using existing objects that might have the through model attached (not as an attribute object)
-          if (throughAttributes instanceof association.through.model) {
+          if (throughAttributes && throughAttributes.model === association.through.model) {
             throughAttributes = {};
           }
 
@@ -650,7 +641,7 @@ export class BelongsToMany extends Association {
           const attributes = _.defaults({}, throughAttributes, defaultAttributes);
 
           where[identifier] = sourceInstance.get(sourceKey);
-          where[foreignIdentifier] = (newObj as any).get(targetKey);
+          where[foreignIdentifier] = newObj.get(targetKey);
 
           if (Object.keys(attributes).length) {
             promises.push(association.through.model.update(attributes, _.extend(options, {where})));
@@ -671,7 +662,7 @@ export class BelongsToMany extends Association {
           let attributes = {};
 
           attributes[identifier] = sourceInstance.get(sourceKey);
-          attributes[foreignIdentifier] = (unassociatedObject as any).get(targetKey);
+          attributes[foreignIdentifier] = unassociatedObject.get(targetKey);
 
           attributes = _.defaults(attributes, unassociatedObject[association.through.model.name], defaultAttributes);
 
@@ -679,12 +670,12 @@ export class BelongsToMany extends Association {
           attributes = Object.assign(attributes, association.through.scope);
 
           return attributes;
-        });
+        }) as TTargetAttributes[];
 
         promises.push(association.through.model.bulkCreate(bulk, _.assign({ validate: true }, options)));
       }
 
-      return Utils.Promise.all(promises);
+      return Utils.Promise.all(promises) as any;
     });
   }
 
@@ -694,12 +685,12 @@ export class BelongsToMany extends Association {
    * @param newInstances A single instance or primary key, or a mixed array of persisted instances or primary keys
    * @param options Options passed to `through.findAll`, `bulkCreate` and `update`
    */
-  public add(sourceInstance : Model, newInstances : Model[] | Model | string[] | string | number[] | number, options : {
+  public add(sourceInstance : TSourceInstance, newInstances : TTargetInstance[] | TTargetInstance | string[] | string | number[] | number, options : {
     /** Additional attributes for the join table. */
     through? : {},
     /** Run validation for the join model. */
     validate? : {}
-  }) : Promise<any> {
+  }) : Promise<void | TSourceInstance> {
     // If newInstances is null or undefined, no-op
     if (!newInstances) {
       return Utils.Promise.resolve();
@@ -718,7 +709,7 @@ export class BelongsToMany extends Association {
 
     const mainWhere = {};
     mainWhere[identifier] = sourceInstance.get(sourceKey);
-    mainWhere[foreignIdentifier] = (newInstances as any).map(newInstance => newInstance.get(targetKey));
+    mainWhere[foreignIdentifier] = (newInstances as TTargetInstance[]).map(newInstance => newInstance.get(targetKey));
 
     _.assign(mainWhere, association.through.scope);
 
@@ -726,7 +717,7 @@ export class BelongsToMany extends Association {
       const promises = [];
       const unassociatedObjects = [];
       const changedAssociations = [];
-      for (const obj of (newInstances as any)) {
+      for (const obj of (newInstances as TTargetInstance[])) {
         const existingAssociation = _.find(currentRows, current => current[foreignIdentifier] === obj.get(targetKey));
 
         if (!existingAssociation) {
@@ -762,7 +753,7 @@ export class BelongsToMany extends Association {
         const attributes = _.defaults({}, throughAttributes, defaultAttributes);
         const where = {};
         // Quick-fix for subtle bug when using existing objects that might have the through model attached (not as an attribute object)
-        if (throughAttributes instanceof association.through.model) {
+        if (throughAttributes && throughAttributes.model === association.through.model) {
           throughAttributes = {};
         }
 
@@ -772,7 +763,7 @@ export class BelongsToMany extends Association {
         promises.push(association.through.model.update(attributes, _.extend(options, {where})));
       }
 
-      return Utils.Promise.all(promises);
+      return Utils.Promise.all(promises) as any;
     });
   }
 
@@ -782,7 +773,7 @@ export class BelongsToMany extends Association {
    * @param oldAssociatedObjects Can be an Instance or its primary key, or a mixed array of instances and primary keys
    * @param options Options passed to `through.destroy`
    */
-  public remove(sourceInstance : Model , oldAssociatedObjects : any , options : {}) : Promise<any> {
+  public remove(sourceInstance : TSourceInstance , oldAssociatedObjects : any , options : {}) : Promise<TSourceInstance> {
     const association = this;
 
     options = options || {};
@@ -801,15 +792,15 @@ export class BelongsToMany extends Association {
    *
    * @param options Options passed to create and add
    */
-  public create(sourceInstance : Model, values : {}, options : {
+  public create(sourceInstance : TSourceInstance, values : TTargetAttributes, options : {
     fields? : string[],
     /** Additional attributes for the join table */
     through? : {}
-  }) : Promise<any> {
+  }) : Promise<TTargetInstance> {
     const association = this;
 
     options = options || {};
-    values = values || {};
+    values = values || {} as TTargetAttributes;
 
     if (Array.isArray(options)) {
       options = {
@@ -826,7 +817,7 @@ export class BelongsToMany extends Association {
 
     // Create the related model instance
     return association.target.create(values, options).then(newAssociatedObject =>
-      sourceInstance[association.accessors.add](newAssociatedObject, _.omit(options, ['fields'])).return(newAssociatedObject)
+      sourceInstance.addLinkedData(this, newAssociatedObject, _.omit(options, ['fields'])).return(newAssociatedObject)
     );
   }
 }

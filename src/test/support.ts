@@ -1,5 +1,6 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as chai from 'chai';
 import * as chaiaspromised from 'chai-as-promised';
 import * as chaispies from 'chai-spies';
@@ -39,11 +40,11 @@ if (!process.env.COVERAGE && process.env.SHIM) {
   SupportShim.supportShim(Sequelize);
 }
 
-const Support = {
-  sequelize: null,
-  Sequelize: null,
+export class Support {
+  public static sequelize : Sequelize;
+  public static Sequelize : typeof Sequelize;
 
-  initTests(options) {
+  public static initTests(options) {
     const sequelize = this.createSequelizeInstance(options);
 
     this.clearDatabase(sequelize, () => {
@@ -59,9 +60,9 @@ const Support = {
         options.onComplete(sequelize, DataTypes);
       }
     });
-  },
+  }
 
-  prepareTransactionTest(sequelize, callback = null) {
+  public static prepareTransactionTest(sequelize, callback = null) : Promise<Sequelize> {
     const dialect = Support.getTestDialect();
 
     if (dialect === 'sqlite') {
@@ -91,9 +92,9 @@ const Support = {
         return Sequelize.Promise.resolve(sequelize);
       }
     }
-  },
+  }
 
-  createSequelizeInstance(options = null) {
+  public static createSequelizeInstance(options = null) : Sequelize {
     options = options || {};
     options.dialect = this.getTestDialect();
 
@@ -117,23 +118,23 @@ const Support = {
     }
 
     return this.getSequelizeInstance(config.database, config.username, config.password, sequelizeOptions);
-  },
+  }
 
-  getConnectionOptions() {
+  public static getConnectionOptions() {
     const config = Config[this.getTestDialect()];
 
     delete config.pool;
 
     return config;
-  },
+  }
 
-  getSequelizeInstance(db, user, pass, options) {
+  public static getSequelizeInstance(db, user, pass, options) {
     options = options || {};
     options.dialect = options.dialect || this.getTestDialect();
     return new Sequelize(db, user, pass, options);
-  },
+  }
 
-  clearDatabase(sequelize) {
+  public static clearDatabase(sequelize, callback?) {
     return sequelize
       .getQueryInterface()
       .dropAllTables()
@@ -145,23 +146,23 @@ const Support = {
           .getQueryInterface()
           .dropAllEnums();
       });
-  },
+  }
 
-  getSupportedDialects() {
+  public static getSupportedDialects() {
     return fs.readdirSync(__dirname + '/../lib/dialects').filter(file => {
       return file.indexOf('.js') === -1 && file.indexOf('abstract') === -1;
     });
-  },
+  }
 
-  checkMatchForDialects(dialect, value, expectations) {
+  public static checkMatchForDialects(dialect, value, expectations) {
     if (expectations[dialect]) {
       expect(value).to.match(expectations[dialect]);
     } else {
       throw new Error('Undefined expectation for "' + dialect + '"!');
     }
-  },
+  }
 
-  getAbstractQueryGenerator(sequelize) {
+  public static getAbstractQueryGenerator(sequelize) {
     const QG = new DummyQueryGenerator({
       options: sequelize.options,
       _dialect: sequelize.dialect,
@@ -170,9 +171,9 @@ const Support = {
     );
     (QG as any).quoteIdentifier = function quoteIdentifier(identifier) { return identifier; };
     return QG;
-  },
+  }
 
-  getTestDialect() {
+  public static getTestDialect() {
     let envDialect = process.env.DIALECT || 'mysql';
 
     if (envDialect === 'postgres-native') {
@@ -184,9 +185,9 @@ const Support = {
     }
 
     return envDialect;
-  },
+  }
 
-  getTestDialectTeaser(moduleName) {
+  public static getTestDialectTeaser(moduleName) {
     let dialect = this.getTestDialect();
 
     if (process.env.DIALECT === 'postgres-native') {
@@ -194,9 +195,9 @@ const Support = {
     }
 
     return '[' + dialect.toUpperCase() + '] ' + moduleName;
-  },
+  }
 
-  getTestUrl(config) {
+  public static getTestUrl(config) {
     let url;
     const dbConfig = config[config.dialect];
 
@@ -213,9 +214,9 @@ const Support = {
       + '@' + dbConfig.host + ':' + dbConfig.port + '/' + dbConfig.database;
     }
     return url;
-  },
+  }
 
-  expectsql(query, assertions) {
+  public static expectsql(query, assertions) {
     const expectations = assertions.query || assertions;
     let expectation = expectations[Support.sequelize.dialect.name];
 
@@ -240,7 +241,7 @@ const Support = {
       expect(query.bind).to.deep.equal(bind);
     }
   }
-};
+}
 
 if (typeof beforeEach !== 'undefined') {
   beforeEach(function() {

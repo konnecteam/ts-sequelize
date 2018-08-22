@@ -2,15 +2,18 @@
 
 import * as chai from 'chai';
 import * as _ from 'lodash';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('update', () => {
+    let Account : Model<ItestInstance, ItestAttribute>;
     beforeEach(function() {
-      this.Account = this.sequelize.define('Account', {
+      Account = current.define<ItestInstance, ItestAttribute>('Account', {
         ownerId: {
           type: new DataTypes.INTEGER(),
           allowNull: false,
@@ -20,13 +23,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           type: new DataTypes.STRING()
         }
       });
-      return this.Account.sync({force: true});
+      return Account.sync({force: true});
     });
 
     it('should only update the passed fields', function() {
-      return this.Account
+      return Account
         .create({ ownerId: 2 })
-        .then(account => this.Account.update({
+        .then(account => Account.update({
           name: Math.random().toString()
         }, {
           where: {
@@ -38,8 +41,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     if (_.get(current.dialect.supports, 'returnValues.returning')) {
       it('should return the updated record', function() {
-        return this.Account.create({ ownerId: 2 }).then(account => {
-          return this.Account.update({ name: 'FooBar' }, {
+        return Account.create({ ownerId: 2 }).then(account => {
+          return Account.update({ name: 'FooBar' }, {
             where: {
               id: account.get('id')
             },
@@ -55,18 +58,18 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     if (current.dialect.supports['LIMIT ON UPDATE']) {
       it('should only update one row', function() {
-        return this.Account.create({
+        return Account.create({
           ownerId: 2,
           name: 'Account Name 1'
         })
           .then(() => {
-            return this.Account.create({
+            return Account.create({
               ownerId: 2,
               name: 'Account Name 2'
             });
           })
           .then(() => {
-            return this.Account.create({
+            return Account.create({
               ownerId: 2,
               name: 'Account Name 3'
             });
@@ -78,7 +81,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               },
               limit: 1
             };
-            return this.Account.update({ name: 'New Name' }, options);
+            return Account.update({ name: 'New Name' }, options);
           })
           .then(account => {
             expect(account[0]).to.equal(1);

@@ -3,6 +3,7 @@
 import * as chai from 'chai';
 import * as _ from 'lodash';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
@@ -10,7 +11,7 @@ const current = Support.sequelize;
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('removeAttribute', () => {
     it('should support removing the primary key', () => {
-      const Model = current.define('m', {
+      const Model = current.define<ItestInstance, ItestAttribute>('m', {
         name: new DataTypes.STRING()
       });
 
@@ -24,7 +25,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('should not add undefined attribute after removing primary key', () => {
-      const Model = current.define('m', {
+      const Model = current.define<ItestInstance, ItestAttribute>('m', {
         name: new DataTypes.STRING()
       });
 

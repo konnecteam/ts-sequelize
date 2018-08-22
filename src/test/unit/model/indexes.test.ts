@@ -2,6 +2,7 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
@@ -9,7 +10,7 @@ const current = Support.sequelize;
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('indexes', () => {
     it('should automatically set a gin index for JSONB indexes', () => {
-      const Model = current.define('event', {
+      const Model = current.define<ItestInstance, ItestAttribute>('event', {
         eventData: {
           type: new DataTypes.JSONB(),
           index: true,
@@ -24,7 +25,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('should set the unique property when type is unique', () => {
-      const Model = current.define('m', {}, {
+      const Model = current.define<ItestInstance, ItestAttribute>('m', {}, {
         indexes: [
           {
             type: 'unique'
@@ -40,7 +41,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('should not set rawAttributes when indexes are defined via options', () => {
-      const User = current.define('User', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {
         username: new DataTypes.STRING()
       }, {
         indexes: [{
@@ -53,7 +54,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('should not set rawAttributes when composite unique indexes are defined via options', () => {
-      const User = current.define('User', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {
         name: new DataTypes.STRING(),
         address: new DataTypes.STRING()
       }, {

@@ -2,6 +2,7 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const Sequelize = Support.Sequelize;
@@ -12,12 +13,12 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     describe('group', () => {
       it('should correctly group with attributes, #3009', () => {
 
-        const Post = current.define('Post', {
+        const Post = current.define<ItestInstance, ItestAttribute>('Post', {
           id: { type: new DataTypes.INTEGER(), autoIncrement: true, primaryKey: true },
           name: { type: new DataTypes.STRING(), allowNull: false }
         });
 
-        const Comment = current.define('Comment', {
+        const Comment = current.define<ItestInstance, ItestAttribute>('Comment', {
           id: { type: new DataTypes.INTEGER(), autoIncrement: true, primaryKey: true },
           text: { type: new DataTypes.STRING(), allowNull: false }
         });
@@ -53,12 +54,12 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should not add primary key when grouping using a belongsTo association', () => {
-        const Post = current.define('Post', {
+        const Post = current.define<ItestInstance, ItestAttribute>('Post', {
           id: { type: new DataTypes.INTEGER(), autoIncrement: true, primaryKey: true },
           name: { type: new DataTypes.STRING(), allowNull: false }
         });
 
-        const Comment = current.define('Comment', {
+        const Comment = current.define<ItestInstance, ItestAttribute>('Comment', {
           id: { type: new DataTypes.INTEGER(), autoIncrement: true, primaryKey: true },
           text: { type: new DataTypes.STRING(), allowNull: false }
         });

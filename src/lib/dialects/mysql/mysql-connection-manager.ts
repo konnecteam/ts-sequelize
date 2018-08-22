@@ -1,10 +1,11 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as momentTz from 'moment-timezone';
 import { Sequelize } from '../../..';
 import AllDataTypes from '../../data-types';
 import * as SequelizeErrors from '../../errors/index';
-import { IConfigMysql } from '../../model/iconfig';
+import { IConfigMysql } from '../../interfaces/iconfig';
 import { Utils } from '../../utils';
 import { AbstractConnectionManager } from '../abstract/abstract-connection-manager';
 import { ParserStore } from '../parserStore';
@@ -139,7 +140,7 @@ export class MysqlConnectionManager extends AbstractConnectionManager {
             // but named timezone are not directly supported in mysql, so get its offset first
             let tzOffset = this.sequelize.options.timezone;
             tzOffset = /\//.test(tzOffset) ? momentTz.tz(tzOffset).format('Z') : tzOffset;
-            return connection.query(`SET time_zone = '${tzOffset}'`, err => {
+            return (connection as any).query(`SET time_zone = '${tzOffset}'`, err => {
               if (err) { reject(err); } else { resolve(connection); }
             });
           }

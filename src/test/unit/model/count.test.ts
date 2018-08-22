@@ -3,47 +3,51 @@
 import * as Promise from 'bluebird';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
+  let User : Model<ItestInstance, ItestAttribute>;
+  let Project : Model<ItestInstance, ItestAttribute>;
   describe('method count', () => {
     before(() => {
-      this.oldFindAll = current.Model.findAll;
-      this.oldAggregate = current.Model.aggregate;
+      this.oldFindAll = current.Model.prototype.findAll;
+      this.oldAggregate = current.Model.prototype.aggregate;
 
-      current.Model.findAll = sinon.stub().returns(Promise.resolve());
+      current.Model.prototype.findAll = sinon.stub().returns(Promise.resolve());
 
-      this.User = current.define('User', {
+      User = current.define<ItestInstance, ItestAttribute>('User', {
         username: new DataTypes.STRING(),
         age: new DataTypes.INTEGER()
       });
-      this.Project = current.define('Project', {
+      Project = current.define<ItestInstance, ItestAttribute>('Project', {
         name: new DataTypes.STRING()
       });
 
-      this.User.hasMany(this.Project);
-      this.Project.belongsTo(this.User);
+      User.hasMany(Project);
+      Project.belongsTo(User);
     });
 
     after(() => {
-      current.Model.findAll = this.oldFindAll;
-      current.Model.aggregate = this.oldAggregate;
+      current.Model.prototype.findAll = this.oldFindAll;
+      current.Model.prototype.aggregate = this.oldAggregate;
     });
 
     beforeEach(() => {
-      this.stub = current.Model.aggregate = sinon.stub().returns(Promise.resolve());
+      this.stub = current.Model.prototype.aggregate = sinon.stub().returns(Promise.resolve());
     });
 
     describe('should pass the same options to model.aggregate as findAndCount', () => {
       it('with includes', () => {
         const queryObject = {
-          include: [this.Project]
+          include: [Project]
         };
-        return this.User.count(queryObject)
-          .then(() => this.User.findAndCount(queryObject))
+        return User.count(queryObject)
+          .then(() => User.findAndCount(queryObject))
           .then(() => {
             const count = this.stub.getCall(0).args;
             const findAndCount = this.stub.getCall(1).args;
@@ -55,8 +59,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         const queryObject = {
           attributes: ['username']
         };
-        return this.User.count(queryObject)
-          .then(() => this.User.findAndCount(queryObject))
+        return User.count(queryObject)
+          .then(() => User.findAndCount(queryObject))
           .then(() => {
             const count = this.stub.getCall(0).args;
             const findAndCount = this.stub.getCall(1).args;

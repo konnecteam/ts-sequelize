@@ -3,13 +3,14 @@
 import * as chai from 'chai';
 import * as _ from 'lodash';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('hasOne'), () => {
   it('throws when invalid model is passed', () => {
-    const User = current.define('User');
+    const User = current.define<ItestInstance, ItestAttribute>('User');
 
     expect(() => {
       User.hasOne();
@@ -17,8 +18,8 @@ describe(Support.getTestDialectTeaser('hasOne'), () => {
   });
 
   it('warn on invalid options', () => {
-    const User = current.define('User', {});
-    const Task = current.define('Task', {});
+    const User = current.define<ItestInstance, ItestAttribute>('User', {});
+    const Task = current.define<ItestInstance, ItestAttribute>('Task', {});
 
     expect(() => {
       User.hasOne(Task, { sourceKey: 'wowow' });
@@ -26,8 +27,8 @@ describe(Support.getTestDialectTeaser('hasOne'), () => {
   });
 
   it('properly use the `as` key to generate foreign key name', () => {
-    const User = current.define('User', { username: new DataTypes.STRING() });
-    const Task = current.define('Task', { title: new DataTypes.STRING() });
+    const User = current.define<ItestInstance, ItestAttribute>('User', { username: new DataTypes.STRING() });
+    const Task = current.define<ItestInstance, ItestAttribute>('Task', { title: new DataTypes.STRING() });
 
     User.hasOne(Task);
     expect(Task.rawAttributes.UserId).not.to.be.empty;
@@ -42,12 +43,12 @@ describe(Support.getTestDialectTeaser('hasOne'), () => {
       setTask: 'set',
       createTask: 'create'
     };
-    const User = current.define('User');
-    const Task = current.define('Task');
+    const User = current.define<ItestInstance, ItestAttribute>('User');
+    const Task = current.define<ItestInstance, ItestAttribute>('Task');
 
     _.each(methods, (alias, method) => {
-      User.prototype[method] = function() {
-        const realMethod = this.constructor.associations.task[alias];
+      User.dataSetsMethods[method] = function() {
+        const realMethod = this.model.associations.task[alias];
         expect(realMethod).to.be.a('function');
         return realMethod;
       };

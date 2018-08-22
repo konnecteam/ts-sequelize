@@ -2,31 +2,33 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('sync', () => {
     beforeEach(function() {
-      this.testSync = this.sequelize.define('testSync', {
+      const testSync = current.define<ItestInstance, ItestAttribute>('testSync', {
         dummy: new DataTypes.STRING()
       });
-      return this.testSync.drop();
+      return testSync.drop();
     });
 
     it('should remove a column if it exists in the databases schema but not the model', function() {
-      const User = this.sequelize.define('testSync', {
+      const User = current.define<ItestInstance, ItestAttribute>('testSync', {
         name: new DataTypes.STRING(),
         age: new DataTypes.INTEGER()
       });
-      return this.sequelize.sync()
+      return current.sync()
         .then(() => {
-          this.sequelize.define('testSync', {
+          current.define<ItestInstance, ItestAttribute>('testSync', {
             name: new DataTypes.STRING()
           });
         })
-        .then(() => this.sequelize.sync({alter: true}))
+        .then(() => current.sync({alter: true}))
         .then(() => User.describe())
         .then(data => {
           expect(data).to.not.have.ownProperty('age');
@@ -35,30 +37,30 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('should add a column if it exists in the model but not the database', function() {
-      const testSync = this.sequelize.define('testSync', {
+      const testSync = current.define<ItestInstance, ItestAttribute>('testSync', {
         name: new DataTypes.STRING()
       });
-      return this.sequelize.sync()
-        .then(() => this.sequelize.define('testSync', {
+      return current.sync()
+        .then(() => current.define<ItestInstance, ItestAttribute>('testSync', {
           name: new DataTypes.STRING(),
           age: new DataTypes.INTEGER()
         }))
-        .then(() => this.sequelize.sync({alter: true}))
+        .then(() => current.sync({alter: true}))
         .then(() => testSync.describe())
         .then(data => expect(data).to.have.ownProperty('age'));
     });
 
     it('should change a column if it exists in the model but is different in the database', function() {
-      const testSync = this.sequelize.define('testSync', {
+      const testSync = current.define<ItestInstance, ItestAttribute>('testSync', {
         name: new DataTypes.STRING(),
         age: new DataTypes.INTEGER()
       });
-      return this.sequelize.sync()
-        .then(() => this.sequelize.define('testSync', {
+      return current.sync()
+        .then(() => current.define<ItestInstance, ItestAttribute>('testSync', {
           name: new DataTypes.STRING(),
           age: new DataTypes.STRING()
         }))
-        .then(() => this.sequelize.sync({alter: true}))
+        .then(() => current.sync({alter: true}))
         .then(() => testSync.describe())
         .then(data => {
           expect(data).to.have.ownProperty('age');
@@ -67,13 +69,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('should not alter table if data type does not change', function() {
-      const testSync = this.sequelize.define('testSync', {
+      const testSync = current.define<ItestInstance, ItestAttribute>('testSync', {
         name: new DataTypes.STRING(),
         age: new DataTypes.STRING()
       });
-      return this.sequelize.sync()
+      return current.sync()
         .then(() => testSync.create({name: 'test', age: '1'}))
-        .then(() => this.sequelize.sync({alter: true}))
+        .then(() => current.sync({alter: true}))
         .then(() => testSync.findOne())
         .then(data => {
           expect(data.dataValues.name).to.eql('test');
@@ -82,11 +84,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('should properly create composite index without affecting individual fields', function() {
-      const testSync = this.sequelize.define('testSync', {
+      const testSync = current.define<ItestInstance, ItestAttribute>('testSync', {
         name: new DataTypes.STRING(),
         age: new DataTypes.STRING()
       }, {indexes: [{unique: true, fields: ['name', 'age']}]});
-      return this.sequelize.sync()
+      return current.sync()
         .then(() => testSync.create({name: 'test'}))
         .then(() => testSync.create({name: 'test2'}))
         .then(() => testSync.create({name: 'test3'}))
@@ -103,11 +105,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
     });
     it('should properly create composite index that fails on constraint violation', function() {
-      const testSync = this.sequelize.define('testSync', {
+      const testSync = current.define<ItestInstance, ItestAttribute>('testSync', {
         name: new DataTypes.STRING(),
         age: new DataTypes.STRING()
       }, {indexes: [{unique: true, fields: ['name', 'age']}]});
-      return this.sequelize.sync()
+      return current.sync()
         .then(() => testSync.create({name: 'test', age: '1'}))
         .then(() => testSync.create({name: 'test', age: '1'}))
         .then(data => expect(data).not.to.be.ok, error => expect(error).to.be.ok);
@@ -116,25 +118,25 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     if (Support.getTestDialect() !== 'oracle') {
       //Table names too long for Oracle
       it('should properly alter tables when there are foreign keys', function() {
-        const foreignKeyTestSyncA = this.sequelize.define('foreignKeyTestSyncA', {
+        const foreignKeyTestSyncA = current.define<ItestInstance, ItestAttribute>('foreignKeyTestSyncA', {
           dummy: new DataTypes.STRING()
         });
 
-        const foreignKeyTestSyncB = this.sequelize.define('foreignKeyTestSyncB', {
+        const foreignKeyTestSyncB = current.define<ItestInstance, ItestAttribute>('foreignKeyTestSyncB', {
           dummy: new DataTypes.STRING()
         });
 
         foreignKeyTestSyncA.hasMany(foreignKeyTestSyncB);
         foreignKeyTestSyncB.belongsTo(foreignKeyTestSyncA);
 
-        return this.sequelize.sync({ alter: true })
-          .then(() => this.sequelize.sync({ alter: true }));
+        return current.sync({ alter: true })
+          .then(() => current.sync({ alter: true }));
       });
 
       describe('indexes', () => {
         describe('with alter:true', () => {
           it('should not duplicate named indexes after multiple sync calls', function() {
-            const User = this.sequelize.define('testSync', {
+            const User = current.define<ItestInstance, ItestAttribute>('testSync', {
               email: {
                 type: new DataTypes.STRING()
               },
@@ -157,7 +159,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               .then(() => User.sync({ alter: true }))
               .then(() => User.sync({ alter: true }))
               .then(() => User.sync({ alter: true }))
-              .then(() => this.sequelize.getQueryInterface().showIndex(User.getTableName()))
+              .then(() => current.getQueryInterface().showIndex(User.getTableName()))
               .then(results => {
                 if (dialect === 'sqlite') {
                   // SQLite doesn't treat primary key as index
@@ -175,7 +177,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           });
 
           it('should not duplicate unnamed indexes after multiple sync calls', function() {
-            const User = this.sequelize.define('testSync', {
+            const User = current.define<ItestInstance, ItestAttribute>('testSync', {
               email: {
                 type: new DataTypes.STRING()
               },
@@ -198,7 +200,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               .then(() => User.sync({ alter: true }))
               .then(() => User.sync({ alter: true }))
               .then(() => User.sync({ alter: true }))
-              .then(() => this.sequelize.getQueryInterface().showIndex(User.getTableName()))
+              .then(() => current.getQueryInterface().showIndex(User.getTableName()))
               .then(results => {
                 if (dialect === 'sqlite') {
                   // SQLite doesn't treat primary key as index
@@ -212,7 +214,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         it('should create only one unique index for unique:true column', function() {
-          const User = this.sequelize.define('testSync', {
+          const User = current.define<ItestInstance, ItestAttribute>('testSync', {
             email: {
               type: new DataTypes.STRING(),
               unique: true
@@ -220,7 +222,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           });
 
           return User.sync({ force: true }).then(() => {
-            return this.sequelize.getQueryInterface().showIndex(User.getTableName());
+            return current.getQueryInterface().showIndex(User.getTableName());
           }).then(results => {
             if (dialect === 'sqlite') {
               // SQLite doesn't treat primary key as index
@@ -235,7 +237,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         it('should create only one unique index for unique:true columns', function() {
-          const User = this.sequelize.define('testSync', {
+          const User = current.define<ItestInstance, ItestAttribute>('testSync', {
             email: {
               type: new DataTypes.STRING(),
               unique: true
@@ -247,7 +249,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           });
 
           return User.sync({ force: true }).then(() => {
-            return this.sequelize.getQueryInterface().showIndex(User.getTableName());
+            return current.getQueryInterface().showIndex(User.getTableName());
           }).then(results => {
             if (dialect === 'sqlite') {
               // SQLite doesn't treat primary key as index
@@ -262,7 +264,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         it('should create only one unique index for unique:true columns taking care of options.indexes', function() {
-          const User = this.sequelize.define('testSync', {
+          const User = current.define<ItestInstance, ItestAttribute>('testSync', {
             email: {
               type: new DataTypes.STRING(),
               unique: true
@@ -277,7 +279,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           });
 
           return User.sync({ force: true }).then(() => {
-            return this.sequelize.getQueryInterface().showIndex(User.getTableName());
+            return current.getQueryInterface().showIndex(User.getTableName());
           }).then(results => {
             if (dialect === 'sqlite') {
               // SQLite doesn't treat primary key as index
@@ -293,7 +295,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         it('should create only one unique index for unique:name column', function() {
-          const User = this.sequelize.define('testSync', {
+          const User = current.define<ItestInstance, ItestAttribute>('testSync', {
             email: {
               type: new DataTypes.STRING(),
               unique: 'wow_my_index'
@@ -301,7 +303,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           });
 
           return User.sync({ force: true }).then(() => {
-            return this.sequelize.getQueryInterface().showIndex(User.getTableName());
+            return current.getQueryInterface().showIndex(User.getTableName());
           }).then(results => {
             if (dialect === 'sqlite') {
               // SQLite doesn't treat primary key as index
@@ -321,7 +323,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         it('should create only one unique index for unique:name columns', function() {
-          const User = this.sequelize.define('testSync', {
+          const User = current.define<ItestInstance, ItestAttribute>('testSync', {
             email: {
               type: new DataTypes.STRING(),
               unique: 'wow_my_index'
@@ -333,7 +335,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           });
 
           return User.sync({ force: true }).then(() => {
-            return this.sequelize.getQueryInterface().showIndex(User.getTableName());
+            return current.getQueryInterface().showIndex(User.getTableName());
           }).then(results => {
             if (dialect === 'sqlite') {
               // SQLite doesn't treat primary key as index

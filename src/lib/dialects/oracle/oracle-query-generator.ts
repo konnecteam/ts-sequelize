@@ -7,9 +7,9 @@ import * as oracleDb from 'oracledb';
 import * as semver from 'semver';
 import * as uuid from 'uuid';
 import { Sequelize } from '../../..';
+import { IInclude } from '../../interfaces/iinclude';
+import { ISequelizeOption } from '../../interfaces/isequelize-option';
 import { Model } from '../../model';
-import { IInclude } from '../../model/iinclude';
-import { ISequelizeOption } from '../../model/isequelize-option';
 import { Transaction } from '../../transaction';
 import * as AllUtils from '../../utils';
 import { AbstractQueryGenerator } from '../abstract/abstract-query-generator';
@@ -698,7 +698,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
     fields? : string[],
     /** An object of hook function that are called before and after certain lifecycle events */
     hooks? : boolean,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** Return raw result. */
     raw? : boolean,
     /**
@@ -1021,7 +1021,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
     inputParameters? : any,
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     returning? : boolean,
     through? : {},
     /** Transaction to run query under */
@@ -1229,14 +1229,14 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
     allowNull? : boolean,
     autoIncrement? : boolean,
     defaultValue? : any,
-    Model? : typeof Model,
+    Model? : Model<any, any>,
     onDelete? : string,
     onUpdate? : string,
     primaryKey? : string,
     /** An object with reference configurations */
     references? : {
       /** If this column references another table, provide it here as a Model, or a string */
-      model? : typeof Model | string,
+      model? : Model<any, any> | string,
       /** = 'id', The column of the foreign table that this column references */
       key? : string;
     };
@@ -1639,7 +1639,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
     keysEscaped? : boolean,
     /** The maximum count you want to get. */
     limit? : number,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** An offset value to start from. Only useable with limit! */
     offset? : number,
     /** OrderBy clause */
@@ -1650,7 +1650,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
     subQuery? : boolean,
     tableNames? : string[],
     topLimit? : any,
-    topModel? : typeof Model,
+    topModel? : Model<any, any>,
     type ? : string,
     /** A hash of search attributes. */
     where? : {}
@@ -1694,7 +1694,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
     limit? : number,
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** An offset value to start from. Only useable with limit! */
     offset? : number,
     /** OrderBy clause */
@@ -1708,7 +1708,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
     tableNames? : string[],
     tableAs? : string,
     topLimit? : any,
-    topModel? : typeof Model,
+    topModel? : Model<any, any>,
     /** Transaction to run query under */
     transaction? : Transaction,
     type ? : string,

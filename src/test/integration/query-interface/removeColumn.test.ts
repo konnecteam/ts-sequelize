@@ -2,24 +2,27 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
+import { AbstractQueryInterface } from '../../../lib/query-interface';
 import Support from '../../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('QueryInterface'), () => {
+  let queryInterface : AbstractQueryInterface;
   beforeEach(function() {
-    this.sequelize.options.quoteIdenifiers = true;
-    this.queryInterface = this.sequelize.getQueryInterface();
+    current.options.quoteIdentifiers = true;
+    queryInterface = current.getQueryInterface();
   });
 
   afterEach(function() {
-    return this.sequelize.dropAllSchemas();
+    return current.dropAllSchemas();
   });
 
   describe('removeColumn', () => {
     describe('(without a schema)', () => {
       beforeEach(function() {
-        return this.queryInterface.createTable('users', {
+        return queryInterface.createTable('users', {
           id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
@@ -47,37 +50,37 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
       });
 
       it('should be able to remove a column with a default value', function() {
-        return this.queryInterface.removeColumn('users', 'firstName').bind(this).then(function() {
-          return this.queryInterface.describeTable('users');
+        return queryInterface.removeColumn('users', 'firstName').bind(this).then(function() {
+          return queryInterface.describeTable('users');
         }).then(table => {
           expect(table).to.not.have.property('firstName');
         });
       });
 
       it('should be able to remove a column without default value', function() {
-        return this.queryInterface.removeColumn('users', 'lastName').bind(this).then(function() {
-          return this.queryInterface.describeTable('users');
+        return queryInterface.removeColumn('users', 'lastName').bind(this).then(function() {
+          return queryInterface.describeTable('users');
         }).then(table => {
           expect(table).to.not.have.property('lastName');
         });
       });
 
       it('should be able to remove a column with a foreign key constraint', function() {
-        return this.queryInterface.removeColumn('users', 'manager').bind(this).then(function() {
-          return this.queryInterface.describeTable('users');
+        return queryInterface.removeColumn('users', 'manager').bind(this).then(function() {
+          return queryInterface.describeTable('users');
         }).then(table => {
           expect(table).to.not.have.property('manager');
         });
       });
 
       it('should be able to remove a column with primaryKey', function() {
-        return this.queryInterface.removeColumn('users', 'manager').bind(this).then(function() {
-          return this.queryInterface.describeTable('users');
+        return queryInterface.removeColumn('users', 'manager').bind(this).then(function() {
+          return queryInterface.describeTable('users');
         }).then(function(table) {
           expect(table).to.not.have.property('manager');
-          return this.queryInterface.removeColumn('users', 'id');
+          return queryInterface.removeColumn('users', 'id');
         }).then(function() {
-          return this.queryInterface.describeTable('users');
+          return queryInterface.describeTable('users');
         }).then(table => {
           expect(table).to.not.have.property('id');
         });
@@ -89,8 +92,8 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
       // https://docs.microsoft.com/en-us/sql/t-sql/statements/alter-table-transact-sql#arguments
       if (dialect !== 'mssql') {
         it('should be able to remove a column with unique contraint', function() {
-          return this.queryInterface.removeColumn('users', 'email').bind(this).then(function() {
-            return this.queryInterface.describeTable('users');
+          return queryInterface.removeColumn('users', 'email').bind(this).then(function() {
+            return queryInterface.describeTable('users');
           }).then(table => {
             expect(table).to.not.have.property('email');
           });
@@ -100,8 +103,8 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
 
     describe('(with a schema)', () => {
       beforeEach(function() {
-        return this.sequelize.createSchema('archive').then(() => {
-          return this.queryInterface.createTable({
+        return current.createSchema('archive').then(() => {
+          return queryInterface.createTable({
             tableName: 'users',
             schema: 'archive'
           }, {
@@ -126,12 +129,12 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
       });
 
       it('should be able to remove a column with a default value', function() {
-        return this.queryInterface.removeColumn({
+        return queryInterface.removeColumn({
           tableName: 'users',
           schema: 'archive'
         }, 'firstName'
         ).bind(this).then(function() {
-          return this.queryInterface.describeTable({
+          return queryInterface.describeTable({
             tableName: 'users',
             schema: 'archive'
           });
@@ -141,12 +144,12 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
       });
 
       it('should be able to remove a column without default value', function() {
-        return this.queryInterface.removeColumn({
+        return queryInterface.removeColumn({
           tableName: 'users',
           schema: 'archive'
         }, 'lastName'
         ).bind(this).then(function() {
-          return this.queryInterface.describeTable({
+          return queryInterface.describeTable({
             tableName: 'users',
             schema: 'archive'
           });
@@ -156,11 +159,11 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
       });
 
       it('should be able to remove a column with primaryKey', function() {
-        return this.queryInterface.removeColumn({
+        return queryInterface.removeColumn({
           tableName: 'users',
           schema: 'archive'
         }, 'id').bind(this).then(function() {
-          return this.queryInterface.describeTable({
+          return queryInterface.describeTable({
             tableName: 'users',
             schema: 'archive'
           });
@@ -175,11 +178,11 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
       // https://docs.microsoft.com/en-us/sql/t-sql/statements/alter-table-transact-sql#arguments
       if (dialect !== 'mssql') {
         it('should be able to remove a column with unique contraint', function() {
-          return this.queryInterface.removeColumn({
+          return queryInterface.removeColumn({
             tableName: 'users',
             schema: 'archive'
           }, 'email').bind(this).then(function() {
-            return this.queryInterface.describeTable({
+            return queryInterface.describeTable({
               tableName: 'users',
               schema: 'archive'
             });

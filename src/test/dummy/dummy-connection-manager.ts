@@ -13,6 +13,7 @@ export class DummyConnectionManager extends AbstractConnectionManager {
   /**
    * Declaration void as main class is abstract
    */
+  public _clearTypeParser() {}
   public connect(connection?) {}
   public disconnect(connection?) {}
   public validate(connection?) {}

@@ -2,6 +2,7 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
 const current = Support.sequelize;
@@ -9,7 +10,7 @@ const current = Support.sequelize;
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('increment', () => {
     describe('options tests', () => {
-      const Model = current.define('User', {
+      const Model = current.define<ItestInstance, ItestAttribute>('User', {
         id: {
           type: new DataTypes.BIGINT(),
           primaryKey: true,

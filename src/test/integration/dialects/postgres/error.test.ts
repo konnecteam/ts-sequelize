@@ -3,23 +3,26 @@
 import * as chai from 'chai';
 import * as _ from 'lodash';
 import DataTypes from '../../../../lib/data-types';
+import { Model } from '../../../../lib/model';
+import { ItestAttribute, ItestInstance } from '../../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const Sequelize = Support.Sequelize;
+const current = Support.sequelize;
 const dialect   = Support.getTestDialect();
 
 if (dialect.match(/^postgres/)) {
   const constraintName = 'overlap_period';
+  let Booking : Model<ItestInstance, ItestAttribute>;
   beforeEach(function() {
-    const self = this;
-    this.Booking = self.sequelize.define('Booking', {
+    Booking = current.define<ItestInstance, ItestAttribute>('Booking', {
       roomNo: new DataTypes.INTEGER(),
       period: new DataTypes.RANGE(new DataTypes.DATE())
     });
-    return self.Booking
+    return Booking
       .sync({ force: true })
       .then(() => {
-        return self.sequelize.query('ALTER TABLE "' + self.Booking.tableName + '" ADD CONSTRAINT ' + constraintName +
+        return current.query('ALTER TABLE "' + Booking.tableName + '" ADD CONSTRAINT ' + constraintName +
                                     ' EXCLUDE USING gist ("roomNo" WITH =, period WITH &&)');
       });
   });
@@ -42,8 +45,6 @@ if (dialect.match(/^postgres/)) {
     });
 
     it('should throw ExclusionConstraintError when "period" value overlaps existing', function() {
-      const Booking = this.Booking;
-
       return Booking
         .create({
           roomNo: 1,

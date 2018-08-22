@@ -3,6 +3,7 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
@@ -11,7 +12,7 @@ const Promise = current.Promise;
 describe(Support.getTestDialectTeaser('Instance'), () => {
   describe('set', () => {
     it('sets nested keys in JSON objects', () => {
-      const User = current.define('User', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {
         meta: new DataTypes.JSONB()
       });
       const user = User.build({
@@ -33,7 +34,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('doesnt mutate the JSONB defaultValue', () => {
-      const User = current.define('User', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {
         meta: {
           type: new DataTypes.JSONB(),
           allowNull: false,
@@ -47,7 +48,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('sets the date "1970-01-01" to previously null field', () => {
-      const User = current.define('User', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {
         date: {
           type: new DataTypes.DATE(),
           allowNull: true
@@ -62,7 +63,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('overwrites non-date originalValue with date', () => {
-      const User = current.define('User', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {
         date: new DataTypes.DATE()
       });
       const user = User.build({
@@ -88,7 +89,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         this.stubCreate.restore();
       });
 
-      const User = current.define('User', {
+      const User = current.define<ItestInstance, ItestAttribute>('User', {
         phoneNumber: {
           type: new DataTypes.STRING(),
           set(val) {

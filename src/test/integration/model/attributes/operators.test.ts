@@ -1,21 +1,24 @@
 'use strict';
 
 import * as chai from 'chai';
-import {Sequelize} from '../../../../index';
+import { Model, Sequelize } from '../../../../index';
 import DataTypes from '../../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const Promise = Sequelize.Promise;
 const dialect = Support.getTestDialect();
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('attributes', () => {
     describe('operators', () => {
       describe('REGEXP', () => {
+        let User : Model<ItestInstance, ItestAttribute>;
         beforeEach(function() {
-          const queryInterface = this.sequelize.getQueryInterface();
+          const queryInterface = current.getQueryInterface();
 
-          this.User = this.sequelize.define('user', {
+          User = current.define<ItestInstance, ItestAttribute>('user', {
             id: {
               type: new DataTypes.INTEGER(),
               allowNull: false,
@@ -49,12 +52,10 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
         if (dialect === 'mysql' || dialect === 'postgres') {
           it('should work with a regexp where', function() {
-            const self = this;
-
-            return this.User.create({
+            return User.create({
               name: 'Foobar'
             }).then(() => {
-              return self.User.find({
+              return User.find({
                 where: {
                   name: {
                     $regexp: '^Foo'
@@ -67,12 +68,10 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           });
 
           it('should work with a not regexp where', function() {
-            const self = this;
-
-            return this.User.create({
+            return User.create({
               name: 'Foobar'
             }).then(() => {
-              return self.User.find({
+              return User.find({
                 where: {
                   name: {
                     $notRegexp: '^Foo'
@@ -86,12 +85,10 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
           if (dialect === 'postgres') {
             it('should work with a case-insensitive regexp where', function() {
-              const self = this;
-
-              return this.User.create({
+              return User.create({
                 name: 'Foobar'
               }).then(() => {
-                return self.User.find({
+                return User.find({
                   where: {
                     name: {
                       $iRegexp: '^foo'
@@ -104,12 +101,10 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             });
 
             it('should work with a case-insensitive not regexp where', function() {
-              const self = this;
-
-              return this.User.create({
+              return User.create({
                 name: 'Foobar'
               }).then(() => {
-                return self.User.find({
+                return User.find({
                   where: {
                     name: {
                       $notIRegexp: '^foo'

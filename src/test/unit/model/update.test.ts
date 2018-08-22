@@ -3,16 +3,19 @@
 import * as chai from 'chai';
 import * as _ from 'lodash';
 import * as sinon from 'sinon';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
 const Promise = current.Promise;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
+  let User : Model<ItestInstance, ItestAttribute>;
   describe('method update', () => {
     before(function() {
-      this.User = current.define('User', {
+      User = current.define<ItestInstance, ItestAttribute>('User', {
         name: new DataTypes.STRING(),
         secretValue: new DataTypes.INTEGER()
       });
@@ -35,13 +38,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     describe('properly clones input values', () => {
       it('with default options', function() {
-        return this.User.update(this.updates, { where: { secretValue: '1' } }).then(() => {
+        return User.update(this.updates, { where: { secretValue: '1' } }).then(() => {
           expect(this.updates).to.be.deep.equal(this.cloneUpdates);
         });
       });
 
       it('when using fields option', function() {
-        return this.User.update(this.updates, { where: { secretValue: '1' }, fields: ['name'] }).then(() => {
+        return User.update(this.updates, { where: { secretValue: '1' }, fields: ['name'] }).then(() => {
           expect(this.updates).to.be.deep.equal(this.cloneUpdates);
         });
       });
@@ -51,7 +54,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       const Where = function() { this.secretValue = '1'; };
 
       expect(() => {
-        this.User.update(this.updates, { where: new Where() });
+        User.update(this.updates, { where: new Where() });
       }).to.throw();
     });
   });

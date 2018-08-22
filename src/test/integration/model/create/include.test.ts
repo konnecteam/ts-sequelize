@@ -2,14 +2,16 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('create', () => {
     describe('include', () => {
       it('should create data for BelongsTo relations', function() {
-        const Product = this.sequelize.define('Product', {
+        const Product = current.define<ItestInstance, ItestAttribute>('Product', {
           title: new DataTypes.STRING()
         }, {
           hooks: {
@@ -18,7 +20,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             }
           }
         });
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           first_name: new DataTypes.STRING(),
           last_name: new DataTypes.STRING()
         }, {
@@ -31,7 +33,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
         Product.belongsTo(User);
 
-        return this.sequelize.sync({ force: true }).then(() => {
+        return current.sync({ force: true }).then(() => {
           return Product.create({
             title: 'Chair',
             User: {
@@ -60,10 +62,10 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should create data for BelongsTo relations with no nullable FK', function() {
-        const Product = this.sequelize.define('Product', {
+        const Product = current.define<ItestInstance, ItestAttribute>('Product', {
           title: new DataTypes.STRING()
         });
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           first_name: new DataTypes.STRING()
         });
 
@@ -73,7 +75,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }
         });
 
-        return this.sequelize.sync({ force: true }).then(() => {
+        return current.sync({ force: true }).then(() => {
           return Product.create({
             title: 'Chair',
             User: {
@@ -93,17 +95,17 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should create data for BelongsTo relations with alias', function() {
-        const Product = this.sequelize.define('Product', {
+        const Product = current.define<ItestInstance, ItestAttribute>('Product', {
           title: new DataTypes.STRING()
         });
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           first_name: new DataTypes.STRING(),
           last_name: new DataTypes.STRING()
         });
 
         const Creator = Product.belongsTo(User, {as: 'creator'});
 
-        return this.sequelize.sync({ force: true }).then(() => {
+        return current.sync({ force: true }).then(() => {
           return Product.create({
             title: 'Chair',
             creator: {
@@ -126,7 +128,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should create data for HasMany relations', function() {
-        const Product = this.sequelize.define('Product', {
+        const Product = current.define<ItestInstance, ItestAttribute>('Product', {
           title: new DataTypes.STRING()
         }, {
           hooks: {
@@ -138,7 +140,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             }
           }
         });
-        const Tag = this.sequelize.define('Tag', {
+        const Tag = current.define<ItestInstance, ItestAttribute>('Tag', {
           name: new DataTypes.STRING()
         }, {
           hooks: {
@@ -150,7 +152,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
         Product.hasMany(Tag);
 
-        return this.sequelize.sync({ force: true }).then(() => {
+        return current.sync({ force: true }).then(() => {
           return Product.create({
             id: 1,
             title: 'Chair',
@@ -181,16 +183,16 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should create data for HasMany relations with alias', function() {
-        const Product = this.sequelize.define('Product', {
+        const Product = current.define<ItestInstance, ItestAttribute>('Product', {
           title: new DataTypes.STRING()
         });
-        const Tag = this.sequelize.define('Tag', {
+        const Tag = current.define<ItestInstance, ItestAttribute>('Tag', {
           name: new DataTypes.STRING()
         });
 
         const Categories = Product.hasMany(Tag, {as: 'categories'});
 
-        return this.sequelize.sync({ force: true }).then(() => {
+        return current.sync({ force: true }).then(() => {
           return Product.create({
             id: 1,
             title: 'Chair',
@@ -213,17 +215,17 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should create data for HasOne relations', function() {
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           username: new DataTypes.STRING()
         });
 
-        const Task = this.sequelize.define('Task', {
+        const Task = current.define<ItestInstance, ItestAttribute>('Task', {
           title: new DataTypes.STRING()
         });
 
         User.hasOne(Task);
 
-        return this.sequelize.sync({ force: true }).then(() => {
+        return current.sync({ force: true }).then(() => {
           return User.create({
             username: 'Muzzy',
             Task: {
@@ -243,18 +245,18 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should create data for HasOne relations with alias', function() {
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           username: new DataTypes.STRING()
         });
 
-        const Task = this.sequelize.define('Task', {
+        const Task = current.define<ItestInstance, ItestAttribute>('Task', {
           title: new DataTypes.STRING()
         });
 
         const Job = User.hasOne(Task, {as: 'job'});
 
 
-        return this.sequelize.sync({ force: true }).then(() => {
+        return current.sync({ force: true }).then(() => {
           return User.create({
             username: 'Muzzy',
             job: {
@@ -274,7 +276,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should create data for BelongsToMany relations', function() {
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           username: new DataTypes.STRING()
         }, {
           hooks: {
@@ -287,7 +289,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }
         });
 
-        const Task = this.sequelize.define('Task', {
+        const Task = current.define<ItestInstance, ItestAttribute>('Task', {
           title: new DataTypes.STRING(),
           active: new DataTypes.BOOLEAN()
         }, {
@@ -301,7 +303,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         User.belongsToMany(Task, {through: 'user_task'});
         Task.belongsToMany(User, {through: 'user_task'});
 
-        return this.sequelize.sync({ force: true }).then(() => {
+        return current.sync({ force: true }).then(() => {
           return User.create({
             username: 'John',
             Tasks: [
@@ -331,21 +333,21 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should create data for polymorphic BelongsToMany relations', function() {
-        const Post = this.sequelize.define('Post', {
+        const Post = current.define<ItestInstance, ItestAttribute>('Post', {
           title: new DataTypes.STRING()
         }, {
           tableName: 'posts',
           underscored: true
         });
 
-        const Tag = this.sequelize.define('Tag', {
+        const Tag = current.define<ItestInstance, ItestAttribute>('Tag', {
           name: new DataTypes.STRING()
         }, {
           tableName: 'tags',
           underscored: true
         });
 
-        const ItemTag = this.sequelize.define('ItemTag', {
+        const ItemTag = current.define<ItestInstance, ItestAttribute>('ItemTag', {
           tag_id: {
             type: new DataTypes.INTEGER(),
             references: {
@@ -389,7 +391,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }
         });
 
-        return this.sequelize.sync({ force: true }).then(() => {
+        return current.sync({ force: true }).then(() => {
           return Post.create({
             title: 'Polymorphic Associations',
             tags: [
@@ -415,7 +417,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           expect(savedPost.tags.length).to.equal(2);
           // The saved post should be able to retrieve the two tags
           // using the convenience accessor methods
-          return savedPost.getTags();
+          return savedPost.getManyLinkedData<ItestInstance, ItestAttribute>('Tag');
         }).then(savedTags => {
           // All nested tags should be returned
           expect(savedTags.length).to.equal(2);
@@ -431,11 +433,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should create data for BelongsToMany relations with alias', function() {
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           username: new DataTypes.STRING()
         });
 
-        const Task = this.sequelize.define('Task', {
+        const Task = current.define<ItestInstance, ItestAttribute>('Task', {
           title: new DataTypes.STRING(),
           active: new DataTypes.BOOLEAN()
         });
@@ -443,7 +445,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         const Jobs = User.belongsToMany(Task, {through: 'user_job', as: 'jobs'});
         Task.belongsToMany(User, {through: 'user_job'});
 
-        return this.sequelize.sync({ force: true }).then(() => {
+        return current.sync({ force: true }).then(() => {
           return User.create({
             username: 'John',
             jobs: [

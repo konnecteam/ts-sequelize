@@ -1,5 +1,6 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as errors from '../../errors/index';
 import { AbstractQueryInterface } from '../../query-interface';
@@ -30,11 +31,11 @@ export class MysqlQueryInterface extends AbstractQueryInterface {
     )
       .spread(results => {
         //Exclude primary key constraint
-        if (!results.length || results[0].constraint_name === 'PRIMARY') {
+        if (!(results as any).length || results[0].constraint_name === 'PRIMARY') {
           // No foreign key constraints found, so we can remove the column
           return;
         }
-        return this.sequelize.Promise.map(results, constraint => this.sequelize.query(
+        return this.sequelize.Promise.map((results as any[]), constraint => this.sequelize.query(
           this.QueryGenerator.dropForeignKeyQuery(tableName, constraint.constraint_name),
           _.assign({ raw: true }, options)
         ));

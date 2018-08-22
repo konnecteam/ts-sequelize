@@ -5,6 +5,7 @@ import * as _ from 'lodash';
 import * as sinon from 'sinon';
 import {Sequelize} from '../../../index';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
 const current = Support.sequelize;
@@ -14,13 +15,13 @@ if (current.dialect.supports.groupedLimit) {
   describe(Support.getTestDialectTeaser('Include'), () => {
     describe('separate', () => {
       it('should run a hasMany association in a separate query', function() {
-        const User = this.sequelize.define('User', {});
-        const Task = this.sequelize.define('Task', {});
+        const User = current.define<ItestInstance, ItestAttribute>('User', {});
+        const Task = current.define<ItestInstance, ItestAttribute>('Task', {});
         const sqlSpy = sinon.spy();
 
-        User.Tasks = User.hasMany(Task, {as: 'tasks'});
+        const User_Tasks = User.hasMany(Task, {as: 'tasks'});
 
-        return this.sequelize.sync({force: true}).then(() => {
+        return current.sync({force: true}).then(() => {
           return Promise.join(
             User.create({
               id: 1,
@@ -30,7 +31,7 @@ if (current.dialect.supports.groupedLimit) {
                 {},
               ]
             }, {
-              include: [User.Tasks]
+              include: [User_Tasks]
             }),
             User.create({
               id: 2,
@@ -38,12 +39,12 @@ if (current.dialect.supports.groupedLimit) {
                 {},
               ]
             }, {
-              include: [User.Tasks]
+              include: [User_Tasks]
             })
           ).then(() => {
             return User.findAll({
               include: [
-                {association: User.Tasks, separate: true},
+                {association: User_Tasks, separate: true},
               ],
               order: [
                 ['id', 'ASC'],
@@ -65,15 +66,15 @@ if (current.dialect.supports.groupedLimit) {
       });
 
       it('should work even if the id was not included', function() {
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           name: new DataTypes.STRING()
         });
-        const Task = this.sequelize.define('Task', {});
+        const Task = current.define<ItestInstance, ItestAttribute>('Task', {});
         const sqlSpy = sinon.spy();
 
-        User.Tasks = User.hasMany(Task, {as: 'tasks'});
+        const User_Tasks = User.hasMany(Task, {as: 'tasks'});
 
-        return this.sequelize.sync({force: true}).then(() => {
+        return current.sync({force: true}).then(() => {
           return User.create({
             id: 1,
             tasks: [
@@ -82,12 +83,12 @@ if (current.dialect.supports.groupedLimit) {
               {},
             ]
           }, {
-            include: [User.Tasks]
+            include: [User_Tasks]
           }).then(() => {
             return User.findAll({
               attributes: ['name'],
               include: [
-                {association: User.Tasks, separate: true},
+                {association: User_Tasks, separate: true},
               ],
               order: [
                 ['id', 'ASC'],
@@ -103,25 +104,25 @@ if (current.dialect.supports.groupedLimit) {
       });
 
       it('should work even if include does not specify foreign key attribute with custom sourceKey', function() {
-        const User = this.sequelize.define('User', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {
           name: new DataTypes.STRING(),
           userExtraId: {
             type: new DataTypes.INTEGER(),
             unique: true
           }
         });
-        const Task = this.sequelize.define('Task', {
+        const Task = current.define<ItestInstance, ItestAttribute>('Task', {
           title: new DataTypes.STRING()
         });
         const sqlSpy = sinon.spy();
 
-        User.Tasks = User.hasMany(Task, {
+        const User_Tasks = User.hasMany(Task, {
           as: 'tasks',
           foreignKey: 'userId',
           sourceKey: 'userExtraId'
         });
 
-        return this.sequelize
+        return current
           .sync({force: true})
           .then(() => {
             return User.create({
@@ -132,7 +133,7 @@ if (current.dialect.supports.groupedLimit) {
                 {},
                 {}]
             }, {
-              include: [User.Tasks]
+              include: [User_Tasks]
             });
           })
           .then(() => {
@@ -142,7 +143,7 @@ if (current.dialect.supports.groupedLimit) {
                 {
                   attributes: [
                     'title'],
-                  association: User.Tasks,
+                  association: User_Tasks,
                   separate: true
                 }],
               order: [
@@ -158,27 +159,27 @@ if (current.dialect.supports.groupedLimit) {
       });
 
       it('should not break a nested include with null values', function() {
-        const User = this.sequelize.define('User', {});
-        const Team = this.sequelize.define('Team', {});
-        const Company = this.sequelize.define('Company', {});
+        const User = current.define<ItestInstance, ItestAttribute>('User', {});
+        const Team = current.define<ItestInstance, ItestAttribute>('Team', {});
+        const Company = current.define<ItestInstance, ItestAttribute>('Company', {});
 
-        User.Team = User.belongsTo(Team);
-        Team.Company = Team.belongsTo(Company);
+        const User_Team = User.belongsTo(Team);
+        const Team_Company = Team.belongsTo(Company);
 
-        return this.sequelize.sync({force: true}).then(() => {
+        return current.sync({force: true}).then(() => {
           return User.create({});
         }).then(() => {
           return User.findAll({
             include: [
-              {association: User.Team, include: [Team.Company]},
+              {association: User_Team, include: [Team_Company]},
             ]
           });
         });
       });
 
       it('should run a hasMany association with limit in a separate query', function() {
-        const User = this.sequelize.define('User', {});
-        const Task = this.sequelize.define('Task', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {});
+        const Task = current.define<ItestInstance, ItestAttribute>('Task', {
           userId: {
             type: new DataTypes.INTEGER(),
             field: 'user_id'
@@ -186,9 +187,9 @@ if (current.dialect.supports.groupedLimit) {
         });
         const sqlSpy = sinon.spy();
 
-        User.Tasks = User.hasMany(Task, {as: 'tasks', foreignKey: 'userId'});
+        const User_Tasks = User.hasMany(Task, {as: 'tasks', foreignKey: 'userId'});
 
-        return this.sequelize.sync({force: true}).then(() => {
+        return current.sync({force: true}).then(() => {
           return Promise.join(
             User.create({
               id: 1,
@@ -198,7 +199,7 @@ if (current.dialect.supports.groupedLimit) {
                 {},
               ]
             }, {
-              include: [User.Tasks]
+              include: [User_Tasks]
             }),
             User.create({
               id: 2,
@@ -209,12 +210,12 @@ if (current.dialect.supports.groupedLimit) {
                 {},
               ]
             }, {
-              include: [User.Tasks]
+              include: [User_Tasks]
             })
           ).then(() => {
             return User.findAll({
               include: [
-                {association: User.Tasks, limit: 2},
+                {association: User_Tasks, limit: 2},
               ],
               order: [
                 ['id', 'ASC'],
@@ -232,15 +233,15 @@ if (current.dialect.supports.groupedLimit) {
       });
 
       it('should run a nested (from a non-separate include) hasMany association in a separate query', function() {
-        const User = this.sequelize.define('User', {});
-        const Company = this.sequelize.define('Company');
-        const Task = this.sequelize.define('Task', {});
+        const User = current.define<ItestInstance, ItestAttribute>('User', {});
+        const Company = current.define<ItestInstance, ItestAttribute>('Company');
+        const Task = current.define<ItestInstance, ItestAttribute>('Task', {});
         const sqlSpy = sinon.spy();
 
-        User.Company = User.belongsTo(Company, {as: 'company'});
-        Company.Tasks = Company.hasMany(Task, {as: 'tasks'});
+        const User_Company = User.belongsTo(Company, {as: 'company'});
+        const Company_Tasks = Company.hasMany(Task, {as: 'tasks'});
 
-        return this.sequelize.sync({force: true}).then(() => {
+        return current.sync({force: true}).then(() => {
           return Promise.join(
             User.create({
               id: 1,
@@ -253,7 +254,7 @@ if (current.dialect.supports.groupedLimit) {
               }
             }, {
               include: [
-                {association: User.Company, include: [Company.Tasks]},
+                {association: User_Company, include: [Company_Tasks]},
               ]
             }),
             User.create({
@@ -265,14 +266,14 @@ if (current.dialect.supports.groupedLimit) {
               }
             }, {
               include: [
-                {association: User.Company, include: [Company.Tasks]},
+                {association: User_Company, include: [Company_Tasks]},
               ]
             })
           ).then(() => {
             return User.findAll({
               include: [
-                {association: User.Company, include: [
-                  {association: Company.Tasks, separate: true},
+                {association: User_Company, include: [
+                  {association: Company_Tasks, separate: true},
                 ]},
               ],
               order: [
@@ -291,17 +292,17 @@ if (current.dialect.supports.groupedLimit) {
       });
 
       it('should work having a separate include between a parent and child include', function() {
-        const User = this.sequelize.define('User', {});
-        const  Project = this.sequelize.define('Project');
-        const Company = this.sequelize.define('Company');
-        const Task = this.sequelize.define('Task', {});
+        const User = current.define<ItestInstance, ItestAttribute>('User', {});
+        const  Project = current.define<ItestInstance, ItestAttribute>('Project');
+        const Company = current.define<ItestInstance, ItestAttribute>('Company');
+        const Task = current.define<ItestInstance, ItestAttribute>('Task', {});
         const sqlSpy = sinon.spy();
 
-        Company.Users = Company.hasMany(User, {as: 'users'});
-        User.Tasks = User.hasMany(Task, {as: 'tasks'});
-        Task.Project = Task.belongsTo(Project, {as: 'project'});
+        const Company_Users = Company.hasMany(User, {as: 'users'});
+        const User_Tasks = User.hasMany(Task, {as: 'tasks'});
+        const Task_Project = Task.belongsTo(Project, {as: 'project'});
 
-        return this.sequelize.sync({force: true}).then(() => {
+        return current.sync({force: true}).then(() => {
           return Promise.join(
             Company.create({
               id: 1,
@@ -316,9 +317,9 @@ if (current.dialect.supports.groupedLimit) {
               ]
             }, {
               include: [
-                {association: Company.Users, include: [
-                  {association: User.Tasks, include: [
-                    Task.Project,
+                {association: Company_Users, include: [
+                  {association: User_Tasks, include: [
+                    Task_Project,
                   ]},
                 ]},
               ]
@@ -326,9 +327,9 @@ if (current.dialect.supports.groupedLimit) {
           ).then(() => {
             return Company.findAll({
               include: [
-                {association: Company.Users, include: [
-                  {association: User.Tasks, separate: true, include: [
-                    Task.Project,
+                {association: Company_Users, include: [
+                  {association: User_Tasks, separate: true, include: [
+                    Task_Project,
                   ]},
                 ]},
               ],
@@ -346,15 +347,15 @@ if (current.dialect.supports.groupedLimit) {
       });
 
       it('should run two nested hasMany association in a separate queries', function() {
-        const User = this.sequelize.define('User', {});
-        const Project = this.sequelize.define('Project', {});
-        const Task = this.sequelize.define('Task', {});
+        const User = current.define<ItestInstance, ItestAttribute>('User', {});
+        const Project = current.define<ItestInstance, ItestAttribute>('Project', {});
+        const Task = current.define<ItestInstance, ItestAttribute>('Task', {});
         const sqlSpy = sinon.spy();
 
-        User.Projects = User.hasMany(Project, {as: 'projects'});
-        Project.Tasks = Project.hasMany(Task, {as: 'tasks'});
+        const User_Projects = User.hasMany(Project, {as: 'projects'});
+        const Project_Tasks = Project.hasMany(Task, {as: 'tasks'});
 
-        return this.sequelize.sync({force: true}).then(() => {
+        return current.sync({force: true}).then(() => {
           return Promise.join(
             User.create({
               id: 1,
@@ -376,7 +377,7 @@ if (current.dialect.supports.groupedLimit) {
               ]
             }, {
               include: [
-                {association: User.Projects, include: [Project.Tasks]},
+                {association: User_Projects, include: [Project_Tasks]},
               ]
             }),
             User.create({
@@ -392,14 +393,14 @@ if (current.dialect.supports.groupedLimit) {
               ]
             }, {
               include: [
-                {association: User.Projects, include: [Project.Tasks]},
+                {association: User_Projects, include: [Project_Tasks]},
               ]
             })
           ).then(() => {
             return User.findAll({
               include: [
-                {association: User.Projects, separate: true, include: [
-                  {association: Project.Tasks, separate: true},
+                {association: User_Projects, separate: true, include: [
+                  {association: Project_Tasks, separate: true},
                 ]},
               ],
               order: [
@@ -430,17 +431,17 @@ if (current.dialect.supports.groupedLimit) {
       });
 
       it('should work with two schema models in a hasMany association', function() {
-        const User = this.sequelize.define('User', {}, {schema: 'archive'});
-        const Task = this.sequelize.define('Task', {
+        const User = current.define<ItestInstance, ItestAttribute>('User', {}, {schema: 'archive'});
+        const Task = current.define<ItestInstance, ItestAttribute>('Task', {
           id: { type: new DataTypes.INTEGER(), primaryKey: true },
           title: new DataTypes.STRING()
         }, {schema: 'archive'});
 
-        User.Tasks = User.hasMany(Task, {as: 'tasks'});
+        const User_Tasks = User.hasMany(Task, {as: 'tasks'});
 
-        return this.sequelize.dropAllSchemas().then(() => {
-          return this.sequelize.createSchema('archive').then(() => {
-            return this.sequelize.sync({force: true}).then(() => {
+        return current.dropAllSchemas().then(() => {
+          return current.createSchema('archive').then(() => {
+            return current.sync({force: true}).then(() => {
               return Promise.join(
                 User.create({
                   id: 1,
@@ -451,7 +452,7 @@ if (current.dialect.supports.groupedLimit) {
                     {id: 4, title: 'a'},
                   ]
                 }, {
-                  include: [User.Tasks]
+                  include: [User_Tasks]
                 }),
                 User.create({
                   id: 2,
@@ -461,7 +462,7 @@ if (current.dialect.supports.groupedLimit) {
                     {id: 7, title: 'b'},
                   ]
                 }, {
-                  include: [User.Tasks]
+                  include: [User_Tasks]
                 })
               );
             }).then(() => {

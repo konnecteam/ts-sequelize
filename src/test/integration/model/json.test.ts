@@ -2,18 +2,21 @@
 
 import * as chai from 'chai';
 import * as moment from 'moment';
-import {Sequelize} from '../../../index';
+import { Model, Sequelize } from '../../../index';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
 const Promise = Sequelize.Promise;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
+  let Event : Model<ItestInstance, ItestAttribute>;
+  let _Model : Model<ItestInstance, ItestAttribute>;
   if (current.dialect.supports.JSON) {
     describe('JSON', () => {
       beforeEach(function() {
-        this.Event = this.sequelize.define('Event', {
+        Event = current.define<ItestInstance, ItestAttribute>('Event', {
           data: {
             type: new DataTypes.JSON(),
             field: 'event_data',
@@ -22,13 +25,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           json: new DataTypes.JSON()
         });
 
-        return this.Event.sync({ force: true });
+        return Event.sync({ force: true });
       });
 
       if (current.dialect.supports.lock) {
         it('findOrCreate supports transactions, json and locks', function() {
           return current.transaction().then(transaction => {
-            return this.Event.findOrCreate({
+            return Event.findOrCreate({
               where: {
                 json: { some: { input: 'Hello' } }
               },
@@ -44,10 +47,10 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 }
               }
             }).then(() => {
-              return this.Event.count().then(count => {
+              return Event.count().then(count => {
                 expect(count).to.equal(0);
                 return transaction.commit().then(() => {
-                  return this.Event.count().then(_count => {
+                  return Event.count().then(_count => {
                     expect(_count).to.equal(1);
                   });
                 });
@@ -59,7 +62,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       describe('create', () => {
         it('should create an instance with JSON data', function() {
-          return this.Event.create({
+          return Event.create({
             data: {
               name: {
                 first: 'Homer',
@@ -68,7 +71,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               employment: 'Nuclear Safety Inspector'
             }
           }).then(() => {
-            return this.Event.findAll().then(events => {
+            return Event.findAll().then(events => {
               const event = events[0];
 
               expect(event.get('data')).to.eql({
@@ -85,7 +88,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       describe('update', () => {
         it('should update with JSON column (dot notation)', function() {
-          return this.Event.bulkCreate([{
+          return Event.bulkCreate([{
             id: 1,
             data: {
               name: {
@@ -103,7 +106,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               },
               employment: 'Multiverse Scientist'
             }
-          }]).then(() => this.Event.update({
+          }]).then(() => Event.update({
             data: {
               name: {
                 first: 'Rick',
@@ -115,7 +118,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             where: {
               'data.name.first': 'Rick'
             }
-          })).then(() => this.Event.findById(2)).then(event => {
+          })).then(() => Event.findById(2)).then(event => {
             expect(event.get('data')).to.eql({
               name: {
                 first: 'Rick',
@@ -127,7 +130,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         it('should update with JSON column (JSON notation)', function() {
-          return this.Event.bulkCreate([{
+          return Event.bulkCreate([{
             id: 1,
             data: {
               name: {
@@ -145,7 +148,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               },
               employment: 'Multiverse Scientist'
             }
-          }]).then(() => this.Event.update({
+          }]).then(() => Event.update({
             data: {
               name: {
                 first: 'Rick',
@@ -161,7 +164,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 }
               }
             }
-          })).then(() => this.Event.findById(2)).then(event => {
+          })).then(() => Event.findById(2)).then(event => {
             expect(event.get('data')).to.eql({
               name: {
                 first: 'Rick',
@@ -173,7 +176,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         it('should update an instance with JSON data', function() {
-          return this.Event.create({
+          return Event.create({
             data: {
               name: {
                 first: 'Homer',
@@ -192,7 +195,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               }
             });
           }).then(() => {
-            return this.Event.findAll().then(events => {
+            return Event.findAll().then(events => {
               const event = events[0];
 
               expect(event.get('data')).to.eql({
@@ -210,7 +213,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       describe('find', () => {
         it('should be possible to query a nested value', function() {
           return Promise.join(
-            this.Event.create({
+            Event.create({
               data: {
                 name: {
                   first: 'Homer',
@@ -219,7 +222,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 employment: 'Nuclear Safety Inspector'
               }
             }),
-            this.Event.create({
+            Event.create({
               data: {
                 name: {
                   first: 'Marge',
@@ -229,7 +232,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               }
             })
           ).then(() => {
-            return this.Event.findAll({
+            return Event.findAll({
               where: {
                 data: {
                   employment: 'Housewife'
@@ -255,14 +258,14 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           const before = moment().milliseconds(0).subtract(1, 'day').toDate();
           const after = moment().milliseconds(0).add(1, 'day').toDate();
           return Promise.join(
-            this.Event.create({
+            Event.create({
               json: {
                 user: 'Homer',
                 lastLogin: now
               }
             })
           ).then(() => {
-            return this.Event.findAll({
+            return Event.findAll({
               where: {
                 json: {
                   lastLogin: now
@@ -278,7 +281,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               });
             });
           }).then(() => {
-            return this.Event.findAll({
+            return Event.findAll({
               where: {
                 json: {
                   lastLogin: {$between: [before, after]}
@@ -298,14 +301,14 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
         it('should be possible to query a boolean with array operators', function() {
           return Promise.join(
-            this.Event.create({
+            Event.create({
               json: {
                 user: 'Homer',
                 active: true
               }
             })
           ).then(() => {
-            return this.Event.findAll({
+            return Event.findAll({
               where: {
                 json: {
                   active: true
@@ -321,7 +324,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               });
             });
           }).then(() => {
-            return this.Event.findAll({
+            return Event.findAll({
               where: {
                 json: {
                   active: {$in: [true, false]}
@@ -341,7 +344,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
         it('should be possible to query a nested integer value', function() {
           return Promise.join(
-            this.Event.create({
+            Event.create({
               data: {
                 name: {
                   first: 'Homer',
@@ -350,7 +353,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 age: 40
               }
             }),
-            this.Event.create({
+            Event.create({
               data: {
                 name: {
                   first: 'Marge',
@@ -360,7 +363,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               }
             })
           ).then(() => {
-            return this.Event.findAll({
+            return Event.findAll({
               where: {
                 data: {
                   age: {
@@ -385,7 +388,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
         it('should be possible to query a nested null value', function() {
           return Promise.join(
-            this.Event.create({
+            Event.create({
               data: {
                 name: {
                   first: 'Homer',
@@ -394,7 +397,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 employment: 'Nuclear Safety Inspector'
               }
             }),
-            this.Event.create({
+            Event.create({
               data: {
                 name: {
                   first: 'Marge',
@@ -404,7 +407,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               }
             })
           ).then(() => {
-            return this.Event.findAll({
+            return Event.findAll({
               where: {
                 data: {
                   employment: null
@@ -425,7 +428,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
         it('should be possible to query for nested fields with hyphens/dashes, #8718', function() {
           return Promise.join(
-            this.Event.create({
+            Event.create({
               data: {
                 name: {
                   first: 'Homer',
@@ -439,7 +442,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 employment: 'Nuclear Safety Inspector'
               }
             }),
-            this.Event.create({
+            Event.create({
               data: {
                 name: {
                   first: 'Marge',
@@ -449,7 +452,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               }
             })
           ).then(() => {
-            return this.Event.findAll({
+            return Event.findAll({
               where: {
                 data: {
                   status_report: {
@@ -478,7 +481,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         it('should be possible to query multiple nested values', function() {
-          return this.Event.create({
+          return Event.create({
             data: {
               name: {
                 first: 'Homer',
@@ -488,7 +491,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             }
           }).then(() => {
             return Promise.join(
-              this.Event.create({
+              Event.create({
                 data: {
                   name: {
                     first: 'Marge',
@@ -497,7 +500,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                   employment: 'Housewife'
                 }
               }),
-              this.Event.create({
+              Event.create({
                 data: {
                   name: {
                     first: 'Bart',
@@ -508,7 +511,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               })
             );
           }).then(() => {
-            return this.Event.findAll({
+            return Event.findAll({
               where: {
                 data: {
                   name: {
@@ -545,7 +548,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         it('should be possible to query a nested value and order results', function() {
-          return this.Event.create({
+          return Event.create({
             data: {
               name: {
                 first: 'Homer',
@@ -555,7 +558,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             }
           }).then(() => {
             return Promise.join(
-              this.Event.create({
+              Event.create({
                 data: {
                   name: {
                     first: 'Marge',
@@ -564,7 +567,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                   employment: 'Housewife'
                 }
               }),
-              this.Event.create({
+              Event.create({
                 data: {
                   name: {
                     first: 'Bart',
@@ -575,7 +578,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               })
             );
           }).then(() => {
-            return this.Event.findAll({
+            return Event.findAll({
               where: {
                 data: {
                   name: {
@@ -628,7 +631,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           };
 
           return Promise.join(
-            this.Event.create({
+            Event.create({
               data: {
                 name: {
                   first: 'Elliot',
@@ -637,7 +640,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 employment: 'Hacker'
               }
             }),
-            this.Event.create({
+            Event.create({
               data: {
                 name: {
                   first: 'Christian',
@@ -646,7 +649,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 employment: 'Hacker'
               }
             }),
-            this.Event.create({
+            Event.create({
               data: {
                 name: {
                   first: ' Tyrell',
@@ -656,25 +659,25 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               }
             })
           ).then(() => {
-            return expect(this.Event.findAll(conditionSearch)).to.eventually.have.length(2);
+            return expect(Event.findAll(conditionSearch)).to.eventually.have.length(2);
           }).then(() => {
-            return this.Event.destroy(conditionSearch);
+            return Event.destroy(conditionSearch);
           }).then(() => {
-            return expect(this.Event.findAll(conditionSearch)).to.eventually.have.length(0);
+            return expect(Event.findAll(conditionSearch)).to.eventually.have.length(0);
           });
         });
       });
 
       describe('sql injection attacks', () => {
         beforeEach(function() {
-          this.Model = this.sequelize.define('Model', {
+          _Model = current.define<ItestInstance, ItestAttribute>('Model', {
             data: new DataTypes.JSON()
           });
-          return this.sequelize.sync({ force: true });
+          return current.sync({ force: true });
         });
 
         it('should properly escape the single quotes', function() {
-          return this.Model.create({
+          return _Model.create({
             data: {
               type: 'Point',
               properties: {
@@ -685,7 +688,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         it('should properly escape the single quotes in array', function() {
-          return this.Model.create({
+          return _Model.create({
             data: {
               type: 'Point',
               coordinates: [39.807222, "'); DELETE YOLO INJECTIONS; --"]
@@ -694,7 +697,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         it('should be possible to find with properly escaped select query', function() {
-          return this.Model.create({
+          return _Model.create({
             data: {
               type: 'Point',
               properties: {
@@ -702,7 +705,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               }
             }
           }).then(() => {
-            return this.Model.findOne({
+            return _Model.findOne({
               where: {
                 data: {
                   type: 'Point',
@@ -723,7 +726,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         it('should query an instance with JSONB data and order while trying to inject', function() {
-          return this.Event.create({
+          return Event.create({
             data: {
               name: {
                 first: 'Homer',
@@ -733,7 +736,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             }
           }).then(() => {
             return Promise.join(
-              this.Event.create({
+              Event.create({
                 data: {
                   name: {
                     first: 'Marge',
@@ -742,7 +745,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                   employment: 'Housewife'
                 }
               }),
-              this.Event.create({
+              Event.create({
                 data: {
                   name: {
                     first: 'Bart',
@@ -754,7 +757,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             );
           }).then(() => {
             if (current.options.dialect === 'sqlite') {
-              return this.Event.findAll({
+              return Event.findAll({
                 where: {
                   data: {
                     name: {
@@ -776,7 +779,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                 });
               });
             } else if (current.options.dialect === 'postgres') {
-              return expect(this.Event.findAll({
+              return expect(Event.findAll({
                 where: {
                   data: {
                     name: {

@@ -1,14 +1,19 @@
 'use strict';
 
 import * as chai from 'chai';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
+  let User : Model<ItestInstance, ItestAttribute>;
+  let Project : Model<ItestInstance, ItestAttribute>;
   describe('toJSON', () => {
     beforeEach(function() {
-      this.User = this.sequelize.define('User', {
+      User = current.define<ItestInstance, ItestAttribute>('User', {
         username: { type: new DataTypes.STRING() },
         age: new DataTypes.INTEGER(),
         level: { type: new DataTypes.INTEGER() },
@@ -21,26 +26,25 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
         timestamps: false
       });
 
-      this.Project = this.sequelize.define('NiceProject', { title: new DataTypes.STRING() }, { timestamps: false });
+      Project = current.define<ItestInstance, ItestAttribute>('NiceProject', { title: new DataTypes.STRING() }, { timestamps: false });
 
-      this.User.hasMany(this.Project, { as: 'Projects', foreignKey: 'lovelyUserId' });
-      this.Project.belongsTo(this.User, { as: 'LovelyUser', foreignKey: 'lovelyUserId' });
+      User.hasMany(Project, { as: 'Projects', foreignKey: 'lovelyUserId' });
+      Project.belongsTo(User, { as: 'LovelyUser', foreignKey: 'lovelyUserId' });
 
-      return this.User.sync({ force: true }).then(() => {
-        return this.Project.sync({ force: true });
+      return User.sync({ force: true }).then(() => {
+        return Project.sync({ force: true });
       });
     });
 
     it("dont return instance that isn't defined", function() {
-      const self = this;
-      return self.Project.create({ lovelyUserId: null })
+      return Project.create({ lovelyUserId: null })
         .then(project => {
-          return self.Project.findOne({
+          return Project.findOne({
             where: {
               id: project.id
             },
             include: [
-              { model: self.User, as: 'LovelyUser' },
+              { model: User, as: 'LovelyUser' },
             ]
           });
         })
@@ -51,15 +55,14 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it("dont return instances that aren't defined", function() {
-      const self = this;
-      return self.User.create({ username: 'cuss' })
+      return User.create({ username: 'cuss' })
         .then(user => {
-          return self.User.findOne({
+          return User.findOne({
             where: {
               id: user.id
             },
             include: [
-              { model: self.Project, as: 'Projects' },
+              { model: Project, as: 'Projects' },
             ]
           });
         })
@@ -71,7 +74,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     describe('build', () => {
       it('returns an object containing all values', function() {
-        const user = this.User.build({
+        const user = User.build({
           username: 'Adam',
           age: 22,
           level: -1,
@@ -90,7 +93,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       it('returns a response that can be stringified', function() {
-        const user = this.User.build({
+        const user = User.build({
           username: 'test.user',
           age: 99,
           isAdmin: true,
@@ -100,14 +103,14 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       it('returns a response that can be stringified and then parsed', function() {
-        const user = this.User.build({ username: 'test.user', age: 99, isAdmin: true });
+        const user = User.build({ username: 'test.user', age: 99, isAdmin: true });
         expect(JSON.parse(JSON.stringify(user))).to.deep.equal({ username: 'test.user', age: 99, isAdmin: true, isUser: false, id: null });
       });
     });
 
     describe('create', () => {
       it('returns an object containing all values', function() {
-        return this.User.create({
+        return User.create({
           username: 'Adam',
           age: 22,
           level: -1,
@@ -126,7 +129,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       it('returns a response that can be stringified', function() {
-        return this.User.create({
+        return User.create({
           username: 'test.user',
           age: 99,
           isAdmin: true,
@@ -138,7 +141,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       it('returns a response that can be stringified and then parsed', function() {
-        return this.User.create({
+        return User.create({
           username: 'test.user',
           age: 99,
           isAdmin: true,
@@ -158,13 +161,13 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
 
     describe('find', () => {
       it('returns an object containing all values', function() {
-        return this.User.create({
+        return User.create({
           username: 'Adam',
           age: 22,
           level: -1,
           isUser: false,
           isAdmin: true
-        }).then(user => this.User.findById(user.get('id'))).then(user => {
+        }).then(user => User.findById(user.get('id'))).then(user => {
           expect(user.toJSON()).to.deep.equal({
             id: user.get('id'),
             username: 'Adam',
@@ -177,22 +180,22 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
       });
 
       it('returns a response that can be stringified', function() {
-        return this.User.create({
+        return User.create({
           username: 'test.user',
           age: 99,
           isAdmin: true,
           isUser: false
-        }).then(user => this.User.findById(user.get('id'))).then(user => {
+        }).then(user => User.findById(user.get('id'))).then(user => {
           expect(JSON.stringify(user)).to.deep.equal(`{"id":${user.get('id')},"username":"test.user","age":99,"level":null,"isUser":false,"isAdmin":true}`);
         });
       });
 
       it('returns a response that can be stringified and then parsed', function() {
-        return this.User.create({
+        return User.create({
           username: 'test.user',
           age: 99,
           isAdmin: true
-        }).then(user => this.User.findById(user.get('id'))).then(user => {
+        }).then(user => User.findById(user.get('id'))).then(user => {
           expect(JSON.parse(JSON.stringify(user))).to.deep.equal({
             id: user.get('id'),
             username: 'test.user',
@@ -206,17 +209,16 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('includes the eagerly loaded associations', function() {
-      const self = this;
-      return this.User.create({ username: 'fnord', age: 1, isAdmin: true }).then(user => {
-        return self.Project.create({ title: 'fnord' }).then(project => {
-          return user.setProjects([project]).then(() => {
-            return self.User.findAll({include: [{ model: self.Project, as: 'Projects' }]}).then(users => {
+      return User.create({ username: 'fnord', age: 1, isAdmin: true }).then(user => {
+        return Project.create({ title: 'fnord' }).then(project => {
+          return user.setLinkedData({ model : 'NiceProject', associationAlias : 'Projects' }, [project]).then(() => {
+            return User.findAll({include: [{ model: Project, as: 'Projects' }]}).then(users => {
               const _user = users[0];
 
               expect(_user.Projects).to.exist;
               expect(JSON.parse(JSON.stringify(_user)).Projects).to.exist;
 
-              return self.Project.findAll({include: [{ model: self.User, as: 'LovelyUser' }]}).then(projects => {
+              return Project.findAll({include: [{ model: User, as: 'LovelyUser' }]}).then(projects => {
                 const _project = projects[0];
 
                 expect(_project.LovelyUser).to.exist;

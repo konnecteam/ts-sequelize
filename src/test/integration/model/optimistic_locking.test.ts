@@ -2,14 +2,16 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
   describe('optimistic locking', () => {
     let Account;
     beforeEach(function() {
-      Account = this.sequelize.define('Account', {
+      Account = current.define<ItestInstance, ItestAttribute>('Account', {
         number: {
           type: new DataTypes.INTEGER()
         }

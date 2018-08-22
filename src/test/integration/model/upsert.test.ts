@@ -1,8 +1,9 @@
 'use strict';
 
 import * as chai from 'chai';
-import {Sequelize} from '../../../index';
+import { Model, Sequelize } from '../../../index';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const Promise = Sequelize.Promise;
 const expect = chai.expect;
@@ -10,9 +11,11 @@ const dialect = Support.getTestDialect();
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
+  let User : Model<ItestInstance, ItestAttribute>;
+  let ModelWithFieldPK : Model<ItestInstance, ItestAttribute>;
 
   beforeEach(function() {
-    this.User = this.sequelize.define('user', {
+    User = current.define<ItestInstance, ItestAttribute>('user', {
       username: new DataTypes.STRING(),
       foo: {
         unique: 'foobar',
@@ -30,7 +33,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       blob: new DataTypes.BLOB()
     });
 
-    this.ModelWithFieldPK = this.sequelize.define('ModelWithFieldPK', {
+    ModelWithFieldPK = current.define<ItestInstance, ItestAttribute>('ModelWithFieldPK', {
       userId: {
         field: 'user_id',
         type: new DataTypes.INTEGER(),
@@ -43,13 +46,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       }
     });
 
-    return this.sequelize.sync({ force: true });
+    return current.sync({ force: true });
   });
 
   if (current.dialect.supports.upserts) {
     describe('upsert', () => {
       it('works with upsert on id', function() {
-        return this.User.upsert({ id: 42, username: 'john' }).bind(this).then(function(created) {
+        return User.upsert({ id: 42, username: 'john' }).bind(this).then(function(created) {
           if (dialect === 'sqlite') {
             expect(created).to.be.undefined;
           } else {
@@ -57,7 +60,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }
 
           return Promise.delay(1000).then(() => {
-            return this.User.upsert({ id: 42, username: 'doe' });
+            return User.upsert({ id: 42, username: 'doe' });
           }).then(_created => {
             if (dialect === 'sqlite') {
               expect(_created).to.be.undefined;
@@ -65,7 +68,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               expect(_created).not.to.be.ok;
             }
 
-            return this.User.findById(42);
+            return User.findById(42);
           }).then(user => {
             expect(user.createdAt).to.be.ok;
             expect(user.username).to.equal('doe');
@@ -75,7 +78,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('works with upsert on a composite key', function() {
-        return this.User.upsert({ foo: 'baz', bar: 19, username: 'john' }).bind(this).then(function(created) {
+        return User.upsert({ foo: 'baz', bar: 19, username: 'john' }).bind(this).then(function(created) {
           if (dialect === 'sqlite') {
             expect(created).to.be.undefined;
           } else {
@@ -83,7 +86,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }
 
           return Promise.delay(1000).then(() => {
-            return this.User.upsert({ foo: 'baz', bar: 19, username: 'doe' });
+            return User.upsert({ foo: 'baz', bar: 19, username: 'doe' });
           }).then(_created => {
             if (dialect === 'sqlite') {
               expect(_created).to.be.undefined;
@@ -91,7 +94,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               expect(_created).not.to.be.ok;
             }
 
-            return this.User.find({ where: { foo: 'baz', bar: 19 }});
+            return User.find({ where: { foo: 'baz', bar: 19 }});
           }).then(user => {
             expect(user.createdAt).to.be.ok;
             expect(user.username).to.equal('doe');
@@ -101,7 +104,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should work with UUIDs wth default values', function() {
-        const User = this.sequelize.define('User', {
+        User = current.define<ItestInstance, ItestAttribute>('User', {
           id: {
             primaryKey: true,
             allowNull: false,
@@ -121,7 +124,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('works with upsert on a composite primary key', function() {
-        const User = this.sequelize.define('user', {
+        User = current.define<ItestInstance, ItestAttribute>('user', {
           a: {
             type: new DataTypes.STRING(),
             primaryKey: true
@@ -174,7 +177,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('supports validations', function() {
-        const User = this.sequelize.define('user', {
+        User = current.define<ItestInstance, ItestAttribute>('user', {
           email: {
             type: new DataTypes.STRING(),
             validate: {
@@ -183,11 +186,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }
         });
 
-        return expect(User.upsert({ email: 'notanemail' })).to.eventually.be.rejectedWith(this.sequelize.ValidationError);
+        return expect(User.upsert({ email: 'notanemail' })).to.eventually.be.rejectedWith(current.ValidationError);
       });
 
       it('supports skipping validations', function() {
-        const User = this.sequelize.define('user', {
+        User = current.define<ItestInstance, ItestAttribute>('user', {
           email: {
             type: new DataTypes.STRING(),
             validate: {
@@ -210,7 +213,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('works with BLOBs', function() {
-        return this.User.upsert({ id: 42, username: 'john', blob: new Buffer('kaj') }).bind(this).then(function(created) {
+        return User.upsert({ id: 42, username: 'john', blob: new Buffer('kaj') }).bind(this).then(function(created) {
           if (dialect === 'sqlite') {
             expect(created).to.be.undefined;
           } else {
@@ -218,7 +221,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }
 
           return Promise.delay(1000).then(() => {
-            return this.User.upsert({ id: 42, username: 'doe', blob: new Buffer('andrea') });
+            return User.upsert({ id: 42, username: 'doe', blob: new Buffer('andrea') });
           }).then(_created => {
             if (dialect === 'sqlite') {
               expect(_created).to.be.undefined;
@@ -226,7 +229,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               expect(_created).not.to.be.ok;
             }
 
-            return this.User.findById(42);
+            return User.findById(42);
           }).then(user => {
             expect(user.createdAt).to.be.ok;
             expect(user.username).to.equal('doe');
@@ -244,14 +247,14 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('works with .field', function() {
-        return this.User.upsert({ id: 42, baz: 'foo' }).bind(this).then(function(created) {
+        return User.upsert({ id: 42, baz: 'foo' }).bind(this).then(function(created) {
           if (dialect === 'sqlite') {
             expect(created).to.be.undefined;
           } else {
             expect(created).to.be.ok;
           }
 
-          return this.User.upsert({ id: 42, baz: 'oof' });
+          return User.upsert({ id: 42, baz: 'oof' });
         }).then(function(created) {
           if (dialect === 'sqlite') {
             expect(created).to.be.undefined;
@@ -259,21 +262,21 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             expect(created).not.to.be.ok;
           }
 
-          return this.User.findById(42);
+          return User.findById(42);
         }).then(user => {
           expect(user.baz).to.equal('oof');
         });
       });
 
       it('works with primary key using .field', function() {
-        return this.ModelWithFieldPK.upsert({ userId: 42, foo: 'first' }).bind(this).then(function(created) {
+        return ModelWithFieldPK.upsert({ userId: 42, foo: 'first' }).bind(this).then(function(created) {
           if (dialect === 'sqlite') {
             expect(created).to.be.undefined;
           } else {
             expect(created).to.be.ok;
           }
 
-          return this.ModelWithFieldPK.upsert({ userId: 42, foo: 'second' });
+          return ModelWithFieldPK.upsert({ userId: 42, foo: 'second' });
         }).then(_created => {
           if (dialect === 'sqlite') {
             expect(_created).to.be.undefined;
@@ -281,28 +284,28 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             expect(_created).not.to.be.ok;
           }
 
-          return this.ModelWithFieldPK.findOne({ where: { userId: 42 } });
+          return ModelWithFieldPK.findOne({ where: { userId: 42 } });
         }).then(instance => {
           expect(instance.foo).to.equal('second');
         });
       });
 
       it('works with database functions', function() {
-        return this.User.upsert({ id: 42, username: 'john', foo: this.sequelize.fn('upper', 'mixedCase1')}).bind(this).then(function(created) {
+        return User.upsert({ id: 42, username: 'john', foo: current.fn('upper', 'mixedCase1')}).bind(this).then(function(created) {
           if (dialect === 'sqlite') {
             expect(created).to.be.undefined;
           } else {
             expect(created).to.be.ok;
           }
 
-          return this.User.upsert({ id: 42, username: 'doe', foo: this.sequelize.fn('upper', 'mixedCase2') });
+          return User.upsert({ id: 42, username: 'doe', foo: current.fn('upper', 'mixedCase2') });
         }).then(_created => {
           if (dialect === 'sqlite') {
             expect(_created).to.be.undefined;
           } else {
             expect(_created).not.to.be.ok;
           }
-          return this.User.findById(42);
+          return User.findById(42);
         }).then(user => {
           expect(user.createdAt).to.be.ok;
           expect(user.username).to.equal('doe');
@@ -313,15 +316,15 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       it('does not overwrite createdAt time on update', function() {
         let originalCreatedAt;
         let originalUpdatedAt;
-        return this.User.create({ id: 42, username: 'john'}).bind(this).then(function() {
-          return this.User.findById(42);
+        return User.create({ id: 42, username: 'john'}).bind(this).then(function() {
+          return User.findById(42);
         }).then(function(user) {
           originalCreatedAt = user.createdAt;
           originalUpdatedAt = user.updatedAt;
           return Promise.delay(1000).then(() => {
-            return this.User.upsert({ id: 42, username: 'doe'});
+            return User.upsert({ id: 42, username: 'doe'});
           }).then(() => {
-            return this.User.findById(42);
+            return User.findById(42);
           }).then(user2 => {
             expect(user2.updatedAt).to.be.gt(originalUpdatedAt);
             expect(user2.createdAt).to.deep.equal(originalCreatedAt);
@@ -330,16 +333,16 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('does not update using default values', function() {
-        return this.User.create({ id: 42, username: 'john', baz: 'new baz value'}).bind(this).then(function() {
-          return this.User.findById(42);
+        return User.create({ id: 42, username: 'john', baz: 'new baz value'}).bind(this).then(function() {
+          return User.findById(42);
         }).then(function(user) {
           // 'username' should be 'john' since it was set
           expect(user.username).to.equal('john');
           // 'baz' should be 'new baz value' since it was set
           expect(user.baz).to.equal('new baz value');
-          return this.User.upsert({ id: 42, username: 'doe'});
+          return User.upsert({ id: 42, username: 'doe'});
         }).then(function() {
-          return this.User.findById(42);
+          return User.findById(42);
         }).then(user => {
           // 'username' was updated
           expect(user.username).to.equal('doe');
@@ -349,10 +352,10 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('does not update when setting current values', function() {
-        return this.User.create({ id: 42, username: 'john' }).bind(this).then(function() {
-          return this.User.findById(42);
+        return User.create({ id: 42, username: 'john' }).bind(this).then(function() {
+          return User.findById(42);
         }).then(function(user) {
-          return this.User.upsert({ id: user.id, username: user.username });
+          return User.upsert({ id: user.id, username: user.username });
         }).then(created => {
           if (dialect === 'sqlite') {
             expect(created).to.be.undefined;
@@ -366,7 +369,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('Works when two separate uniqueKeys are passed', function() {
-        const User = this.sequelize.define('User', {
+        User = current.define<ItestInstance, ItestAttribute>('User', {
           username: {
             type: new DataTypes.STRING(),
             unique: true
@@ -408,7 +411,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('works when indexes are created via indexes array', function() {
-        const User = this.sequelize.define('User', {
+        User = current.define<ItestInstance, ItestAttribute>('User', {
           username: new DataTypes.STRING(),
           email: new DataTypes.STRING(),
           city: new DataTypes.STRING()
@@ -447,7 +450,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('works when composite indexes are created via indexes array', () => {
-        const User = current.define('User', {
+        User = current.define<ItestInstance, ItestAttribute>('User', {
           name: new DataTypes.STRING(),
           address: new DataTypes.STRING(),
           city: new DataTypes.STRING()
@@ -484,13 +487,13 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       if (dialect === 'mssql') {
         it('Should throw foreignKey violation for MERGE statement as ForeignKeyConstraintError', function() {
-          const User = this.sequelize.define('User', {
+          User = current.define<ItestInstance, ItestAttribute>('User', {
             username: {
               type: new DataTypes.STRING(),
               primaryKey: true
             }
           });
-          const Posts = this.sequelize.define('Posts', {
+          const Posts = current.define<ItestInstance, ItestAttribute>('Posts', {
             title: {
               type: new DataTypes.STRING(),
               primaryKey: true
@@ -498,7 +501,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             username: new DataTypes.STRING()
           });
           Posts.belongsTo(User, { foreignKey: 'username' });
-          return this.sequelize.sync({ force: true })
+          return current.sync({ force: true })
             .then(() => User.create({ username: 'user1' }))
             .then(() => {
               return expect(Posts.upsert({ title: 'Title', username: 'user2' })).to.eventually.be.rejectedWith(Sequelize.ForeignKeyConstraintError);
@@ -508,7 +511,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       if (dialect.match(/^postgres/)) {
         it('works when deletedAt is Infinity and part of primary key', function() {
-          const User = this.sequelize.define('User', {
+          User = current.define<ItestInstance, ItestAttribute>('User', {
             name: {
               type: new DataTypes.STRING(),
               primaryKey: true
@@ -548,21 +551,21 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       if (current.dialect.supports.returnValues) {
         describe('with returning option', () => {
           it('works with upsert on id', function() {
-            return this.User.upsert({ id: 42, username: 'john' }, { returning: true }).spread((user, created) => {
-              expect(user.get('id')).to.equal(42);
-              expect(user.get('username')).to.equal('john');
+            return User.upsert({ id: 42, username: 'john' }, { returning: true }).spread((user, created) => {
+              expect((user as ItestInstance).get('id')).to.equal(42);
+              expect((user as ItestInstance).get('username')).to.equal('john');
               expect(created).to.be.true;
 
-              return this.User.upsert({ id: 42, username: 'doe' }, { returning: true });
+              return User.upsert({ id: 42, username: 'doe' }, { returning: true });
             }).spread((user, created) => {
-              expect(user.get('id')).to.equal(42);
-              expect(user.get('username')).to.equal('doe');
+              expect((user as ItestInstance).get('id')).to.equal(42);
+              expect((user as ItestInstance).get('username')).to.equal('doe');
               expect(created).to.be.false;
             });
           });
 
           it('works for table with custom primary key field', function() {
-            const User = this.sequelize.define('User', {
+            User = current.define<ItestInstance, ItestAttribute>('User', {
               id: {
                 type: DataTypes.INTEGER,
                 autoIncrement: true,
@@ -577,20 +580,20 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             return User.sync({ force: true }).then(() => {
               return User.upsert({ id: 42, username: 'john' }, { returning: true });
             }).spread((user, created) => {
-              expect(user.get('id')).to.equal(42);
-              expect(user.get('username')).to.equal('john');
+              expect((user as ItestInstance).get('id')).to.equal(42);
+              expect((user as ItestInstance).get('username')).to.equal('john');
               expect(created).to.be.true;
 
               return User.upsert({ id: 42, username: 'doe' }, { returning: true });
             }).spread((user, created) => {
-              expect(user.get('id')).to.equal(42);
-              expect(user.get('username')).to.equal('doe');
+              expect((user as ItestInstance).get('id')).to.equal(42);
+              expect((user as ItestInstance).get('username')).to.equal('doe');
               expect(created).to.be.false;
             });
           });
 
           it('works for non incrementing primaryKey', function() {
-            const User = this.sequelize.define('User', {
+            User = current.define<ItestInstance, ItestAttribute>('User', {
               id: {
                 type: DataTypes.STRING,
                 primaryKey: true,
@@ -604,14 +607,14 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             return User.sync({ force: true }).then(() => {
               return User.upsert({ id: 'surya', username: 'john' }, { returning: true });
             }).spread((user, created) => {
-              expect(user.get('id')).to.equal('surya');
-              expect(user.get('username')).to.equal('john');
+              expect((user as ItestInstance).get('id')).to.equal('surya');
+              expect((user as ItestInstance).get('username')).to.equal('john');
               expect(created).to.be.true;
 
               return User.upsert({ id: 'surya', username: 'doe' }, { returning: true });
             }).spread((user, created) => {
-              expect(user.get('id')).to.equal('surya');
-              expect(user.get('username')).to.equal('doe');
+              expect((user as ItestInstance).get('id')).to.equal('surya');
+              expect((user as ItestInstance).get('username')).to.equal('doe');
               expect(created).to.be.false;
             });
           });

@@ -5,6 +5,7 @@ import * as sinon from 'sinon';
 import DataTypes from '../../../lib/data-types';
 import * as sequelizeErrors from '../../../lib/errors/index';
 import { Utils } from '../../../lib/utils';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
@@ -20,27 +21,27 @@ describe(Support.getTestDialectTeaser('Model'), () => {
     });
 
     it('Warns the user if they use a model attribute without a where clause', () => {
-      const User = current.define('User', {firstName: 'string'});
+      const User = current.define<ItestInstance, ItestAttribute>('User', {firstName: 'string'});
       User.warnOnInvalidOptions({firstName: 12, order: []}, ['firstName']);
       const expectedError = 'Model attributes (firstName) passed into finder method options of model User, but the options.where object is empty. Did you forget to use options.where?';
       expect(this.loggerSpy.calledWith(expectedError)).to.equal(true);
     });
 
     it('Does not warn the user if they use a model attribute without a where clause that shares its name with a query option', () => {
-      const User = current.define('User', {order: 'string'});
+      const User = current.define<ItestInstance, ItestAttribute>('User', {order: 'string'});
       User.warnOnInvalidOptions({order: []}, ['order']);
       expect(this.loggerSpy.called).to.equal(false);
     });
 
     it('Does not warn the user if they use valid query options', () => {
-      const User = current.define('User', {order: 'string'});
+      const User = current.define<ItestInstance, ItestAttribute>('User', {order: 'string'});
       User.warnOnInvalidOptions({where: {order: 1}, order: []});
       expect(this.loggerSpy.called).to.equal(false);
     });
   });
 
   describe('method findAll', () => {
-    const Model = current.define('model', {
+    const Model = current.define<ItestInstance, ItestAttribute>('model', {
       name: new DataTypes.STRING()
     }, { timestamps: false });
 
@@ -115,8 +116,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('works for models without PK #4607', () => {
-        const _Model = current.define('model', {}, { timestamps: false });
-        const Foo = current.define('foo');
+        const _Model = current.define<ItestInstance, ItestAttribute>('model', {}, { timestamps: false });
+        const Foo = current.define<ItestInstance, ItestAttribute>('foo');
         _Model.hasOne(Foo);
 
         _Model.removeAttribute('id');

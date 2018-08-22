@@ -1,15 +1,25 @@
 'use strict';
 
 import * as chai from 'chai';
+import { DataSet } from '../../../lib/data-set';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
 
+export interface ItestAttribute {
+  data : {
+    foo? : string,
+  };
+}
+export interface ItestInstance extends DataSet<ItestAttribute>, ItestAttribute { }
+
+
 describe(Support.getTestDialectTeaser('Instance'), () => {
   describe('build', () => {
     it('should populate NOW default values', () => {
-      const Model = current.define('Model', {
+      const Model = current.define<ItestInstance, ItestAttribute>('Model', {
         created_time: {
           type: new DataTypes.DATE(),
           allowNull: true,
@@ -35,7 +45,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
           }
         }
       }, {
-        timestamp: false
+        timestamps: false
       });
       const instance = Model.build({ip: '127.0.0.1', ip2: '0.0.0.0'});
 
@@ -49,7 +59,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should populate explicitly undefined UUID primary keys', () => {
-      const Model = current.define('Model', {
+      const Model = current.define<ItestInstance, ItestAttribute>('Model', {
         id: {
           type: new DataTypes.UUID(),
           primaryKey: true,
@@ -66,7 +76,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should populate undefined columns with default value', () => {
-      const Model = current.define('Model', {
+      const Model = current.define<ItestInstance, ItestAttribute>('Model', {
         number1: {
           type: new DataTypes.INTEGER(),
           defaultValue: 1
@@ -87,7 +97,7 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('should clone the default values', () => {
-      const Model = current.define('Model', {
+      const Model = current.define<ItestInstance, ItestAttribute>('Model', {
         data: {
           type: new DataTypes.JSONB(),
           defaultValue: { foo: 'bar' }

@@ -2,14 +2,16 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Multiple Level Filters'), () => {
   it('can filter through belongsTo', function() {
-    const User = this.sequelize.define('User', {username: new DataTypes.STRING() });
-    const Task = this.sequelize.define('Task', {title: new DataTypes.STRING() });
-    const Project = this.sequelize.define('Project', { title: new DataTypes.STRING() });
+    const User = current.define<ItestInstance, ItestAttribute>('User', {username: new DataTypes.STRING() });
+    const Task = current.define<ItestInstance, ItestAttribute>('Task', {title: new DataTypes.STRING() });
+    const Project = current.define<ItestInstance, ItestAttribute>('Project', { title: new DataTypes.STRING() });
 
     Project.belongsTo(User);
     User.hasMany(Project);
@@ -17,7 +19,7 @@ describe(Support.getTestDialectTeaser('Multiple Level Filters'), () => {
     Task.belongsTo(Project);
     Project.hasMany(Task);
 
-    return this.sequelize.sync({ force: true }).then(() => {
+    return current.sync({ force: true }).then(() => {
       return User.bulkCreate([{
         username: 'leia'
       }, {
@@ -66,9 +68,9 @@ describe(Support.getTestDialectTeaser('Multiple Level Filters'), () => {
   });
 
   it('avoids duplicated tables in query', function() {
-    const User = this.sequelize.define('User', {username: new DataTypes.STRING() });
-    const Task = this.sequelize.define('Task', {title: new DataTypes.STRING() });
-    const Project = this.sequelize.define('Project', { title: new DataTypes.STRING() });
+    const User = current.define<ItestInstance, ItestAttribute>('User', {username: new DataTypes.STRING() });
+    const Task = current.define<ItestInstance, ItestAttribute>('Task', {title: new DataTypes.STRING() });
+    const Project = current.define<ItestInstance, ItestAttribute>('Project', { title: new DataTypes.STRING() });
 
     Project.belongsTo(User);
     User.hasMany(Project);
@@ -76,7 +78,7 @@ describe(Support.getTestDialectTeaser('Multiple Level Filters'), () => {
     Task.belongsTo(Project);
     Project.hasMany(Task);
 
-    return this.sequelize.sync({ force: true }).then(() => {
+    return current.sync({ force: true }).then(() => {
       return User.bulkCreate([{
         username: 'leia'
       }, {
@@ -128,9 +130,9 @@ describe(Support.getTestDialectTeaser('Multiple Level Filters'), () => {
   });
 
   it('can filter through hasMany', function() {
-    const User = this.sequelize.define('User', {username: new DataTypes.STRING() });
-    const Task = this.sequelize.define('Task', {title: new DataTypes.STRING() });
-    const Project = this.sequelize.define('Project', { title: new DataTypes.STRING() });
+    const User = current.define<ItestInstance, ItestAttribute>('User', {username: new DataTypes.STRING() });
+    const Task = current.define<ItestInstance, ItestAttribute>('Task', {title: new DataTypes.STRING() });
+    const Project = current.define<ItestInstance, ItestAttribute>('Project', { title: new DataTypes.STRING() });
 
     Project.belongsTo(User);
     User.hasMany(Project);
@@ -138,7 +140,7 @@ describe(Support.getTestDialectTeaser('Multiple Level Filters'), () => {
     Task.belongsTo(Project);
     Project.hasMany(Task);
 
-    return this.sequelize.sync({ force: true }).then(() => {
+    return current.sync({ force: true }).then(() => {
       return User.bulkCreate([{
         username: 'leia'
       }, {
@@ -186,13 +188,13 @@ describe(Support.getTestDialectTeaser('Multiple Level Filters'), () => {
   });
 
   it('can filter through hasMany connector', function() {
-    const User = this.sequelize.define('User', {username: new DataTypes.STRING() });
-    const Project = this.sequelize.define('Project', { title: new DataTypes.STRING() });
+    const User = current.define<ItestInstance, ItestAttribute>('User', {username: new DataTypes.STRING() });
+    const Project = current.define<ItestInstance, ItestAttribute>('Project', { title: new DataTypes.STRING() });
 
     Project.belongsToMany(User, {through: 'user_project'});
     User.belongsToMany(Project, {through: 'user_project'});
 
-    return this.sequelize.sync({ force: true }).then(() => {
+    return current.sync({ force: true }).then(() => {
       return User.bulkCreate([{
         username: 'leia'
       }, {
@@ -205,10 +207,10 @@ describe(Support.getTestDialectTeaser('Multiple Level Filters'), () => {
         }]).then(() => {
           return User.findById(1).then(user => {
             return Project.findById(1).then(project => {
-              return user.setProjects([project]).then(() => {
+              return user.setLinkedData('Project', [project]).then(() => {
                 return User.findById(2).then(_user => {
                   return Project.findById(2).then(_project => {
-                    return _user.setProjects([_project]).then(() => {
+                    return _user.setLinkedData('Project', [_project]).then(() => {
                       return User.findAll({
                         include: [
                           {model: Project, where: {title: 'republic'}},

@@ -4,6 +4,8 @@ import * as Promise from 'bluebird';
 import * as chai from 'chai';
 import * as cls from 'continuation-local-storage';
 import * as sinon from 'sinon';
+import { Model, Sequelize } from '../../..';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
@@ -12,24 +14,25 @@ const stub = sinon.stub;
 describe(Support.getTestDialectTeaser('Model'), () => {
 
   describe('method findOrCreate', () => {
+    let User : Model<ItestInstance, ItestAttribute>;
 
     before(() => {
-      current.constructor.useCLS(cls.createNamespace('sequelize'));
+      (current.constructor as typeof Sequelize).useCLS(cls.createNamespace('sequelize'));
     });
 
     after(() => {
-      delete current.constructor._cls;
+      delete (current.constructor as typeof Sequelize)._cls;
     });
 
     beforeEach(function() {
-      this.User = current.define('User', {}, {
+      User = current.define<ItestInstance, ItestAttribute>('User', {}, {
         name: 'John'
       });
 
-      this.transactionStub = stub(this.User.sequelize, 'transaction');
+      this.transactionStub = stub(User.sequelize, 'transaction');
       this.transactionStub.returns(new Promise(() => {}));
 
-      this.clsStub = stub(current.constructor._cls, 'get');
+      this.clsStub = stub((current.constructor as typeof Sequelize)._cls, 'get');
       this.clsStub.returns({ id: 123 });
     });
 
@@ -46,7 +49,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         }
       };
 
-      this.User.findOrCreate(options);
+      User.findOrCreate(options);
 
       expect(this.clsStub.calledOnce).to.equal(true, 'expected to ask for transaction');
     });
@@ -60,7 +63,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         transaction: { id: 123 }
       };
 
-      this.User.findOrCreate(options);
+      User.findOrCreate(options);
 
       expect(this.clsStub.called).to.equal(false);
     });

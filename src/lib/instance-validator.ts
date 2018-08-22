@@ -1,11 +1,11 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import { BelongsTo } from './associations/belongs-to';
+import { DataSet } from './data-set';
 import DataTypes from './data-types';
 import * as sequelizeError from './errors/index';
-import { Model } from './model';
-import Promise from './promise';
 import * as AllUtils from './utils';
 import * as validatorExtras from './utils/validator-extras';
 
@@ -27,7 +27,7 @@ export class InstanceValidator {
     skip? : any[],
     validate? : boolean
   };
-  public modelInstance : Model;
+  public modelInstance : DataSet<any>;
   /** Exposes a reference to validator.js. This allows you to add custom validations using `validator.extend`
    * @private validator
    */
@@ -42,11 +42,11 @@ export class InstanceValidator {
   public static RAW_KEY_NAME : string;
 
 
-  constructor(modelInstance? : Model, options? : { fields?, skip?, hooks? }) {
+  constructor(modelInstance? : DataSet<any>, options? : { fields?, skip?, hooks? }) {
     options = _.clone(options) || {};
 
     if (options.fields && !options.skip) {
-      options.skip = _.difference(Object.keys(modelInstance.constructor.rawAttributes), options.fields);
+      options.skip = _.difference(Object.keys(modelInstance.model.rawAttributes), options.fields);
     }
 
     // assign defined and default options
@@ -104,7 +104,7 @@ export class InstanceValidator {
    *   - On validation failure: Validation Failed Model Hooks
    */
   public _validateAndRunHooks() : Promise<any> {
-    const runHooks = this.modelInstance.constructor.runHooks.bind(this.modelInstance.constructor);
+    const runHooks = this.modelInstance.model.runHooks.bind(this.modelInstance.model);
     return runHooks('beforeValidate', this.modelInstance, this.options)
       .then(() =>
         this._validate()
@@ -318,10 +318,10 @@ export class InstanceValidator {
    */
   private _validateSchema(rawAttribute : { allowNull? : boolean, type?, fieldName? }, field : string, value : any) {
     if (rawAttribute.allowNull === false && (value === null || value === undefined)) {
-      const association = _.values(this.modelInstance.constructor.associations).find(_association => _association instanceof BelongsTo && _association.foreignKey === rawAttribute.fieldName);
-      if (!association || !this.modelInstance.get((association as any).associationAccessor)) {
+      const association = _.values(this.modelInstance.model.associations).find(_association => _association instanceof BelongsTo && _association.foreignKey === rawAttribute.fieldName);
+      if (!association || !this.modelInstance.get(association.associationAccessor)) {
         const validators = this.modelInstance.validators[field];
-        const errMsg = _.get(validators, 'notNull.msg', `${this.modelInstance.constructor.name}.${field} cannot be null`);
+        const errMsg = _.get(validators, 'notNull.msg', `${this.modelInstance.model.name}.${field} cannot be null`);
 
         this.errors.push(new sequelizeError.ValidationErrorItem(
           errMsg,

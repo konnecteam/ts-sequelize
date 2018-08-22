@@ -1,19 +1,27 @@
 'use strict';
 
 import * as chai from 'chai';
-import {Sequelize} from '../../../../index';
+import { Model, Sequelize } from '../../../../index';
+import { HasMany } from '../../../../lib/associations/has-many';
 import DataTypes from '../../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const Promise = Sequelize.Promise;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
+  let Company : Model<ItestInstance, ItestAttribute>;
+  let Project : Model<ItestInstance, ItestAttribute>;
+  let ScopeMe : Model<ItestInstance, ItestAttribute>;
+  let Profile : Model<ItestInstance, ItestAttribute>;
+  let UserAssociation : HasMany<ItestInstance, ItestAttribute, any, any>;
   describe('scope', () => {
     describe('associations', () => {
       beforeEach(function() {
-        const sequelize = this.sequelize;
+        const sequelize = current;
 
-        this.ScopeMe = this.sequelize.define('ScopeMe', {
+        ScopeMe = current.define<ItestInstance, ItestAttribute>('ScopeMe', {
           username: new DataTypes.STRING(),
           email: new DataTypes.STRING(),
           access_level: new DataTypes.INTEGER(),
@@ -46,7 +54,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }
         });
 
-        this.Project = this.sequelize.define('project', {
+        Project = current.define<ItestInstance, ItestAttribute>('project', {
           active: new DataTypes.BOOLEAN()
         }, {
           scopes: {
@@ -58,7 +66,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }
         });
 
-        this.Company = this.sequelize.define('company', {
+        Company = current.define<ItestInstance, ItestAttribute>('company', {
           active: new DataTypes.BOOLEAN()
         }, {
           defaultScope: {
@@ -76,7 +84,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }
         });
 
-        this.Profile = this.sequelize.define('profile', {
+        Profile = current.define<ItestInstance, ItestAttribute>('profile', {
           active: new DataTypes.BOOLEAN()
         }, {
           defaultScope: {
@@ -91,28 +99,28 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           }
         });
 
-        this.Project.belongsToMany(this.Company, { through: 'CompanyProjects' });
-        this.Company.belongsToMany(this.Project, { through: 'CompanyProjects' });
+        Project.belongsToMany(Company, { through: 'CompanyProjects' });
+        Company.belongsToMany(Project, { through: 'CompanyProjects' });
 
-        this.ScopeMe.hasOne(this.Profile, { foreignKey: 'userId' });
+        ScopeMe.hasOne(Profile, { foreignKey: 'userId' });
 
-        this.ScopeMe.belongsTo(this.Company);
-        this.UserAssociation = this.Company.hasMany(this.ScopeMe, { as: 'users' });
+        ScopeMe.belongsTo(Company);
+        UserAssociation = Company.hasMany(ScopeMe, { as: 'users' });
 
-        return this.sequelize.sync({force: true}).bind(this).then(function() {
+        return current.sync({force: true}).bind(this).then(function() {
           return Promise.all([
-            this.ScopeMe.create({ id: 1, username: 'dan', email: 'dan@sequelizejs.com', access_level: 5, other_value: 10, parent_id: 1}),
-            this.ScopeMe.create({ id: 2, username: 'tobi', email: 'tobi@fakeemail.com', access_level: 10, other_value: 11, parent_id: 2}),
-            this.ScopeMe.create({ id: 3, username: 'tony', email: 'tony@sequelizejs.com', access_level: 3, other_value: 7, parent_id: 1}),
-            this.ScopeMe.create({ id: 4, username: 'fred', email: 'fred@foobar.com', access_level: 3, other_value: 7, parent_id: 1}),
-            this.ScopeMe.create({ id: 5, username: 'bob', email: 'bob@foobar.com', access_level: 1, other_value: 9, parent_id: 5}),
-            this.Company.create({ id: 1, active: true}),
-            this.Company.create({ id: 2, active: false}),
+            ScopeMe.create({ id: 1, username: 'dan', email: 'dan@sequelizejs.com', access_level: 5, other_value: 10, parent_id: 1}),
+            ScopeMe.create({ id: 2, username: 'tobi', email: 'tobi@fakeemail.com', access_level: 10, other_value: 11, parent_id: 2}),
+            ScopeMe.create({ id: 3, username: 'tony', email: 'tony@sequelizejs.com', access_level: 3, other_value: 7, parent_id: 1}),
+            ScopeMe.create({ id: 4, username: 'fred', email: 'fred@foobar.com', access_level: 3, other_value: 7, parent_id: 1}),
+            ScopeMe.create({ id: 5, username: 'bob', email: 'bob@foobar.com', access_level: 1, other_value: 9, parent_id: 5}),
+            Company.create({ id: 1, active: true}),
+            Company.create({ id: 2, active: false}),
           ]);
         }).spread((u1, u2, u3, u4, u5, c1, c2) => {
           return Promise.all([
-            c1.setUsers([u1, u2, u3, u4]),
-            c2.setUsers([u5]),
+            c1.setLinkedData({ model : 'ScopeMe', associationAlias : 'users' }, [u1, u2, u3, u4]),
+            c2.setLinkedData({ model : 'ScopeMe', associationAlias : 'users' }, [u5]),
           ]);
         });
       });
@@ -120,32 +128,32 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       describe('include', () => {
         it('should scope columns properly', function() {
           // Will error with ambigous column if id is not scoped properly to `Company`.`id`
-          return expect(this.Company.findAll({
+          return expect(Company.findAll({
             where: { id: 1 },
-            include: [this.UserAssociation]
+            include: [UserAssociation]
           })).not.to.be.rejected;
         });
 
         it('should apply default scope when including an associations', function() {
-          return this.Company.findAll({
-            include: [this.UserAssociation]
-          }).get(0).then(company => {
+          return Company.findAll({
+            include: [UserAssociation]
+          }).get(0 as any).then(company => {
             expect(company.users).to.have.length(2);
           });
         });
 
         it('should apply default scope when including a model', function() {
-          return this.Company.findAll({
-            include: [{ model: this.ScopeMe, as: 'users'}]
-          }).get(0).then(company => {
+          return Company.findAll({
+            include: [{ model: ScopeMe, as: 'users'}]
+          }).get(0 as any).then(company => {
             expect(company.users).to.have.length(2);
           });
         });
 
         it('should be able to include a scoped model', function() {
-          return this.Company.findAll({
-            include: [{ model: this.ScopeMe.scope('isTony'), as: 'users'}]
-          }).get(0).then(company => {
+          return Company.findAll({
+            include: [{ model: ScopeMe.scope('isTony'), as: 'users'}]
+          }).get(0 as any).then(company => {
             expect(company.users).to.have.length(1);
             expect(company.users[0].get('username')).to.equal('tony');
           });
@@ -155,46 +163,46 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       describe('get', () => {
         beforeEach(function() {
           return Promise.all([
-            this.Project.create(),
-            this.Company.unscoped().findAll(),
-          ]).spread((p, companies) => {
-            return p.setCompanies(companies);
+            Project.create(),
+            Company.unscoped().findAll(),
+          ]).spread((p : ItestInstance, companies) => {
+            return p.setLinkedData('company', companies);
           });
         });
 
         describe('it should be able to unscope', () => {
           it('hasMany', function() {
-            return this.Company.findById(1).then(company => {
-              return company.getUsers({ scope: false});
+            return Company.findById(1).then(company => {
+              return company.getLinkedData<ItestInstance, ItestAttribute>({ model : 'ScopeMe', associationAlias : 'users' }, { scope: false});
             }).then(users => {
               expect(users).to.have.length(4);
             });
           });
 
           it('hasOne', function() {
-            return this.Profile.create({
+            return Profile.create({
               active: false,
               userId: 1
             }).bind(this).then(function() {
-              return this.ScopeMe.findById(1);
+              return ScopeMe.findById(1);
             }).then(user => {
-              return user.getProfile({ scope: false });
+              return user.getLinkedData<ItestInstance, ItestAttribute>('profile', { scope: false });
             }).then(profile => {
               expect(profile).to.be.ok;
             });
           });
 
           it('belongsTo', function() {
-            return this.ScopeMe.unscoped().find({ where: { username: 'bob' }}).then(user => {
-              return user.getCompany({ scope: false });
+            return ScopeMe.unscoped().find({ where: { username: 'bob' }}).then(user => {
+              return user.getLinkedData<ItestInstance, ItestAttribute>('company', { scope: false });
             }).then(company => {
               expect(company).to.be.ok;
             });
           });
 
           it('belongsToMany', function() {
-            return this.Project.findAll().get(0).then(p => {
-              return p.getCompanies({ scope: false});
+            return Project.findAll().get(0 as any).then(p => {
+              return p.getLinkedData<ItestInstance, ItestAttribute>('company', { scope: false});
             }).then(companies => {
               expect(companies).to.have.length(2);
             });
@@ -203,37 +211,37 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
         describe('it should apply default scope', () => {
           it('hasMany', function() {
-            return this.Company.findById(1).then(company => {
-              return company.getUsers();
+            return Company.findById(1).then(company => {
+              return company.getLinkedData<ItestInstance, ItestAttribute>({ model : 'ScopeMe', associationAlias : 'users' });
             }).then(users => {
               expect(users).to.have.length(2);
             });
           });
 
           it('hasOne', function() {
-            return this.Profile.create({
+            return Profile.create({
               active: false,
               userId: 1
             }).bind(this).then(function() {
-              return this.ScopeMe.findById(1);
+              return ScopeMe.findById(1);
             }).then(user => {
-              return user.getProfile();
+              return user.getLinkedData<ItestInstance, ItestAttribute>('profile');
             }).then(profile => {
               expect(profile).not.to.be.ok;
             });
           });
 
           it('belongsTo', function() {
-            return this.ScopeMe.unscoped().find({ where: { username: 'bob' }}).then(user => {
-              return user.getCompany();
+            return ScopeMe.unscoped().find({ where: { username: 'bob' }}).then(user => {
+              return user.getLinkedData<ItestInstance, ItestAttribute>('company');
             }).then(company => {
               expect(company).not.to.be.ok;
             });
           });
 
           it('belongsToMany', function() {
-            return this.Project.findAll().get(0).then(p => {
-              return p.getCompanies();
+            return Project.findAll().get(0 as any).then(p => {
+              return p.getLinkedData<ItestInstance, ItestAttribute>('company');
             }).then(companies => {
               expect(companies).to.have.length(1);
               expect(companies[0].get('active')).to.be.ok;
@@ -243,8 +251,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
         describe('it should be able to apply another scope', () => {
           it('hasMany', function() {
-            return this.Company.findById(1).then(company => {
-              return company.getUsers({ scope: 'isTony'});
+            return Company.findById(1).then(company => {
+              return company.getLinkedData<ItestInstance, ItestAttribute>({ model : 'ScopeMe', associationAlias : 'users' }, { scope: 'isTony'});
             }).then(users => {
               expect(users).to.have.length(1);
               expect(users[0].get('username')).to.equal('tony');
@@ -252,29 +260,29 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           });
 
           it('hasOne', function() {
-            return this.Profile.create({
+            return Profile.create({
               active: true,
               userId: 1
             }).bind(this).then(function() {
-              return this.ScopeMe.findById(1);
+              return ScopeMe.findById(1);
             }).then(user => {
-              return user.getProfile({ scope: 'notActive' });
+              return user.getLinkedData<ItestInstance, ItestAttribute>('profile', { scope: 'notActive' });
             }).then(profile => {
               expect(profile).not.to.be.ok;
             });
           });
 
           it('belongsTo', function() {
-            return this.ScopeMe.unscoped().find({ where: { username: 'bob' }}).then(user => {
-              return user.getCompany({ scope: 'notActive' });
+            return ScopeMe.unscoped().find({ where: { username: 'bob' }}).then(user => {
+              return user.getLinkedData<ItestInstance, ItestAttribute>('company', { scope: 'notActive' });
             }).then(company => {
               expect(company).to.be.ok;
             });
           });
 
           it('belongsToMany', function() {
-            return this.Project.findAll().get(0).then(p => {
-              return p.getCompanies({ scope: 'reversed' });
+            return Project.findAll().get(0 as any).then(p => {
+              return p.getLinkedData<ItestInstance, ItestAttribute>('company', { scope: 'reversed' });
             }).then(companies => {
               expect(companies).to.have.length(2);
               expect(companies[0].id).to.equal(2);
@@ -287,20 +295,20 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       describe('scope with includes', () => {
         beforeEach(function() {
           return Promise.all([
-            this.Company.findById(1),
-            this.Project.create({ id: 1, active: true}),
-            this.Project.create({ id: 2, active: false}),
+            Company.findById(1),
+            Project.create({ id: 1, active: true}),
+            Project.create({ id: 2, active: false}),
           ]).spread((c, p1, p2) => {
-            return c.setProjects([p1, p2]);
+            return c.setLinkedData('project', [p1, p2]);
           });
         });
 
         it('should scope columns properly', function() {
-          return expect(this.ScopeMe.scope('includeActiveProjects').findAll()).not.to.be.rejected;
+          return expect(ScopeMe.scope('includeActiveProjects').findAll()).not.to.be.rejected;
         });
 
         it('should apply scope conditions', function() {
-          return this.ScopeMe.scope('includeActiveProjects').findOne({ where: { id: 1 }}).then(user => {
+          return ScopeMe.scope('includeActiveProjects').findOne({ where: { id: 1 }}).then(user => {
             expect(user.company.projects).to.have.length(1);
           });
         });

@@ -10,7 +10,7 @@
 import * as debug from 'debug';
 import * as depd from 'depd';
 import * as _ from 'lodash';
-import { IConfig } from '../model/iconfig';
+import { IConfig } from '../interfaces/iconfig';
 
 export class Logger {
   public config;

@@ -1,9 +1,9 @@
 'use strict';
-import { Sequelize } from '../..';
+import * as Promise from 'bluebird';
+import { DataSet } from '../data-set';
 import { AssociationError } from '../errors/index';
 import { Model } from '../model';
-import { HasOne } from './has-one';
-
+import { Sequelize } from '../sequelize';
 
 /**
  * Creating associations in sequelize is done by calling one of the belongsTo / hasOne / hasMany / belongsToMany functions on a model (the source), and providing another model as the first argument to the function (the target).
@@ -89,7 +89,9 @@ import { HasOne } from './has-one';
  * 'users' is dependent of itself`. If you encounter this, you should either disable some constraints, or rethink your associations completely.
  */
 
-export class Association {
+export class Association
+<TSourceInstance extends DataSet<TSourceAttributes>, TSourceAttributes,
+TTargetInstance extends DataSet<TTargetAttributes>, TTargetAttributes> {
   /**
    * contains the name of the accessors
    */
@@ -120,7 +122,6 @@ export class Association {
   public isMultiAssociation : boolean;
   public isSingleAssociation : boolean;
   public isSelfAssociation : boolean;
-  public oneFromTarget : HasOne;
   public options : {
     /** : string | {}, assocation alias */
     as? : any,
@@ -128,7 +129,7 @@ export class Association {
     createByBTM? : boolean,
     /** = {}, Define the default search scope to use for this model. Scopes have the same form as the options passed to find / findAll */
     defaultScope? : {},
-    foreignKey? : string,
+    foreignKey? : string | {},
     /** = false If freezeTableName is true, sequelize will not try to alter the model name to get the table name. Otherwise, the model name will be pluralized */
     freezeTableName? : boolean,
     /** An object of hook function that are called before and after certain lifecycle events */
@@ -181,24 +182,25 @@ export class Association {
   public scope : {
     ismain? : boolean
   };
-  public source : typeof Model;
+  public source : Model<TSourceInstance, TSourceAttributes>;
+  public sourceKey : string;
   public sourceKeyAttribute;
   public sourceKeyField : string;
-  public target : typeof Model;
+  public target : Model<TTargetInstance, TTargetAttributes>;
   public through : {
-    model?,
+    model? : Model<any, any>,
     unique? : boolean,
     scope?
   };
-  public toTarget : Association;
+  public toTarget : Association<TSourceInstance, TSourceAttributes, TTargetInstance, TTargetAttributes>;
 
-  constructor(source : typeof Model, target : typeof Model, options : {
+  constructor(source : Model<TSourceInstance, TSourceAttributes>, target : Model<TTargetInstance, TTargetAttributes>, options : {
     /** : string | {}, assocation alias */
     as? : any,
     createByBTM? : boolean,
     /** = {}, Define the default search scope to use for this model. Scopes have the same form as the options passed to find / findAll */
     defaultScope? : {},
-    foreignKey? : string,
+    foreignKey? : string | {},
     /** = false If freezeTableName is true, sequelize will not try to alter the model name to get the table name. Otherwise, the model name will be pluralized */
     freezeTableName? : boolean,
     /** An object of hook function that are called before and after certain lifecycle events */
@@ -242,7 +244,7 @@ export class Association {
     this.target = target;
     this.options = options;
     this.scope = options.scope;
-    this.isSelfAssociation = this.source === this.target;
+    this.isSelfAssociation = this.source === (this.target as any);
     this.as = options.as;
     this.associationType = '';
 
@@ -258,17 +260,17 @@ export class Association {
    * @param input {Any}, it may be array or single obj, instance or primary key
    * @returns <Array>, built objects
    */
-  public toInstanceArray(input : any) : any[] {
+  public toInstanceArray(input : any) : TTargetInstance[] {
     if (!Array.isArray(input)) {
       input = [input];
     }
 
     return input.map(element => {
-      if (element instanceof this.target) {
+      if (element.model && element.model.name === this.target.name) {
         return element;
       }
 
-      const tmpInstance = {};
+      const tmpInstance = {} as TTargetAttributes;
       tmpInstance[this.target.primaryKeyAttribute] = element;
 
       return this.target.build(tmpInstance, { isNewRecord: false });
@@ -280,5 +282,34 @@ export class Association {
    */
   public inspect() : any {
     return this.as;
+  }
+
+  public get(sourceInstance : TSourceInstance | TSourceInstance[], options?) : Promise<TTargetInstance | TTargetInstance[]> {
+    throw Error('there is no get method');
+  }
+
+  public set(sourceInstance : TSourceInstance | TSourceInstance[], newAssociatedObjects : any, options?) : Promise<TSourceInstance> {
+    throw Error('there is no set method');
+  }
+
+  public create(sourceInstance : TSourceInstance, values : TTargetAttributes, options?) : Promise<TTargetInstance> {
+    throw Error('there is no create method');
+  }
+
+  public add(sourceInstance : TSourceInstance, newInstances : TTargetInstance[] | TTargetInstance | string[] | string | number[] | number, options?)
+   : Promise<void | TSourceInstance> {
+    throw Error('there is no add method');
+  }
+
+  public remove(sourceInstance : TSourceInstance , oldAssociatedObjects : any , options? : {}) : Promise<TSourceInstance> {
+    throw Error('there is no remove method');
+  }
+
+  public has(sourceInstance : TSourceInstance | TSourceInstance[], instances : TTargetInstance | TTargetInstance[] | string[] | string | number[] | number, options?) : Promise<boolean> {
+    throw Error('there is no has method');
+  }
+
+  public count(sourceInstance : TSourceInstance | TSourceInstance[], options?) : Promise<number> {
+    throw Error('there is no count method');
   }
 }

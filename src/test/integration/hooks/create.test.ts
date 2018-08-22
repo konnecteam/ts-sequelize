@@ -3,13 +3,17 @@
 import * as Promise from 'bluebird';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
 const expect = chai.expect;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Hooks'), () => {
+  let User : Model<ItestInstance, ItestAttribute>;
   beforeEach(function() {
-    this.User = this.sequelize.define('User', {
+    User = current.define<ItestInstance, ItestAttribute>('User', {
       username: {
         type: new DataTypes.STRING(),
         allowNull: false
@@ -19,7 +23,7 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         values: ['happy', 'sad', 'neutral']
       }
     });
-    return this.sequelize.sync({ force: true });
+    return current.sync({ force: true });
   });
 
   describe('#create', () => {
@@ -30,12 +34,12 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         const beforeSave = sinon.spy();
         const afterSave = sinon.spy();
 
-        this.User.beforeCreate(beforeHook);
-        this.User.afterCreate(afterHook);
-        this.User.beforeSave(beforeSave);
-        this.User.afterSave(afterSave);
+        User.beforeCreate(beforeHook);
+        User.afterCreate(afterHook);
+        User.beforeSave(beforeSave);
+        User.afterSave(afterSave);
 
-        return this.User.create({username: 'Toni', mood: 'happy'}).then(() => {
+        return User.create({username: 'Toni', mood: 'happy'}).then(() => {
           expect(beforeHook).to.have.been.calledOnce;
           expect(afterHook).to.have.been.calledOnce;
           expect(beforeSave).to.have.been.calledOnce;
@@ -51,15 +55,15 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         const afterHook = sinon.spy();
         const afterSave = sinon.spy();
 
-        this.User.beforeCreate(() => {
+        User.beforeCreate(() => {
           beforeHook();
           throw new Error('Whoops!');
         });
-        this.User.afterCreate(afterHook);
-        this.User.beforeSave(beforeSave);
-        this.User.afterSave(afterSave);
+        User.afterCreate(afterHook);
+        User.beforeSave(beforeSave);
+        User.afterSave(afterSave);
 
-        return expect(this.User.create({username: 'Toni', mood: 'happy'})).to.be.rejected.then(() => {
+        return expect(User.create({username: 'Toni', mood: 'happy'})).to.be.rejected.then(() => {
           expect(beforeHook).to.have.been.calledOnce;
           expect(afterHook).not.to.have.been.called;
           expect(beforeSave).not.to.have.been.called;
@@ -74,15 +78,15 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
         const afterSave = sinon.spy();
 
 
-        this.User.beforeCreate(beforeHook);
-        this.User.afterCreate(() => {
+        User.beforeCreate(beforeHook);
+        User.afterCreate(() => {
           afterHook();
           throw new Error('Whoops!');
         });
-        this.User.beforeSave(beforeSave);
-        this.User.afterSave(afterSave);
+        User.beforeSave(beforeSave);
+        User.afterSave(afterSave);
 
-        return expect(this.User.create({username: 'Toni', mood: 'happy'})).to.be.rejected.then(() => {
+        return expect(User.create({username: 'Toni', mood: 'happy'})).to.be.rejected.then(() => {
           expect(beforeHook).to.have.been.calledOnce;
           expect(afterHook).to.have.been.calledOnce;
           expect(beforeSave).to.have.been.calledOnce;
@@ -92,10 +96,10 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
     });
 
     it('should not trigger hooks on parent when using N:M association setters', function() {
-      const A = this.sequelize.define('A', {
+      const A = current.define<ItestInstance, ItestAttribute>('A', {
         name: new DataTypes.STRING()
       });
-      const B = this.sequelize.define('B', {
+      const B = current.define<ItestInstance, ItestAttribute>('B', {
         name: new DataTypes.STRING()
       });
 
@@ -109,12 +113,12 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       B.belongsToMany(A, {through: 'a_b'});
       A.belongsToMany(B, {through: 'a_b'});
 
-      return this.sequelize.sync({force: true}).bind(this).then(function() {
-        return this.sequelize.Promise.all([
+      return current.sync({force: true}).bind(this).then(function() {
+        return current.Promise.all([
           A.create({name: 'a'}),
           B.create({name: 'b'}),
         ]).spread((a, b) => {
-          return a.addB(b).then(() => {
+          return a.addLinkedData('B', b).then(() => {
             expect(hookCalled).to.equal(1);
           });
         });
@@ -125,12 +129,12 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       it('beforeValidate', function() {
         let hookCalled = 0;
 
-        this.User.beforeValidate(user => {
+        User.beforeValidate(user => {
           user.mood = 'happy';
           hookCalled++;
         });
 
-        return this.User.create({mood: 'sad', username: 'leafninja'}).then(user => {
+        return User.create({mood: 'sad', username: 'leafninja'}).then(user => {
           expect(user.mood).to.equal('happy');
           expect(user.username).to.equal('leafninja');
           expect(hookCalled).to.equal(1);
@@ -140,12 +144,12 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       it('afterValidate', function() {
         let hookCalled = 0;
 
-        this.User.afterValidate(user => {
+        User.afterValidate(user => {
           user.mood = 'neutral';
           hookCalled++;
         });
 
-        return this.User.create({mood: 'sad', username: 'fireninja'}).then(user => {
+        return User.create({mood: 'sad', username: 'fireninja'}).then(user => {
           expect(user.mood).to.equal('neutral');
           expect(user.username).to.equal('fireninja');
           expect(hookCalled).to.equal(1);
@@ -155,12 +159,12 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       it('beforeCreate', function() {
         let hookCalled = 0;
 
-        this.User.beforeCreate(user => {
+        User.beforeCreate(user => {
           user.mood = 'happy';
           hookCalled++;
         });
 
-        return this.User.create({username: 'akira'}).then(user => {
+        return User.create({username: 'akira'}).then(user => {
           expect(user.mood).to.equal('happy');
           expect(user.username).to.equal('akira');
           expect(hookCalled).to.equal(1);
@@ -170,12 +174,12 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       it('beforeSave', function() {
         let hookCalled = 0;
 
-        this.User.beforeSave(user => {
+        User.beforeSave(user => {
           user.mood = 'happy';
           hookCalled++;
         });
 
-        return this.User.create({username: 'akira'}).then(user => {
+        return User.create({username: 'akira'}).then(user => {
           expect(user.mood).to.equal('happy');
           expect(user.username).to.equal('akira');
           expect(hookCalled).to.equal(1);
@@ -185,17 +189,17 @@ describe(Support.getTestDialectTeaser('Hooks'), () => {
       it('beforeSave with beforeCreate', function() {
         let hookCalled = 0;
 
-        this.User.beforeCreate(user => {
+        User.beforeCreate(user => {
           user.mood = 'sad';
           hookCalled++;
         });
 
-        this.User.beforeSave(user => {
+        User.beforeSave(user => {
           user.mood = 'happy';
           hookCalled++;
         });
 
-        return this.User.create({username: 'akira'}).then(user => {
+        return User.create({username: 'akira'}).then(user => {
           expect(user.mood).to.equal('happy');
           expect(user.username).to.equal('akira');
           expect(hookCalled).to.equal(2);

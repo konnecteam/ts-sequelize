@@ -1,11 +1,11 @@
 'use strict';
 
+import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as Cursor from 'pg-cursor';
 import { Sequelize } from '../../..';
+import { DataSet } from '../../data-set';
 import * as sequelizeErrors from '../../errors/index';
-import { Model } from '../../model';
-import Promise from '../../promise';
 import { QueryTypes } from '../../query-types';
 import { Utils } from '../../utils';
 import { AbstractQuery } from '../abstract/abstract-query';
@@ -16,7 +16,7 @@ const debug = Utils.getLogger().debugContext('sql:pg');
 export class PostgresQuery extends AbstractQuery {
   public client;
 
-  constructor(client : {}, sequelize : Sequelize, options : { instance? : Model, model? : any }) {
+  constructor(client : {}, sequelize : Sequelize, options : { instance? : DataSet<any>, model? : any }) {
     super();
     this.client = client;
     this.sequelize = sequelize;

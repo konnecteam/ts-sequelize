@@ -1,6 +1,7 @@
 'use strict';
 
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expectsql = Support.expectsql;
 const current = Support.sequelize;
@@ -10,7 +11,7 @@ if (current.dialect.name === 'mysql') {
   describe(Support.getTestDialectTeaser('SQL'), () => {
     describe('addColumn', () => {
 
-      const Model = current.define('users', {
+      const Model = current.define<ItestInstance, ItestAttribute>('users', {
         id: {
           type: new DataTypes.INTEGER(),
           primaryKey: true,

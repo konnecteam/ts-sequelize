@@ -1,24 +1,26 @@
 'use strict';
 
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../support';
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('IncludeAdvanced'), () => {
   describe('findAll', () => {
 
     it('[WA] BT->(outer  BT, outer BT) and where', function() {
 
-      const Project = this.sequelize.define('project', { name: new DataTypes.STRING() });
-      const Issue = this.sequelize.define('issue', { name: new DataTypes.STRING() });
-      const IssueType = this.sequelize.define('issueType', { description: new DataTypes.TEXT() });
-      const IssuePriority = this.sequelize.define('issuePriority', { description: new DataTypes.TEXT() });
-      const IssueComment = this.sequelize.define('issueComment', { comment: new DataTypes.TEXT() });
+      const Project = current.define<ItestInstance, ItestAttribute>('project', { name: new DataTypes.STRING() });
+      const Issue = current.define<ItestInstance, ItestAttribute>('issue', { name: new DataTypes.STRING() });
+      const IssueType = current.define<ItestInstance, ItestAttribute>('issueType', { description: new DataTypes.TEXT() });
+      const IssuePriority = current.define<ItestInstance, ItestAttribute>('issuePriority', { description: new DataTypes.TEXT() });
+      const IssueComment = current.define<ItestInstance, ItestAttribute>('issueComment', { comment: new DataTypes.TEXT() });
       Project.hasOne(Issue);
       Issue.belongsTo(IssueType);
       Issue.belongsTo(IssuePriority);
       Issue.hasMany(IssueComment);
 
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         return Project.findAll({
           limit : 5,
           include: [{
@@ -49,17 +51,17 @@ describe(Support.getTestDialectTeaser('IncludeAdvanced'), () => {
 
     it('BT->(outer  BT, outer BT) and where', function() {
 
-      const Project = this.sequelize.define('project', { name: new DataTypes.STRING() });
-      const Issue = this.sequelize.define('issue', { name: new DataTypes.STRING() });
-      const IssueType = this.sequelize.define('issueType', { description: new DataTypes.TEXT() });
-      const IssuePriority = this.sequelize.define('issuePriority', { description: new DataTypes.TEXT() });
-      const IssueComment = this.sequelize.define('issueComment', { comment: new DataTypes.TEXT() });
+      const Project = current.define<ItestInstance, ItestAttribute>('project', { name: new DataTypes.STRING() });
+      const Issue = current.define<ItestInstance, ItestAttribute>('issue', { name: new DataTypes.STRING() });
+      const IssueType = current.define<ItestInstance, ItestAttribute>('issueType', { description: new DataTypes.TEXT() });
+      const IssuePriority = current.define<ItestInstance, ItestAttribute>('issuePriority', { description: new DataTypes.TEXT() });
+      const IssueComment = current.define<ItestInstance, ItestAttribute>('issueComment', { comment: new DataTypes.TEXT() });
       Project.hasOne(Issue);
       Issue.belongsTo(IssueType);
       Issue.belongsTo(IssuePriority);
       Issue.hasMany(IssueComment);
 
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         return Project.findAll({
           limit : 5,
           include: [{
@@ -92,17 +94,17 @@ describe(Support.getTestDialectTeaser('IncludeAdvanced'), () => {
 
     it('BT->(inner HM, outer  BT[WA] , outer BT[WA]) and where', function() {
 
-      const Project = this.sequelize.define('project', { name: new DataTypes.STRING() });
-      const Issue = this.sequelize.define('issue', { name: new DataTypes.STRING() });
-      const IssueType = this.sequelize.define('issueType', { description: new DataTypes.TEXT() });
-      const IssuePriority = this.sequelize.define('issuePriority', { description: new DataTypes.TEXT() });
-      const IssueComment = this.sequelize.define('issueComment', { comment: new DataTypes.TEXT() });
+      const Project = current.define<ItestInstance, ItestAttribute>('project', { name: new DataTypes.STRING() });
+      const Issue = current.define<ItestInstance, ItestAttribute>('issue', { name: new DataTypes.STRING() });
+      const IssueType = current.define<ItestInstance, ItestAttribute>('issueType', { description: new DataTypes.TEXT() });
+      const IssuePriority = current.define<ItestInstance, ItestAttribute>('issuePriority', { description: new DataTypes.TEXT() });
+      const IssueComment = current.define<ItestInstance, ItestAttribute>('issueComment', { comment: new DataTypes.TEXT() });
       Project.hasOne(Issue);
       Issue.belongsTo(IssueType);
       Issue.belongsTo(IssuePriority);
       Issue.hasMany(IssueComment);
 
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         return Project.findAll({
           limit : 5,
           include: [{
@@ -138,17 +140,17 @@ describe(Support.getTestDialectTeaser('IncludeAdvanced'), () => {
 
     it('BT[WOA]->(inner HM, outer  BT[WA] , outer BT[WA]) and where', function() {
 
-      const Project = this.sequelize.define('project', { name: new DataTypes.STRING() });
-      const Issue = this.sequelize.define('issue', { name: new DataTypes.STRING() });
-      const IssueType = this.sequelize.define('issueType', { description: new DataTypes.TEXT() });
-      const IssuePriority = this.sequelize.define('issuePriority', { description: new DataTypes.TEXT() });
-      const IssueComment = this.sequelize.define('issueComment', { comment: new DataTypes.TEXT() });
+      const Project = current.define<ItestInstance, ItestAttribute>('project', { name: new DataTypes.STRING() });
+      const Issue = current.define<ItestInstance, ItestAttribute>('issue', { name: new DataTypes.STRING() });
+      const IssueType = current.define<ItestInstance, ItestAttribute>('issueType', { description: new DataTypes.TEXT() });
+      const IssuePriority = current.define<ItestInstance, ItestAttribute>('issuePriority', { description: new DataTypes.TEXT() });
+      const IssueComment = current.define<ItestInstance, ItestAttribute>('issueComment', { comment: new DataTypes.TEXT() });
       Project.hasOne(Issue);
       Issue.belongsTo(IssueType);
       Issue.belongsTo(IssuePriority);
       Issue.hasMany(IssueComment);
 
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         return Project.findAll({
           limit : 5,
           include: [{
@@ -185,17 +187,17 @@ describe(Support.getTestDialectTeaser('IncludeAdvanced'), () => {
 
     it('BT->(inner HM, outer  BT, outer BT) and where', function() {
 
-      const Project = this.sequelize.define('project', { name: new DataTypes.STRING() });
-      const Issue = this.sequelize.define('issue', { name: new DataTypes.STRING() });
-      const IssueType = this.sequelize.define('issueType', { description: new DataTypes.TEXT() });
-      const IssuePriority = this.sequelize.define('issuePriority', { description: new DataTypes.TEXT() });
-      const IssueComment = this.sequelize.define('issueComment', { comment: new DataTypes.TEXT() });
+      const Project = current.define<ItestInstance, ItestAttribute>('project', { name: new DataTypes.STRING() });
+      const Issue = current.define<ItestInstance, ItestAttribute>('issue', { name: new DataTypes.STRING() });
+      const IssueType = current.define<ItestInstance, ItestAttribute>('issueType', { description: new DataTypes.TEXT() });
+      const IssuePriority = current.define<ItestInstance, ItestAttribute>('issuePriority', { description: new DataTypes.TEXT() });
+      const IssueComment = current.define<ItestInstance, ItestAttribute>('issueComment', { comment: new DataTypes.TEXT() });
       Project.hasOne(Issue);
       Issue.belongsTo(IssueType);
       Issue.belongsTo(IssuePriority);
       Issue.hasMany(IssueComment);
 
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         return Project.findAll({
           limit : 5,
           include: [{
@@ -232,17 +234,17 @@ describe(Support.getTestDialectTeaser('IncludeAdvanced'), () => {
     });
 
     it('BT->(outer HM, outer  BT, outer BT) and where', function() {
-      const Project = this.sequelize.define('project', { name: new DataTypes.STRING() });
-      const Issue = this.sequelize.define('issue', { name: new DataTypes.STRING() });
-      const IssueType = this.sequelize.define('issueType', { description: new DataTypes.TEXT() });
-      const IssuePriority = this.sequelize.define('issuePriority', { description: new DataTypes.TEXT() });
-      const IssueComment = this.sequelize.define('issueComment', { comment: new DataTypes.TEXT() });
+      const Project = current.define<ItestInstance, ItestAttribute>('project', { name: new DataTypes.STRING() });
+      const Issue = current.define<ItestInstance, ItestAttribute>('issue', { name: new DataTypes.STRING() });
+      const IssueType = current.define<ItestInstance, ItestAttribute>('issueType', { description: new DataTypes.TEXT() });
+      const IssuePriority = current.define<ItestInstance, ItestAttribute>('issuePriority', { description: new DataTypes.TEXT() });
+      const IssueComment = current.define<ItestInstance, ItestAttribute>('issueComment', { comment: new DataTypes.TEXT() });
       Project.hasOne(Issue);
       Issue.belongsTo(IssueType);
       Issue.belongsTo(IssuePriority);
       Issue.hasMany(IssueComment);
 
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         return Project.findAll({
           limit : 5,
           include: [{
@@ -264,17 +266,17 @@ describe(Support.getTestDialectTeaser('IncludeAdvanced'), () => {
     });
 
     it('BT->([WA]outer HM, outer  BT, outer BT) and where', function() {
-      const Project = this.sequelize.define('project', { name: new DataTypes.STRING() });
-      const Issue = this.sequelize.define('issue', { name: new DataTypes.STRING() });
-      const IssueType = this.sequelize.define('issueType', { description: new DataTypes.TEXT() });
-      const IssuePriority = this.sequelize.define('issuePriority', { description: new DataTypes.TEXT() });
-      const IssueComment = this.sequelize.define('issueComment', { comment: new DataTypes.TEXT() });
+      const Project = current.define<ItestInstance, ItestAttribute>('project', { name: new DataTypes.STRING() });
+      const Issue = current.define<ItestInstance, ItestAttribute>('issue', { name: new DataTypes.STRING() });
+      const IssueType = current.define<ItestInstance, ItestAttribute>('issueType', { description: new DataTypes.TEXT() });
+      const IssuePriority = current.define<ItestInstance, ItestAttribute>('issuePriority', { description: new DataTypes.TEXT() });
+      const IssueComment = current.define<ItestInstance, ItestAttribute>('issueComment', { comment: new DataTypes.TEXT() });
       Project.hasOne(Issue);
       Issue.belongsTo(IssueType);
       Issue.belongsTo(IssuePriority);
       Issue.hasMany(IssueComment);
 
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         return Project.findAll({
           limit : 5,
           include: [{
@@ -296,17 +298,17 @@ describe(Support.getTestDialectTeaser('IncludeAdvanced'), () => {
     });
 
     it('BT->([WA]outer HM, outer  BT, [WA]outer BT) and where', function() {
-      const Project = this.sequelize.define('project', { name: new DataTypes.STRING() });
-      const Issue = this.sequelize.define('issue', { name: new DataTypes.STRING() });
-      const IssueType = this.sequelize.define('issueType', { description: new DataTypes.TEXT() });
-      const IssuePriority = this.sequelize.define('issuePriority', { description: new DataTypes.TEXT() });
-      const IssueComment = this.sequelize.define('issueComment', { comment: new DataTypes.TEXT() });
+      const Project = current.define<ItestInstance, ItestAttribute>('project', { name: new DataTypes.STRING() });
+      const Issue = current.define<ItestInstance, ItestAttribute>('issue', { name: new DataTypes.STRING() });
+      const IssueType = current.define<ItestInstance, ItestAttribute>('issueType', { description: new DataTypes.TEXT() });
+      const IssuePriority = current.define<ItestInstance, ItestAttribute>('issuePriority', { description: new DataTypes.TEXT() });
+      const IssueComment = current.define<ItestInstance, ItestAttribute>('issueComment', { comment: new DataTypes.TEXT() });
       Project.hasOne(Issue);
       Issue.belongsTo(IssueType);
       Issue.belongsTo(IssuePriority);
       Issue.hasMany(IssueComment);
 
-      return this.sequelize.sync({ force: true }).then(() => {
+      return current.sync({ force: true }).then(() => {
         return Project.findAll({
           limit : 5,
           include: [{

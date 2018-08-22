@@ -2,16 +2,19 @@
 
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
 const Promise = current.Promise;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
+  let _Model : Model<ItestInstance, ItestAttribute>;
   describe('bulkCreate', () => {
     before(function() {
-      this.Model = current.define('model', {
+      _Model = current.define<ItestInstance, ItestAttribute>('model', {
         accountId: {
           type: new DataTypes.INTEGER(11).UNSIGNED,
           allowNull: false,
@@ -32,7 +35,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
     describe('validations', () => {
       it('should not fail for renamed fields', function() {
-        return this.Model.bulkCreate([
+        return _Model.bulkCreate([
           { accountId: 42 },
         ], { validate: true }).then(() => {
           expect(this.stub.getCall(0).args[1]).to.deep.equal([

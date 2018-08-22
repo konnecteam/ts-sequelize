@@ -5,9 +5,9 @@ import * as _ from 'lodash';
 import * as semver from 'semver';
 import { Sequelize } from '../../..';
 import DataTypes from '../../data-types';
+import { IInclude } from '../../interfaces/iinclude';
+import { ISequelizeOption } from '../../interfaces/isequelize-option';
 import { Model } from '../../model';
-import { IInclude } from '../../model/iinclude';
-import { ISequelizeOption } from '../../model/isequelize-option';
 import Op from '../../operators';
 import { Transaction } from '../../transaction';
 import * as AllUtils from '../../utils';
@@ -398,7 +398,7 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
     individualHooks? : boolean,
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     returning? : boolean,
     /** Additional attributes for the join table */
     through? : {},
@@ -511,7 +511,7 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
   /**
    * generate an upsert query
    */
-  public upsertQuery(tableName : string, insertValues, updateValues, where : {}, model : typeof Model) : string {
+  public upsertQuery(tableName : string, insertValues, updateValues, where : {}, model : Model<any, any>) : string {
     const targetTableAlias = this.quoteTable(`${tableName}_target`);
     const sourceTableAlias = this.quoteTable(`${tableName}_source`);
     const primaryKeysAttrs = [];
@@ -661,7 +661,7 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
     limit? : number,
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** = false, A flag that defines if native library shall be used or not. Currently only has an effect for postgres */
     native? : boolean,
     /** = false, A flag that defines if null values should be passed to SQL queries or not. */
@@ -766,14 +766,14 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
     allowNull? : boolean,
     defaultValue? : any,
     field? : string,
-    Model? : typeof Model,
+    Model? : Model<any, any>,
     onDelete? : string,
     onUpdate? : string,
     primaryKey? : string,
     /** An object with reference configurations */
     references? : {
       /** If this column references another table, provide it here as a Model, or a string */
-      model? : typeof Model | string,
+      model? : Model<any, any> | string,
       /** = 'id', The column of the foreign table that this column references */
       key? : string;
     };
@@ -1124,7 +1124,7 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
     keysEscaped? : boolean,
     /** The maximum count you want to get. */
     limit? : number,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** An offset value to start from. Only useable with limit! */
     offset? : number,
     /** OrderBy clause */
@@ -1136,7 +1136,7 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
     tableHint? : any,
     tableNames? : string[],
     topLimit? : any,
-    topModel? : typeof Model,
+    topModel? : Model<any, any>,
     type ? : string,
     /** A hash of search attributes. */
     where? : {}
@@ -1229,7 +1229,7 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
     limit? : number,
     /** A function that logs sql queries, or false for no logging */
     logging? : boolean | any,
-    model? : typeof Model,
+    model? : Model<any, any>,
     /** An offset value to start from. Only useable with limit! */
     offset? : number,
     /** OrderBy clause */
@@ -1243,7 +1243,7 @@ export class MssqlQueryGenerator extends AbstractQueryGenerator {
     tableAs? : string,
     tableNames? : string[],
     topLimit? : any,
-    topModel? : typeof Model,
+    topModel? : Model<any, any>,
     /** Transaction to run query under */
     transaction? : Transaction,
     type ? : string,

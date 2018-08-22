@@ -2,6 +2,7 @@
 
 import * as sinon from 'sinon';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expectsql = Support.expectsql;
 const current = Support.sequelize;
@@ -11,8 +12,9 @@ const Promise = current.Promise;
 if (current.dialect.name !== 'sqlite') {
   describe(Support.getTestDialectTeaser('SQL'), () => {
     describe('changeColumn', () => {
+      let stub;
 
-      const Model = current.define('users', {
+      const Model = current.define<ItestInstance, ItestAttribute>('users', {
         id: {
           type: new DataTypes.INTEGER(),
           primaryKey: true,
@@ -25,17 +27,17 @@ if (current.dialect.name !== 'sqlite') {
 
       before(function() {
 
-        this.stub = sinon.stub(current, 'query').callsFake(sql => {
+        stub = sinon.stub(current, 'query').callsFake(sql => {
           return Promise.resolve(sql);
         });
       });
 
       beforeEach(function() {
-        this.stub.resetHistory();
+        stub.resetHistory();
       });
 
       after(function() {
-        this.stub.restore();
+        stub.restore();
       });
 
       it('properly generate alter queries', () => {

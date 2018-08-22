@@ -2,15 +2,20 @@
 
 import * as chai from 'chai';
 import DataTypes from '../../../../lib/data-types';
+import { Model } from '../../../../lib/model';
+import { ItestAttribute, ItestInstance } from '../../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const Sequelize = Support.Sequelize;
 const dialect = Support.getTestDialect();
+const current = Support.sequelize;
 
 if (dialect === 'sqlite') {
   describe('[SQLITE Specific] DAO', () => {
+    let User : Model<ItestInstance, ItestAttribute>;
+    let Project : Model<ItestInstance, ItestAttribute>;
     beforeEach(function() {
-      this.User = this.sequelize.define('User', {
+      User = current.define<ItestInstance, ItestAttribute>('User', {
         username: new DataTypes.STRING(),
         emergency_contact: new DataTypes.JSON(),
         emergencyContact: new DataTypes.JSON(),
@@ -19,26 +24,26 @@ if (dialect === 'sqlite') {
           field: 'date_field'
         }
       });
-      this.Project = this.sequelize.define('project', {
+      Project = current.define<ItestInstance, ItestAttribute>('project', {
         dateField: {
           type: new DataTypes.DATE(),
           field: 'date_field'
         }
       });
 
-      this.User.hasMany(this.Project);
-      return this.sequelize.sync({ force: true });
+      User.hasMany(Project);
+      return current.sync({ force: true });
     });
 
     describe('findAll', () => {
       it('handles dates correctly', function() {
-        const user = this.User.build({ username: 'user' });
+        const user = User.build({ username: 'user' });
 
         user.dataValues.createdAt = new Date(2011, 4, 4);
 
         return user.save().then(() => {
-          return this.User.create({ username: 'new user' }).then(() => {
-            return this.User.findAll({
+          return User.create({ username: 'new user' }).then(() => {
+            return User.findAll({
               where: { createdAt: { $gt: new Date(2012, 1, 1) } }
             }).then(users => {
               expect(users).to.have.length(1);
@@ -48,10 +53,10 @@ if (dialect === 'sqlite') {
       });
 
       it('handles dates with aliasses correctly #3611', function() {
-        return this.User.create({
+        return User.create({
           dateField: new Date(2010, 10, 10)
         }).then(() => {
-          return this.User.findAll().get(0);
+          return User.findAll().get(0 as any);
         }).then(user => {
           expect(user.get('dateField')).to.be.an.instanceof(Date);
           expect(user.get('dateField')).to.equalTime(new Date(2010, 10, 10));
@@ -59,14 +64,14 @@ if (dialect === 'sqlite') {
       });
 
       it('handles dates in includes correctly #2644', function() {
-        return this.User.create({
+        return User.create({
           projects: [
             { dateField: new Date(1990, 5, 5) },
           ]
-        }, { include: [this.Project] }).then(() => {
-          return this.User.findAll({
-            include: [this.Project]
-          }).get(0);
+        }, { include: [Project] }).then(() => {
+          return User.findAll({
+            include: [Project]
+          }).get(0 as any);
         }).then(user => {
           expect(user.projects[0].get('dateField')).to.be.an.instanceof(Date);
           expect(user.projects[0].get('dateField')).to.equalTime(new Date(1990, 5, 5));
@@ -76,11 +81,11 @@ if (dialect === 'sqlite') {
 
     describe('json', () => {
       it('should be able to retrieve a row with json_extract function', function() {
-        return this.sequelize.Promise.all([
-          this.User.create({ username: 'swen', emergency_contact: { name: 'kate' } }),
-          this.User.create({ username: 'anna', emergency_contact: { name: 'joe' } }),
+        return current.Promise.all([
+          User.create({ username: 'swen', emergency_contact: { name: 'kate' } }),
+          User.create({ username: 'anna', emergency_contact: { name: 'joe' } }),
         ]).then(() => {
-          return this.User.find({
+          return User.find({
             where: Sequelize.json('json_extract(emergency_contact, \'$.name\')', 'kate'),
             attributes: ['username', 'emergency_contact']
           });
@@ -90,11 +95,11 @@ if (dialect === 'sqlite') {
       });
 
       it('should be able to retrieve a row by json_type function', function() {
-        return this.sequelize.Promise.all([
-          this.User.create({ username: 'swen', emergency_contact: { name: 'kate' } }),
-          this.User.create({ username: 'anna', emergency_contact: ['kate', 'joe'] }),
+        return current.Promise.all([
+          User.create({ username: 'swen', emergency_contact: { name: 'kate' } }),
+          User.create({ username: 'anna', emergency_contact: ['kate', 'joe'] }),
         ]).then(() => {
-          return this.User.find({
+          return User.find({
             where: Sequelize.json('json_type(emergency_contact)', 'array'),
             attributes: ['username', 'emergency_contact']
           });
@@ -106,7 +111,7 @@ if (dialect === 'sqlite') {
 
     describe('regression tests', () => {
       it('do not crash while parsing unique constraint errors', function() {
-        const Payments = this.sequelize.define('payments', {});
+        const Payments = current.define<ItestInstance, ItestAttribute>('payments', {});
 
         return Payments.sync({ force: true }).then(() => {
           return expect(Payments.bulkCreate([{ id: 1 }, { id: 1 }], { ignoreDuplicates: false })).to.eventually.be.rejected;

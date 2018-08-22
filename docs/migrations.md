@@ -198,9 +198,9 @@ The passed `queryInterface` object can be used to modify the database. The `Sequ
 module.exports = {
   up: (queryInterface, Sequelize) => {
     return queryInterface.createTable('Person', {
-        name: new Sequelize.STRING(),
+        name: new DataTypes.STRING(),
         isBetaMember: {
-          type: new Sequelize.BOOLEAN(),
+          type: new DataTypes.BOOLEAN(),
           defaultValue: false,
           allowNull: false
         }

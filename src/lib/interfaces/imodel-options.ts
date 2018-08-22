@@ -1,4 +1,5 @@
 export interface IModelOptions {
+  collate? : string;
   /** Override the name of the createdAt column if a string is provided, or disable it if false. Timestamps must be true. Not affected by underscored setting. */
   createdAt? : string | boolean;
   /** = {}, Define the default search scope to use for this model. Scopes have the same form as the options passed to find / findAll */
@@ -24,6 +25,7 @@ export interface IModelOptions {
   paranoid? : boolean;
   /** Error if no result found */
   rejectOnEmpty? : boolean;
+  rowFormat? : string;
   /** The schema that the tables should be created in. This can be overriden for each table in sequelize.define */
   schema? : string;
   schemaDelimiter? : string;

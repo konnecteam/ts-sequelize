@@ -1,20 +1,26 @@
 'use strict';
 
 import * as chai from 'chai';
-import {Sequelize} from '../../../../index';
+import { Model, Sequelize } from '../../../../index';
 import DataTypes from '../../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const dialect = Support.getTestDialect();
 const Promise = Sequelize.Promise;
+const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Model'), () => {
+  let User : Model<ItestInstance, ItestAttribute>;
+  let Task : Model<ItestInstance, ItestAttribute>;
+  let ModelUnderTest : Model<ItestInstance, ItestAttribute>;
+  let Comment : Model<ItestInstance, ItestAttribute>;
   describe('attributes', () => {
     describe('field', () => {
       beforeEach(function() {
-        const queryInterface = this.sequelize.getQueryInterface();
+        const queryInterface = current.getQueryInterface();
 
-        this.User = this.sequelize.define('user', {
+        User = current.define<ItestInstance, ItestAttribute>('user', {
           id: {
             type: new DataTypes.INTEGER(),
             allowNull: false,
@@ -37,7 +43,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           timestamps: false
         });
 
-        this.Task = this.sequelize.define('task', {
+        Task = current.define<ItestInstance, ItestAttribute>('task', {
           id: {
             type: new DataTypes.INTEGER(),
             allowNull: false,
@@ -54,7 +60,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           timestamps: false
         });
 
-        this.Comment = this.sequelize.define('comment', {
+        Comment = current.define<ItestInstance, ItestAttribute>('comment', {
           id: {
             type: new DataTypes.INTEGER(),
             allowNull: false,
@@ -72,20 +78,20 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           timestamps: true
         });
 
-        this.User.hasMany(this.Task, {
+        User.hasMany(Task, {
           foreignKey: 'user_id'
         });
-        this.Task.belongsTo(this.User, {
+        Task.belongsTo(User, {
           foreignKey: 'user_id'
         });
-        this.Task.hasMany(this.Comment, {
+        Task.hasMany(Comment, {
           foreignKey: 'task_id'
         });
-        this.Comment.belongsTo(this.Task, {
+        Comment.belongsTo(Task, {
           foreignKey: 'task_id'
         });
 
-        this.User.belongsToMany(this.Comment, {
+        User.belongsToMany(Comment, {
           foreignKey: 'userId',
           otherKey: 'commentId',
           through: 'userComments'
@@ -163,7 +169,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       describe('primaryKey', () => {
         describe('in combination with allowNull', () => {
           beforeEach(function() {
-            this.ModelUnderTest = this.sequelize.define('ModelUnderTest', {
+            ModelUnderTest = current.define<ItestInstance, ItestAttribute>('ModelUnderTest', {
               identifier: {
                 primaryKey: true,
                 type: new DataTypes.STRING(),
@@ -171,12 +177,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
               }
             });
 
-            return this.ModelUnderTest.sync({ force: true });
+            return ModelUnderTest.sync({ force: true });
           });
 
           it('sets the column to not allow null', function() {
-            return this
-              .ModelUnderTest
+            return ModelUnderTest
               .describe()
               .then(fields => {
                 expect(fields.identifier).to.include({ allowNull: false });
@@ -185,14 +190,14 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         });
 
         it('should support instance.destroy()', function() {
-          return this.User.create().then(user => {
+          return User.create().then(user => {
             return user.destroy();
           });
         });
 
         it('should support Model.destroy()', function() {
-          return this.User.create().bind(this).then(function(user) {
-            return this.User.destroy({
+          return User.create().bind(this).then(function(user) {
+            return User.destroy({
               where: {
                 id: user.get('id')
               }
@@ -203,34 +208,34 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       describe('field and attribute name is the same', () => {
         beforeEach(function() {
-          return this.Comment.bulkCreate([
+          return Comment.bulkCreate([
             { notes: 'Number one'},
             { notes: 'Number two'},
           ]);
         });
 
         it('bulkCreate should work', function() {
-          return this.Comment.findAll().then(comments => {
+          return Comment.findAll().then(comments => {
             expect(comments[0].notes).to.equal('Number one');
             expect(comments[1].notes).to.equal('Number two');
           });
         });
 
         it('find with where should work', function() {
-          return this.Comment.findAll({ where: { notes: 'Number one' }}).then(comments => {
+          return Comment.findAll({ where: { notes: 'Number one' }}).then(comments => {
             expect(comments).to.have.length(1);
             expect(comments[0].notes).to.equal('Number one');
           });
         });
 
         it('reload should work', function() {
-          return this.Comment.findById(1).then(comment => {
+          return Comment.findById(1).then(comment => {
             return comment.reload();
           });
         });
 
         it('save should work', function() {
-          return this.Comment.create({ notes: 'my note' }).then(comment => {
+          return Comment.create({ notes: 'my note' }).then(comment => {
             comment.notes = 'new note';
             return comment.save();
           }).then(comment => {
@@ -242,8 +247,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('increment should work', function() {
-        return this.Comment.destroy({ truncate: true })
-          .then(() => this.Comment.create({ note: 'oh boy, here I go again', likes: 23 }))
+        return Comment.destroy({ truncate: true })
+          .then(() => Comment.create({ note: 'oh boy, here I go again', likes: 23 }))
           .then(comment => comment.increment('likes'))
           .then(comment => comment.reload())
           .then(comment => {
@@ -252,8 +257,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('decrement should work', function() {
-        return this.Comment.destroy({ truncate: true })
-          .then(() => this.Comment.create({ note: 'oh boy, here I go again', likes: 23 }))
+        return Comment.destroy({ truncate: true })
+          .then(() => Comment.create({ note: 'oh boy, here I go again', likes: 23 }))
           .then(comment => comment.decrement('likes'))
           .then(comment => comment.reload())
           .then(comment => {
@@ -262,21 +267,19 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('sum should work', function() {
-        return this.Comment.destroy({ truncate: true })
-          .then(() => this.Comment.create({ note: 'oh boy, here I go again', likes: 23 }))
-          .then(() => this.Comment.sum('likes'))
+        return Comment.destroy({ truncate: true })
+          .then(() => Comment.create({ note: 'oh boy, here I go again', likes: 23 }))
+          .then(() => Comment.sum('likes'))
           .then(likes => {
             expect(likes).to.be.equal(23);
           });
       });
 
       it('should create, fetch and update with alternative field names from a simple model', function() {
-        const self = this;
-
-        return this.User.create({
+        return User.create({
           name: 'Foobar'
         }).then(() => {
-          return self.User.find({
+          return User.find({
             limit: 1
           });
         }).then(user => {
@@ -285,7 +288,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             name: 'Barfoo'
           });
         }).then(() => {
-          return self.User.find({
+          return User.find({
             limit: 1
           });
         }).then(user => {
@@ -294,11 +297,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should bulk update', function() {
-        const Entity = this.sequelize.define('Entity', {
+        const Entity = current.define<ItestInstance, ItestAttribute>('Entity', {
           strField: {type: new DataTypes.STRING(), field: 'str_field'}
         });
 
-        return this.sequelize.sync({force: true}).then(() => {
+        return current.sync({force: true}).then(() => {
           return Entity.create({strField: 'foo'});
         }).then(() => {
           return Entity.update(
@@ -318,7 +321,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should not contain the field properties after create', function() {
-        const Model = this.sequelize.define('test', {
+        const _Model = current.define<ItestInstance, ItestAttribute>('test', {
           id: {
             type: new DataTypes.INTEGER(),
             field: 'test_id',
@@ -339,8 +342,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           freezeTableName: true
         });
 
-        return Model.sync({force: true}).then(() => {
-          return Model.create({title: 'test'}).then(data => {
+        return _Model.sync({force: true}).then(() => {
+          return _Model.create({title: 'test'}).then(data => {
             expect(data.get('test_title')).to.be.an('undefined');
             expect(data.get('test_id')).to.be.an('undefined');
           });
@@ -348,7 +351,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should make the aliased auto incremented primary key available after create', function() {
-        return this.User.create({
+        return User.create({
           name: 'Barfoo'
         }).then(user => {
           expect(user.get('id')).to.be.ok;
@@ -356,23 +359,21 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should work with where on includes for find', function() {
-        const self = this;
-
-        return this.User.create({
+        return User.create({
           name: 'Barfoo'
         }).then(user => {
-          return user.createTask({
+          return user.createLinkedData<ItestInstance, ItestAttribute>('task', {
             title: 'DatDo'
           });
         }).then(task => {
-          return task.createComment({
+          return task.createLinkedData<ItestInstance, ItestAttribute>('comment', {
             text: 'Comment'
           });
         }).then(() => {
-          return self.Task.find({
+          return Task.find({
             include: [
-              {model: self.Comment},
-              {model: self.User},
+              {model: Comment},
+              {model: User},
             ],
             where: {title: 'DatDo'}
           });
@@ -384,23 +385,21 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should work with where on includes for findAll', function() {
-        const self = this;
-
-        return this.User.create({
+        return User.create({
           name: 'Foobar'
         }).then(user => {
-          return user.createTask({
+          return user.createLinkedData<ItestInstance, ItestAttribute>('task', {
             title: 'DoDat'
           });
         }).then(task => {
-          return task.createComment({
+          return task.createLinkedData<ItestInstance, ItestAttribute>('comment', {
             text: 'Comment'
           });
         }).then(() => {
-          return self.User.findAll({
+          return User.findAll({
             include: [
-              {model: self.Task, where: {title: 'DoDat'}, include: [
-                {model: self.Comment}]},
+              {model: Task, where: {title: 'DoDat'}, include: [
+                {model: Comment}]},
             ]
           });
         }).then(users => {
@@ -413,18 +412,16 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should work with increment', function() {
-        return this.User.create().then(user => {
+        return User.create().then(user => {
           return user.increment('taskCount');
         });
       });
 
       it('should work with a simple where', function() {
-        const self = this;
-
-        return this.User.create({
+        return User.create({
           name: 'Foobar'
         }).then(() => {
-          return self.User.find({
+          return User.find({
             where: {
               name: 'Foobar'
             }
@@ -435,13 +432,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should work with a where or', function() {
-        const self = this;
-
-        return this.User.create({
+        return User.create({
           name: 'Foobar'
         }).then(() => {
-          return self.User.find({
-            where: self.sequelize.or({
+          return User.find({
+            where: current.or({
               name: 'Foobar'
             }, {
               name: 'Lollerskates'
@@ -453,15 +448,14 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should work with bulkCreate and findAll', function() {
-        const self = this;
-        return this.User.bulkCreate([{
+        return User.bulkCreate([{
           name: 'Abc'
         }, {
           name: 'Bcd'
         }, {
           name: 'Cde'
         }]).then(() => {
-          return self.User.findAll();
+          return User.findAll();
         }).then(users => {
           users.forEach(user => {
             expect(['Abc', 'Bcd', 'Cde'].indexOf(user.get('name')) !== -1).to.be.true;
@@ -470,11 +464,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should support renaming of sequelize method fields', function() {
-        const Test = this.sequelize.define('test', {
+        const Test = current.define<ItestInstance, ItestAttribute>('test', {
           someProperty: new DataTypes.VIRTUAL() // Since we specify the AS part as a part of the literal string, not with sequelize syntax, we have to tell sequelize about the field
         });
 
-        return this.sequelize.sync({ force: true }).then(() => {
+        return current.sync({ force: true }).then(() => {
           return Test.create({});
         }).then(() => {
           let findAttributes;
@@ -506,18 +500,18 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should sync foreign keys with custom field names', function() {
-        return this.sequelize.sync({ force: true })
+        return current.sync({ force: true })
           .then(() => {
-            const attrs = this.Task.tableAttributes;
+            const attrs = Task.tableAttributes;
             expect(attrs.user_id.references.model).to.equal('users');
             expect(attrs.user_id.references.key).to.equal('userId');
           });
       });
 
       it('should find the value of an attribute with a custom field name', function() {
-        return this.User.create({ name: 'test user' })
+        return User.create({ name: 'test user' })
           .then(() => {
-            return this.User.find({ where: { name: 'test user' } });
+            return User.find({ where: { name: 'test user' } });
           })
           .then(user => {
             expect(user.name).to.equal('test user');
@@ -525,12 +519,10 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('field names that are the same as property names should create, update, and read correctly', function() {
-        const self = this;
-
-        return this.Comment.create({
+        return Comment.create({
           notes: 'Foobar'
         }).then(() => {
-          return self.Comment.find({
+          return Comment.find({
             limit: 1
           });
         }).then(comment => {
@@ -539,7 +531,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             notes: 'Barfoo'
           });
         }).then(() => {
-          return self.Comment.find({
+          return Comment.find({
             limit: 1
           });
         }).then(comment => {
@@ -548,17 +540,19 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should work with a belongsTo association getter', function() {
+        let userA : ItestInstance;
         const userId = Math.floor(Math.random() * 100000);
         return Promise.join(
-          this.User.create({
+          User.create({
             id: userId
           }),
-          this.Task.create({
+          Task.create({
             user_id: userId
           })
         ).spread((user, task) => {
-          return [user, task.getUser()];
-        }).spread((userA, userB) => {
+          userA = user;
+          return task.getLinkedData<ItestInstance, ItestAttribute>('user');
+        }).then(userB => {
           expect(userA.get('id')).to.equal(userB.get('id'));
           expect(userA.get('id')).to.equal(userId);
           expect(userB.get('id')).to.equal(userId);
@@ -566,7 +560,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should work with paranoid instance.destroy()', function() {
-        const User = this.sequelize.define('User', {
+        User = current.define<ItestInstance, ItestAttribute>('User', {
           deletedAt: {
             type: new DataTypes.DATE(),
             field: 'deleted_at'
@@ -593,7 +587,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should work with paranoid Model.destroy()', function() {
-        const User = this.sequelize.define('User', {
+        User = current.define<ItestInstance, ItestAttribute>('User', {
           deletedAt: {
             type: new DataTypes.DATE(),
             field: 'deleted_at'
@@ -615,18 +609,18 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       });
 
       it('should work with `belongsToMany` association `count`', function() {
-        return this.User.create({
+        return User.create({
           name: 'John'
         })
-          .then(user => user.countComments())
+          .then(user => user.countLinkedData('comment'))
           .then(commentCount => expect(commentCount).to.equal(0));
       });
 
       it('should work with `hasMany` association `count`', function() {
-        return this.User.create({
+        return User.create({
           name: 'John'
         })
-          .then(user => user.countTasks())
+          .then(user => user.countLinkedData('task'))
           .then(taskCount => expect(taskCount).to.equal(0));
       });
     });

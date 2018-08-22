@@ -2,16 +2,19 @@
 
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import { Model } from '../../..';
 import DataTypes from '../../../lib/data-types';
+import { ItestAttribute, ItestInstance } from '../../dummy/dummy-data-set';
 import Support from '../../support';
 const expect = chai.expect;
 const current = Support.sequelize;
 
 describe(Support.getTestDialectTeaser('Instance'), () => {
+  let User : Model<ItestInstance, ItestAttribute>;
   describe('get', () => {
     beforeEach(function() {
       this.getSpy = sinon.spy();
-      this.User = current.define('User', {
+      User = current.define<ItestInstance, ItestAttribute>('User', {
         name: {
           type: new DataTypes.STRING(),
           get: this.getSpy
@@ -20,13 +23,13 @@ describe(Support.getTestDialectTeaser('Instance'), () => {
     });
 
     it('invokes getter if raw: false', function() {
-      this.User.build().get('name');
+      User.build().get('name');
 
       expect(this.getSpy).to.have.been.called;
     });
 
     it('does not invoke getter if raw: true', function() {
-      expect(this.getSpy, ({ raw: true } as any)).not.to.have.been.called;
+      expect(this.getSpy, { raw: true }).not.to.have.been.called;
     });
   });
 });

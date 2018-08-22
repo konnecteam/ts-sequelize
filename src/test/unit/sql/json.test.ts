@@ -15,38 +15,38 @@ if (current.dialect.supports.JSON) {
     describe('JSON', () => {
       describe('escape', () => {
         it('plain string', () => {
-          expectsql(sql.escape('string', { type: new (DataTypes as any).JSON() }), {
+          expectsql(sql.escape('string', { type: new DataTypes.JSON() }), {
             default: '\'"string"\'',
             mysql: '\'\\"string\\"\''
           });
         });
 
         it('plain int', () => {
-          expectsql(sql.escape(0, { type: new (DataTypes as any).JSON() }), {
+          expectsql(sql.escape(0, { type: new DataTypes.JSON() }), {
             default: '\'0\''
           });
-          expectsql(sql.escape(123, { type: new (DataTypes as any).JSON() }), {
+          expectsql(sql.escape(123, { type: new DataTypes.JSON() }), {
             default: '\'123\''
           });
         });
 
         it('boolean', () => {
-          expectsql(sql.escape(true, { type: new (DataTypes as any).JSON() }), {
+          expectsql(sql.escape(true, { type: new DataTypes.JSON() }), {
             default: '\'true\''
           });
-          expectsql(sql.escape(false, { type: new (DataTypes as any).JSON() }), {
+          expectsql(sql.escape(false, { type: new DataTypes.JSON() }), {
             default: '\'false\''
           });
         });
 
         it('NULL', () => {
-          expectsql(sql.escape(null, { type: new (DataTypes as any).JSON() }), {
+          expectsql(sql.escape(null, { type: new DataTypes.JSON() }), {
             default: 'NULL'
           });
         });
 
         it('nested object', () => {
-          expectsql(sql.escape({ some: 'nested', more: { nested: true }, answer: 42 }, { type: new (DataTypes as any).JSON() }), {
+          expectsql(sql.escape({ some: 'nested', more: { nested: true }, answer: 42 }, { type: new DataTypes.JSON() }), {
             default: '\'{"some":"nested","more":{"nested":true},"answer":42}\'',
             mysql: '\'{\\"some\\":\\"nested\\",\\"more\\":{\\"nested\\":true},\\"answer\\":42}\''
           });
