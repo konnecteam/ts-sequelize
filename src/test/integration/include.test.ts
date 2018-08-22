@@ -751,7 +751,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       }).then(function() {
         return this.group.addLinkedData({ model : 'user', associationAlias : 'Members' }, this.member);
       }).then(function() {
-        return this.owner.getLinkedData('group', {
+        return this.owner.getManyLinkedData('group', {
           include: [{
             model: User,
             as: 'Members'
@@ -859,7 +859,7 @@ describe(Support.getTestDialectTeaser('Include'), () => {
       return current.sync({force: true}).then(() => {
         return Questionnaire.create();
       }).then(questionnaire => {
-        return questionnaire.getLinkedData('Question', {
+        return questionnaire.getManyLinkedData('Question', {
           include: Answer
         });
       });

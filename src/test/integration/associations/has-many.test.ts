@@ -723,13 +723,13 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
           _task = task;
           return task.setLinkedData('User', [user]);
         }).then(function() {
-          return _task.getLinkedData<ItestInstance, ItestAttribute>('User');
+          return _task.getManyLinkedData<ItestInstance, ItestAttribute>('User');
         }).then(function(users) {
           expect(users).to.have.length(1);
 
           return _task.setLinkedData('User', null);
         }).then(function() {
-          return _task.getLinkedData<ItestInstance, ItestAttribute>('User');
+          return _task.getManyLinkedData<ItestInstance, ItestAttribute>('User');
         }).then(users => {
           expect(users).to.have.length(0);
         });
@@ -754,7 +754,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         }).then(function() {
           return _article.setLinkedData('Label', [_label2.id]);
         }).then(function() {
-          return _article.getLinkedData<ItestInstance, ItestAttribute>('Label');
+          return _article.getManyLinkedData<ItestInstance, ItestAttribute>('Label');
         }).then(labels => {
           expect(labels).to.have.length(1);
           expect(labels[0].text).to.equal('label two');
@@ -812,7 +812,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
           _article = article;
           return article.addLinkedData('Label', label.id);
         }).then(function() {
-          return _article.getLinkedData<ItestInstance, ItestAttribute>('Label');
+          return _article.getManyLinkedData<ItestInstance, ItestAttribute>('Label');
         }).then(labels => {
           expect(labels[0].text).to.equal('label one'); // Make sure that we didn't modify one of the other attributes while building / saving a new instance
         });
@@ -843,7 +843,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         }).then(function() {
           return _task.addLinkedData('User', [_users[1], _users[2]]);
         }).then(function() {
-          return _task.getLinkedData<ItestInstance, ItestAttribute>('User');
+          return _task.getManyLinkedData<ItestInstance, ItestAttribute>('User');
         }).then(users => {
           expect(users).to.have.length(3);
         });
@@ -885,13 +885,13 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
         _task = task;
         return task.setLinkedData('User', [_user]);
       }).then(function() {
-        return _task.getLinkedData<ItestInstance, ItestAttribute>('User');
+        return _task.getManyLinkedData<ItestInstance, ItestAttribute>('User');
       }).then(function(users) {
         expect(users).to.have.length(1);
 
         return _task.setLinkedData('User', null);
       }).then(function() {
-        return _task.getLinkedData<ItestInstance, ItestAttribute>('User');
+        return _task.getManyLinkedData<ItestInstance, ItestAttribute>('User');
       }).then(users => {
         expect(users).to.have.length(0);
       }).finally(() => {
@@ -1041,7 +1041,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
             _article = article;
             return article.setLinkedData('Label', [label1, label2]);
           }).then(function() {
-            return _article.getLinkedData<ItestInstance, ItestAttribute>('Label', {where: {until: {$gt: moment('2014-01-02').toDate()}}});
+            return _article.getManyLinkedData<ItestInstance, ItestAttribute>('Label', {where: {until: {$gt: moment('2014-01-02').toDate()}}});
           }).then(labels => {
             expect(labels).to.be.instanceof(Array);
             expect(labels).to.have.length(1);
@@ -1052,7 +1052,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
 
       it('gets all associated objects when no options are passed', function() {
         return _User.find({where: {username: 'John'}}).then(john => {
-          return john.getLinkedData<ItestInstance, ItestAttribute>('Task');
+          return john.getManyLinkedData<ItestInstance, ItestAttribute>('Task');
         }).then(tasks => {
           expect(tasks).to.have.length(2);
         });
@@ -1060,7 +1060,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
 
       it('only get objects that fulfill the options', function() {
         return _User.find({ where: { username: 'John' } }).then(john => {
-          return john.getLinkedData<ItestInstance, ItestAttribute>('Task', { where: { active: true }, limit: 10, order: [['id', 'DESC']]});
+          return john.getManyLinkedData<ItestInstance, ItestAttribute>('Task', { where: { active: true }, limit: 10, order: [['id', 'DESC']]});
         }).then(tasks => {
           expect(tasks).to.have.length(1);
         });
@@ -1505,7 +1505,7 @@ describe(Support.getTestDialectTeaser('HasMany'), () => {
           return User.findOne({ where: { email: values.email } });
         })
         .then(user =>
-          user.getLinkedData<ItestInstance, ItestAttribute>('TaskXYZ')
+          user.getManyLinkedData<ItestInstance, ItestAttribute>('TaskXYZ')
             .then(tasks => {
               // Make sure tasks relationship is successful
               expect(tasks).to.be.an('array');

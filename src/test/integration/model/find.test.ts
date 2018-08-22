@@ -872,8 +872,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
                   {model: Tag, as: 'tags'},
                 ]
               })).to.eventually.have.property('tags').to.have.length(2),
-              expect(tags[1].getLinkedData<ItestInstance, ItestAttribute>('Product')).to.eventually.have.length(3),
-              expect(products[1].getLinkedData<ItestInstance, ItestAttribute>('Tag')).to.eventually.have.length(1),
+              expect(tags[1].getManyLinkedData<ItestInstance, ItestAttribute>('Product')).to.eventually.have.length(3),
+              expect(products[1].getManyLinkedData<ItestInstance, ItestAttribute>('Tag')).to.eventually.have.length(1),
             ]);
           });
         });

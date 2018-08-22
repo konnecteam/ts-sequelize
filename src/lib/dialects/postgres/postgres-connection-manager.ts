@@ -185,7 +185,7 @@ export class PostgresConnectionManager extends AbstractConnectionManager {
       query += "SET lc_messages TO 'en_US.UTF-8';";
 
       if (query) {
-        return connection.query(query);
+        return (connection as any).query(query);
       }
     }).tap(connection => {
       if (

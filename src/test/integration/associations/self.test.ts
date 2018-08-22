@@ -73,7 +73,7 @@ describe(Support.getTestDialectTeaser('Self'), () => {
         return mary.setLinkedData({ model : 'Person', associationAlias : 'Parents' }, [john]).then(() => {
           return chris.addLinkedData({ model : 'Person', associationAlias : 'Parents' }, john);
         }).then(() => {
-          return john.getLinkedData<ItestInstance, ItestAttribute>({ model : 'Person', associationAlias : 'Childs' });
+          return john.getManyLinkedData<ItestInstance, ItestAttribute>({ model : 'Person', associationAlias : 'Childs' });
         }).then(children => {
           expect(_.map(children, 'id')).to.have.members([mary.id, chris.id]);
         });
@@ -141,7 +141,7 @@ describe(Support.getTestDialectTeaser('Self'), () => {
         }
       });
     }).then(function() {
-      return john.getLinkedData<ItestInstance, ItestAttribute>({ model : 'Person', associationAlias : 'Children' }, {
+      return john.getManyLinkedData<ItestInstance, ItestAttribute>({ model : 'Person', associationAlias : 'Children' }, {
         logging(sql) {
           count++;
           const whereClause = sql.split('FROM')[1]; // look only in the whereClause

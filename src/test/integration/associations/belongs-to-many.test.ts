@@ -91,12 +91,12 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
         }).then(function() {
           return Article.all({ transaction: _t });
         }).then(articles => {
-          return articles[0].getLinkedData<ItestInstance, ItestAttribute>('Label');
+          return (articles as ItestInstance[])[0].getManyLinkedData<ItestInstance, ItestAttribute>('Label');
         }).then(function(labels) {
           expect(labels).to.have.length(0);
           return Article.all({ transaction: _t });
         }).then(function(articles) {
-          return articles[0].getLinkedData<ItestInstance, ItestAttribute>('Label', { transaction: _t });
+          return articles[0].getManyLinkedData<ItestInstance, ItestAttribute>('Label', { transaction: _t });
         }).then(function(labels) {
           expect(labels).to.have.length(1);
           return _t.rollback();
@@ -106,7 +106,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
 
     it('gets all associated objects with all fields', function() {
       return _User.find({where: {username: 'John'}}).then(john => {
-        return john.getLinkedData<ItestInstance, ItestAttribute>('Task');
+        return john.getManyLinkedData<ItestInstance, ItestAttribute>('Task');
       }).then(tasks => {
         Object.keys(tasks[0].rawAttributes).forEach(attr => {
           expect(tasks[0]).to.have.property(attr);
@@ -116,7 +116,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
 
     it('gets all associated objects when no options are passed', function() {
       return _User.find({where: {username: 'John'}}).then(john => {
-        return john.getLinkedData<ItestInstance, ItestAttribute>('Task');
+        return john.getManyLinkedData<ItestInstance, ItestAttribute>('Task');
       }).then(tasks => {
         expect(tasks).to.have.length(2);
       });
@@ -124,7 +124,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
 
     it('only get objects that fulfill the options', function() {
       return _User.find({where: {username: 'John'}}).then(john => {
-        return john.getLinkedData<ItestInstance, ItestAttribute>('Task', {
+        return john.getManyLinkedData<ItestInstance, ItestAttribute>('Task', {
           where: {
             active: true
           }
@@ -140,7 +140,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
           username: 'John'
         }
       }).then(john => {
-        return john.getLinkedData<ItestInstance, ItestAttribute>('Task', {
+        return john.getManyLinkedData<ItestInstance, ItestAttribute>('Task', {
           where: {
             title: {
               not: ['Get rich']
@@ -158,7 +158,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
           username: 'John'
         }
       }).then(john => {
-        return john.getLinkedData<ItestInstance, ItestAttribute>('Task', {
+        return john.getManyLinkedData<ItestInstance, ItestAttribute>('Task', {
           where: {
             id: {
               not: [_tasks[0].get('id')]
@@ -173,7 +173,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
 
     it('only gets objects that fulfill options with a formatted value', function() {
       return _User.find({where: {username: 'John'}}).then(john => {
-        return john.getLinkedData<ItestInstance, ItestAttribute>('Task', {where: {active: true}});
+        return john.getManyLinkedData<ItestInstance, ItestAttribute>('Task', {where: {active: true}});
       }).then(tasks => {
         expect(tasks).to.have.length(1);
       });
@@ -240,7 +240,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
       }).then(function(p) {
         return _u.addLinkedData('Project', p, { through: { status: 'active', data: 42 }});
       }).then(function() {
-        return _u.getLinkedData<ItestInstance, ItestAttribute>('Project');
+        return _u.getManyLinkedData<ItestInstance, ItestAttribute>('Project');
       }).then(projects => {
         expect(projects).to.have.length(1);
         const project = projects[0];
@@ -299,7 +299,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
           return User.findOne({
             where: {}
           }).then(user => {
-            return user.getLinkedData<ItestInstance, ItestAttribute>('Group');
+            return user.getManyLinkedData<ItestInstance, ItestAttribute>('Group');
           });
         });
       });
@@ -555,12 +555,12 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
         _task = task;
         return task.setLinkedData('User', [user]);
       }).then(function() {
-        return _task.getLinkedData<ItestInstance, ItestAttribute>('User');
+        return _task.getManyLinkedData<ItestInstance, ItestAttribute>('User');
       }).then(function(users) {
         expect(users).to.have.length(1);
         return _task.setLinkedData('User', null);
       }).then(function() {
-        return _task.getLinkedData<ItestInstance, ItestAttribute>('User');
+        return _task.getManyLinkedData<ItestInstance, ItestAttribute>('User');
       }).then(users => {
         expect(users).to.have.length(0);
       });
@@ -588,7 +588,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
         _user2.user_has_task = {usertitle: 'Something'};
         return _task.setLinkedData('User', [_user1, _user2]);
       }).then(function() {
-        return _task.getLinkedData<ItestInstance, ItestAttribute>('User');
+        return _task.getManyLinkedData<ItestInstance, ItestAttribute>('User');
       }).then(users => {
         expect(users).to.have.length(2);
       });
@@ -615,7 +615,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
       }).spread((group, member) => {
         return group.addLinkedData('member', member).return(group);
       }).then(group => {
-        return group.getLinkedData<ItestInstance, ItestAttribute>('member');
+        return group.getManyLinkedData<ItestInstance, ItestAttribute>('member');
       }).then(members => {
         expect(members).to.be.instanceof(Array);
         expect(members).to.have.length(1);
@@ -644,7 +644,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
       }).then(function() {
         return _user.setLinkedData('Task', [_task2.id]);
       }).then(function() {
-        return _user.getLinkedData<ItestInstance, ItestAttribute>('Task');
+        return _user.getManyLinkedData<ItestInstance, ItestAttribute>('Task');
       }).then(tasks => {
         expect(tasks).to.have.length(1);
         expect(tasks[0].title).to.equal('wat');
@@ -696,8 +696,8 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
         return _comment.setLinkedData('Tag', [_tag]);
       }).then(() => {
         return Promise.all([
-          _post.getLinkedData<ItestInstance, ItestAttribute>('Tag'),
-          _comment.getLinkedData<ItestInstance, ItestAttribute>('Tag'),
+          _post.getManyLinkedData<ItestInstance, ItestAttribute>('Tag'),
+          _comment.getManyLinkedData<ItestInstance, ItestAttribute>('Tag'),
         ]);
       }).spread( (postTags, commentTags) => {
         expect(postTags).to.have.length(1);
@@ -754,8 +754,8 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
         return _post.setLinkedData('Tag', [_tag]);
       }).then( () => {
         return Promise.all([
-          _post.getLinkedData<ItestInstance, ItestAttribute>('Tag'),
-          _comment.getLinkedData<ItestInstance, ItestAttribute>('Tag'),
+          _post.getManyLinkedData<ItestInstance, ItestAttribute>('Tag'),
+          _comment.getManyLinkedData<ItestInstance, ItestAttribute>('Tag'),
         ]);
       }).spread( (postTags, commentTags) => {
         expect(postTags).to.have.length(1);
@@ -780,7 +780,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
       }).then(function(createdUser) {
         expect(createdUser.model).to.equal(User);
         expect(createdUser.username).to.equal('foo');
-        return _task.getLinkedData<ItestInstance, ItestAttribute>('User');
+        return _task.getManyLinkedData<ItestInstance, ItestAttribute>('User');
       }).then(users => {
         expect(users).to.have.length(1);
       });
@@ -807,11 +807,11 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
           _t = t;
           return task.createLinkedData<ItestInstance, ItestAttribute>('User', { username: 'foo' }, { transaction: t });
         }).then(function() {
-          return _task.getLinkedData<ItestInstance, ItestAttribute>('User');
+          return _task.getManyLinkedData<ItestInstance, ItestAttribute>('User');
         }).then(function(users) {
           expect(users).to.have.length(0);
 
-          return _task.getLinkedData<ItestInstance, ItestAttribute>('User', { transaction: _t });
+          return _task.getManyLinkedData<ItestInstance, ItestAttribute>('User', { transaction: _t });
         }).then(function(users) {
           expect(users).to.have.length(1);
           return _t.rollback();
@@ -865,7 +865,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
       }).then(function(createdUser) {
         expect(createdUser.model).to.equal(User);
         expect(createdUser.username).to.equal('foo');
-        return _task.getLinkedData<ItestInstance, ItestAttribute>('User');
+        return _task.getManyLinkedData<ItestInstance, ItestAttribute>('User');
       }).then(users => {
         expect(users).to.have.length(1);
       });
@@ -961,8 +961,8 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
           return _task.addLinkedData('User', _user, { transaction: _t, through: {status: 'completed'}}); // Add an already exisiting user in a transaction, updating a value in the join table
         }).then(function() {
           return Promise.all([
-            _user.getLinkedData<ItestInstance, ItestAttribute>('Task'),
-            _user.getLinkedData<ItestInstance, ItestAttribute>('Task', { transaction: _t }),
+            _user.getManyLinkedData<ItestInstance, ItestAttribute>('Task'),
+            _user.getManyLinkedData<ItestInstance, ItestAttribute>('Task', { transaction: _t }),
           ]);
         }).spread(function(tasks, transactionTasks) {
           expect(tasks[0].UserTask.status).to.equal('pending');
@@ -988,7 +988,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
       }).spread((user, task) => {
         return user.addLinkedData('Task', task.id).return (user);
       }).then(user => {
-        return user.getLinkedData<ItestInstance, ItestAttribute>('Task');
+        return user.getManyLinkedData<ItestInstance, ItestAttribute>('Task');
       }).then(tasks => {
         expect(tasks[0].title).to.equal('get started');
       });
@@ -1080,7 +1080,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
         }).then(function() {
           return _task.addLinkedData('User', [_users[1], _users[2]]);
         }).then(function() {
-          return _task.getLinkedData<ItestInstance, ItestAttribute>('User');
+          return _task.getManyLinkedData<ItestInstance, ItestAttribute>('User');
         }).then(function(users) {
           expect(users).to.have.length(3);
 
@@ -1091,7 +1091,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
             expect(_task.addLinkedData('User', [_users[0].id])).not.to.be.rejected,
           ]);
         }).then(function() {
-          return _task.getLinkedData<ItestInstance, ItestAttribute>('User');
+          return _task.getManyLinkedData<ItestInstance, ItestAttribute>('User');
         }).then(users => {
           expect(users).to.have.length(3);
         });
@@ -1403,7 +1403,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
       }).then(user => {
         expect(spy.calledTwice).to.be.ok; // Once for SELECT, once for INSERT
         spy.resetHistory();
-        return user.getLinkedData<ItestInstance, ItestAttribute>('Project', {
+        return user.getManyLinkedData<ItestInstance, ItestAttribute>('Project', {
           logging: spy
         });
       }).then(projects => {
@@ -1597,7 +1597,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
         ]).spread((user, project) => {
           return user.addLinkedData('Project', project, { through: { status: 'active', data: 42 }}).return (user);
         }).then(user => {
-          return user.getLinkedData<ItestInstance, ItestAttribute>('Project');
+          return user.getManyLinkedData<ItestInstance, ItestAttribute>('Project');
         }).then(projects => {
           const project = projects[0];
 
@@ -1615,7 +1615,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
         ]).spread((user, project) => {
           return user.addLinkedData('Project', project, { through: { status: 'active', data: 42 }}).return (user);
         }).then(user => {
-          return user.getLinkedData<ItestInstance, ItestAttribute>('Project', { joinTableAttributes: ['status']});
+          return user.getManyLinkedData<ItestInstance, ItestAttribute>('Project', { joinTableAttributes: ['status']});
         }).then(projects => {
           const project = projects[0];
 
@@ -1784,7 +1784,7 @@ describe(Support.getTestDialectTeaser('BelongsToMany'), () => {
               user.createLinkedData<ItestInstance, ItestAttribute>('Project', {}, { through: { status: 'inactive', data: 3 }}),
             ]).then(() => {
               return Promise.all([
-                user.getLinkedData<ItestInstance, ItestAttribute>('Project', { through: { where: { status: 'active' } } }),
+                user.getManyLinkedData<ItestInstance, ItestAttribute>('Project', { through: { where: { status: 'active' } } }),
                 user.countLinkedData('Project', { through: { where: { status: 'inactive' } } }),
               ]);
             });

@@ -66,11 +66,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           })
             .then(() => {
               return Promise.join(
-                Student.build({no: 1}).getLinkedData<ItestInstance, ItestAttribute>('course', {where: {no: 100}}),
-                Score.find({ where: { StudentId: 1, CourseId: 100 } })
+                Student.build({no: 1}).getManyLinkedData<ItestInstance, ItestAttribute>('course', {where: {no: 100}}),
+                Score.find({ where: { StudentId: 1, CourseId: 100 } }) as any
               );
             })
-            .spread((courses : ItestInstance, score : ItestInstance) => {
+            .spread((courses : ItestInstance[], score : ItestInstance) => {
               expect(score.test_value).to.equal(1001);
               expect(courses[0].score.toJSON().test_value).to.equal(1001);
               expect(callCount).to.equal(1);

@@ -173,7 +173,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         describe('it should be able to unscope', () => {
           it('hasMany', function() {
             return Company.findById(1).then(company => {
-              return company.getLinkedData<ItestInstance, ItestAttribute>({ model : 'ScopeMe', associationAlias : 'users' }, { scope: false});
+              return company.getManyLinkedData<ItestInstance, ItestAttribute>({ model : 'ScopeMe', associationAlias : 'users' }, { scope: false});
             }).then(users => {
               expect(users).to.have.length(4);
             });
@@ -202,7 +202,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
           it('belongsToMany', function() {
             return Project.findAll().get(0 as any).then(p => {
-              return p.getLinkedData<ItestInstance, ItestAttribute>('company', { scope: false});
+              return p.getManyLinkedData<ItestInstance, ItestAttribute>('company', { scope: false});
             }).then(companies => {
               expect(companies).to.have.length(2);
             });
@@ -212,7 +212,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         describe('it should apply default scope', () => {
           it('hasMany', function() {
             return Company.findById(1).then(company => {
-              return company.getLinkedData<ItestInstance, ItestAttribute>({ model : 'ScopeMe', associationAlias : 'users' });
+              return company.getManyLinkedData<ItestInstance, ItestAttribute>({ model : 'ScopeMe', associationAlias : 'users' });
             }).then(users => {
               expect(users).to.have.length(2);
             });
@@ -241,7 +241,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
           it('belongsToMany', function() {
             return Project.findAll().get(0 as any).then(p => {
-              return p.getLinkedData<ItestInstance, ItestAttribute>('company');
+              return p.getManyLinkedData<ItestInstance, ItestAttribute>('company');
             }).then(companies => {
               expect(companies).to.have.length(1);
               expect(companies[0].get('active')).to.be.ok;
@@ -252,7 +252,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         describe('it should be able to apply another scope', () => {
           it('hasMany', function() {
             return Company.findById(1).then(company => {
-              return company.getLinkedData<ItestInstance, ItestAttribute>({ model : 'ScopeMe', associationAlias : 'users' }, { scope: 'isTony'});
+              return company.getManyLinkedData<ItestInstance, ItestAttribute>({ model : 'ScopeMe', associationAlias : 'users' }, { scope: 'isTony'});
             }).then(users => {
               expect(users).to.have.length(1);
               expect(users[0].get('username')).to.equal('tony');
@@ -282,7 +282,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
           it('belongsToMany', function() {
             return Project.findAll().get(0 as any).then(p => {
-              return p.getLinkedData<ItestInstance, ItestAttribute>('company', { scope: 'reversed' });
+              return p.getManyLinkedData<ItestInstance, ItestAttribute>('company', { scope: 'reversed' });
             }).then(companies => {
               expect(companies).to.have.length(2);
               expect(companies[0].id).to.equal(2);

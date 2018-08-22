@@ -90,10 +90,10 @@ if (dialect.match(/^postgres/)) {
         });
 
         it('should correctly add an association to the dao', function() {
-          return user.getLinkedData<ItestInstance, ItestAttribute>(taskTableName).then(tasks1 => {
+          return user.getManyLinkedData<ItestInstance, ItestAttribute>(taskTableName).then(tasks1 => {
             expect(tasks1).to.have.length(0);
             return user.addLinkedData(taskTableName, task).then(() => {
-              return user.getLinkedData<ItestInstance, ItestAttribute>(taskTableName).then(tasks2 => {
+              return user.getManyLinkedData<ItestInstance, ItestAttribute>(taskTableName).then(tasks2 => {
                 expect(tasks2).to.have.length(1);
               });
             });
@@ -132,16 +132,16 @@ if (dialect.match(/^postgres/)) {
                     task = tasks1[0];
                     tasks = tasks1;
 
-                    return user.getLinkedData<ItestInstance, ItestAttribute>(taskTableName).then(tasks2 => {
+                    return user.getManyLinkedData<ItestInstance, ItestAttribute>(taskTableName).then(tasks2 => {
                       expect(tasks2).to.have.length(0);
                       return user.setLinkedData(taskTableName, tasks).then(() => {
-                        return user.getLinkedData<ItestInstance, ItestAttribute>(taskTableName).then(tasks3 => {
+                        return user.getManyLinkedData<ItestInstance, ItestAttribute>(taskTableName).then(tasks3 => {
                           expect(tasks3).to.have.length(tasks.length);
                           return user.removeLinkedData(taskTableName, tasks[0]).then(() => {
-                            return user.getLinkedData<ItestInstance, ItestAttribute>(taskTableName).then(tasks4 => {
+                            return user.getManyLinkedData<ItestInstance, ItestAttribute>(taskTableName).then(tasks4 => {
                               expect(tasks4).to.have.length(tasks.length - 1);
                               return user.removeLinkedData(taskTableName, [tasks[1], tasks[2]]).then(() => {
-                                return user.getLinkedData<ItestInstance, ItestAttribute>(taskTableName).then(tasks5 => {
+                                return user.getManyLinkedData<ItestInstance, ItestAttribute>(taskTableName).then(tasks5 => {
                                   expect(tasks5).to.have.length(tasks.length - 3);
                                 });
                               });

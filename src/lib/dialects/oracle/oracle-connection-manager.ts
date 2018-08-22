@@ -108,7 +108,7 @@ export class OracleConnectionManager extends AbstractConnectionManager  {
         database : config.database,
         password: config.password,
         externalAuth : config.externalAuth,
-        stmtCacheSize : 5
+        stmtCacheSize : 0
       };
       //We check if there dialect options
       if ('dialectOptions' in config) {
