@@ -2,7 +2,6 @@
 
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
-import { Model } from './model';
 import { Sequelize } from './sequelize';
 import { Utils } from './utils';
 
