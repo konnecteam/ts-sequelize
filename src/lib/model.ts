@@ -558,7 +558,7 @@ export class Model extends Mixin {
 
     const used = [];
     (function addAllIncludes(parent, allIncludes) {
-      _.forEach(parent.associations, association => {
+      _.forEach(parent.associations, (association : Association) => {
         if (all !== true && all.indexOf(association.associationType) === -1) {
           return;
         }
@@ -1646,8 +1646,8 @@ export class Model extends Mixin {
     });
     // Create a map of field to attribute names
     this.fieldAttributeMap = _.reduce(this.fieldRawAttributesMap, (map, value, key) => {
-      if (key !== value.fieldName) {
-        map[key] = value.fieldName;
+      if (key !== value['fieldName']) {
+        map[key] = value['fieldName'];
       }
       return map;
     }, {});
@@ -2338,6 +2338,11 @@ export class Model extends Mixin {
     rejectOnEmpty? : boolean | any;
     /** = DEFAULT, An optional parameter to specify the schema search_path (Postgres only) */
     searchPath? : string;
+    /** Oracle specific parameter; forces the transformation of all TEXT for Oracle (mapped as CLOB)
+     *  Allow SELECT DISTINCT (id), CLOB from A, B
+     *  In this case, the CLOB fields will only have 4000 characters
+     */
+    shouldTreatTextColumns? : boolean,
     /** Passes by sub-query ? */
     subQuery? : boolean;
     tableNames? : string[];
@@ -2379,6 +2384,11 @@ export class Model extends Mixin {
     }).then(() => {
       this._conformOptions(options, this);
       this._expandIncludeAll(options);
+
+      //Oracle specific case
+      if (this.sequelize.dialect.name === 'oracle' && 'shouldTreatTextColumns' in options) {
+        this._castOracleText(options);
+      }
 
       if (options.hooks) {
         return this.runHooks('beforeFindAfterExpandIncludeAll', options);
@@ -2435,6 +2445,62 @@ export class Model extends Mixin {
 
       return Model._findSeparate(results, originalOptions);
     });
+  }
+
+  /**
+   * Oracle special case
+   * We need to protect the select on CLOB fields as it may be problematic in the query
+   * For example : Oracle doesn't support SELECT DISTINCT(id), CLOB
+   * To get rid of this, we have to create a map of all CLOB fields called in the query
+   * They are replaced by "" in the select
+   * The map will be treated later in the _findSeparate method
+   * @param options
+   */
+  private static _castOracleText(options) {
+    if (('separateFields' in options)) {
+      //Remove the separate fields, we pass here only if the separateFields are being processed
+      //If they are still available, we loop over again and again
+      delete options.separateFields;
+    } else {
+      //We need to loop over each attribute to treat it if it's a TEXT (CLOB)
+      for (let i = 0; i < (options as any).attributes.length; i++) {
+        const modelAttr = this.attributes[(options as any).attributes[i]];
+        if (modelAttr && modelAttr.type.key === 'TEXT' && !('separateFields' in options)) {
+          if (!('separateFields' in options)) {
+            options.separateFields = [];
+          }
+          options.separateFields.push({
+            attribute : options.attributes[i],
+            options
+          });
+          //The attribute is still in the request but just "" as field
+          const field = [new AllUtils.Literal('\'\''), (options as any).attributes[i]];
+          (options as any).attributes[i] = field;
+        }
+      }
+    }
+    if (options.include) {
+      //Case where the TEXT field may be in an association
+      for (let i = 0; i < options.include.length; i++) {
+        const include = options.include[i];
+        if (include.attributes && include.attributes.length > 0) {
+          for (let j = 0 ; j < include.attributes.length; j++) {
+            const modelAttr = include.model.attributes[include.attributes[j]];
+            if (modelAttr && modelAttr.type.key === 'TEXT') {
+              const field = [new AllUtils.Literal('\'\''), include.attributes[j]];
+              if (!('separateFields' in include)) {
+                include.separateFields = [];
+              }
+              include.separateFields.push({
+                attribute : include.attributes[j],
+                include
+              });
+              include.attributes[j] = field;
+            }
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -2568,51 +2634,117 @@ export class Model extends Mixin {
       return original;
     }
 
-    return Promise.map(options.include, include => {
-      if (!include.separate) {
-        return Model._findSeparate(
-          results.reduce((memo, result) => {
-            let associations = result.get(include.association.as);
+    let firstPromise = Promise.resolve(results);
 
-            // Might be an empty belongsTo relation
-            if (!associations) {
-              return memo;
-            }
-
-            // Force array so we can concat no matter if it's 1:1 or :M
-            if (!Array.isArray(associations)) {
-              associations = [associations];
-            }
-
-            for (let i = 0, len = associations.length; i !== len; ++i) {
-              memo.push(associations[i]);
-            }
-            return memo;
-          }, []),
-          _.assign(
-            {},
-            _.omit(options, 'include', 'attributes', 'order', 'where', 'limit', 'plain', 'scope', 'group'),
-            {include: include.include || []}
-          )
-        );
-      }
-
-      return include.association.get(results, _.assign(
+    //If there are separate fields in the main model
+    if ('separateFields' in options) {
+      const findAllParameters = _.assign(
         {},
-        _.omit(options, 'include', 'attributes', 'order', 'where', 'limit', 'plain', 'group'),
-        _.omit(include, 'parent', 'association', 'as')
-      )).then(map => {
-        for (const result of results) {
-          result.set(
-            include.association.as,
-            map[result.get(include.association.source.primaryKeyAttribute)],
-            {
-              raw: true
+        _.omit(options, 'include', 'attributes', 'order', 'where', 'limit', 'plain', 'group', 'includeMap', 'includeNames')
+      );
+      (options as any).model._scope = [];
+      //We need to get the CLOB attributes
+      (findAllParameters as any).attributes = [(options as any).model.primaryKeyAttribute].concat((options as any).separateFields.map(f => f.attribute));
+      const whereCond = {};
+      //We create the where condition based on the ids previously retrieved
+      whereCond[(options as any).model.primaryKeyAttribute] = {
+        $in : results.map(f => f[(options as any).model.primaryKeyAttribute])
+      };
+      (findAllParameters as any).where = whereCond;
+      delete (options as any).separateFields; //We remove the separateFields attribute
+      firstPromise = (options as any).model.findAll(findAllParameters).then(map => {
+        //Datas from DB, we have to set them in the results object
+        const fieldsToUpdate = map[0]._options.attributes.filter( f => f !== this.primaryKeyAttribute);
+        map.forEach(mapping => {
+          const resToUpdate = results.find(f => f[this.primaryKeyAttribute] === mapping[this.primaryKeyAttribute]);
+          if (resToUpdate) {
+            fieldsToUpdate.forEach(field => {
+              resToUpdate[field] = mapping[field];
+            });
+          }
+
+        });
+        return results;
+      });
+    }
+    return firstPromise.then(firstRangeResults => {
+      results = firstRangeResults;
+      return Promise.map(options.include, include => {
+        if ('separateFields' in include) {
+          //As previously for the main model, we need to treat each include as if it was a separate and create a new request for each include
+          const includeParams =  _.assign(
+            {},
+            _.omit(options, 'include', 'attributes', 'order', 'where', 'limit', 'plain', 'group'),
+            _.omit(include, 'parent', 'association', 'as')
+          );
+          includeParams.attributes = include.attributes.map(attr => {
+            if (typeof attr === 'string') {
+              return attr;
+            } else {
+              //If we have a CLOB attribute -> [AllUtils.Literal(''), FIELD]
+              if (attr[0] instanceof AllUtils.Literal) {
+                return attr[1];
+              }
             }
+          });
+          return include.association.get(results, includeParams).then(map => {
+            //Setting values on the result object
+            for (const result of results) {
+              result.set(
+                include.association.as,
+                map[result.get(include.association.source.primaryKeyAttribute)],
+                {
+                  raw: true
+                }
+              );
+            }
+          });
+        }
+        if (!include.separate) {
+          return Model._findSeparate(
+            results.reduce((memo, result) => {
+              let associations = result.get(include.association.as);
+
+              // Might be an empty belongsTo relation
+              if (!associations) {
+                return memo;
+              }
+
+              // Force array so we can concat no matter if it's 1:1 or :M
+              if (!Array.isArray(associations)) {
+                associations = [associations];
+              }
+
+              for (let i = 0, len = associations.length; i !== len; ++i) {
+                memo.push(associations[i]);
+              }
+              return memo;
+            }, []),
+            _.assign(
+              {},
+              _.omit(options, 'include', 'attributes', 'order', 'where', 'limit', 'plain', 'scope', 'group'),
+              {include: include.include || []}
+            )
           );
         }
-      });
-    }).return(original);
+
+        return include.association.get(results, _.assign(
+          {},
+          _.omit(options, 'include', 'attributes', 'order', 'where', 'limit', 'plain', 'group'),
+          _.omit(include, 'parent', 'association', 'as')
+        )).then(map => {
+          for (const result of results) {
+            result.set(
+              include.association.as,
+              map[result.get(include.association.source.primaryKeyAttribute)],
+              {
+                raw: true
+              }
+            );
+          }
+        });
+      }).return(original);
+    });
   }
 
   /**
@@ -5056,6 +5188,9 @@ export class Model extends Mixin {
           }
         })
         .then(result => {
+          if (result._previousDataValues == null) {
+            result._previousDataValues = {};
+          }
           for (const field of options.fields) {
             result._previousDataValues[field] = result.dataValues[field];
             this.changed(field, false);

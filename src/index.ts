@@ -1,3 +1,4 @@
+
 // 'use strict';
 
 /**
@@ -6,3 +7,4 @@
  * @module Sequelize
  */
 export {Sequelize} from './lib/sequelize';
+export { Transaction } from './lib/transaction';

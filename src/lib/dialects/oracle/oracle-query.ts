@@ -783,6 +783,10 @@ export class OracleQuery extends AbstractQuery {
       return new sequelizeErrors.UnknownConstraintError(match[1]);
     }
 
+    if (!('sql' in err)) {
+      (err as any).sql = this.sql;
+    }
+
     return new sequelizeErrors.DatabaseError(err);
   }
 

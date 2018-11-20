@@ -8,6 +8,7 @@ npm-debug.log
 *~
 src/test/binary/tmp/*
 src/test/tmp/*
+.directory
 src/test/dialects/sqlite/test.sqlite
 src/test/sqlite/test.sqlite
 coverage-*

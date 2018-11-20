@@ -17,8 +17,8 @@ export class MysqlQueryGenerator extends AbstractQueryGenerator {
   constructor(options : { sequelize? : Sequelize, options : ISequelizeOption, _dialect? : MysqlDialect }) {
     super(options);
     this.dialect = 'mysql';
-    this.OperatorMap[Op.regexp] = 'REGEXP';
-    this.OperatorMap[Op.notRegexp] = 'NOT REGEXP';
+    this.OperatorMap[Op.regexp as any] = 'REGEXP';
+    this.OperatorMap[Op.notRegexp as any] = 'NOT REGEXP';
   }
 
 
@@ -176,11 +176,11 @@ export class MysqlQueryGenerator extends AbstractQueryGenerator {
 
     if (options.uniqueKeys) {
       _.each(options.uniqueKeys, (columns, indexName) => {
-        if (!columns.singleField) { // If it's a single field it's handled in column def, not as an index
+        if (!columns['singleField']) { // If it's a single field it's handled in column def, not as an index
           if (!_.isString(indexName)) {
-            indexName = 'uniq_' + tableName + '_' + columns.fields.join('_');
+            indexName = 'uniq_' + tableName + '_' + (columns as any).fields.join('_');
           }
-          values.attributes += ', UNIQUE ' + this.quoteIdentifier(indexName) + ' (' + _.map(columns.fields, this.quoteIdentifier).join(', ') + ')';
+          values.attributes += ', UNIQUE ' + this.quoteIdentifier(indexName) + ' (' + _.map((columns as any).fields, this.quoteIdentifier).join(', ') + ')';
         }
       });
     }

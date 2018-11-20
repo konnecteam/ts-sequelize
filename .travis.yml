@@ -8,8 +8,7 @@ branches:
     - typescript
     - develop
     - /^greenkeeper/.*$/
-  except:
-    - /^v\d+\.\d+\.\d+$/
+  except:- /^v\d+\.\d+\.\d+$/
 
 cache:
   directories:
@@ -96,8 +95,8 @@ jobs:
         - npm run docs
       deploy:
         provider: surge
-        project: ./esdoc/
-        domain: docs.sequelizejs.com
+        project: ./site/
+        domain: docs.ts-sequelizejs.com
         skip_cleanup: true
 
 stages:

@@ -1,5 +1,6 @@
 'use strict';
 
+import { BigNumber } from 'bignumber.js';
 import * as _ from 'lodash';
 import * as wkx from 'wkx';
 import * as BaseTypes from '../../data-types';
@@ -277,6 +278,10 @@ export class BIGINT extends BaseTypes.BIGINT {
       this._unsigned = undefined;
       this._zerofill = undefined;
     }
+  }
+
+  public static parse(value, oid, getTypeParser) {
+    return new BigNumber(value);
   }
 }
 

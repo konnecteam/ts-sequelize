@@ -543,7 +543,7 @@ export class Sequelize {
    * @see {@link Model.build} for more information about instance option.
    */
 
-  public query(sql : { values?, bind?, query?, trim? } | string, options : {
+  public query(sql : { values?, bind?, query?, trim? } | string, options? : {
     /** Either an object of named bind parameter in the format `_param` or an array of unnamed bind parameter to replace `$1, $2, ...` in your SQL. */
     bind? : {} | any[];
     /** Map returned fields to arbitrary names for `SELECT` query type. */
@@ -1078,7 +1078,7 @@ export class Sequelize {
    * @alias condition
    * @since v2.0.0-dev3
    */
-  public static where(attr : {}, comparator : string, logic : string) {
+  public static where(attr : {}, comparator : string, logic : string) : AllUtils.Where {
     return new AllUtils.Where(attr, comparator, logic);
   }
 

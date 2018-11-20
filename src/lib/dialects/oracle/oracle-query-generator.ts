@@ -760,9 +760,6 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
     const inputParamCpt = 0;
 
 
-    //We have to specify a variable that will be used as return value for the id
-    const returningQuery = '<%=valueQuery %> RETURNING <%=primaryKey %> INTO <%=primaryKeyReturn %>';
-
     if (modelAttributes) {
 
       //We search for the primaryKey
@@ -817,7 +814,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
               inputParam['type'] = oracleDb.STRING;
             } else {
               //No length -> it's a CLOB
-              inputParam['type'] = oracleDb.STRING;
+              inputParam['type'] = oracleDb.CLOB;
             }
           } else {
             //No TEXT, it's a BLOB
@@ -891,14 +888,123 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
       values: values.join(',')
     };
 
-    if (options.returning && replacements.attributes && replacements.attributes.length > 0) {
-      query = returningQuery;
-      replacements.valueQuery = _.template(valueQuery)(replacements);
-    } else {
-      query = (replacements.attributes.length ? valueQuery : emptyQuery);
-    }
+    query = (replacements.attributes.length ? valueQuery : emptyQuery);
 
     return _.template(query)(replacements);
+  }
+
+  /**
+   * Returns an update query.
+   * @param tableName -> Name of the table
+   * @param values -> A hash with attribute-value-pairs
+   * @param where -> A hash with conditions (e.g. {name: 'foo'})
+   *              OR an ID as integer
+   *              OR a string with conditions (e.g. 'name="foo"').
+   *              If you use a string, you have to escape it on your own.
+   */
+  public updateQuery(tableName : string, attrValueHash : {}, where : { length? }, options : {
+    fields? : string[],
+    hasTrigger? : boolean,
+    /** An object of hook function that are called before and after certain lifecycle events */
+    hooks? : boolean,
+    /** How many rows to update */
+    limit? : number,
+    mapToModel? : boolean,
+    model? : typeof Model,
+    /** = false, A flag that defines if null values should be passed to SQL queries or not. */
+    omitNull? : boolean,
+    /** Return raw result. */
+    raw? : boolean,
+    returning? : boolean,
+    /**
+     * The type of query you are executing. The query type affects how results are formatted before they are passed back.
+     * The type is a string, but `Sequelize.QueryTypes` is provided as convenience shortcuts.
+     */
+    type? : string
+  }, attributes : {}) : string {
+    options = options || {};
+    _.defaults(options, this.options);
+
+    attrValueHash = Utils.removeNullValuesFromHash(attrValueHash, options.omitNull, options);
+
+    const values = [];
+    const modelAttributeMap = {};
+    const inputParameters = {};
+    const inputParamCpt = 0;
+    let query = 'UPDATE <%= table %> SET <%= values %> <%= where %>';
+
+    if (options.limit) {
+      if (where && ((where.length && where.length > 0) || (Object.keys(where).length > 0))) {
+        //If we have a where clause, we add AND
+        query += ' AND ';
+      } else {
+        //No where clause, we add where
+        query += ' WHERE ';
+      }
+      query += `rownum <= ${this.escape(options.limit)} `;
+    }
+
+    if (attributes) {
+      Object.keys(attributes).forEach(key => {
+        const attribute = attributes[key];
+        modelAttributeMap[key] = attribute;
+        if (attribute.field) {
+          modelAttributeMap[attribute.field] = attribute;
+        }
+      });
+    }
+
+    //forin
+    for (const key in attrValueHash) {
+      if (modelAttributeMap && modelAttributeMap[key] && modelAttributeMap[key].autoIncrement === true && !this._dialect.supports.autoIncrement.update) {
+        // not allowed to update identity column
+        continue;
+      }
+
+      const value = attrValueHash[key];
+      //if we try to update with STRING / BLOB / CLOB we need to use bind parameters
+      if (modelAttributeMap[key].type.key === 'TEXT' || (modelAttributeMap[key].type.key === 'STRING' && value.length > 2000) || modelAttributeMap[key].type.key === 'BLOB') {
+        const paramName = `:input${key}${inputParamCpt}`;
+        const inputParam = {
+          // dir : oracleDb.BIND_IN,
+          val : value
+        };
+        //Binding type to parameter
+        if (modelAttributeMap[key].type.key === DataTypes.TEXT.key) {
+          //if text with length, it's generated as a String inside Oracle,
+          if (modelAttributeMap[key].type.key === 'STRING' || modelAttributeMap[key].type._length !== '') {
+            inputParam['type'] = oracleDb.STRING;
+          } else {
+            //No length -> it's a CLOB
+            inputParam['type'] = oracleDb.CLOB;
+          }
+        } else {
+          //No TEXT, it's a BLOB
+          // inputParam['type'] =  oracleDb.BLOB;
+          inputParam['val'] = Buffer.from(inputParam['val']);
+        }
+        inputParameters[paramName.slice(1, paramName.length)] = inputParam;
+        values.push(this.quoteIdentifier(key) + '=' + paramName);
+      } else {
+        values.push(this.quoteIdentifier(key) + '=' + this.escape(value, modelAttributeMap && modelAttributeMap[key] || undefined, { context: 'UPDATE' }));
+      }
+    }
+
+    const replacements = {
+      table: this.quoteTable(tableName),
+      values: values.join(','),
+      where: this.whereQuery(where, options)
+    };
+
+    if (values.length === 0) {
+      return '';
+    }
+
+    if (Object.keys(inputParameters).length > 0) {
+      (options as any).inputParameters = inputParameters;
+    }
+
+    return _.template(query, this._templateSettings)(replacements).trim();
   }
 
 
@@ -983,7 +1089,6 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
           }
           if (currAttribute && currAttribute.type != null && (currAttribute.type.key === DataTypes.TEXT.key || currAttribute.type.key === DataTypes.BLOB.key)) {
             //If we try to insert into TEXT or BLOB, we need to pass by input-parameters to avoid the 4000 char length limit
-
             const paramName = `:input${key}${inputParamCpt}`;
             const inputParam = {
               dir : oracleDb.BIND_IN,
@@ -996,7 +1101,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
                 inputParam['type'] = oracleDb.STRING;
               } else {
                 //No length -> it's a CLidxOB
-                inputParam['type'] = oracleDb.STRING;
+                inputParam['type'] = oracleDb.CLOB;
               }
             } else {
               //No TEXT, it's a BLOB
@@ -1382,13 +1487,13 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
     } else {
       tableName = rawTablename;
     }
-    return _.map(indexes, index => {
-      if (!index.hasOwnProperty('name')) {
-        if (index.unique) {
-          index.name = this._generateUniqueConstraintName(tableName, index.fields);
+    return _.map(indexes, (index : any) => {
+      if (!(index as any).hasOwnProperty('name')) {
+        if (index['unique']) {
+          index['name'] = this._generateUniqueConstraintName(tableName, index.fields);
         } else {
           const onlyAttributeNames = index.fields.map(field => typeof field === 'string' ? field : field.name || field.attribute);
-          index.name = Utils.underscore(tableName + '_' + onlyAttributeNames.join('_'));
+          index['name'] = Utils.underscore(tableName + '_' + onlyAttributeNames.join('_'));
         }
       }
       return index;

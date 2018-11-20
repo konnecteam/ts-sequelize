@@ -24,9 +24,9 @@ export default {
 
   mssql: mssqlConfig || {
     database: process.env.SEQ_MSSQL_DB   || process.env.SEQ_DB   || 'sequelize_test',
-    username: process.env.SEQ_MSSQL_USER || process.env.SEQ_USER || 'sequelize',
-    password: process.env.SEQ_MSSQL_PW   || process.env.SEQ_PW   || 'nEGkLma26gXVHFUAHJxcmsrK',
-    host:     process.env.SEQ_MSSQL_HOST || process.env.SEQ_HOST || '127.0.0.1',
+    username: process.env.SEQ_MSSQL_USER || process.env.SEQ_USER || 'sa',
+    password: process.env.SEQ_MSSQL_PW   || process.env.SEQ_PW   || 'aqw123zsx!',
+    host:     process.env.SEQ_MSSQL_HOST || process.env.SEQ_HOST || 'localhost',
     port:     process.env.SEQ_MSSQL_PORT || process.env.SEQ_PORT || 1433,
     dialectOptions: {
       // big insert queries need a while

@@ -1072,7 +1072,7 @@ export abstract class AbstractQueryInterface {
 
     // Lets combine uniquekeys and indexes into one
     indexes = _.map(model.options.uniqueKeys, value => {
-      return value.fields;
+      return value['fields'];
     });
 
     Object.keys(model.options.indexes).forEach(key => {
@@ -1281,7 +1281,7 @@ export abstract class AbstractQueryInterface {
    *
    * @returns Promise,
    */
-  public bulkDelete(tableName : string, identifier : {}, options : {
+  public bulkDelete(tableName : string, identifier : {}, options? : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : any,
     hasDuplicating? : boolean,
@@ -1311,7 +1311,7 @@ export abstract class AbstractQueryInterface {
     topModel? : typeof Model,
     /** A hash of search attributes. */
     where? : {}
-  }, model : typeof Model) {
+  }, model? : typeof Model) {
     options = Utils.cloneDeep(options);
     options = _.defaults(options, {limit: null});
     if (typeof identifier === 'object') {

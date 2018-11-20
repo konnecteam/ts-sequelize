@@ -337,8 +337,8 @@ export class PostgresQuery extends AbstractQuery {
 
             if (this.model && this.model.uniqueKeys) {
               _.forOwn(this.model.uniqueKeys, constraint => {
-                if (_.isEqual(constraint.fields, Object.keys(fields)) && !!constraint.msg) {
-                  message = constraint.msg;
+                if (_.isEqual(constraint['fields'], Object.keys(fields)) && !!constraint['msg']) {
+                  message = constraint['msg'];
                   return false;
                 }
               });

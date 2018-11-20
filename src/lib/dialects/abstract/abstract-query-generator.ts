@@ -21,6 +21,7 @@ import { Transaction } from '../../transaction';
 import * as AllUtils from '../../utils';
 import { AbstractDialect } from './abstract-dialect';
 const Utils = AllUtils.Utils;
+const SequelizeMethod = AllUtils.SequelizeMethod;
 
 export abstract class AbstractQueryGenerator {
   public _templateSettings =  _.runInContext().templateSettings;
@@ -414,15 +415,15 @@ export abstract class AbstractQueryGenerator {
     return _.template(query, this._templateSettings)(replacements);
   }
 
- /**
-  * Returns an update query.
-  * @param tableName -> Name of the table
-  * @param values -> A hash with attribute-value-pairs
-  * @param where -> A hash with conditions (e.g. {name: 'foo'})
-  *              OR an ID as integer
-  *              OR a string with conditions (e.g. 'name="foo"').
-  *              If you use a string, you have to escape it on your own.
-  */
+/**
+ * Returns an update query.
+ * @param tableName -> Name of the table
+ * @param values -> A hash with attribute-value-pairs
+ * @param where -> A hash with conditions (e.g. {name: 'foo'})
+ *              OR an ID as integer
+ *              OR a string with conditions (e.g. 'name="foo"').
+ *              If you use a string, you have to escape it on your own.
+ */
   public updateQuery(tableName : string, attrValueHash : {}, where : { length? }, options : {
     fields? : string[],
     hasTrigger? : boolean,
@@ -550,16 +551,16 @@ export abstract class AbstractQueryGenerator {
     return _.template(query, this._templateSettings)(replacements).trim();
   }
 
- /**
-  * Returns an update query.
-  * @param operator -> String with the arithmetic operator (e.g. '+' or '-')
-  * @param tableName -> Name of the table
-  * @param values -> A hash with attribute-value-pairs
-  * @param where -> A hash with conditions (e.g. {name: 'foo'})
-  *              OR an ID as integer
-  *              OR a string with conditions (e.g. 'name="foo"').
-  *              If you use a string, you have to escape it on your own.
-  */
+/**
+ * Returns an update query.
+ * @param operator -> String with the arithmetic operator (e.g. '+' or '-')
+ * @param tableName -> Name of the table
+ * @param values -> A hash with attribute-value-pairs
+ * @param where -> A hash with conditions (e.g. {name: 'foo'})
+ *              OR an ID as integer
+ *              OR a string with conditions (e.g. 'name="foo"').
+ *              If you use a string, you have to escape it on your own.
+ */
   public arithmeticQuery(operator : string, tableName : string, attrValueHash : { number? : number}, where : { id? : number}, options : {
     /** Array<String>|Object, A list of the attributes that you want to select, or an object with `include` and `exclude` keys. */
     attributes? : {} | any[],
@@ -1607,6 +1608,7 @@ export abstract class AbstractQueryGenerator {
     /** A hash of search attributes. */
     where? : {}
   }, mainTableAs : string) : any[] {
+
     return attributes && attributes.map(attr => {
       let addTable = true;
 
@@ -2742,6 +2744,7 @@ export abstract class AbstractQueryGenerator {
     prefix? : string,
     json? : {}
   }) : any {
+
     options = options || {};
     if (key && typeof key === 'string' && key.indexOf('.') !== -1 && options.model) {
       const keyParts = key.split('.');
@@ -2775,10 +2778,10 @@ export abstract class AbstractQueryGenerator {
     }
 
     if (!value) {
-      return this._joinKeyValue(key, this.escape(value, field), value === null ? this.OperatorMap[Op.is] : this.OperatorMap[Op.eq], options.prefix);
+      return this._joinKeyValue(key, this.escape(value, field), value === null ? this.OperatorMap[Op.is as any] : this.OperatorMap[Op.eq as any], options.prefix);
     }
 
-    if (value instanceof AllUtils.SequelizeMethod && !(key !== undefined && value instanceof AllUtils.Fn)) {
+    if (value instanceof SequelizeMethod && !(key !== undefined && value instanceof AllUtils.Fn)) {
       return this.handleSequelizeMethod(value);
     }
 
@@ -2797,15 +2800,15 @@ export abstract class AbstractQueryGenerator {
 
 
     if (value[Op.or]) {
-      return this._whereBind(this.OperatorMap[Op.or], key, value[Op.or], options);
+      return this._whereBind(this.OperatorMap[Op.or as any], key, value[Op.or], options);
     }
 
     if (value[Op.and]) {
-      return this._whereBind(this.OperatorMap[Op.and], key, value[Op.and], options);
+      return this._whereBind(this.OperatorMap[Op.and as any], key, value[Op.and], options);
     }
 
     if (isArray && fieldType instanceof DataTypes.ARRAY) {
-      return this._joinKeyValue(key, this.escape(value, field), this.OperatorMap[Op.eq], options.prefix);
+      return this._joinKeyValue(key, this.escape(value, field), this.OperatorMap[Op.eq as any], options.prefix);
     }
 
     if (isPlainObject && fieldType instanceof DataTypes.JSON && options.json !== false) {
@@ -2813,7 +2816,7 @@ export abstract class AbstractQueryGenerator {
     }
     // If multiple keys we combine the different logic conditions
     if (isPlainObject && valueKeys.length > 1) {
-      return this._whereBind(this.OperatorMap[Op.and], key, value, options);
+      return this._whereBind(this.OperatorMap[Op.and as any], key, value, options);
     }
 
     if (isArray) {
@@ -2823,15 +2826,15 @@ export abstract class AbstractQueryGenerator {
       if (this.OperatorMap[valueKeys[0]]) {
         return this._whereParseSingleValueObject(key, field, valueKeys[0], value[valueKeys[0]], options);
       } else {
-        return this._whereParseSingleValueObject(key, field, this.OperatorMap[Op.eq], value, options);
+        return this._whereParseSingleValueObject(key, field, this.OperatorMap[Op.eq as any], value, options);
       }
     }
 
     if (key === Op.placeholder) {
-      return this._joinKeyValue(this.OperatorMap[key], this.escape(value, field), this.OperatorMap[Op.eq], options.prefix);
+      return this._joinKeyValue(this.OperatorMap[key], this.escape(value, field), this.OperatorMap[Op.eq as any], options.prefix);
     }
+    return this._joinKeyValue(key, this.escape(value, field), this.OperatorMap[Op.eq as any], options.prefix);
 
-    return this._joinKeyValue(key, this.escape(value, field), this.OperatorMap[Op.eq], options.prefix);
   }
 
   /**
@@ -2871,7 +2874,7 @@ export abstract class AbstractQueryGenerator {
       }
     });
 
-    _.forOwn(orig, (item, prop) => {
+    _.forOwn(orig, (item : any, prop) => {
       prop = this.OperatorsAliasMap[prop] || prop;
       if (_.isPlainObject(item)) {
         item = this._replaceAliases(item);
@@ -2886,12 +2889,12 @@ export abstract class AbstractQueryGenerator {
    * @hidden
    */
   private _whereGroupBind(key : any, value : any, options : { model? : typeof Model, prefix? : string } ) : string {
-    const binding = key === Op.or ? this.OperatorMap[Op.or] : this.OperatorMap[Op.and];
+    const binding = key === Op.or ? this.OperatorMap[Op.or as any] : this.OperatorMap[Op.and as any];
     const outerBinding = key === Op.not ? 'NOT ' : '';
 
     if (Array.isArray(value)) {
       value = value.map(item => {
-        let itemQuery = this.whereItemsQuery(item, options, this.OperatorMap[Op.and]);
+        let itemQuery = this.whereItemsQuery(item, options, this.OperatorMap[Op.and as any]);
         if (itemQuery && itemQuery.length && (Array.isArray(item) || _.isPlainObject(item)) && Utils.getComplexSize(item) > 1) {
           itemQuery = '(' + itemQuery + ')';
         }
@@ -2953,7 +2956,7 @@ export abstract class AbstractQueryGenerator {
       this._traverseJSON(items, baseKey, prop, item, [prop]);
     });
 
-    const result = items.join(this.OperatorMap[Op.and]);
+    const result = items.join(this.OperatorMap[Op.and as any]);
     return items.length > 1 ? '(' + result + ')' : result;
   }
 
@@ -3148,7 +3151,7 @@ export abstract class AbstractQueryGenerator {
       }
     }
 
-    let comparator = this.OperatorMap[prop] || this.OperatorMap[Op.eq];
+    let comparator = this.OperatorMap[prop] || this.OperatorMap[Op.eq as any];
 
     switch (prop) {
       case Op.in:
@@ -3161,14 +3164,14 @@ export abstract class AbstractQueryGenerator {
           return this._joinKeyValue(key, `(${value.map(item => this.escape(item, field)).join(', ')})`, comparator, options.prefix);
         }
 
-        if (comparator === this.OperatorMap[Op.in]) {
+        if (comparator === this.OperatorMap[Op.in as any]) {
           return this._joinKeyValue(key, '(NULL)', comparator, options.prefix);
         }
 
         return '';
       case Op.any:
       case Op.all:
-        comparator = `${this.OperatorMap[Op.eq]} ${comparator}`;
+        comparator = `${this.OperatorMap[Op.eq as any]} ${comparator}`;
         if (value[Op.values]) {
           return this._joinKeyValue(key, `(VALUES ${value[Op.values].map(item => `(${this.escape(item)})`).join(', ')})`, comparator, options.prefix);
         }
@@ -3180,7 +3183,7 @@ export abstract class AbstractQueryGenerator {
       case Op.raw:
         throw new Error('The `$raw` where property is no longer supported.  Use `sequelize.literal` instead.');
       case Op.col:
-        comparator = this.OperatorMap[Op.eq];
+        comparator = this.OperatorMap[Op.eq as any];
         value = value.split('.');
 
         if (value.length > 2) {
@@ -3198,7 +3201,7 @@ export abstract class AbstractQueryGenerator {
       acceptStrings? : boolean,
       isList? : boolean
     } = {
-      acceptStrings: comparator.indexOf(this.OperatorMap[Op.like]) !== -1
+      acceptStrings: comparator.indexOf(this.OperatorMap[Op.like as any]) !== -1
     };
 
     if (_.isPlainObject(value)) {
@@ -3207,22 +3210,22 @@ export abstract class AbstractQueryGenerator {
       }
       if (value[Op.any]) {
         escapeOptions.isList = true;
-        return this._joinKeyValue(key, `(${this.escape(value[Op.any], field, escapeOptions)})`, `${comparator} ${this.OperatorMap[Op.any]}`, options.prefix);
+        return this._joinKeyValue(key, `(${this.escape(value[Op.any], field, escapeOptions)})`, `${comparator} ${this.OperatorMap[Op.any as any]}`, options.prefix);
       }
       if (value[Op.all]) {
         escapeOptions.isList = true;
-        return this._joinKeyValue(key, `(${this.escape(value[Op.all], field, escapeOptions)})`, `${comparator} ${this.OperatorMap[Op.all]}`, options.prefix);
+        return this._joinKeyValue(key, `(${this.escape(value[Op.all], field, escapeOptions)})`, `${comparator} ${this.OperatorMap[Op.all as any]}`, options.prefix);
       }
     }
 
-    if (comparator.indexOf(this.OperatorMap[Op.regexp]) !== -1) {
+    if (comparator.indexOf(this.OperatorMap[Op.regexp as any]) !== -1) {
       return this._joinKeyValue(key, `'${value}'`, comparator, options.prefix);
     }
 
-    if (value === null && comparator === this.OperatorMap[Op.eq]) {
-      return this._joinKeyValue(key, this.escape(value, field, escapeOptions), this.OperatorMap[Op.is], options.prefix);
-    } else if (value === null && comparator === this.OperatorMap[Op.ne]) {
-      return this._joinKeyValue(key, this.escape(value, field, escapeOptions), this.OperatorMap[Op.not], options.prefix);
+    if (value === null && comparator === this.OperatorMap[Op.eq as any]) {
+      return this._joinKeyValue(key, this.escape(value, field, escapeOptions), this.OperatorMap[Op.is as any], options.prefix);
+    } else if (value === null && comparator === this.OperatorMap[Op.ne as any]) {
+      return this._joinKeyValue(key, this.escape(value, field, escapeOptions), this.OperatorMap[Op.not as any], options.prefix);
     }
 
     return this._joinKeyValue(key, this.escape(value, field, escapeOptions), comparator, options.prefix);

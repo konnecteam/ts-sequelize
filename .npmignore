@@ -17,6 +17,7 @@ typedoc.js
 tslint.json
 tsconfig.json
 typings.json
+.directory
 Dockerfile
 node_modules
 

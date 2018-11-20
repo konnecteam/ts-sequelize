@@ -83,7 +83,7 @@ export const Hooks = {
   hasHooks: undefined,
   _setupHooks(hooks : {}) {
     this.options.hooks = {};
-    _.map(hooks || {}, (hooksArray, hookName) => {
+    _.map(hooks || {}, (hooksArray : any, hookName) => {
       if (!_.isArray(hooksArray)) {
         hooksArray = [hooksArray];
       }

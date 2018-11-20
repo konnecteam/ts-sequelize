@@ -103,6 +103,10 @@ export class TEXT extends BaseTypes.TEXT {
     }
     return 'CLOB';
   }
+
+  public _stringify(value : any) : number {
+    return value;
+  }
 }
 
 export class BOOLEAN extends BaseTypes.BOOLEAN {

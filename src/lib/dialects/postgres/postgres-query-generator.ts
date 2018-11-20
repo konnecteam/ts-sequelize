@@ -999,10 +999,10 @@ export class PostgresQueryGenerator extends AbstractQueryGenerator {
         throw new Error('parseTriggerEventSpec: undefined trigger event ' + fireKey);
       }
 
-      let eventSpec = EVENT_MAP[fireValue];
+      let eventSpec : string = EVENT_MAP[fireValue];
       if (eventSpec === 'UPDATE') {
-        if (_.isArray(fireValue) && fireValue.length > 0) {
-          eventSpec += ' OF ' + fireValue.join(', ');
+        if (_.isArray(fireValue) && (fireValue as any).length > 0) {
+          eventSpec += ' OF ' + (fireValue as any).join(', ');
         }
       }
 

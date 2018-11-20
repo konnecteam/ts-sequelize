@@ -437,8 +437,8 @@ export class SqliteQuery extends AbstractQuery {
 
         if (this.model) {
           _.forOwn(this.model.uniqueKeys, constraint => {
-            if (_.isEqual(constraint.fields, fields) && !!constraint.msg) {
-              message = constraint.msg;
+            if (_.isEqual(constraint['fields'], fields) && !!constraint['msg']) {
+              message = constraint['msg'];
               return false;
             }
           });

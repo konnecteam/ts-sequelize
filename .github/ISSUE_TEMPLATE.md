@@ -23,7 +23,7 @@ _But the output was bar!_
 _Output, either JSON or SQL_
 
 
-__Dialect:__ mysql / postgres / sqlite / mssql / any
+__Dialect:__ mysql / postgres / sqlite / mssql / oracle / any
 __Dialect version:__ XXX
 __Database version:__ XXX
 __Sequelize version:__ XXX
