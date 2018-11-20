@@ -209,7 +209,8 @@ export class OracleQuery extends AbstractQuery {
 
           const formatedResult = self.formatResults(result);
 
-          if (this.isUpsertQuery()) {
+          //If we have an upsert or update we should return the data directly
+          if (this.isUpsertQuery() || this.isUpdateQuery()) {
             return formatedResult;
           }
           return [formatedResult];

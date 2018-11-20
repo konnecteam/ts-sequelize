@@ -760,6 +760,9 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
     const inputParamCpt = 0;
 
 
+    //We have to specify a variable that will be used as return value for the id
+    const returningQuery = '<%=valueQuery %> RETURNING <%=primaryKey %> INTO <%=primaryKeyReturn %>';
+
     if (modelAttributes) {
 
       //We search for the primaryKey
@@ -888,7 +891,12 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
       values: values.join(',')
     };
 
-    query = (replacements.attributes.length ? valueQuery : emptyQuery);
+    if (options.returning && replacements.attributes && replacements.attributes.length > 0) {
+      query = returningQuery;
+      replacements.valueQuery = _.template(valueQuery)(replacements);
+    } else {
+      query = (replacements.attributes.length ? valueQuery : emptyQuery);
+    }
 
     return _.template(query)(replacements);
   }
@@ -963,7 +971,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
 
       const value = attrValueHash[key];
       //if we try to update with STRING / BLOB / CLOB we need to use bind parameters
-      if (modelAttributeMap[key].type.key === 'TEXT' || (modelAttributeMap[key].type.key === 'STRING' && value.length > 2000) || modelAttributeMap[key].type.key === 'BLOB') {
+      if (key in modelAttributeMap && (modelAttributeMap[key].type.key === 'TEXT' || (modelAttributeMap[key].type.key === 'STRING' && value.length > 2000) || modelAttributeMap[key].type.key === 'BLOB')) {
         const paramName = `:input${key}${inputParamCpt}`;
         const inputParam = {
           // dir : oracleDb.BIND_IN,
