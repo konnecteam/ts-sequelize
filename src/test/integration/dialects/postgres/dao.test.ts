@@ -569,9 +569,9 @@ if (dialect.match(/^postgres/)) {
           const User = this.User;
 
           return User.create({ aNumber: '9223372036854775807' }).then(user => {
-            expect(user.aNumber).to.equal('9223372036854775807');
+            expect(user.aNumber.toString()).to.equal('9223372036854775807');
             return User.find({ where: { aNumber: '9223372036854775807' } }).then(_user => {
-              expect(_user.aNumber).to.equal('9223372036854775807');
+              expect(_user.aNumber.toString()).to.equal('9223372036854775807');
             });
           });
         });
@@ -580,9 +580,9 @@ if (dialect.match(/^postgres/)) {
           const User = this.User;
 
           return User.create({ aNumber: '-9223372036854775807' }).then(user => {
-            expect(user.aNumber).to.equal('-9223372036854775807');
+            expect(user.aNumber.toString()).to.equal('-9223372036854775807');
             return User.find({ where: { aNumber: '-9223372036854775807' } }).then(_user => {
-              expect(_user.aNumber).to.equal('-9223372036854775807');
+              expect(_user.aNumber.toString()).to.equal('-9223372036854775807');
             });
           });
         });
