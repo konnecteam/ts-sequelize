@@ -9,7 +9,8 @@ branches:
     - develop
     - docdeployment
     - /^greenkeeper/.*$/
-  except:- /^v\d+\.\d+\.\d+$/
+  except:
+    - /^v\d+\.\d+\.\d+$/
 
 cache:
   directories:
