@@ -8,7 +8,7 @@ const expect = chai.expect;
 const dialect = Support.getTestDialect();
 
 if (dialect === 'mysql') {
-  describe('[MYSQL Specific] Connection Manager', () => {
+  describe.only('[MYSQL Specific] Connection Manager', () => {
     it('works correctly after being idle', function() {
       const User = this.sequelize.define('User', { username: new DataTypes.STRING() });
       const spy = sinon.spy();
@@ -99,12 +99,14 @@ if (dialect === 'mysql') {
           return cm.getConnection();
         })
         .then(connection => {
-          // Old threadId should be different from current new one
-          expect(conn.threadId).to.not.be.equal(connection.threadId);
-          expect(sequelize.connectionManager.pool.size).to.equal(1);
-          expect(cm.validate(conn)).to.be.not.ok;
+          setTimeout(() => {
+            // Old threadId should be different from current new one
+            expect(conn.threadId).to.not.be.equal(connection.threadId);
+            expect(sequelize.connectionManager.pool.size).to.equal(1);
+            expect(cm.validate(conn)).to.be.not.ok;
 
-          return cm.releaseConnection(connection);
+            return cm.releaseConnection(connection);
+          }, 500);
         });
     });
 
