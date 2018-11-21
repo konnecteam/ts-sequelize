@@ -99,14 +99,12 @@ if (dialect === 'mysql') {
           return cm.getConnection();
         })
         .then(connection => {
-          setTimeout(() => {
-            // Old threadId should be different from current new one
-            expect(conn.threadId).to.not.be.equal(connection.threadId);
-            expect(sequelize.connectionManager.pool.size).to.equal(1);
-            expect(cm.validate(conn)).to.be.not.ok;
+          // Old threadId should be different from current new one
+          expect(conn.threadId).to.not.be.equal(connection.threadId);
+          expect(sequelize.connectionManager.pool.size).to.equal(1);
+          expect(cm.validate(conn)).to.be.not.ok;
 
-            return cm.releaseConnection(connection);
-          }, 500);
+          return cm.releaseConnection(connection);
         });
     });
 
@@ -146,12 +144,10 @@ if (dialect === 'mysql') {
           return cm.getConnection();
         })
         .then(connection => {
-          setTimeout(() => {
-            // Old threadId should be different from current new one
-            expect(conn.threadId).to.not.be.equal(connection.threadId);
-            expect(cm.validate(conn)).to.not.be.ok;
-            return cm.releaseConnection(connection);
-          }, 500);
+          // Old threadId should be different from current new one
+          expect(conn.threadId).to.not.be.equal(connection.threadId);
+          expect(cm.validate(conn)).to.not.be.ok;
+          return cm.releaseConnection(connection);
         });
     });
   });
