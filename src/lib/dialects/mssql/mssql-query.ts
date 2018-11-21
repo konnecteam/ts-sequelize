@@ -127,7 +127,6 @@ export class MssqlQuery extends AbstractQuery {
         const request = new connection.lib.Request(this.sql, (err, rowCount) => {
 
           debug(`executed(${this.connection.uuid || 'default'}) : ${this.sql}`);
-          console.log('executed ' + sql);
 
           if (benchmark) {
             this.sequelize.log('Executed (' + (this.connection.uuid || 'default') + '): ' + this.sql, Date.now() - queryBegin, this.options);
