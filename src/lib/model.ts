@@ -2481,6 +2481,9 @@ export class Model extends Mixin {
                 model : this,
                 options
               });
+              if (options.attributes.indexOf(this.primaryKeyAttribute) === -1) {
+                options.attributes.push(this.primaryKeyAttribute);
+              }
               //The attribute is still in the request but just "" as field
               const field = [new AllUtils.Literal('\'\''), (options as any).attributes[i]];
               (options as any).attributes[i] = field;
@@ -2703,15 +2706,15 @@ export class Model extends Mixin {
               }
             });
             //We need to add the foreign key in the attributes asked to the DB
-            if (!(include.association.foreignKey in includeParams.attributes)) {
+            if (includeParams.attributes && includeParams.attributes.indexOf(include.association.foreignKey) === -1) {
               includeParams.attributes.push(include.association.foreignKey);
             }
             //We need to add the foreign key to the include attributes for Sequelize to map the results
-            if (!(include.association.foreignKey in include.attributes)) {
+            if (include.attributes && include.attributes.indexOf(include.association.foreignKey) === -1) {
               include.attributes.push(include.association.foreignKey);
             }
             //We need to add the foreign key to the include originalAttributes for Sequelize to map the results
-            if (!(include.association.foreignKey in include.originalAttributes)) {
+            if (include.originalAttributes && include.originalAttributes.indexOf(include.association.foreignKey) === -1) {
               include.originalAttributes.push(include.association.foreignKey);
             }
             return include.association.get(results, includeParams).then(map => {

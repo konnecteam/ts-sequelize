@@ -233,6 +233,7 @@ export class OracleQuery extends AbstractQuery {
           // Dealing with long names in sql - we only come here if this is a select statement from selectQuery
           opts = this._dealWithLongAliasesBeforeSelect(self.sql);
           sqlToExec = opts.sql;
+
           if (logAliasesQry) {
             //We will log aliases query only if asked
             this.sequelize.log('Executing reformated (' + (connection.uuid || 'default') + '): ' + sqlToExec, this.options);

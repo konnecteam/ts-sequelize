@@ -806,13 +806,11 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
           //If we try to insert into TEXT or BLOB, we need to pass by input-parameters to avoid the 4000 char length limit
 
           const paramName = `:input${key}${inputParamCpt}`;
-          const inputParam = {
-            // dir : oracleDb.BIND_IN,
-            val : value
-          };
+          const inputParam = {};
           //Binding type to parameter
           if (modelAttributes[key].type.key === DataTypes.TEXT.key) {
             //if text with length, it's generated as a String inside Oracle,
+            inputParam['val'] = value.toString();
             if (modelAttributes[key].type._length !== '') {
               inputParam['type'] = oracleDb.STRING;
             } else {
@@ -822,7 +820,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
           } else {
             //No TEXT, it's a BLOB
             // inputParam['type'] =  oracleDb.BLOB;
-            inputParam['val'] = Buffer.from(inputParam['val']);
+            inputParam['val'] = Buffer.from(value);
           }
           inputParameters[paramName.slice(1, paramName.length)] = inputParam;
           values.push(paramName);
@@ -973,13 +971,11 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
       //if we try to update with STRING / BLOB / CLOB we need to use bind parameters
       if (key in modelAttributeMap && (modelAttributeMap[key].type.key === 'TEXT' || (modelAttributeMap[key].type.key === 'STRING' && value.length > 2000) || modelAttributeMap[key].type.key === 'BLOB')) {
         const paramName = `:input${key}${inputParamCpt}`;
-        const inputParam = {
-          // dir : oracleDb.BIND_IN,
-          val : value
-        };
+        const inputParam = {};
         //Binding type to parameter
         if (modelAttributeMap[key].type.key === DataTypes.TEXT.key) {
           //if text with length, it's generated as a String inside Oracle,
+          inputParam['val'] = value.toString();
           if (modelAttributeMap[key].type.key === 'STRING' || modelAttributeMap[key].type._length !== '') {
             inputParam['type'] = oracleDb.STRING;
           } else {
@@ -989,7 +985,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
         } else {
           //No TEXT, it's a BLOB
           // inputParam['type'] =  oracleDb.BLOB;
-          inputParam['val'] = Buffer.from(inputParam['val']);
+          inputParam['val'] = Buffer.from(value);
         }
         inputParameters[paramName.slice(1, paramName.length)] = inputParam;
         values.push(this.quoteIdentifier(key) + '=' + paramName);
