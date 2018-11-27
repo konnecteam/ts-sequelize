@@ -1400,7 +1400,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
 
     if (force === true) {
       return Utils.addTicks(identifier, '"');
-    } else if (identifier.indexOf('.') > - 1 || identifier.indexOf('->') > - 1) {
+    } else if (identifier.indexOf('.') > - 1 || identifier.indexOf('->') > - 1 || identifier.indexOf(' ') > - 1) {
       return Utils.addTicks(identifier, '"');
     } else {
       //If there is a reserved word, we have to quote it
