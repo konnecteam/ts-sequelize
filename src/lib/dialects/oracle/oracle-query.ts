@@ -594,10 +594,14 @@ export class OracleQuery extends AbstractQuery {
               //If we don't have a mapping name provided (from the model), we take it from sql
               let firstIdx = -1;
 
-              //We first start by checking if this is defined as an alias
-              if (this.sql.toUpperCase().indexOf('AS ' + key) > -1) {
+             //We first start by checking if this is defined as an alias
+
+              if (this.sql.toUpperCase().indexOf('AS ' + key.toUpperCase()) > -1) {
                 //This is an alias, we take it
-                firstIdx = this.sql.toUpperCase().indexOf('AS ' + key) + 3;
+                firstIdx = this.sql.toUpperCase().indexOf('AS ' + key.toUpperCase()) + 3;
+              } else if (this.sql.toUpperCase().indexOf('AS "' + key.toUpperCase()) > -1) {
+                //Still an alias, but with " inside
+                firstIdx = this.sql.toUpperCase().indexOf('AS "' + key.toUpperCase() + '"') + 4;
               } else {
                 //No alias, we take the first occurence we find
                 firstIdx = this.sql.toUpperCase().indexOf(key);
