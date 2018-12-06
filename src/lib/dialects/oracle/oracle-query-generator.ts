@@ -760,6 +760,9 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
     const inputParamCpt = 0;
 
 
+    //We have to specify a variable that will be used as return value for the id
+    const returningQuery = '<%=valueQuery %> RETURNING <%=primaryKey %> INTO <%=primaryKeyReturn %>';
+
     if (modelAttributes) {
 
       //We search for the primaryKey
@@ -803,13 +806,11 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
           //If we try to insert into TEXT or BLOB, we need to pass by input-parameters to avoid the 4000 char length limit
 
           const paramName = `:input${key}${inputParamCpt}`;
-          const inputParam = {
-            // dir : oracleDb.BIND_IN,
-            val : value
-          };
+          const inputParam = {};
           //Binding type to parameter
           if (modelAttributes[key].type.key === DataTypes.TEXT.key) {
             //if text with length, it's generated as a String inside Oracle,
+            inputParam['val'] = value.toString();
             if (modelAttributes[key].type._length !== '') {
               inputParam['type'] = oracleDb.STRING;
             } else {
@@ -819,7 +820,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
           } else {
             //No TEXT, it's a BLOB
             // inputParam['type'] =  oracleDb.BLOB;
-            inputParam['val'] = Buffer.from(inputParam['val']);
+            inputParam['val'] = Buffer.from(value);
           }
           inputParameters[paramName.slice(1, paramName.length)] = inputParam;
           values.push(paramName);
@@ -888,7 +889,12 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
       values: values.join(',')
     };
 
-    query = (replacements.attributes.length ? valueQuery : emptyQuery);
+    if (options.returning && replacements.attributes && replacements.attributes.length > 0) {
+      query = returningQuery;
+      replacements.valueQuery = _.template(valueQuery)(replacements);
+    } else {
+      query = (replacements.attributes.length ? valueQuery : emptyQuery);
+    }
 
     return _.template(query)(replacements);
   }
@@ -963,15 +969,13 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
 
       const value = attrValueHash[key];
       //if we try to update with STRING / BLOB / CLOB we need to use bind parameters
-      if (modelAttributeMap[key].type.key === 'TEXT' || (modelAttributeMap[key].type.key === 'STRING' && value.length > 2000) || modelAttributeMap[key].type.key === 'BLOB') {
+      if (key in modelAttributeMap && (modelAttributeMap[key].type.key === 'TEXT' || (modelAttributeMap[key].type.key === 'STRING' && value.length > 2000) || modelAttributeMap[key].type.key === 'BLOB')) {
         const paramName = `:input${key}${inputParamCpt}`;
-        const inputParam = {
-          // dir : oracleDb.BIND_IN,
-          val : value
-        };
+        const inputParam = {};
         //Binding type to parameter
         if (modelAttributeMap[key].type.key === DataTypes.TEXT.key) {
           //if text with length, it's generated as a String inside Oracle,
+          inputParam['val'] = value.toString();
           if (modelAttributeMap[key].type.key === 'STRING' || modelAttributeMap[key].type._length !== '') {
             inputParam['type'] = oracleDb.STRING;
           } else {
@@ -981,7 +985,7 @@ export class OracleQueryGenerator extends AbstractQueryGenerator {
         } else {
           //No TEXT, it's a BLOB
           // inputParam['type'] =  oracleDb.BLOB;
-          inputParam['val'] = Buffer.from(inputParam['val']);
+          inputParam['val'] = Buffer.from(value);
         }
         inputParameters[paramName.slice(1, paramName.length)] = inputParam;
         values.push(this.quoteIdentifier(key) + '=' + paramName);

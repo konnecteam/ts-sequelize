@@ -817,8 +817,10 @@ describe(Support.getTestDialectTeaser('Sequelize'), () => {
       });
 
       it('supports WITH queries', function() {
-        return expect(this.sequelize.query('WITH RECURSIVE t(n) AS ( VALUES (1) UNION ALL SELECT n+1 FROM t WHERE n < 100) SELECT sum(n) FROM t').get(0))
-          .to.eventually.deep.equal([{ sum: '5050' }]);
+        return this.sequelize.query('WITH RECURSIVE t(n) AS ( VALUES (1) UNION ALL SELECT n+1 FROM t WHERE n < 100) SELECT sum(n) FROM t')
+        .then(res => {
+          expect(res[0][0].sum.toString()).to.equal('5050');
+        });
       });
     }
 

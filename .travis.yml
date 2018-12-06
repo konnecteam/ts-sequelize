@@ -7,8 +7,10 @@ branches:
   only:
     - typescript
     - develop
+    - docdeployment
     - /^greenkeeper/.*$/
-  except:- /^v\d+\.\d+\.\d+$/
+  except:
+    - /^v\d+\.\d+\.\d+$/
 
 cache:
   directories:
@@ -102,4 +104,4 @@ jobs:
 stages:
   - test
   - name: release
-    if: branch = master AND type = push AND fork = false
+    if: type = push AND fork = false

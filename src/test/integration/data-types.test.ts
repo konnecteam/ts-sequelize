@@ -467,8 +467,8 @@ describe(Support.getTestDialectTeaser('DataTypes'), () => {
       }).then(() => {
         return Model.findById(1);
       }).then(user => {
-        expect(user.get('jewelPurity')).to.be.eql(sampleData.jewelPurity);
-        expect(user.get('jewelPurity')).to.be.string;
+        expect(user.get('jewelPurity').toString()).to.be.eql(sampleData.jewelPurity);
+        expect(user.get('jewelPurity').toString()).to.be.string;
       });
     });
   }

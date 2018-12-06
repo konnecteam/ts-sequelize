@@ -1059,7 +1059,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
 
       return User.sync({ force: true }).then(() => {
         return User.create({ big: '9223372036854775807' }).then(user => {
-          expect(user.big).to.be.equal('9223372036854775807');
+          expect(user.big.toString()).to.be.equal('9223372036854775807');
         });
       });
     });

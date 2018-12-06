@@ -11,8 +11,9 @@ const current = Support.sequelize;
 const Promise = Sequelize.Promise;
 
 if (current.dialect.supports.groupedLimit) {
+
   describe(Support.getTestDialectTeaser('Include'), () => {
-    describe.only('separate', () => {
+    describe('separate', () => {
       it('should run a hasMany association in a separate query', function() {
         const User = this.sequelize.define('User', {});
         const Task = this.sequelize.define('Task', {});
